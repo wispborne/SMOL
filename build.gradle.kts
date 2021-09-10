@@ -18,6 +18,9 @@ repositories {
 
 dependencies {
     implementation(compose.desktop.currentOs)
+
+    implementation(fileTree("libs") { include("*.jar") })
+    implementation("com.beust:klaxon:5.5")
 }
 
 tasks.withType<KotlinCompile>().configureEach {

@@ -13,16 +13,24 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import net.sf.sevenzipjbinding.SevenZip
+import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream
 import java.awt.datatransfer.DataFlavor
 import java.awt.dnd.DnDConstants
 import java.awt.dnd.DropTarget
 import java.awt.dnd.DropTargetDragEvent
 import java.awt.dnd.DropTargetDropEvent
 import java.io.File
-import kotlin.random.Random
+import java.io.RandomAccessFile
 
 
 fun main() = application {
+    try {
+        SevenZip.initSevenZipFromPlatformJAR()
+    } catch (e: Exception) {
+        throw e
+    }
+
     Window(onCloseRequest = ::exitApplication) {
         App()
         Dropper(window = window)
@@ -46,9 +54,10 @@ fun App() {
                     Text(text)
                 }
                 ModsGrid(
-                    buildList(30) {
-                        repeat(30) { this.add(Mod(it.toString(), Version("$it.5.2"))) }
-                    }
+                    Loader.getMods()
+//                    buildList(30) {
+//                        repeat(30) { this.add(Mod(ModInfo(it.toString(), "$it.5.2"))) }
+//                    }
                 )
             }
         }
@@ -117,8 +126,8 @@ fun ModsGrid(
                         items(mods) { mod ->
                             ListItem {
                                 Row {
-                                    Text(mod.name, Modifier.weight(1f))
-                                    Text(mod.version.toString(), Modifier.weight(1f))
+                                    Text(mod.modInfo.name, Modifier.weight(1f))
+                                    Text(mod.modInfo.version.toString(), Modifier.weight(1f))
                                 }
                             }
                         }
@@ -146,22 +155,14 @@ fun Dropper(
 
             droppedFiles.first()?.let {
                 name = (it as File).absolutePath
+
+                SevenZip.openInArchive(null, RandomAccessFileInStream(RandomAccessFile(it, "r")))
+                    .numberOfItems
+                    .also { println("Files in $name: $it") }
             }
         }
     }
     window.contentPane.dropTarget = target
 
     Text(text = name, modifier = modifier)
-}
-
-data class Mod(
-    val name: String,
-    val version: Version,
-    val isEnabled: Boolean = Random.nextBoolean()
-)
-
-data class Version(
-    val raw: String
-) {
-    override fun toString() = raw
 }
