@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.5.21"
+    kotlin("kapt") version "1.5.21"
     id("org.jetbrains.compose") version "1.0.0-alpha3"
 }
 
@@ -20,7 +21,12 @@ dependencies {
     implementation(compose.desktop.currentOs)
 
     implementation(fileTree("libs") { include("*.jar") })
-    implementation("com.beust:klaxon:5.5")
+    val moshiVer = "1.12.0"
+    kapt("com.squareup.moshi:moshi-kotlin-codegen:$moshiVer")
+    implementation("com.squareup.moshi:moshi-adapters:$moshiVer")
+
+    implementation("org.tinylog:jcl-tinylog:2.4.0-M1")
+    implementation("org.tinylog:tinylog-impl:2.4.0-M1")
 }
 
 tasks.withType<KotlinCompile>().configureEach {
