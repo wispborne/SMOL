@@ -15,7 +15,7 @@ sealed class ModInfo(
     val utility = utilityString.toBooleanStrictOrNull() ?: false
 
 
-    @JsonClass(generateAdapter = true)
+//    @JsonClass(generateAdapter = true)
     class v091(
         id: String,
         name: String = "",
@@ -57,7 +57,7 @@ sealed class ModInfo(
 
     }
 
-    @JsonClass(generateAdapter = true)
+//    @JsonClass(generateAdapter = true)
     class v095(
         id: String,
         name: String = "",
@@ -82,7 +82,7 @@ sealed class ModInfo(
     }
 }
 
-@JsonClass(generateAdapter = true)
+//@JsonClass(generateAdapter = true)
 data class Version(
     val raw: String?,
     val major: String = "0",

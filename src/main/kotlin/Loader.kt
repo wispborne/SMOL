@@ -18,6 +18,10 @@ class Loader {
             }
             .onSuccess { Logger.debug { "Product Name: ${it.absolutePath}" } }
             .getOrNull()
+            .also {
+                SL.appConfig.gamePath = it?.absolutePath
+                Logger.debug { SL.appConfig.gamePath }
+            }
     }
 
     fun getModsPath(starsectorPath: File = getStarsectorPath()!!): File {
@@ -35,17 +39,17 @@ class Loader {
         return modsPath
             .walkTopDown().maxDepth(1)
             .mapNotNull { modFolder ->
-                Logger.debug { "Folder: ${modFolder.name}" }
+                Logger.trace { "Folder: ${modFolder.name}" }
                 val modInfo = modFolder
                     .walkTopDown().maxDepth(1)
                     .firstOrNull {
-                        Logger.debug { "  File: ${it.name}" }
+                        Logger.trace { "  File: ${it.name}" }
                         it.name.equals("mod_info.json")
                     } ?: return@mapNotNull null
 
                 val json = JsonValue.readHjson(modInfo.readText())
                 val jsonStr = json.toString()
-                    .also { Logger.debug { it.toString() } }
+                    .also { Logger.trace { it.toString() } }
 
                 Mod(
                     modInfo = SL.moshi.run {

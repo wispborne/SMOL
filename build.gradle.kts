@@ -2,10 +2,12 @@ import org.jetbrains.compose.compose
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
+
 plugins {
-    kotlin("jvm") version "1.5.21"
-    kotlin("kapt") version "1.5.21"
-    id("org.jetbrains.compose") version "1.0.0-alpha3"
+    val kotlinVer = "1.5.30"
+    kotlin("jvm") version kotlinVer
+    kotlin("kapt") version kotlinVer
+    id("org.jetbrains.compose") version "1.0.0-alpha4-build344"
 }
 
 group = "com.wisp"
@@ -19,14 +21,24 @@ repositories {
 
 dependencies {
     implementation(compose.desktop.currentOs)
+    implementation(kotlin("reflect"))
 
     implementation(fileTree("libs") { include("*.jar") })
+
+    // JSON
     val moshiVer = "1.12.0"
-    kapt("com.squareup.moshi:moshi-kotlin-codegen:$moshiVer")
+    implementation("com.squareup.moshi:moshi-kotlin:$moshiVer")
+//    kapt("com.squareup.moshi:moshi-kotlin:$moshiVer")
     implementation("com.squareup.moshi:moshi-adapters:$moshiVer")
 
+    // Logging
     implementation("org.tinylog:jcl-tinylog:2.4.0-M1")
     implementation("org.tinylog:tinylog-impl:2.4.0-M1")
+
+    // Navigation
+    val decomposeVer = "0.3.1"
+    api("com.arkivanov.decompose:decompose:$decomposeVer")
+    api("com.arkivanov.decompose:extensions-compose-jetbrains:$decomposeVer")
 }
 
 tasks.withType<KotlinCompile>().configureEach {
