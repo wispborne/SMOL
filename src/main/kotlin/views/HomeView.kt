@@ -13,7 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.Router
 import com.arkivanov.decompose.push
-import rememberRouter
 
 @Composable
 @Preview
@@ -23,9 +22,10 @@ fun homeView(
 ) {
     Scaffold(topBar = {
         TopAppBar {
-            Button(onClick = {
-                router.push(Screen.Settings)
-            }) {
+            Button(
+                onClick = { router.push(Screen.Settings) },
+                modifier = Modifier.padding(start = 16.dp)
+            ) {
                 Text("Settings")
             }
         }

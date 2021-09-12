@@ -2,14 +2,43 @@ import com.squareup.moshi.adapter
 import com.sun.jna.platform.win32.Advapi32Util
 import com.sun.jna.platform.win32.WinReg
 import org.hjson.JsonValue
+import org.jetbrains.skija.impl.Platform
 import org.tinylog.Logger
 import java.io.File
 
 
 class Loader {
+    fun isValidGamePath(path: String): Boolean {
+        val file = File(path)
+
+        if (!file.exists()) return false
+
+        var hasGameExe = false
+        var hasGameCoreExe = false
+
+        file.walkTopDown().maxDepth(1)
+            .forEach {
+                if (it.nameWithoutExtension == "starsector") hasGameExe = true
+                if (it.nameWithoutExtension == "starsector-core") hasGameCoreExe = true
+            }
+
+        return hasGameExe && hasGameCoreExe
+    }
+
     fun getStarsectorPath(): File? {
         return kotlin.runCatching {
-            Advapi32Util.registryGetStringValue(WinReg.HKEY_CURRENT_USER, "SOFTWARE\\Fractal Softworks\\Starsector", "")
+            when (Platform.CURRENT) {
+                Platform.WINDOWS ->
+                    Advapi32Util.registryGetStringValue(
+                        WinReg.HKEY_CURRENT_USER,
+                        "SOFTWARE\\Fractal Softworks\\Starsector",
+                        ""
+                    )
+                Platform.MACOS_X64,
+                Platform.MACOS_ARM64 -> "" // TODO
+                Platform.LINUX -> "" // TODO
+                else -> "" // TODO
+            }
         }
             .mapCatching { File(it) }
             .onFailure {
@@ -19,8 +48,11 @@ class Loader {
             .onSuccess { Logger.debug { "Product Name: ${it.absolutePath}" } }
             .getOrNull()
             .also {
-                SL.appConfig.gamePath = it?.absolutePath
-                Logger.debug { SL.appConfig.gamePath }
+                if (SL.appConfig.gamePath == null) {
+                    SL.appConfig.gamePath = it?.absolutePath
+                }
+
+                Logger.debug { "Game path: ${SL.appConfig.gamePath}" }
             }
     }
 

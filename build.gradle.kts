@@ -4,10 +4,10 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 
 plugins {
-    val kotlinVer = "1.5.30"
+    val kotlinVer = "1.5.21"
     kotlin("jvm") version kotlinVer
     kotlin("kapt") version kotlinVer
-    id("org.jetbrains.compose") version "1.0.0-alpha4-build344"
+    id("org.jetbrains.compose") version "1.0.0-alpha3"
 }
 
 group = "com.wisp"

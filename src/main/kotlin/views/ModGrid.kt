@@ -22,7 +22,6 @@ fun ModGrid(
     mods: List<Mod>,
     modifier: Modifier = Modifier
 ) {
-
     Column(modifier) {
         ListItem(Modifier.background(MaterialTheme.colors.background)) {
             Row {
