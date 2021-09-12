@@ -4,6 +4,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import com.arkivanov.decompose.Router
+import navigation.Screen
+import navigation.rememberRouter
 import net.sf.sevenzipjbinding.SevenZip
 import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream
 import java.awt.datatransfer.DataFlavor
@@ -23,15 +26,29 @@ fun main() = application {
     }
 
     Window(onCloseRequest = ::exitApplication) {
-        App()
-        Dropper(window = window)
+        val router = rememberRouter<Screen>(
+            initialConfiguration = { Screen.Home },
+            handleBackButton = true
+        )
+
+        val appState by remember { mutableStateOf(AppState(router, window)) }
+
+        appState.AppView()
+        appState.Dropper()
     }
 }
 
+
+class AppState(
+    val router: Router<Screen, Any>,
+    val window: ComposeWindow
+) {
+
+}
+
 @Composable
-fun Dropper(
-    modifier: Modifier = Modifier,
-    window: ComposeWindow
+fun AppState.Dropper(
+    modifier: Modifier = Modifier
 ) {
     var name by remember { mutableStateOf("") }
     val target = object : DropTarget() {

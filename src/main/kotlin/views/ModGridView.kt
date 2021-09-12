@@ -1,3 +1,6 @@
+package views
+
+import AppState
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,7 +22,7 @@ import model.Mod
 )
 @Composable
 @Preview
-fun ModGrid(
+fun AppState.ModGridView(
     mods: List<Mod>,
     modifier: Modifier = Modifier
 ) {

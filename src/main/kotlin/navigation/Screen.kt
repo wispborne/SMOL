@@ -1,4 +1,4 @@
-package views
+package navigation
 
 import com.arkivanov.essenty.parcelable.Parcelable
 

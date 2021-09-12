@@ -1,6 +1,6 @@
 package views
 
-import ModGrid
+import AppState
 import SL
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.*
@@ -9,13 +9,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.arkivanov.decompose.Router
 import com.arkivanov.decompose.push
+import navigation.Screen
 
 @Composable
 @Preview
-fun homeView(
-    router: Router<Screen, Any>,
+fun AppState.homeView(
     modifier: Modifier = Modifier
 ) {
     Scaffold(topBar = {
@@ -29,7 +28,7 @@ fun homeView(
         }
     }) {
         if (SL.gamePath.isValidGamePath(SL.appConfig.gamePath ?: "")) {
-            ModGrid(
+            ModGridView(
                 SL.gamePath.getMods(),
                 Modifier.padding(16.dp)
             )

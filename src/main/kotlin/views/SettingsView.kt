@@ -1,15 +1,18 @@
 package views
 
+import AppState
 import SL
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.arkivanov.decompose.Router
 import com.arkivanov.decompose.pop
+import java.io.File
+import javax.swing.JFileChooser
 
 @OptIn(
     ExperimentalMaterialApi::class,
@@ -17,8 +20,7 @@ import com.arkivanov.decompose.pop
 )
 @Composable
 @Preview
-fun settingsView(
-    router: Router<Screen, Any>,
+fun AppState.settingsView(
     modifier: Modifier = Modifier
 ) {
 
@@ -43,15 +45,36 @@ fun settingsView(
                     item {
                         Column {
                             var isGamePathError by remember { mutableStateOf(!isValidGamePath(gamePath)) }
-                            TextField(
-                                value = gamePath,
-                                modifier = Modifier.fillMaxWidth(),
-                                label = { Text("Game path") },
-                                isError = isGamePathError,
-                                onValueChange = {
-                                    gamePath = it
-                                    isGamePathError = !isValidGamePath(it)
-                                })
+                            Row {
+                                TextField(
+                                    value = gamePath,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .align(Alignment.CenterVertically),
+                                    label = { Text("Game path") },
+                                    isError = isGamePathError,
+                                    onValueChange = {
+                                        gamePath = it
+                                        isGamePathError = !isValidGamePath(it)
+                                    })
+                                Button(
+                                    modifier = Modifier
+                                        .align(Alignment.CenterVertically)
+                                        .padding(start = 16.dp),
+                                    onClick = {
+                                        JFileChooser().apply {
+                                            currentDirectory =
+                                                File(gamePath.ifBlank { null } ?: System.getProperty("user.home"))
+                                            fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
+
+                                            when (showOpenDialog(window)) {
+                                                JFileChooser.APPROVE_OPTION -> gamePath = this.selectedFile.absolutePath
+                                            }
+                                        }
+                                    }) {
+                                    Text("Open")
+                                }
+                            }
                             if (isGamePathError) {
                                 Text("Invalid game path", color = MaterialTheme.colors.error)
                             }
