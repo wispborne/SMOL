@@ -3,15 +3,17 @@ import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import org.tinylog.configuration.Configuration
 import util.AppConfig
 import util.GamePath
+import util.Installer
 
 var SL = ServiceLocator()
 
 class ServiceLocator(
-    val gamePath: GamePath = GamePath(),
     val moshi: Moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())
         .build(),
-    val appConfig: AppConfig = AppConfig(moshi)
+    val appConfig: AppConfig = AppConfig(moshi),
+    val gamePath: GamePath = GamePath(appConfig, moshi),
+    val installer: Installer = Installer(appConfig, gamePath, moshi)
 ) {
     init {
         // Logger

@@ -9,6 +9,7 @@ import navigation.Screen
 import navigation.rememberRouter
 import net.sf.sevenzipjbinding.SevenZip
 import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream
+import org.tinylog.Logger
 import java.awt.datatransfer.DataFlavor
 import java.awt.dnd.DnDConstants
 import java.awt.dnd.DropTarget
@@ -24,6 +25,11 @@ fun main() = application {
     } catch (e: Exception) {
         throw e
     }
+
+    SL.appConfig.stagingPath = File(System.getProperty("user.home"), "SMOL").absolutePath
+    SL.installer.loadManifest()
+        .also { Logger.debug { "Staging manifest: ${it?.manifestItems?.keys?.joinToString()}" } }
+    SL.installer.addModsFolderToStagingFolder()
 
     Window(onCloseRequest = ::exitApplication) {
         val router = rememberRouter<Screen>(

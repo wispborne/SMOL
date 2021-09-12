@@ -1,18 +1,21 @@
 package util
 
-import model.Mod
-import model.ModInfo
-import SL
+import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapter
 import com.sun.jna.platform.win32.Advapi32Util
 import com.sun.jna.platform.win32.WinReg
+import model.Mod
+import model.ModInfo
 import org.hjson.JsonValue
 import org.jetbrains.skija.impl.Platform
 import org.tinylog.Logger
 import java.io.File
 
 
-class GamePath {
+class GamePath(
+    private val appConfig: AppConfig,
+    private val moshi: Moshi
+) {
     fun isValidGamePath(path: String): Boolean {
         val file = File(path)
 
@@ -53,11 +56,11 @@ class GamePath {
             .onSuccess { Logger.debug { "Product Name: ${it.absolutePath}" } }
             .getOrNull()
             .also {
-                if (SL.appConfig.gamePath == null) {
-                    SL.appConfig.gamePath = it?.absolutePath
+                if (appConfig.gamePath == null) {
+                    appConfig.gamePath = it?.absolutePath
                 }
 
-                Logger.debug { "Game path: ${SL.appConfig.gamePath}" }
+                Logger.debug { "Game path: ${appConfig.gamePath}" }
             }
     }
 
@@ -89,7 +92,7 @@ class GamePath {
                     .also { Logger.trace { it.toString() } }
 
                 Mod(
-                    modInfo = SL.moshi.run {
+                    modInfo = moshi.run {
                         // Check for 0.95 format
                         if (json.asObject().get("version").isObject) {
                             this.adapter<ModInfo.v095>()
@@ -97,7 +100,8 @@ class GamePath {
                             this.adapter<ModInfo.v091>()
                         }
                     }
-                        .fromJson(jsonStr)!!
+                        .fromJson(jsonStr)!!,
+                    folder = modFolder
                 )
             }
             .toList()
