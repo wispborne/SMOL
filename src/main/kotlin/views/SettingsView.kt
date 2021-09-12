@@ -37,7 +37,7 @@ fun settingsView(
                     SL.appConfig.gamePath = gamePath
                 }
 
-                fun isValidGamePath(path: String) = SL.loader.isValidGamePath(path)
+                fun isValidGamePath(path: String) = SL.gamePath.isValidGamePath(path)
 
                 LazyColumn(Modifier.weight(1f)) {
                     item {

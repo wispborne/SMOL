@@ -28,9 +28,9 @@ fun homeView(
             }
         }
     }) {
-        if (SL.loader.isValidGamePath(SL.appConfig.gamePath ?: "")) {
+        if (SL.gamePath.isValidGamePath(SL.appConfig.gamePath ?: "")) {
             ModGrid(
-                SL.loader.getMods(),
+                SL.gamePath.getMods(),
                 Modifier.padding(16.dp)
             )
         } else {

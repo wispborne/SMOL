@@ -1,3 +1,5 @@
+package model
+
 import kotlin.random.Random
 
 data class Mod(

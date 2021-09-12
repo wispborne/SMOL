@@ -1,3 +1,5 @@
+package util
+
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapter
 import java.util.prefs.Preferences

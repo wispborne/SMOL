@@ -1,5 +1,6 @@
+package model
+
 import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
 
 sealed class ModInfo(
     @Json(name = "id") val id: String,
@@ -59,15 +60,15 @@ sealed class ModInfo(
 
 //    @JsonClass(generateAdapter = true)
     class v095(
-        id: String,
-        name: String = "",
-        author: String = "",
-        utilityString: String = "false",
-        @Json(name = "version") val versionString: Version,
-        description: String = "",
-        gameVersion: String,
-        jars: List<String> = emptyList(),
-        modPlugin: String = ""
+    id: String,
+    name: String = "",
+    author: String = "",
+    utilityString: String = "false",
+    @Json(name = "version") val versionString: Version,
+    description: String = "",
+    gameVersion: String,
+    jars: List<String> = emptyList(),
+    modPlugin: String = ""
     ) : ModInfo(
         id,
         name,

@@ -1,3 +1,8 @@
+package util
+
+import model.Mod
+import model.ModInfo
+import SL
 import com.squareup.moshi.adapter
 import com.sun.jna.platform.win32.Advapi32Util
 import com.sun.jna.platform.win32.WinReg
@@ -7,7 +12,7 @@ import org.tinylog.Logger
 import java.io.File
 
 
-class Loader {
+class GamePath {
     fun isValidGamePath(path: String): Boolean {
         val file = File(path)
 
