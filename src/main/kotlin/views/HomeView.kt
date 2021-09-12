@@ -3,12 +3,10 @@ package views
 import ModGrid
 import SL
 import androidx.compose.desktop.ui.tooling.preview.Preview
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Button
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Text
-import androidx.compose.material.TopAppBar
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.Router
@@ -30,12 +28,25 @@ fun homeView(
             }
         }
     }) {
-        ModGrid(
-            SL.loader.getMods(),
-            Modifier.padding(16.dp)
-//                    buildList(30) {
-//                        repeat(30) { this.add(Mod(ModInfo(it.toString(), "$it.5.2"))) }
-//                    }
-        )
+        if (SL.loader.isValidGamePath(SL.appConfig.gamePath ?: "")) {
+            ModGrid(
+                SL.loader.getMods(),
+                Modifier.padding(16.dp)
+            )
+        } else {
+            Column(
+                Modifier.fillMaxWidth().fillMaxHeight(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(text = "I can't find any mods! Did you set your game path yet?")
+                OutlinedButton(
+                    onClick = { router.push(Screen.Settings) },
+                    Modifier.padding(top = 8.dp)
+                ) {
+                    Text("Settings")
+                }
+            }
+        }
     }
 }
