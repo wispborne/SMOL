@@ -16,7 +16,7 @@ sealed class ModInfo(
     val utility = utilityString.toBooleanStrictOrNull() ?: false
 
 
-//    @JsonClass(generateAdapter = true)
+    //    @JsonClass(generateAdapter = true)
     class v091(
         id: String,
         name: String = "",
@@ -37,38 +37,21 @@ sealed class ModInfo(
         jars,
         modPlugin
     ) {
-        override val version: Version = kotlin.run {
-            // Remove all non-version data from the version information,
-            // then split the version number and release candidate number
-            // (ex: "Starsector 0.65.2a-RC1" becomes {"0.65.2","1"})
-            val localRaw = versionString
-                .replace("[^0-9.-]", "")
-                .split('-', limit = 2);
-
-            val split = localRaw.first().split('.')
-
-            Version(
-                raw = versionString,
-                major = split.getOrElse(0) { "0" },
-                minor = split.getOrElse(1) { "0" },
-                patch = split.getOrElse(2) { "0" },
-                build = split.getOrElse(3) { "0" },
-            )
-        }
+        override val version: Version = Version.parse(versionString)
 
     }
 
-//    @JsonClass(generateAdapter = true)
+    //    @JsonClass(generateAdapter = true)
     class v095(
-    id: String,
-    name: String = "",
-    author: String = "",
-    utilityString: String = "false",
-    @Json(name = "version") val versionString: Version,
-    description: String = "",
-    gameVersion: String,
-    jars: List<String> = emptyList(),
-    modPlugin: String = ""
+        id: String,
+        name: String = "",
+        author: String = "",
+        utilityString: String = "false",
+        @Json(name = "version") val versionString: Version,
+        description: String = "",
+        gameVersion: String,
+        jars: List<String> = emptyList(),
+        modPlugin: String = ""
     ) : ModInfo(
         id,
         name,
@@ -92,4 +75,25 @@ data class Version(
     val build: String?
 ) {
     override fun toString() = raw ?: listOfNotNull(major, minor, patch, build).joinToString(separator = ".")
+
+    companion object {
+        fun parse(versionString: String): Version {
+            // Remove all non-version data from the version information,
+            // then split the version number and release candidate number
+            // (ex: "Starsector 0.65.2a-RC1" becomes {"0.65.2","1"})
+            val localRaw = versionString
+                .replace("[^0-9.-]", "")
+                .split('-', limit = 2);
+
+            val split = localRaw.first().split('.')
+
+            return Version(
+                raw = versionString,
+                major = split.getOrElse(0) { "0" },
+                minor = split.getOrElse(1) { "0" },
+                patch = split.getOrElse(2) { "0" },
+                build = split.getOrElse(3) { "0" },
+            )
+        }
+    }
 }
