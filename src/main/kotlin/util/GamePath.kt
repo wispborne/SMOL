@@ -33,8 +33,8 @@ class GamePath(
         return hasGameExe && hasGameCoreExe
     }
 
-    fun getStarsectorPath(): File? {
-        return kotlin.runCatching {
+    fun getDefaultStarsectorPath(): File? =
+        kotlin.runCatching {
             when (Platform.CURRENT) {
                 Platform.WINDOWS ->
                     Advapi32Util.registryGetStringValue(
@@ -53,18 +53,13 @@ class GamePath(
                 Logger.debug { it.message ?: "" }
                 it.printStackTrace()
             }
-            .onSuccess { Logger.debug { "Product Name: ${it.absolutePath}" } }
+            .onSuccess { Logger.debug { "Game path: ${it.absolutePath}" } }
             .getOrNull()
-            .also {
-                if (appConfig.gamePath == null) {
-                    appConfig.gamePath = it?.absolutePath
-                }
 
-                Logger.debug { "Game path: ${appConfig.gamePath}" }
-            }
-    }
-
-    fun getModsPath(starsectorPath: File = getStarsectorPath()!!): File {
+    fun getModsPath(
+        starsectorPath: File = appConfig.gamePath?.let { File(it) }
+            ?: throw NullPointerException("Game path not found")
+    ): File {
         val mods = File(starsectorPath, "mods")
 
         if (!mods.exists()) {

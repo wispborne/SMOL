@@ -10,6 +10,7 @@ import navigation.rememberRouter
 import net.sf.sevenzipjbinding.SevenZip
 import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream
 import org.tinylog.Logger
+import util.toFileOrNull
 import java.awt.datatransfer.DataFlavor
 import java.awt.dnd.DnDConstants
 import java.awt.dnd.DropTarget
@@ -18,18 +19,16 @@ import java.awt.dnd.DropTargetDropEvent
 import java.io.File
 import java.io.RandomAccessFile
 
+var safeMode = false
 
 fun main() = application {
-    try {
-        SevenZip.initSevenZipFromPlatformJAR()
-    } catch (e: Exception) {
-        throw e
-    }
 
-    SL.appConfig.stagingPath = File(System.getProperty("user.home"), "SMOL").absolutePath
-    SL.installer.loadManifest()
-        .also { Logger.debug { "Staging manifest: ${it?.manifestItems?.keys?.joinToString()}" } }
-    SL.installer.addModsFolderToStagingFolder()
+    if (!safeMode) {
+        SevenZip.initSevenZipFromPlatformJAR()
+
+        checkAndSetDefaultPaths()
+        SL.archives.addModsFolderToArchivesFolder()
+    }
 
     Window(onCloseRequest = ::exitApplication) {
         val router = rememberRouter<Screen>(
@@ -40,20 +39,33 @@ fun main() = application {
         val appState by remember { mutableStateOf(AppState(router, window)) }
 
         appState.AppView()
-        appState.Dropper()
+        appState.FileDropper()
     }
+}
+
+fun checkAndSetDefaultPaths() {
+    val appConfig = SL.appConfig
+
+    if (!SL.gamePath.isValidGamePath(appConfig.gamePath ?: "")) {
+        appConfig.gamePath = SL.gamePath.getDefaultStarsectorPath()?.absolutePath
+    }
+
+    if (appConfig.archivesPath.toFileOrNull()?.exists() != true) {
+        appConfig.archivesPath = File(System.getProperty("user.home"), "SMOL").absolutePath
+    }
+
+    SL.archives.getArchivesManifest()
+        .also { Logger.debug { "Archives folder manifest: ${it?.manifestItems?.keys?.joinToString()}" } }
 }
 
 
 class AppState(
     val router: Router<Screen, Any>,
     val window: ComposeWindow
-) {
-
-}
+)
 
 @Composable
-fun AppState.Dropper(
+fun AppState.FileDropper(
     modifier: Modifier = Modifier
 ) {
     var name by remember { mutableStateOf("") }

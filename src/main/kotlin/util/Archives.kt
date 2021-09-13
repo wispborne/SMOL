@@ -17,25 +17,25 @@ import java.io.RandomAccessFile
 import java.util.*
 
 @OptIn(ExperimentalStdlibApi::class)
-class Installer(
+class Archives(
     private val config: AppConfig,
     private val gamePath: GamePath,
     private val moshi: Moshi
 ) {
     companion object {
-        const val MANIFEST_FILENAME = "manifest.json"
+        const val ARCHIVES_FILENAME = "manifest.json"
     }
 
-    fun getStagingPath() = config.stagingPath
+    fun getArchivesPath() = config.archivesPath
 
-    fun loadManifest() =
+    fun getArchivesManifest() =
         kotlin.runCatching {
-            moshi.adapter<StagingManifest>()
-                .fromJson(File(config.stagingPath!!, MANIFEST_FILENAME).readText())
+            moshi.adapter<ArchivesManifest>()
+                .fromJson(File(config.archivesPath!!, ARCHIVES_FILENAME).readText())
         }
             .recover {
                 // Try to make a backup of the file
-                val file = config.stagingPath?.let { File(it, MANIFEST_FILENAME) }
+                val file = config.archivesPath?.let { File(it, ARCHIVES_FILENAME) }
                 if (file?.exists() == true) {
                     kotlin.runCatching {
                         file.copyTo(File(file.parentFile, file.name + ".bak"), overwrite = true)
@@ -44,22 +44,22 @@ class Installer(
                 }
 
                 // Then return an empty manifest so it'll be created anew
-                StagingManifest()
+                ArchivesManifest()
             }
-            .getOrDefault(StagingManifest())
+            .getOrDefault(ArchivesManifest())
 
-    fun addModsFolderToStagingFolder() {
-        if (config.stagingPath == null) {
-            Logger.warn { "Not adding mods to staging folder; staging folder is null." }
+    fun addModsFolderToArchivesFolder() {
+        if (config.archivesPath == null) {
+            Logger.warn { "Not adding mods to archives folder; archives folder is null." }
             return
         }
 
-        val manifest = loadManifest()
+        val manifest = getArchivesManifest()
         val modsPath = gamePath.getModsPath()
 
         gamePath.getMods()
             .filter { mod ->
-                // Only add mods to staging folder if they aren't already there
+                // Only add mods to archives folder if they aren't already there
                 val key = createManifestItemKey(mod)
                 val doesArchiveAlreadyExist = manifest?.manifestItems?.containsKey(key) == true
                         && File(manifest.manifestItems[key]?.archivePath ?: "").exists()
@@ -69,16 +69,16 @@ class Installer(
             .forEach { mod ->
                 val filesToArchive = mod.folder.walkTopDown().toList()
 
-                val stagingArchiveFile = File(
-                    config.stagingPath,
-                    createStagingArchiveName(mod) + ".7z"
+                val archiveFile = File(
+                    config.archivesPath,
+                    createArchiveName(mod) + ".7z"
                 )
                     .apply { parentFile.mkdirs() }
 
                 SevenZip.openOutArchive7z()
                     .createArchive(RandomAccessFileOutStream(
                         RandomAccessFile(
-                            stagingArchiveFile, "rw"
+                            archiveFile, "rw"
                         )
                     ),
                         filesToArchive.size,
@@ -93,7 +93,7 @@ class Installer(
                             override fun setCompleted(complete: Long) {
                                 Logger.debug {
                                     val percentComplete = "%.2f".format((complete.toFloat() / currentTotal) * 100f)
-                                    "[$percentComplete%] Moving '${mod.modInfo.id} v${mod.modInfo.version}' to staging. File: $currentFilepath"
+                                    "[$percentComplete%] Moving '${mod.modInfo.id} v${mod.modInfo.version}' to archives. File: $currentFilepath"
                                 }
                             }
 
@@ -130,25 +130,25 @@ class Installer(
                             this[createManifestItemKey(mod)] = ManifestItemValue(
                                 modId = mod.modInfo.id,
                                 version = mod.modInfo.version,
-                                archivePath = stagingArchiveFile.absolutePath
+                                archivePath = archiveFile.absolutePath
                             )
                         })
                 }
             }
     }
 
-    fun updateManifest(mutator: (stagingManifest: StagingManifest) -> StagingManifest) {
-        mutator(loadManifest()!!)
-            .run { moshi.adapter<StagingManifest>().toJson(this) }
-            .run { File(config.stagingPath!!, MANIFEST_FILENAME).writeText(this) }
+    fun updateManifest(mutator: (archivesManifest: ArchivesManifest) -> ArchivesManifest) {
+        mutator(getArchivesManifest()!!)
+            .run { moshi.adapter<ArchivesManifest>().toJson(this) }
+            .run { File(config.archivesPath!!, ARCHIVES_FILENAME).writeText(this) }
     }
 
-    private fun createStagingArchiveName(mod: Mod) =
+    private fun createArchiveName(mod: Mod) =
         mod.modInfo.id.replace('-', '_') + "-" + mod.modInfo.version.toString()
 
     private fun createManifestItemKey(mod: Mod) = Objects.hash(mod.modInfo.id, mod.modInfo.version.toString())
 
-    data class StagingManifest(
+    data class ArchivesManifest(
         val manifestItems: Map<Int, ManifestItemValue> = emptyMap()
     )
 

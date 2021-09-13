@@ -7,7 +7,7 @@ import kotlin.reflect.KProperty
 
 class AppConfig(private val moshi: Moshi) {
     var gamePath: String? by pref(prefKey = "gamePath", defaultValue = null)
-    var stagingPath: String? by pref("stagingPath", defaultValue = null)
+    var archivesPath: String? by pref("archivesPath", defaultValue = null)
 
     @OptIn(ExperimentalStdlibApi::class)
     inner class pref<T>(val prefKey: String? = null, val defaultValue: T?) {
