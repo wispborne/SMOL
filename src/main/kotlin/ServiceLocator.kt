@@ -4,6 +4,7 @@ import org.tinylog.configuration.Configuration
 import util.AppConfig
 import util.GamePath
 import util.Archives
+import util.Staging
 
 var SL = ServiceLocator()
 
@@ -26,7 +27,8 @@ class ServiceLocator(
         .build(),
     val appConfig: AppConfig = AppConfig(moshi),
     val gamePath: GamePath = GamePath(appConfig, moshi),
-    val archives: Archives = Archives(appConfig, gamePath, moshi)
+    val archives: Archives = Archives(appConfig, gamePath, moshi),
+    val staging: Staging = Staging(appConfig, moshi),
 ) {
     init {
         // Logger
