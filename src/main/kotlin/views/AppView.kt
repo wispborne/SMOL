@@ -9,7 +9,7 @@ import views.settingsView
 @OptIn(ExperimentalStdlibApi::class)
 @Composable
 @Preview
-fun AppState.AppView() {
+fun AppState.appView() {
     DesktopMaterialTheme(colors = DarkColors) {
         Children(router.state) { screen ->
             when (screen.configuration) {

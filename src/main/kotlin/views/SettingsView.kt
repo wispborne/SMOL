@@ -34,12 +34,28 @@ fun AppState.settingsView(
         Box(modifier) {
             Column(Modifier.padding(16.dp)) {
                 var gamePath by remember { mutableStateOf(SL.appConfig.gamePath ?: "") }
+                var archivesFolderPathText by remember { mutableStateOf(SL.appConfig.archivesPath ?: "") }
+                var stagingFolderPathText by remember { mutableStateOf(SL.appConfig.stagingPath ?: "") }
 
                 fun save() {
                     SL.appConfig.gamePath = gamePath
+                    SL.appConfig.archivesPath = archivesFolderPathText
+                    SL.appConfig.stagingPath = stagingFolderPathText
                 }
 
                 fun isValidGamePath(path: String) = SL.gamePath.isValidGamePath(path)
+                fun pickFolder(initialPath: String): String? {
+                                        JFileChooser().apply {
+                                            currentDirectory =
+                                                File(initialPath)
+                                            fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
+
+                                            return when (showOpenDialog(window)) {
+                                                JFileChooser.APPROVE_OPTION -> this.selectedFile.absolutePath
+                                            else null
+                                            }
+                                        }
+                }
 
                 LazyColumn(Modifier.weight(1f)) {
                     item {
@@ -62,15 +78,7 @@ fun AppState.settingsView(
                                         .align(Alignment.CenterVertically)
                                         .padding(start = 16.dp),
                                     onClick = {
-                                        JFileChooser().apply {
-                                            currentDirectory =
-                                                File(gamePath.ifBlank { null } ?: System.getProperty("user.home"))
-                                            fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
-
-                                            when (showOpenDialog(window)) {
-                                                JFileChooser.APPROVE_OPTION -> gamePath = this.selectedFile.absolutePath
-                                            }
-                                        }
+                                        gamePath = pickFolder(gamePath.ifBlank { null } ?: System.getProperty("user.home"))
                                     }) {
                                     Text("Open")
                                 }

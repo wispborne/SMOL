@@ -38,8 +38,8 @@ fun main() = application {
 
         val appState by remember { mutableStateOf(AppState(router, window)) }
 
-        appState.AppView()
-        appState.FileDropper()
+        appState.appView()
+        appState.fileDropper()
     }
 }
 
@@ -65,7 +65,7 @@ class AppState(
 )
 
 @Composable
-fun AppState.FileDropper(
+fun AppState.fileDropper(
     modifier: Modifier = Modifier
 ) {
     var name by remember { mutableStateOf("") }
