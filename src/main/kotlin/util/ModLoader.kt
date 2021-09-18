@@ -5,14 +5,17 @@ import org.tinylog.Logger
 import java.io.File
 
 class ModLoader(
-    val gamePath: GamePath,
-    val config: AppConfig,
-    val archives: Archives,
-    val modInfoLoader: ModInfoLoader
+    private val gamePath: GamePath,
+    private val config: AppConfig,
+    private val archives: Archives,
+    private val modInfoLoader: ModInfoLoader,
+    private val gameEnabledMods: GameEnabledMods
 ) {
 
     @OptIn(ExperimentalStdlibApi::class)
     fun getMods(): List<Mod> {
+        val enabledModIds = gameEnabledMods.getEnabledModIds().enabledMods
+
         // Get items in archives
         val archivedMods = archives.getArchivesManifest()?.manifestItems?.values
             ?.map { archivedItem ->
@@ -21,7 +24,8 @@ class ModLoader(
                 Mod(
                     modInfo = archivedItem.modInfo,
                     staged = null, // Will zip with staged items later to populate
-                    isEnabled = false, // Archived-only items can't be enabled
+                    isEnabledInSmol = false, // Archived-only items can't be enabled
+                    isEnabledInGame = archivedItem.modInfo.id in enabledModIds,
                     archived = Mod.Archived(File(archivedItem.archivePath))
                 )
             } ?: emptyList()
@@ -34,7 +38,8 @@ class ModLoader(
                 Mod(
                     modInfo = modInfo,
                     staged = Mod.Staged(folder = modFolder),
-                    isEnabled = false,
+                    isEnabledInSmol = false,
+                    isEnabledInGame = modInfo.id in enabledModIds,
                     archived = null
                 )
             }
@@ -46,7 +51,8 @@ class ModLoader(
                 Mod(
                     modInfo = modInfo,
                     staged = null,
-                    isEnabled = true,
+                    isEnabledInSmol = true,
+                    isEnabledInGame = modInfo.id in enabledModIds,
                     archived = null
                 )
             }
@@ -55,7 +61,7 @@ class ModLoader(
         val result = (archivedMods + stagedMods + modsFolderMods).groupingBy { it.smolId }
             .reduce { _, accumulator, element ->
                 accumulator.copy(
-                    isEnabled = accumulator.isEnabled || element.isEnabled,
+                    isEnabledInSmol = accumulator.isEnabledInSmol || element.isEnabledInSmol,
                     staged = accumulator.staged ?: element.staged,
                     archived = accumulator.archived ?: element.archived
                 )

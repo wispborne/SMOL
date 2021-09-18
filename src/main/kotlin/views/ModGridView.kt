@@ -18,7 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import kotlinx.coroutines.launch
 import model.Mod
-import org.tinylog.kotlin.Logger
 
 @OptIn(
     ExperimentalMaterialApi::class,

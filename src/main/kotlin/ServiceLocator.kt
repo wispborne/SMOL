@@ -19,39 +19,13 @@ private val basicGson = GsonBuilder().create()
 class ServiceLocator(
     val moshi: Moshi = Moshi.Builder()
         .addLast(KotlinJsonAdapterFactory())
-//        .add(
-//            PolymorphicJsonAdapterFactory.of(ModInfo::class.java, "ModInfo")
-//                .withSubtype(ModInfo.v091::class.java, "ModInfo.v091")
-//                .withSubtype(ModInfo.v095::class.java, "ModInfo.v095")
-//        )
-//        .add(JsonAdapter<WindowState>())
         .add(ModInfoAdapter())
         .build(),
-    val gson: Gson = GsonBuilder()
-        .registerTypeAdapter<ModInfo> {
-            serialize { (src, _, _) ->
-                when (src) {
-                    is ModInfo.v091 -> basicGson.toJson(src, ModInfo.v091::class.java).toJson()
-                    is ModInfo.v095 -> basicGson.toJson(src, ModInfo.v095::class.java).toJson()
-                }
-            }
-            deserialize { arg: DeserializerArg ->
-                val json = if (arg.json.isJsonObject)
-                    arg.json
-                else JsonParser.parseString(arg.json.asString)
-
-                // Check for 0.95 format
-                if (json["version"].isJsonObject) {
-                    basicGson.fromJson<ModInfo.v095>(json)
-                } else {
-                    basicGson.fromJson<ModInfo.v091>(json)
-                }
-            }
-        }
-        .create(),
+    val gson: Gson = buildGson(),
     val appConfig: AppConfig = AppConfig(moshi = moshi),
     val modInfoLoader: ModInfoLoader = ModInfoLoader(moshi = moshi, gson = gson),
     val gamePath: GamePath = GamePath(appConfig = appConfig, moshi = moshi),
+    val gameEnabledMods: GameEnabledMods = GameEnabledMods(gson, gamePath),
     val archives: Archives = Archives(
         config = appConfig,
         gamePath = gamePath,
@@ -63,14 +37,52 @@ class ServiceLocator(
         gamePath = gamePath,
         archives = archives,
         modInfoLoader = modInfoLoader,
-        config = appConfig
+        config = appConfig,
+        gameEnabledMods = gameEnabledMods
     ),
-    val staging: Staging = Staging(config = appConfig, gamePath = gamePath, modLoader = modLoader),
+    val staging: Staging = Staging(
+        config = appConfig,
+        gamePath = gamePath,
+        modLoader = modLoader,
+        gameEnabledMods = gameEnabledMods
+    ),
 ) {
 }
 
+private fun buildGson() = GsonBuilder()
+    .setPrettyPrinting()
+    .setLenient()
+    .registerTypeAdapter<ModInfo> {
+        serialize { (src, _, _) ->
+            when (src) {
+                is ModInfo.v091 -> basicGson.toJson(src, ModInfo.v091::class.java).toJson()
+                is ModInfo.v095 -> basicGson.toJson(src, ModInfo.v095::class.java).toJson()
+            }
+        }
+        deserialize { arg: DeserializerArg ->
+            val json = if (arg.json.isJsonObject)
+                arg.json
+            else JsonParser.parseString(arg.json.asString)
+
+            // Check for 0.95 format
+            if (json["version"].isJsonObject) {
+                basicGson.fromJson<ModInfo.v095>(json)
+            } else {
+                basicGson.fromJson<ModInfo.v091>(json)
+            }
+        }
+    }
+    .create()
+
 @ExperimentalStdlibApi
 private class ModInfoAdapter {
+
+    //        .add(
+//            PolymorphicJsonAdapterFactory.of(ModInfo::class.java, "ModInfo")
+//                .withSubtype(ModInfo.v091::class.java, "ModInfo.v091")
+//                .withSubtype(ModInfo.v095::class.java, "ModInfo.v095")
+//        )
+//        .add(JsonAdapter<WindowState>())
     @ToJson
     fun toJson(obj: ModInfo): String {
         return when (obj) {

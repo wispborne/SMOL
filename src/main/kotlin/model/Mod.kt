@@ -9,11 +9,17 @@ import kotlin.random.Random
  */
 data class Mod(
     val modInfo: ModInfo,
-    val isEnabled: Boolean,
+    val isEnabledInSmol: Boolean,
+    val isEnabledInGame: Boolean,
     val staged: Staged?,
     val archived: Archived?
 ) {
+    /**
+     * Composite key: mod id + mod version.
+     */
     val smolId: Int = Objects.hash(modInfo.id, modInfo.version.toString())
+
+    val isEnabled = isEnabledInGame && isEnabledInSmol
 
     data class Archived(
         val file: File

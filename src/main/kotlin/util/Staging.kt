@@ -17,7 +17,8 @@ import kotlin.io.path.createSymbolicLinkPointingTo
 class Staging(
     private val config: AppConfig,
     private val gamePath: GamePath,
-    private val modLoader: ModLoader
+    private val modLoader: ModLoader,
+    private val gameEnabledMods: GameEnabledMods
 ) {
     enum class LinkMethod {
         HardLink,
@@ -114,6 +115,25 @@ class Staging(
             return Result.success(Unit)
         }
 
+        if (!modToEnable.isEnabledInSmol) {
+            val result = enableInSmol(modToEnable)
+
+            if (result != Result.success(Unit)) {
+                return result
+            }
+
+            Logger.info { "Enabled mod for SMOL: $modToEnable" }
+        }
+
+        if (!modToEnable.isEnabledInGame) {
+            gameEnabledMods.enable(modToEnable.modInfo.id)
+            Logger.info { "Enabled mod for game: $modToEnable" }
+        }
+
+        return Result.success((Unit))
+    }
+
+    private fun enableInSmol(modToEnable: Mod): Result<Unit> {
         var mod = modToEnable
 
         if (mod.staged == null || !mod.staged!!.folder.exists()) {
@@ -145,8 +165,8 @@ class Staging(
         val succeededFiles = mutableListOf<File>()
 
         sourceFolder.walkTopDown().forEach { sourceFile ->
-//        listOf(sourceFolder).forEach { sourceFile ->
-//            if (sourceFile.path == sourceFolder.path) return@forEach
+            //        listOf(sourceFolder).forEach { sourceFile ->
+            //            if (sourceFile.path == sourceFolder.path) return@forEach
             val sourceRelativePath = Path.of(sourceFile.toRelativeString(sourceFolder))
             val destFile = File(destFolder.absolutePath, sourceRelativePath.toString())
 
