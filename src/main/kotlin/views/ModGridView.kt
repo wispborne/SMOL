@@ -1,6 +1,7 @@
 package views
 
 import AppState
+import SL
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -12,9 +13,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import kotlinx.coroutines.launch
 import model.Mod
+import org.tinylog.kotlin.Logger
 
 @OptIn(
     ExperimentalMaterialApi::class,
@@ -23,7 +27,7 @@ import model.Mod
 @Composable
 @Preview
 fun AppState.ModGridView(
-    mods: List<Mod>,
+    mods: SnapshotStateList<Mod>,
     modifier: Modifier = Modifier
 ) {
     Column(modifier) {
@@ -75,7 +79,15 @@ fun AppState.ModGridView(
                             }
                         }
                         this.items(mods) { mod ->
-                            ListItem {
+                            val coroutineScope = rememberCoroutineScope()
+                            ListItem(Modifier.clickable {
+                                coroutineScope.launch {
+                                    kotlin.runCatching {
+                                        SL.staging.enable(mod)
+                                    }
+//                                        .onFailure { Logger.warn(it) }
+                                }
+                            }) {
                                 Row {
                                     Text(mod.modInfo.name, Modifier.weight(1f))
                                     Text(mod.modInfo.version.toString(), Modifier.weight(1f))

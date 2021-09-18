@@ -1,11 +1,13 @@
 package util
 
+import androidx.compose.ui.window.WindowState
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapter
 import java.util.prefs.Preferences
 import kotlin.reflect.KProperty
 
 class AppConfig(private val moshi: Moshi) {
+    var windowState: SmolWindowState? by pref(prefKey = "windowState", defaultValue = null)
     var gamePath: String? by pref(prefKey = "gamePath", defaultValue = null)
     var archivesPath: String? by pref("archivesPath", defaultValue = null)
     var stagingPath: String? by pref(prefKey = "stagingPath", defaultValue = null)

@@ -1,12 +1,8 @@
 package util
 
 import com.squareup.moshi.Moshi
-import com.squareup.moshi.adapter
 import com.sun.jna.platform.win32.Advapi32Util
 import com.sun.jna.platform.win32.WinReg
-import model.Mod
-import model.ModInfo
-import org.hjson.JsonValue
 import org.jetbrains.skija.impl.Platform
 import org.tinylog.Logger
 import java.io.File
@@ -53,7 +49,6 @@ class GamePath(
                 Logger.debug { it.message ?: "" }
                 it.printStackTrace()
             }
-            .onSuccess { Logger.debug { "Game path: ${it.absolutePath}" } }
             .getOrNull()
 
     fun getModsPath(
@@ -62,43 +57,8 @@ class GamePath(
     ): File {
         val mods = File(starsectorPath, "mods")
 
-        if (!mods.exists()) {
-            mods.mkdirs()
-        }
+        mods.mkdirsIfNotExist()
 
         return mods
-    }
-
-    @OptIn(ExperimentalStdlibApi::class)
-    fun getMods(modsPath: File = getModsPath()): List<Mod> {
-        return modsPath
-            .walkTopDown().maxDepth(1)
-            .mapNotNull { modFolder ->
-                Logger.trace { "Folder: ${modFolder.name}" }
-                val modInfo = modFolder
-                    .walkTopDown().maxDepth(1)
-                    .firstOrNull {
-                        Logger.trace { "  File: ${it.name}" }
-                        it.name.equals("mod_info.json")
-                    } ?: return@mapNotNull null
-
-                val json = JsonValue.readHjson(modInfo.readText())
-                val jsonStr = json.toString()
-                    .also { Logger.trace { it.toString() } }
-
-                Mod(
-                    modInfo = moshi.run {
-                        // Check for 0.95 format
-                        if (json.asObject().get("version").isObject) {
-                            this.adapter<ModInfo.v095>()
-                        } else {
-                            this.adapter<ModInfo.v091>()
-                        }
-                    }
-                        .fromJson(jsonStr)!!,
-                    folder = modFolder
-                )
-            }
-            .toList()
     }
 }

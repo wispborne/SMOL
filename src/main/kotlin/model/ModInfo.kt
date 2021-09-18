@@ -13,54 +13,54 @@ sealed class ModInfo(
     @Json(name = "modPlugin") val modPlugin: String = ""
 ) {
     abstract val version: Version
-    val utility = utilityString.toBooleanStrictOrNull() ?: false
+    val isUtilityMod = utilityString.toBooleanStrictOrNull() ?: false
 
 
     //    @JsonClass(generateAdapter = true)
-    class v091(
-        id: String,
-        name: String = "",
-        author: String = "",
-        utilityString: String = "false",
-        @Json(name = "version") val versionString: String,
-        description: String = "",
-        gameVersion: String,
-        jars: List<String> = emptyList(),
-        modPlugin: String = ""
+    data class v091(
+        private val _id: String,
+        private val _name: String = "",
+        private val _author: String = "",
+        private val _utilityString: String = "false",
+        @Json(name = "version") private val versionString: String,
+        private val _description: String = "",
+        private val _gameVersion: String,
+        private val _jars: List<String> = emptyList(),
+        private val _modPlugin: String = ""
     ) : ModInfo(
-        id,
-        name,
-        author,
-        utilityString,
-        description,
-        gameVersion,
-        jars,
-        modPlugin
+        _id,
+        _name,
+        _author,
+        _utilityString,
+        _description,
+        _gameVersion,
+        _jars,
+        _modPlugin
     ) {
         override val version: Version = Version.parse(versionString)
 
     }
 
     //    @JsonClass(generateAdapter = true)
-    class v095(
-        id: String,
-        name: String = "",
-        author: String = "",
-        utilityString: String = "false",
-        @Json(name = "version") val versionString: Version,
-        description: String = "",
-        gameVersion: String,
-        jars: List<String> = emptyList(),
-        modPlugin: String = ""
+    data class v095(
+        private val _id: String,
+        private val _name: String = "",
+        private val _author: String = "",
+        private val _utilityString: String = "false",
+        @Json(name = "version") private val versionString: Version,
+        private val _description: String = "",
+        private val _gameVersion: String,
+        private val _jars: List<String> = emptyList(),
+        private val _modPlugin: String = ""
     ) : ModInfo(
-        id,
-        name,
-        author,
-        utilityString,
-        description,
-        gameVersion,
-        jars,
-        modPlugin
+        _id,
+        _name,
+        _author,
+        _utilityString,
+        _description,
+        _gameVersion,
+        _jars,
+        _modPlugin
     ) {
         override val version: Version = versionString
     }
