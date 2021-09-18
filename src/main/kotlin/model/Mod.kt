@@ -2,17 +2,17 @@ package model
 
 import java.io.File
 import java.util.*
-import kotlin.random.Random
 
 /**
- * @param staged null if not installed, not null otherwise
+ * @param stagingInfo null if not installed, not null otherwise
  */
 data class Mod(
     val modInfo: ModInfo,
     val isEnabledInSmol: Boolean,
     val isEnabledInGame: Boolean,
-    val staged: Staged?,
-    val archived: Archived?
+    val modsFolderInfo: ModsFolderInfo?,
+    val stagingInfo: StagingInfo?,
+    val archiveInfo: ArchiveInfo?
 ) {
     /**
      * Composite key: mod id + mod version.
@@ -21,13 +21,17 @@ data class Mod(
 
     val isEnabled = isEnabledInGame && isEnabledInSmol
 
-    data class Archived(
-        val file: File
-    )
-
-    data class Staged(
+    data class ModsFolderInfo(
         val folder: File
     )
 
-    val exists = staged != null || archived != null
+    data class ArchiveInfo(
+        val folder: File
+    )
+
+    data class StagingInfo(
+        val folder: File
+    )
+
+    val exists = stagingInfo != null || archiveInfo != null
 }

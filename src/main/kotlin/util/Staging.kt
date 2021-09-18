@@ -55,14 +55,14 @@ class Staging(
     }
 
     fun stage(mod: Mod): Result<Unit> {
-        if (mod.archived == null) {
+        if (mod.archiveInfo == null) {
             return failLogging("Cannot stage mod not archived: $mod")
         }
 
         val stagingFolder = config.stagingPath.toFileOrNull() ?: return failLogging("No staging folder: $mod")
 
         RandomAccessFileInStream(
-            RandomAccessFile(mod.archived.file, "r")
+            RandomAccessFile(mod.archiveInfo.folder, "r")
         ).use { fileInStream ->
             SevenZip.openInArchive(null, fileInStream).use { inArchive ->
                 val archiveItems = inArchive.simpleInterface.archiveItems
@@ -85,6 +85,7 @@ class Staging(
                         val fileRelativeToBase =
                             archiveBaseFolder?.let { File(item.path).toRelativeString(it) } ?: item.path
                         File(destFolder, fileRelativeToBase).run {
+                            // Delete file if it exists so we replace it.
                             if (this.exists()) {
                                 this.delete()
                             }
@@ -127,7 +128,6 @@ class Staging(
 
         if (!modToEnable.isEnabledInGame) {
             gameEnabledMods.enable(modToEnable.modInfo.id)
-            Logger.info { "Enabled mod for game: $modToEnable" }
         }
 
         return Result.success((Unit))
@@ -136,21 +136,21 @@ class Staging(
     private fun enableInSmol(modToEnable: Mod): Result<Unit> {
         var mod = modToEnable
 
-        if (mod.staged == null || !mod.staged!!.folder.exists()) {
+        if (mod.stagingInfo == null || !mod.stagingInfo!!.folder.exists()) {
             stage(mod)
             mod = modLoader.getMods().firstOrNull { it.smolId == modToEnable.smolId }
                 ?: return failLogging("Mod was removed: $mod")
 
-            if (mod.staged == null) {
+            if (mod.stagingInfo == null) {
                 return failLogging("Unable to stage mod $mod")
             }
         }
 
-        if (!mod.staged!!.folder.exists()) {
+        if (!mod.stagingInfo!!.folder.exists()) {
             return failLogging("Mod is not staged $mod")
         }
 
-        val sourceFolder = mod.staged!!.folder
+        val sourceFolder = mod.stagingInfo!!.folder
 
         if (!sourceFolder.exists()) {
             return failLogging("Staging folder doesn't exist. ${sourceFolder.path}, $mod")
@@ -176,7 +176,10 @@ class Staging(
             }
 
 
-            destFile.delete()
+            when {
+                sourceFile.isDirectory -> destFile.deleteRecursively()
+                sourceFile.isFile -> destFile.delete()
+            }
 
             kotlin.runCatching {
                 when (linkMethod) {
@@ -212,6 +215,54 @@ class Staging(
         }
 
         Logger.info { "Created links for ${succeededFiles.count()} files in ${destFolder.absolutePath}." }
+
+        return Result.success(Unit)
+    }
+
+    fun disable(modToDisable: Mod): Result<Unit> {
+        if (!modToDisable.isEnabled) {
+            return Result.success(Unit)
+        }
+
+        if (modToDisable.isEnabledInSmol) {
+            val result = disableInSmol(modToDisable)
+
+            if (result != Result.success(Unit)) {
+                return result
+            }
+
+            Logger.info { "Disabled mod for SMOL: $modToDisable" }
+        }
+
+        if (modToDisable.isEnabledInGame) {
+            gameEnabledMods.disable(modToDisable.modInfo.id)
+        }
+
+        return Result.success((Unit))
+    }
+
+    private fun disableInSmol(mod: Mod): Result<Unit> {
+        if (!mod.isEnabledInSmol) {
+            Logger.warn { "Already disabled in SMOL." }
+            return Result.success(Unit)
+        }
+
+        if (mod.modsFolderInfo?.folder?.exists() != true) {
+            Logger.warn { "Nothing to remove. Folder doesn't exist in /mods. $mod" }
+            return Result.success(Unit)
+        }
+
+        kotlin.runCatching {
+            if (!mod.modsFolderInfo.folder.deleteRecursively()) {
+                Logger.warn { "Error deleting ${mod.modsFolderInfo.folder.absolutePath}. Marking for deletion on exit." }
+                mod.modsFolderInfo.folder.deleteOnExit()
+            }
+        }
+            .onFailure {
+                Logger.error(it)
+                return Result.failure(it)
+            }
+            .getOrThrow()
 
         return Result.success(Unit)
     }

@@ -82,9 +82,12 @@ fun AppState.ModGridView(
                             ListItem(Modifier.clickable {
                                 coroutineScope.launch {
                                     kotlin.runCatching {
-                                        SL.staging.enable(mod)
+                                        if (mod.isEnabled) {
+                                            SL.staging.disable(mod)
+                                        } else {
+                                            SL.staging.enable(mod)
+                                        }
                                     }
-//                                        .onFailure { Logger.warn(it) }
                                 }
                             }) {
                                 Row {

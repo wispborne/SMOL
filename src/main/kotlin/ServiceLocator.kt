@@ -52,6 +52,7 @@ class ServiceLocator(
 private fun buildGson() = GsonBuilder()
     .setPrettyPrinting()
     .setLenient()
+    .serializeNulls()
     .registerTypeAdapter<ModInfo> {
         serialize { (src, _, _) ->
             when (src) {

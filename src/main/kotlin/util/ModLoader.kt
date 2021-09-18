@@ -14,7 +14,7 @@ class ModLoader(
 
     @OptIn(ExperimentalStdlibApi::class)
     fun getMods(): List<Mod> {
-        val enabledModIds = gameEnabledMods.getEnabledModIds().enabledMods
+        val enabledModIds = gameEnabledMods.getEnabledMods().enabledMods
 
         // Get items in archives
         val archivedMods = archives.getArchivesManifest()?.manifestItems?.values
@@ -23,10 +23,11 @@ class ModLoader(
 
                 Mod(
                     modInfo = archivedItem.modInfo,
-                    staged = null, // Will zip with staged items later to populate
+                    modsFolderInfo = null,  // Will zip with mods items later to populate
+                    stagingInfo = null, // Will zip with staged items later to populate
                     isEnabledInSmol = false, // Archived-only items can't be enabled
                     isEnabledInGame = archivedItem.modInfo.id in enabledModIds,
-                    archived = Mod.Archived(File(archivedItem.archivePath))
+                    archiveInfo = Mod.ArchiveInfo(File(archivedItem.archivePath))
                 )
             } ?: emptyList()
 
@@ -37,33 +38,40 @@ class ModLoader(
             .map { (modFolder, modInfo) ->
                 Mod(
                     modInfo = modInfo,
-                    staged = Mod.Staged(folder = modFolder),
+                    modsFolderInfo = null,  // Will zip with mods items later to populate
+                    stagingInfo = Mod.StagingInfo(folder = modFolder),
                     isEnabledInSmol = false,
                     isEnabledInGame = modInfo.id in enabledModIds,
-                    archived = null
+                    archiveInfo = null
                 )
             }
             .toList()
 
+        // Get items in /mods folder
         val modsFolder = gamePath.getModsPath()
         val modsFolderMods = modInfoLoader.readModInfosFromFolderOfMods(modsFolder, onlySmolManagedMods = true)
-            .map { (_, modInfo) ->
+            .map { (modFolder, modInfo) ->
                 Mod(
                     modInfo = modInfo,
-                    staged = null,
+                    modsFolderInfo = Mod.ModsFolderInfo(folder = modFolder),
+                    stagingInfo = null,
                     isEnabledInSmol = true,
                     isEnabledInGame = modInfo.id in enabledModIds,
-                    archived = null
+                    archiveInfo = null
                 )
             }
             .toList()
 
-        val result = (archivedMods + stagedMods + modsFolderMods).groupingBy { it.smolId }
+        // Merge all items together, replacing nulls with data.
+        val result = (archivedMods + stagedMods + modsFolderMods)
+            .groupingBy { it.smolId }
             .reduce { _, accumulator, element ->
                 accumulator.copy(
                     isEnabledInSmol = accumulator.isEnabledInSmol || element.isEnabledInSmol,
-                    staged = accumulator.staged ?: element.staged,
-                    archived = accumulator.archived ?: element.archived
+                    isEnabledInGame = accumulator.isEnabledInGame || element.isEnabledInGame,
+                    modsFolderInfo = accumulator.modsFolderInfo ?: element.modsFolderInfo,
+                    stagingInfo = accumulator.stagingInfo ?: element.stagingInfo,
+                    archiveInfo = accumulator.archiveInfo ?: element.archiveInfo
                 )
             }
             .values

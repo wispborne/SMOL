@@ -21,7 +21,7 @@ repositories {
 
 dependencies {
     implementation(compose.desktop.currentOs)
-    implementation(kotlin("reflect"))
+    implementation("org.jetbrains.kotlin:kotlin-reflect:1.5.21")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2-native-mt")
 
     implementation(fileTree("libs") { include("**/*.jar") })
@@ -32,7 +32,6 @@ dependencies {
 //    kapt("com.squareup.moshi:moshi-kotlin:$moshiVer")
     implementation("com.squareup.moshi:moshi-adapters:$moshiVer")
 
-    implementation("com.google.code.gson:gson:2.8.8")
     implementation("com.github.salomonbrys.kotson:kotson:2.5.0")
 
     // Navigation
