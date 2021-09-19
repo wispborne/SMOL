@@ -39,7 +39,7 @@ fun AppState.ModGridView(
         Box {
             LazyColumn(Modifier.fillMaxWidth()) {
                 mods
-                    .groupBy { it.isEnabled }
+                    .groupBy { it.isEnabledInGame }
                     .forEach { (isEnabled, mods) ->
                         val menuItems = if (isEnabled)
                             listOf("Enabled", "Disable")
@@ -82,17 +82,17 @@ fun AppState.ModGridView(
                             ListItem(Modifier.clickable {
                                 coroutineScope.launch {
                                     kotlin.runCatching {
-                                        if (mod.isEnabled) {
-                                            SL.staging.disable(mod)
+                                        if (mod.isEnabledInGame) {
+                                            SL.staging.disable(mod.modVersions.values.first { it.isEnabledInSmol })
                                         } else {
-                                            SL.staging.enable(mod)
+                                            SL.staging.enable(mod.modVersions.values.first { !it.isEnabledInSmol })
                                         }
                                     }
                                 }
                             }) {
                                 Row {
-                                    Text(mod.modInfo.name, Modifier.weight(1f))
-                                    Text(mod.modInfo.version.toString(), Modifier.weight(1f))
+                                    Text(mod.modVersions.values.first().modInfo.name, Modifier.weight(1f))
+                                    Text(mod.modVersions.values.first().modInfo.version.toString(), Modifier.weight(1f))
                                 }
                             }
                         }

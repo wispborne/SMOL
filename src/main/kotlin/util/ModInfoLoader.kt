@@ -2,12 +2,10 @@ package util
 
 import com.google.gson.Gson
 import com.squareup.moshi.Moshi
-import com.squareup.moshi.adapter
 import model.ModInfo
 import org.hjson.JsonValue
 import org.tinylog.Logger
 import java.io.File
-import kotlin.reflect.typeOf
 
 class ModInfoLoader(
     private val moshi: Moshi,
@@ -39,7 +37,7 @@ class ModInfoLoader(
                     .also { Logger.trace { it } }
 
                 modFolder to gson.fromJson(jsonStr, ModInfo::class.java)
-                        //moshi.adapter<ModInfo>().fromJson(jsonStr)!!
+                //moshi.adapter<ModInfo>().fromJson(jsonStr)!!
             }
 
     private fun isManagedBySmol(modFolder: File) =

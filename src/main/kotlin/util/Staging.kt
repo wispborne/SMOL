@@ -1,6 +1,6 @@
 package util
 
-import model.Mod
+import model.ModVersion
 import net.sf.sevenzipjbinding.ExtractOperationResult
 import net.sf.sevenzipjbinding.SevenZip
 import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream
@@ -37,13 +37,6 @@ class Staging(
             val newFolder = File(newPath)
             val oldFolder = File(config.stagingPath ?: return).also { if (!it.exists()) return }
 
-//        if (System.getSecurityManager() == null) {
-//            System.setSecurityManager(SecurityManager())
-//        }
-
-//        System.getSecurityManager().checkRead(newPath)
-//        System.getSecurityManager().checkWrite(newPath)
-
             newFolder.mkdirsIfNotExist()
 
             Files.move(oldFolder.toPath(), newFolder.toPath(), StandardCopyOption.REPLACE_EXISTING)
@@ -54,7 +47,7 @@ class Staging(
             .getOrThrow()
     }
 
-    fun stage(mod: Mod): Result<Unit> {
+    fun stage(mod: ModVersion): Result<Unit> {
         if (mod.archiveInfo == null) {
             return failLogging("Cannot stage mod not archived: $mod")
         }
@@ -111,8 +104,8 @@ class Staging(
         return Result.success(Unit)
     }
 
-    fun enable(modToEnable: Mod): Result<Unit> {
-        if (modToEnable.isEnabled) {
+    fun enable(modToEnable: ModVersion): Result<Unit> {
+        if (modToEnable.mod.isEnabled(modToEnable)) {
             return Result.success(Unit)
         }
 
@@ -126,19 +119,22 @@ class Staging(
             Logger.info { "Enabled mod for SMOL: $modToEnable" }
         }
 
-        if (!modToEnable.isEnabledInGame) {
+        if (!modToEnable.mod.isEnabledInGame) {
             gameEnabledMods.enable(modToEnable.modInfo.id)
         }
 
         return Result.success((Unit))
     }
 
-    private fun enableInSmol(modToEnable: Mod): Result<Unit> {
+    private fun enableInSmol(modToEnable: ModVersion): Result<Unit> {
         var mod = modToEnable
 
         if (mod.stagingInfo == null || !mod.stagingInfo!!.folder.exists()) {
             stage(mod)
-            mod = modLoader.getMods().firstOrNull { it.smolId == modToEnable.smolId }
+            mod = modLoader.getMods()
+                .asSequence()
+                .flatMap { it.modVersions.values }
+                .firstOrNull { modV -> modV.smolId == modToEnable.smolId }
                 ?: return failLogging("Mod was removed: $mod")
 
             if (mod.stagingInfo == null) {
@@ -211,51 +207,53 @@ class Staging(
         }
 
         if (failedFiles.any()) {
-            Logger.warn { "Failed to create links for ${failedFiles.count()} files in ${destFolder.absolutePath}." }
+            Logger.warn { "Failed to create links/folders for ${failedFiles.count()} files in ${destFolder.absolutePath}." }
         }
 
-        Logger.info { "Created links for ${succeededFiles.count()} files in ${destFolder.absolutePath}." }
+        Logger.info { "Created links/folders for ${succeededFiles.count()} files in ${destFolder.absolutePath}." }
 
         return Result.success(Unit)
     }
 
-    fun disable(modToDisable: Mod): Result<Unit> {
-        if (!modToDisable.isEnabled) {
+    fun disable(modVToDisable: ModVersion): Result<Unit> {
+        if (!modVToDisable.mod.isEnabled(modVToDisable)) {
             return Result.success(Unit)
         }
 
-        if (modToDisable.isEnabledInSmol) {
-            val result = disableInSmol(modToDisable)
+        if (modVToDisable.isEnabledInSmol) {
+            val result = disableInSmol(modVToDisable)
 
             if (result != Result.success(Unit)) {
                 return result
             }
 
-            Logger.info { "Disabled mod for SMOL: $modToDisable" }
+            Logger.info { "Disabled mod for SMOL: $modVToDisable" }
         }
 
-        if (modToDisable.isEnabledInGame) {
-            gameEnabledMods.disable(modToDisable.modInfo.id)
+        if (modVToDisable.mod.isEnabledInGame) {
+            gameEnabledMods.disable(modVToDisable.modInfo.id)
         }
 
         return Result.success((Unit))
     }
 
-    private fun disableInSmol(mod: Mod): Result<Unit> {
-        if (!mod.isEnabledInSmol) {
+    private fun disableInSmol(modV: ModVersion): Result<Unit> {
+        if (!modV.isEnabledInSmol) {
             Logger.warn { "Already disabled in SMOL." }
             return Result.success(Unit)
         }
 
-        if (mod.modsFolderInfo?.folder?.exists() != true) {
-            Logger.warn { "Nothing to remove. Folder doesn't exist in /mods. $mod" }
+        val modsFolderInfo = modV.mod.modsFolderInfo
+
+        if (modsFolderInfo?.folder?.exists() != true) {
+            Logger.warn { "Nothing to remove. Folder doesn't exist in /mods. $modV" }
             return Result.success(Unit)
         }
 
         kotlin.runCatching {
-            if (!mod.modsFolderInfo.folder.deleteRecursively()) {
-                Logger.warn { "Error deleting ${mod.modsFolderInfo.folder.absolutePath}. Marking for deletion on exit." }
-                mod.modsFolderInfo.folder.deleteOnExit()
+            if (!modsFolderInfo.folder.deleteRecursively()) {
+                Logger.warn { "Error deleting ${modsFolderInfo.folder.absolutePath}. Marking for deletion on exit." }
+                modsFolderInfo.folder.deleteOnExit()
             }
         }
             .onFailure {

@@ -63,7 +63,7 @@ private fun buildGson() = GsonBuilder()
         deserialize { arg: DeserializerArg ->
             val json = if (arg.json.isJsonObject)
                 arg.json
-            else JsonParser.parseString(arg.json.asString)
+            else JsonParser().parse(arg.json.asString)
 
             // Check for 0.95 format
             if (json["version"].isJsonObject) {
