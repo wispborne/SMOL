@@ -2,14 +2,12 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
 import com.arkivanov.decompose.Router
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
 import navigation.Screen
 import navigation.rememberRouter
 import net.sf.sevenzipjbinding.SevenZip
@@ -82,7 +80,9 @@ fun main() = application {
 
     Window(
         onCloseRequest = ::exitApplication,
-        state = newState
+        state = newState,
+        title = "SMOL",
+        icon = painterResource("kotlin-icon.svg")
     ) {
 
         LaunchedEffect(newState) {

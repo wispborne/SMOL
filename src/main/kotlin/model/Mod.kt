@@ -21,6 +21,12 @@ data class Mod(
     data class ModsFolderInfo(
         val folder: File
     )
+
+    val state: ModState = when {
+        modVersions.values.any { isEnabled(it) } -> ModState.Enabled
+        modVersions.values.any { it.stagingInfo != null } -> ModState.Disabled
+        else -> ModState.Uninstalled
+    }
 }
 
 /**
