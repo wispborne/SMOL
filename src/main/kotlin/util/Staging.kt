@@ -106,6 +106,7 @@ class Staging(
 
     fun enable(modToEnable: ModVersion): Result<Unit> {
         if (modToEnable.mod.isEnabled(modToEnable)) {
+            Logger.info { "Already enabled!: $modToEnable" }
             return Result.success(Unit)
         }
 

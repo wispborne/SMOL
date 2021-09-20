@@ -10,7 +10,13 @@ data class Mod(
     val modVersions: Map<Int, ModVersion>,
 ) {
 
-    fun isEnabled(modVersion: ModVersion) = isEnabledInGame && modVersion.isEnabledInSmol
+    /**
+     * A mod is enabled if:
+     * 1. It's in enabled_mods.json.
+     * 2. Its mod folder is in the /mods folder.
+     * 3. It's marked as enabled in SMOL (by the user).
+     */
+    fun isEnabled(modVersion: ModVersion) = isEnabledInGame && modVersion.isEnabledInSmol && modsFolderInfo != null
 
     data class ModsFolderInfo(
         val folder: File
@@ -32,7 +38,8 @@ data class ModVersion(
     val smolId: Int = Objects.hash(modInfo.id, modInfo.version.toString())
 
     // incredibly inelegant way of doing a parent-child relationship
-    @Transient lateinit var mod: Mod
+    @Transient
+    lateinit var mod: Mod
 
     val exists = stagingInfo != null || archiveInfo != null
 
