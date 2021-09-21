@@ -2,6 +2,8 @@ package views
 
 import AppState
 import SL
+import SmolButton
+import SmolOutlinedButton
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -27,7 +29,7 @@ fun AppState.settingsView(
 ) {
     Scaffold(topBar = {
         TopAppBar {
-            Button(onClick = router::pop, modifier = Modifier.padding(start = 16.dp)) {
+            SmolButton(onClick = router::pop, modifier = Modifier.padding(start = 16.dp)) {
                 Text("Back")
             }
         }
@@ -78,15 +80,15 @@ fun AppState.settingsView(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    Button(modifier = Modifier.padding(end = 16.dp), onClick = {
+                    SmolButton(modifier = Modifier.padding(end = 16.dp), onClick = {
                         if (save()) {
                             router.pop()
                         }
                     }) { Text("Ok") }
-                    OutlinedButton(
+                    SmolOutlinedButton(
                         modifier = Modifier.padding(end = 16.dp),
                         onClick = { router.pop() }) { Text("Cancel") }
-                    OutlinedButton(onClick = { save() }) { Text("Apply") }
+                    SmolOutlinedButton(onClick = { save() }) { Text("Apply") }
                 }
             }
         }
@@ -111,7 +113,7 @@ private fun AppState.gamePathSetting(gamePath: String): String {
                 newGamePath = it
                 isGamePathError = !SL.gamePath.isValidGamePath(it)
             })
-        Button(
+        SmolButton(
             modifier = Modifier
                 .align(Alignment.CenterVertically)
                 .padding(start = 16.dp),
@@ -150,7 +152,7 @@ private fun AppState.archivesPathSetting(archivesPath: String): String {
                 archivesPathMutable = it
                 isArchivesPathError = isValidArchivesPath(it)
             })
-        Button(
+        SmolButton(
             modifier = Modifier
                 .align(Alignment.CenterVertically)
                 .padding(start = 16.dp),
@@ -189,7 +191,7 @@ private fun AppState.stagingPathSetting(stagingPath: String): String {
                 stagingPathMutable = it
 //                isStagingPathError = isValidArchivesPath(it)
             })
-        Button(
+        SmolButton(
             modifier = Modifier
                 .align(Alignment.CenterVertically)
                 .padding(start = 16.dp),

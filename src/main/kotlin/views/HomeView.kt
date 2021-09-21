@@ -2,6 +2,7 @@ package views
 
 import AppState
 import SL
+import SmolButton
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
@@ -55,12 +56,12 @@ fun AppState.homeView(
     }
 
     Scaffold(topBar = {
-        TopAppBar {
+        TopAppBar() {
             settingsButton()
             migrateButton()
 
             val composableScope = rememberCoroutineScope()
-            Button(
+            SmolButton(
                 onClick = {
                     composableScope.launch {
                         mods.clear()
@@ -73,7 +74,6 @@ fun AppState.homeView(
             }
         }
     }, content = {
-
         if (SL.gamePath.isValidGamePath(SL.appConfig.gamePath ?: "")) {
             mods.clear()
             mods.addAll(SL.modLoader.getMods())
@@ -90,7 +90,7 @@ fun AppState.homeView(
                 Text(text = "I can't find any mods! Did you set your game path yet?")
                 OutlinedButton(
                     onClick = { router.push(Screen.Settings) },
-                    Modifier.padding(top = 8.dp)
+                    modifier = Modifier.padding(top = 8.dp)
                 ) {
                     Text("Settings")
                 }
@@ -98,7 +98,9 @@ fun AppState.homeView(
         }
     },
         bottomBar = {
-            BottomAppBar(Modifier.fillMaxWidth().height(40.dp)) {
+            BottomAppBar(
+                modifier = Modifier.fillMaxWidth().height(40.dp)
+            ) {
                 var status by remember { mutableStateOf("") }
                 rememberCoroutineScope().launch {
                     SL.archives.archiveMovementStatusFlow.collectLatest { status = it }
@@ -111,7 +113,7 @@ fun AppState.homeView(
 
 @Composable
 private fun AppState.settingsButton() {
-    Button(
+    SmolButton(
         onClick = { router.push(Screen.Settings) },
         modifier = Modifier.padding(start = 16.dp)
     ) {
@@ -123,7 +125,7 @@ private fun AppState.settingsButton() {
 @Composable
 private fun AppState.migrateButton() {
     val composableScope = rememberCoroutineScope()
-    Button(
+    SmolButton(
         onClick = {
             composableScope.launch {
                 SL.archives.archiveModsInFolder(SL.gamePath.getModsPath())
