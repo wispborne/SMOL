@@ -3,7 +3,7 @@ package views
 import AppState
 import SL
 import SmolButton
-import SmolOutlinedButton
+import SmolSecondaryButton
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -43,10 +43,10 @@ fun AppState.settingsView(
 
                 fun save(): Boolean {
                     SL.appConfig.gamePath = gamePath
-                    SL.appConfig.archivesPath = archivesPath
 
                     kotlin.runCatching {
-                        SL.staging.changeStagingPath(stagingPath)
+                        SL.archives.changePath(archivesPath)
+                        SL.staging.changePath(stagingPath)
                     }
                         .onFailure { ex ->
                             alertDialogMessage =
@@ -85,10 +85,10 @@ fun AppState.settingsView(
                             router.pop()
                         }
                     }) { Text("Ok") }
-                    SmolOutlinedButton(
+                    SmolSecondaryButton(
                         modifier = Modifier.padding(end = 16.dp),
                         onClick = { router.pop() }) { Text("Cancel") }
-                    SmolOutlinedButton(onClick = { save() }) { Text("Apply") }
+                    SmolSecondaryButton(onClick = { save() }) { Text("Apply") }
                 }
             }
         }

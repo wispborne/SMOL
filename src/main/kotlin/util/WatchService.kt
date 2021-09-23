@@ -5,12 +5,9 @@ package util
  * Modified by Wisp to use StateFlow and to be properly cancelable instead of blocking forever.
  */
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import java.io.File
 import java.nio.file.*
 import java.nio.file.StandardWatchEventKinds.*
@@ -28,7 +25,7 @@ import java.util.concurrent.TimeUnit
 fun File.asWatchChannel(
     mode: KWatchChannel.Mode? = null,
     tag: Any? = null,
-    scope: CoroutineScope
+    scope: CoroutineScope = GlobalScope
 ) = KWatchChannel(
     file = this,
     mode = mode ?: if (isFile) KWatchChannel.Mode.SingleFile else KWatchChannel.Mode.Recursive,
@@ -87,7 +84,7 @@ class KWatchChannel(
 
     init {
         // commence emitting events from channel
-        scope.launch(Dispatchers.IO) {
+        scope.launch(Dispatchers.Default) {
 
             // sending channel initalization event
             flow.emit(

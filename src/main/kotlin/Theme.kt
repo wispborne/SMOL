@@ -67,22 +67,25 @@ fun smolFullyClippedButtonShape() = CutCornerShape(size = 8.dp)
 
 @Composable
 @OptIn(ExperimentalMaterialApi::class)
-fun SmolOutlinedButton(
+fun SmolSecondaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     elevation: ButtonElevation? = null,
-    shape: Shape = MaterialTheme.shapes.small,
-    border: BorderStroke? = ButtonDefaults.outlinedBorder,
-    colors: ButtonColors = ButtonDefaults.outlinedButtonColors(),
+    shape: Shape? = null,
+    border: BorderStroke? = null,
+    colors: ButtonColors = ButtonDefaults.buttonColors(
+        backgroundColor = MaterialTheme.colors.primary.copy(alpha = ContentAlpha.medium),
+        contentColor = MaterialTheme.colors.onPrimary.copy(alpha = ContentAlpha.high)
+    ),
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
     content: @Composable RowScope.() -> Unit
 ) {
     SmolButton(
         modifier = modifier,
-        border = border ?: BorderStroke(2.dp, MaterialTheme.colors.onBackground),
-        shape = shape,
+        border = border,
+        shape = shape ?: smolNormalButtonShape(),
         onClick = onClick,
         enabled = enabled,
         interactionSource = interactionSource,

@@ -29,9 +29,8 @@ class ServiceLocator(
     val archives: Archives = Archives(
         config = appConfig,
         gamePath = gamePath,
-        moshi = moshi,
-        modInfoLoader = modInfoLoader,
-        gson = gson
+        gson = gson,
+        modInfoLoader = modInfoLoader
     ),
     val modLoader: ModLoader = ModLoader(
         gamePath = gamePath,

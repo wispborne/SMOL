@@ -6,6 +6,7 @@ import com.sun.jna.platform.win32.WinReg
 import org.jetbrains.skija.impl.Platform
 import org.tinylog.Logger
 import java.io.File
+import kotlin.concurrent.withLock
 
 
 class GamePath(
@@ -13,20 +14,22 @@ class GamePath(
     private val moshi: Moshi
 ) {
     fun isValidGamePath(path: String): Boolean {
-        val file = File(path)
+        IOLock.withLock {
+            val file = File(path)
 
-        if (!file.exists()) return false
+            if (!file.exists()) return false
 
-        var hasGameExe = false
-        var hasGameCoreExe = false
+            var hasGameExe = false
+            var hasGameCoreExe = false
 
-        file.walkTopDown().maxDepth(1)
-            .forEach {
-                if (it.nameWithoutExtension == "starsector") hasGameExe = true
-                if (it.nameWithoutExtension == "starsector-core") hasGameCoreExe = true
-            }
+            file.walkTopDown().maxDepth(1)
+                .forEach {
+                    if (it.nameWithoutExtension == "starsector") hasGameExe = true
+                    if (it.nameWithoutExtension == "starsector-core") hasGameCoreExe = true
+                }
 
-        return hasGameExe && hasGameCoreExe
+            return hasGameExe && hasGameCoreExe
+        }
     }
 
     fun getDefaultStarsectorPath(): File? =
@@ -57,7 +60,9 @@ class GamePath(
     ): File {
         val mods = File(starsectorPath, "mods")
 
-        mods.mkdirsIfNotExist()
+        IOLock.withLock {
+            mods.mkdirsIfNotExist()
+        }
 
         return mods
     }

@@ -1,5 +1,6 @@
 package util
 
+import androidx.compose.ui.text.toLowerCase
 import com.github.salomonbrys.kotson.fromJson
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
@@ -7,6 +8,7 @@ import model.ModInfo
 import org.hjson.JsonObject
 import org.tinylog.kotlin.Logger
 import java.io.File
+import kotlin.concurrent.withLock
 
 class GameEnabledMods(
     private val gson: Gson,
@@ -18,16 +20,18 @@ class GameEnabledMods(
 
     fun getEnabledMods(): EnabledMods =
         kotlin.runCatching {
-            val enabledModsFile = getEnabledModsFile()
+            IOLock.withLock {
+                val enabledModsFile = getEnabledModsFile()
 
-            if (!enabledModsFile.exists()) {
-                enabledModsFile.writer().use { outStream ->
-                    gson.toJson(EnabledMods(emptyList()), outStream)
+                if (!enabledModsFile.exists()) {
+                    enabledModsFile.writer().use { outStream ->
+                        gson.toJson(EnabledMods(emptyList()), outStream)
+                    }
                 }
-            }
 
-            enabledModsFile.reader().use { inStream ->
-                gson.fromJson<EnabledMods>(JsonObject.readHjson(inStream).toString())
+                enabledModsFile.reader().use { inStream ->
+                    gson.fromJson<EnabledMods>(JsonObject.readHjson(inStream).toString())
+                }
             }
         }
             .onFailure { Logger.warn(it) }
@@ -42,8 +46,14 @@ class GameEnabledMods(
 
     fun enable(modId: String) {
         updateEnabledModsFile { enabledModsObj ->
-            enabledModsObj.copy(enabledMods = enabledModsObj.enabledMods.toMutableList()
-                .apply { add(modId) }
+            enabledModsObj.copy(
+                enabledMods = enabledModsObj
+                    .enabledMods
+                    .toMutableList()
+                    .apply { add(modId) }
+                    .distinct()
+                    .sortedBy { it.lowercase() }
+                    .toList()
             )
         }
         Logger.info { "Enabled mod for game: $modId" }
@@ -66,12 +76,15 @@ class GameEnabledMods(
 
     private fun updateEnabledModsFile(mutator: (EnabledMods) -> EnabledMods?) {
         kotlin.runCatching {
-            val enabledModsFile = getEnabledModsFile()
-            createBackupFileIfDoesntExist(enabledModsFile)
+            IOLock.withLock {
+                val enabledModsFile = getEnabledModsFile()
+                createBackupFileIfDoesntExist(enabledModsFile)
+                val prevEnabledMods = getEnabledMods()
 
-            enabledModsFile.writer().use { outStream ->
-                val enabledMods = mutator(getEnabledMods()) ?: return
-                gson.toJson(enabledMods, outStream)
+                enabledModsFile.writer().use { outStream ->
+                    val enabledMods = mutator(prevEnabledMods) ?: prevEnabledMods
+                    gson.toJson(enabledMods, outStream)
+                }
             }
         }
             .onFailure { Logger.error(it) }
@@ -79,11 +92,13 @@ class GameEnabledMods(
     }
 
     private fun createBackupFileIfDoesntExist(enabledModsFile: File) {
-        val backupFile = gamePath.getModsPath().resolve("$FILE.bak")
+        IOLock.withLock {
+            val backupFile = gamePath.getModsPath().resolve("$FILE.bak")
 
-        // Make a backup before modifying it for the first time
-        if (!backupFile.exists()) {
-            enabledModsFile.copyTo(backupFile)
+            // Make a backup before modifying it for the first time
+            if (!backupFile.exists()) {
+                enabledModsFile.copyTo(backupFile)
+            }
         }
     }
 

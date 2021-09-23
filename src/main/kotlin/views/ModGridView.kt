@@ -150,9 +150,9 @@ private fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
                     coroutineScope.launch {
                         kotlin.runCatching {
                             if (shouldShowAsEnabled(mod)) {
-                                SL.staging.disable(mod.modVersions.values.first { it.isEnabledInSmol })
+                                SL.staging.disable(mod.modVersions.values.first { mod.isEnabled(it) })
                             } else {
-                                SL.staging.enable(mod.modVersions.values.first { !it.isEnabledInSmol })
+                                SL.staging.enable(mod.modVersions.values.first { !mod.isEnabled(it) })
                             }
                         }
                     }

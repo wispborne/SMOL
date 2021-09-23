@@ -31,8 +31,12 @@ dependencies {
     implementation("com.squareup.moshi:moshi-kotlin:$moshiVer")
 //    kapt("com.squareup.moshi:moshi-kotlin:$moshiVer")
     implementation("com.squareup.moshi:moshi-adapters:$moshiVer")
-
+    // Gson
     implementation("com.github.salomonbrys.kotson:kotson:2.5.0")
+
+    // Arrow
+    implementation("io.arrow-kt:arrow-core:1.0.0")
+    implementation("io.arrow-kt:arrow-optics:1.0.0")
 
     // Navigation
     val decomposeVer = "0.3.1"
