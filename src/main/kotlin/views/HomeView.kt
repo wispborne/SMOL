@@ -87,8 +87,7 @@ fun AppState.homeView(
         Box {
             if (SL.gamePath.isValidGamePath(SL.appConfig.gamePath ?: "")) {
                 ModGridView(
-                    mods,
-                    Modifier.padding(16.dp)
+                    mods
                 )
             } else {
                 Column(

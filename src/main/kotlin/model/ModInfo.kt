@@ -15,6 +15,13 @@ sealed class ModInfo(
     abstract val version: Version
     val isUtilityMod = utilityString.toBooleanStrictOrNull() ?: false
 
+    val authorsSplit: List<String> =
+        kotlin.runCatching {
+            author
+                .split(',')
+                .map { it.trim() }
+        }
+            .getOrElse { emptyList() }
 
     //    @JsonClass(generateAdapter = true)
     data class v091(

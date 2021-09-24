@@ -27,6 +27,9 @@ data class Mod(
         modVersions.values.any { it.stagingInfo != null } -> ModState.Disabled
         else -> ModState.Uninstalled
     }
+
+    val findFirstEnabled: ModVersion?
+        get() = modVersions.values.firstOrNull { isEnabled(it) }
 }
 
 /**

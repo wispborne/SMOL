@@ -9,30 +9,35 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.platform.Font
 import androidx.compose.ui.unit.dp
 
-private val primary = Color(java.awt.Color.decode("#184957").rgb)
-private val primaryVariant = Color(java.awt.Color.decode("#184957").rgb)
-private val secondary = Color(java.awt.Color.decode("#FCCF00").rgb)
-private val background = Color(java.awt.Color.decode("#091A1F").rgb)
-private val onBackground = Color(java.awt.Color.decode("#2d304e").rgb)
+object SmolTheme {
 
-val DarkColors = darkColors(
-    primary = primary,
-    primaryVariant = primaryVariant,
-    surface = Color(java.awt.Color.decode("#0A1D22").rgb),
-    secondary = secondary,
-    background = background,
-    onPrimary = Color(java.awt.Color.decode("#A8DBFC").rgb)
-)
+    private val primary = Color(java.awt.Color.decode("#184957").rgb)
+    private val primaryVariant = Color(java.awt.Color.decode("#00212e").rgb)
+    private val secondary = Color(java.awt.Color.decode("#FCCF00").rgb)
+    private val background = Color(java.awt.Color.decode("#091A1F").rgb)
+    private val onBackground = Color(java.awt.Color.decode("#2d304e").rgb)
 
-//val SmolShapes = MaterialTheme.shapes.run {
-//    this.copy(
-//        small = this.small.copy(
-//
-//        )
-//    )
-//}
+    val DarkColors = darkColors(
+        primary = primary,
+        primaryVariant = primaryVariant,
+        surface = Color(java.awt.Color.decode("#0A1D22").rgb),
+        secondary = secondary,
+        background = background,
+        onPrimary = Color(java.awt.Color.decode("#A8DBFC").rgb)
+    )
+
+    val orbitronSpaceFont = FontFamily(
+        Font("Font-Orbitron/Orbitron-VariableFont_wght.ttf")
+    )
+
+    val fireCodeFont = FontFamily(
+        Font("Font-Fire_Mono/FiraMono-Regular.ttf")
+    )
+}
 
 @Composable
 @OptIn(ExperimentalMaterialApi::class)
