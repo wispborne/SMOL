@@ -1,8 +1,11 @@
-package util
+package business
 
 import model.Mod
 import model.ModVariant
 import org.tinylog.Logger
+import config.AppConfig
+import config.GamePath
+import util.toFileOrNull
 import java.io.File
 
 class ModLoader(

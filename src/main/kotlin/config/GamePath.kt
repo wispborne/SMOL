@@ -1,10 +1,12 @@
-package util
+package config
 
 import com.squareup.moshi.Moshi
 import com.sun.jna.platform.win32.Advapi32Util
 import com.sun.jna.platform.win32.WinReg
 import org.jetbrains.skija.impl.Platform
 import org.tinylog.Logger
+import util.IOLock
+import util.mkdirsIfNotExist
 import java.io.File
 import kotlin.concurrent.withLock
 

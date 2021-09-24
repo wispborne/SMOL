@@ -1,8 +1,8 @@
-package util
+package config
 
-import androidx.compose.ui.window.WindowState
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapter
+import util.SmolWindowState
 import java.util.prefs.Preferences
 import kotlin.reflect.KProperty
 

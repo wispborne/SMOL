@@ -1,10 +1,11 @@
-package util
+package business
 
 import com.google.gson.Gson
 import com.squareup.moshi.Moshi
 import model.ModInfo
 import org.hjson.JsonValue
 import org.tinylog.Logger
+import util.IOLock
 import java.io.File
 import kotlin.concurrent.withLock
 
