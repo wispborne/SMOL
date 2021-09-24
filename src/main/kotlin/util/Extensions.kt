@@ -32,3 +32,23 @@ fun Any?.reflectionToString(): String {
     }
     return "${this.javaClass.simpleName}=[${s.joinToString(", ")}]"
 }
+
+/**
+ * Empty string, `""`.
+ */
+val String.Companion.empty
+    get() = ""
+
+/**
+ * True if any of the arguments are equal; false otherwise.
+ */
+fun Any.equalsAny(vararg other: Any): Boolean = arrayOf(*other).any { this == it }
+
+/**
+ * Returns items matching the predicate or, if none are matching, returns the original [Collection].
+ */
+fun <T> Collection<T>.prefer(predicate: (item: T) -> Boolean): Collection<T> =
+    this.filter { predicate(it) }
+        .ifEmpty { this }
+
+fun <T> T?.asList(): List<T> = if (this == null) emptyList() else listOf(this)

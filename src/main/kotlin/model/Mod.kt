@@ -7,7 +7,7 @@ data class Mod(
     val id: String,
     val isEnabledInGame: Boolean,
     val modsFolderInfo: ModsFolderInfo?,
-    val modVersions: Map<Int, ModVersion>,
+    val variants: Map<Int, ModVariant>,
 ) {
 
     /**
@@ -16,26 +16,29 @@ data class Mod(
      * 2. Its mod folder is in the /mods folder.
      * 3. It's marked as enabled in SMOL (by the user).
      */
-    fun isEnabled(modVersion: ModVersion) = isEnabledInGame && modVersion.isEnabledInSmol && modsFolderInfo != null
+    fun isEnabled(modVariant: ModVariant) = isEnabledInGame && modVariant.isEnabledInSmol && modsFolderInfo != null
 
     data class ModsFolderInfo(
         val folder: File
     )
 
     val state: ModState = when {
-        modVersions.values.any { isEnabled(it) } -> ModState.Enabled
-        modVersions.values.any { it.stagingInfo != null } -> ModState.Disabled
+        variants.values.any { isEnabled(it) } -> ModState.Enabled
+        variants.values.any { it.stagingInfo != null } -> ModState.Disabled
         else -> ModState.Uninstalled
     }
 
-    val findFirstEnabled: ModVersion?
-        get() = modVersions.values.firstOrNull { isEnabled(it) }
+    val findFirstEnabled: ModVariant?
+        get() = variants.values.firstOrNull { isEnabled(it) }
+
+    val findFirstDisabled: ModVariant?
+        get() = variants.values.firstOrNull { !isEnabled(it) }
 }
 
 /**
  * @param stagingInfo null if not installed, not null otherwise
  */
-data class ModVersion(
+data class ModVariant(
     val modInfo: ModInfo,
     val isEnabledInSmol: Boolean,
     val stagingInfo: StagingInfo?,

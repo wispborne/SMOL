@@ -1,7 +1,7 @@
 package util
 
 import model.Mod
-import model.ModVersion
+import model.ModVariant
 import org.tinylog.Logger
 import java.io.File
 
@@ -22,17 +22,17 @@ class ModLoader(
             ?.map { archivedItem ->
                 Logger.trace { "Archive: ${archivedItem.modInfo.name}" }
 
-                val modVersion = ModVersion(
+                val modVariant = ModVariant(
                     modInfo = archivedItem.modInfo,
                     stagingInfo = null, // Will zip with staged items later to populate
                     isEnabledInSmol = false, // Archived-only items can't be enabled
-                    archiveInfo = ModVersion.ArchiveInfo(File(archivedItem.archivePath)),
+                    archiveInfo = ModVariant.ArchiveInfo(File(archivedItem.archivePath)),
                 )
                 Mod(
                     id = archivedItem.modInfo.id,
                     modsFolderInfo = null,  // Will zip with mods items later to populate
                     isEnabledInGame = archivedItem.modInfo.id in enabledModIds,
-                    modVersions = mapOf(modVersion.smolId to modVersion)
+                    variants = mapOf(modVariant.smolId to modVariant)
                 )
             } ?: emptyList()
 
@@ -41,9 +41,9 @@ class ModLoader(
 
         val stagedMods = modInfoLoader.readModInfosFromFolderOfMods(stagingMods, onlySmolManagedMods = true)
             .map { (modFolder, modInfo) ->
-                val modVersion = ModVersion(
+                val modVariant = ModVariant(
                     modInfo = modInfo,
-                    stagingInfo = ModVersion.StagingInfo(folder = modFolder),
+                    stagingInfo = ModVariant.StagingInfo(folder = modFolder),
                     isEnabledInSmol = false,
                     archiveInfo = null,
                 )
@@ -51,7 +51,7 @@ class ModLoader(
                     id = modInfo.id,
                     modsFolderInfo = null,  // Will zip with mods items later to populate
                     isEnabledInGame = modInfo.id in enabledModIds,
-                    modVersions = mapOf(modVersion.smolId to modVersion)
+                    variants = mapOf(modVariant.smolId to modVariant)
                 )
             }
             .toList()
@@ -60,7 +60,7 @@ class ModLoader(
         val modsFolder = gamePath.getModsPath()
         val modsFolderMods = modInfoLoader.readModInfosFromFolderOfMods(modsFolder, onlySmolManagedMods = true)
             .map { (modFolder, modInfo) ->
-                val modVersion = ModVersion(
+                val modVariant = ModVariant(
                     modInfo = modInfo,
                     stagingInfo = null,
                     isEnabledInSmol = true,
@@ -70,7 +70,7 @@ class ModLoader(
                     id = modInfo.id,
                     modsFolderInfo = Mod.ModsFolderInfo(folder = modFolder),
                     isEnabledInGame = modInfo.id in enabledModIds,
-                    modVersions = mapOf(modVersion.smolId to modVersion)
+                    variants = mapOf(modVariant.smolId to modVariant)
                 )
             }
             .toList()
@@ -82,9 +82,9 @@ class ModLoader(
                 accumulator.copy(
                     isEnabledInGame = accumulator.isEnabledInGame || element.isEnabledInGame,
                     modsFolderInfo = accumulator.modsFolderInfo ?: element.modsFolderInfo,
-                    modVersions = kotlin.run {
-                        val ret = accumulator.modVersions.toMutableMap()
-                        element.modVersions.forEach { (elementKey, elementValue) ->
+                    variants = kotlin.run {
+                        val ret = accumulator.variants.toMutableMap()
+                        element.variants.forEach { (elementKey, elementValue) ->
                             val accValue = ret[elementKey]
 
                             // Either merge in the new element or add it to the list.
@@ -103,8 +103,8 @@ class ModLoader(
                 )
             }
             .values
-            .filter { mod -> mod.modVersions.any { it.value.exists } }
-            .onEach { mod -> mod.modVersions.values.forEach { it.mod = mod } }
+            .filter { mod -> mod.variants.any { it.value.exists } }
+            .onEach { mod -> mod.variants.values.forEach { it.mod = mod } }
             .toList()
             .onEach { Logger.debug { "Loaded mod: $it" } }
 

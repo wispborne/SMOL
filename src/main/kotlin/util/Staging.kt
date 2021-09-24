@@ -1,6 +1,7 @@
 package util
 
-import model.ModVersion
+import model.Mod
+import model.ModVariant
 import net.sf.sevenzipjbinding.ExtractOperationResult
 import net.sf.sevenzipjbinding.SevenZip
 import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream
@@ -50,27 +51,33 @@ class Staging(
         }
     }
 
-    fun stage(mod: ModVersion): Result<Unit> {
-        if (mod.archiveInfo == null) {
-            return failLogging("Cannot stage mod not archived: $mod")
+    fun install(modVariant: ModVariant): Result<Unit> {
+        if (modVariant.stagingInfo != null) {
+            Logger.debug { "Mod already staged! $modVariant" }
+            return Result.success(Unit)
         }
 
-        val stagingFolder = config.stagingPath.toFileOrNull() ?: return failLogging("No staging folder: $mod")
+        if (modVariant.archiveInfo == null) {
+            return failLogging("Cannot stage mod not archived: $modVariant")
+        }
+
+        val stagingFolder = config.stagingPath.toFileOrNull()
+            ?: return failLogging("No staging folder: $modVariant")
 
         IOLock.withLock {
             RandomAccessFileInStream(
-                RandomAccessFile(mod.archiveInfo.folder, "r")
+                RandomAccessFile(modVariant.archiveInfo.folder, "r")
             ).use { fileInStream ->
                 SevenZip.openInArchive(null, fileInStream).use { inArchive ->
                     val archiveItems = inArchive.simpleInterface.archiveItems
                     val files = archiveItems.map { File(it.path) }
                     val modInfoFile = files.find { it.name.equals("mod_info.json", ignoreCase = true) }
-                        ?: return failLogging("mod_info.json not found. $mod")
+                        ?: return failLogging("mod_info.json not found. $modVariant")
 
                     val archiveBaseFolder: File? = modInfoFile.parentFile
 
                     val destFolder = if (modInfoFile.parent == null)
-                        File(stagingFolder, mod.modInfo.name)
+                        File(stagingFolder, modVariant.modInfo.name)
                     else {
                         File(stagingFolder, modInfoFile.parentFile.path)
                     }
@@ -109,7 +116,35 @@ class Staging(
         return Result.success(Unit)
     }
 
-    fun enable(modToEnable: ModVersion): Result<Unit> {
+    fun uninstall(mod: Mod): Result<Unit> {
+        mod.variants.values.forEach { modVariant ->
+            if (modVariant.stagingInfo == null || !modVariant.stagingInfo.folder.exists()) {
+                Logger.debug { "Mod not installed! $modVariant" }
+                return@forEach
+            }
+
+            if (modVariant.archiveInfo == null) {
+                Logger.warn { "Cannot uninstall mod not archived: $modVariant" }
+                return@forEach
+            }
+
+            // Make sure it's disabled before uninstalling
+            disable(modVariant)
+
+            IOLock.withLock {
+                kotlin.runCatching {
+                    modVariant.stagingInfo.folder.deleteRecursively()
+                }
+                    .onFailure { Logger.error(it) }
+                    .getOrThrow()
+            }
+        }
+
+        Logger.debug { "Mod uninstalled: $mod" }
+        return Result.success(Unit)
+    }
+
+    fun enable(modToEnable: ModVariant): Result<Unit> {
         if (modToEnable.mod.isEnabled(modToEnable)) {
             Logger.info { "Already enabled!: $modToEnable" }
             return Result.success(Unit)
@@ -132,15 +167,42 @@ class Staging(
         return Result.success((Unit))
     }
 
-    private fun enableInSmol(modToEnable: ModVersion): Result<Unit> {
+    fun disable(modVariant: ModVariant): Result<Unit> {
+        // If it's not installed, install it (but it'll stay disabled)
+        if (modVariant.stagingInfo == null) {
+            install(modVariant)
+        }
+
+        if (!modVariant.mod.isEnabled(modVariant)) {
+            return Result.success(Unit)
+        }
+
+        if (modVariant.isEnabledInSmol) {
+            val result = disableInSmol(modVariant)
+
+            if (result != Result.success(Unit)) {
+                return result
+            }
+
+            Logger.info { "Disabled mod for SMOL: $modVariant" }
+        }
+
+        if (modVariant.mod.isEnabledInGame) {
+            gameEnabledMods.disable(modVariant.modInfo.id)
+        }
+
+        return Result.success((Unit))
+    }
+
+    private fun enableInSmol(modToEnable: ModVariant): Result<Unit> {
         IOLock.withLock {
             var mod = modToEnable
 
             if (mod.stagingInfo == null || !mod.stagingInfo!!.folder.exists()) {
-                stage(mod)
+                install(mod)
                 mod = modLoader.getMods()
                     .asSequence()
-                    .flatMap { it.modVersions.values }
+                    .flatMap { it.variants.values }
                     .firstOrNull { modV -> modV.smolId == modToEnable.smolId }
                     ?: return failLogging("Mod was removed: $mod")
 
@@ -223,38 +285,16 @@ class Staging(
         }
     }
 
-    fun disable(modVToDisable: ModVersion): Result<Unit> {
-        if (!modVToDisable.mod.isEnabled(modVToDisable)) {
-            return Result.success(Unit)
-        }
-
-        if (modVToDisable.isEnabledInSmol) {
-            val result = disableInSmol(modVToDisable)
-
-            if (result != Result.success(Unit)) {
-                return result
-            }
-
-            Logger.info { "Disabled mod for SMOL: $modVToDisable" }
-        }
-
-        if (modVToDisable.mod.isEnabledInGame) {
-            gameEnabledMods.disable(modVToDisable.modInfo.id)
-        }
-
-        return Result.success((Unit))
-    }
-
-    private fun disableInSmol(modV: ModVersion): Result<Unit> {
-        if (!modV.isEnabledInSmol) {
+    private fun disableInSmol(modVariant: ModVariant): Result<Unit> {
+        if (!modVariant.isEnabledInSmol) {
             Logger.warn { "Already disabled in SMOL." }
             return Result.success(Unit)
         }
 
-        val modsFolderInfo = modV.mod.modsFolderInfo
+        val modsFolderInfo = modVariant.mod.modsFolderInfo
 
         if (modsFolderInfo?.folder?.exists() != true) {
-            Logger.warn { "Nothing to remove. Folder doesn't exist in /mods. $modV" }
+            Logger.warn { "Nothing to remove. Folder doesn't exist in /mods. $modVariant" }
             return Result.success(Unit)
         }
 

@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.ExperimentalUnitApi
@@ -29,9 +30,11 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import model.Mod
 import model.ModState
+import org.tinylog.Logger
 import smolFullyClippedButtonShape
+import util.prefer
 
-private val buttonWidth = 150
+private val buttonWidth = 180
 
 @OptIn(
     ExperimentalMaterialApi::class,
@@ -100,11 +103,11 @@ fun AppState.ModGridView(
                                             mod = mod
                                         )
                                         Text(
-                                            mod.modVersions.values.first().modInfo.name,
+                                            mod.variants.values.first().modInfo.name,
                                             Modifier.weight(1f).align(Alignment.CenterVertically)
                                         )
                                         Text(
-                                            mod.modVersions.values.first().modInfo.version.toString(),
+                                            mod.variants.values.first().modInfo.version.toString(),
                                             Modifier.weight(1f).align(Alignment.CenterVertically)
                                         )
                                     }
@@ -138,7 +141,7 @@ private fun BoxScope.detailsPanel(
                 Modifier
                     .padding(16.dp)
             ) {
-                val modInfo = (row.mod.findFirstEnabled ?: row.mod.modVersions.values.firstOrNull())
+                val modInfo = (row.mod.findFirstEnabled ?: row.mod.variants.values.firstOrNull())
                     ?.modInfo
                 Text(
                     modInfo?.name ?: "VNSector",
@@ -166,7 +169,6 @@ private fun BoxScope.detailsPanel(
 @Composable
 private fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
     val menuItems = ModState.values().filter { it != mod.state }.map { it.name }
-    val coroutineScope = rememberCoroutineScope()
 
     var expanded by remember { mutableStateOf(false) }
     var selectedIndex by remember { mutableStateOf(0) }
@@ -180,7 +182,8 @@ private fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
                 backgroundColor = when (mod.state) {
                     ModState.Enabled -> MaterialTheme.colors.primary
                     ModState.Disabled -> MaterialTheme.colors.primaryVariant
-                    ModState.Uninstalled -> MaterialTheme.colors.onBackground
+                    ModState.Uninstalled -> MaterialTheme.colors.onSurface.copy(alpha = 0.12f)
+                        .compositeOver(MaterialTheme.colors.surface)
                 }
             )
         ) {
@@ -200,20 +203,25 @@ private fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
             ),
             onDismissRequest = { expanded = false }
         ) {
+            val coroutineScope = rememberCoroutineScope()
             menuItems.forEachIndexed { index, title ->
                 DropdownMenuItem(onClick = {
                     selectedIndex = index
                     expanded = false
+                    Logger.debug { "Selected $title." }
 
-                    // Change mod state
                     coroutineScope.launch {
                         kotlin.runCatching {
-                            if (shouldShowAsEnabled(mod)) {
-                                SL.staging.disable(mod.modVersions.values.first { mod.isEnabled(it) })
-                            } else {
-                                SL.staging.enable(mod.modVersions.values.first { !mod.isEnabled(it) })
+                            // Change mod state
+                            when (ModState.valueOf(menuItems[index])) {
+                                ModState.Enabled ->
+                                    SL.staging.enable(mod.variants.values.prefer { !mod.isEnabled(it) }.first())
+                                ModState.Disabled ->
+                                    SL.staging.disable(mod.variants.values.prefer { mod.isEnabled(it) }.first())
+                                ModState.Uninstalled -> SL.staging.uninstall(mod)
                             }
                         }
+                            .onFailure { Logger.error(it) }
                     }
                 }) {
                     Row {
