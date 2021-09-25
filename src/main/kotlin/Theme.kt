@@ -100,3 +100,4 @@ fun SmolSecondaryButton(
         content = content,
     )
 }
+

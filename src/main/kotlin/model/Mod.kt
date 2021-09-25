@@ -16,7 +16,8 @@ data class Mod(
      * 2. Its mod folder is in the /mods folder.
      * 3. It's marked as enabled in SMOL (by the user).
      */
-    fun isEnabled(modVariant: ModVariant) = isEnabledInGame && modVariant.isEnabledInSmol && modsFolderInfo != null
+    fun isEnabled(modVariant: ModVariant) =
+        isEnabledInGame && modVariant.isEnabledInSmol && modsFolderInfo != null
 
     data class ModsFolderInfo(
         val folder: File

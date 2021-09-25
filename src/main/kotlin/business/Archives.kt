@@ -2,6 +2,8 @@ package business
 
 import com.github.salomonbrys.kotson.fromJson
 import com.google.gson.Gson
+import config.AppConfig
+import config.GamePath
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
@@ -15,8 +17,6 @@ import net.sf.sevenzipjbinding.impl.OutItemFactory
 import net.sf.sevenzipjbinding.impl.RandomAccessFileOutStream
 import net.sf.sevenzipjbinding.util.ByteArrayStream
 import org.tinylog.Logger
-import config.AppConfig
-import config.GamePath
 import util.IOLock
 import util.mkdirsIfNotExist
 import java.io.File
@@ -73,11 +73,16 @@ class Archives(
 
                 if (!modFolder.exists()) throw RuntimeException("Mod folder doesn't exist.")
 
-
                 val scope = this
-                val modsPath = gamePath.getModsPath()
+//                val modsPath = gamePath.getModsPath()
                 val manifest = getArchivesManifest()
-                val mods = modInfoLoader.readModInfosFromFolderOfMods(modsPath, onlySmolManagedMods = true)
+                val mods = modInfoLoader.readModInfosFromFolderOfMods(modFolder, onlySmolManagedMods = false)
+
+                if (mods.none()) {
+                    val runtimeException = RuntimeException("No mods found in ${modFolder.absolutePath}.")
+                    Logger.warn(runtimeException)
+                    throw runtimeException
+                }
 
                 mods
                     .filter { (modFolder, modInfo) ->
@@ -165,7 +170,7 @@ class Archives(
                                             item.dataSize = file.readBytes().size.toLong()
                                         }
 
-                                        item.propertyPath = file.toRelativeString(modsPath)
+                                        item.propertyPath = file.toRelativeString(modFolder)
                                         return item
                                     }
 
@@ -175,7 +180,7 @@ class Archives(
                                             return null
                                         }
 
-                                        currentFilepath = filesToArchive[index].relativeTo(modsPath).path
+                                        currentFilepath = filesToArchive[index].relativeTo(modFolder).path
                                         return ByteArrayStream(filesToArchive[index].readBytes(), true)
                                     }
                                 })
