@@ -6,6 +6,7 @@ import model.ModInfo
 import org.hjson.JsonValue
 import org.tinylog.Logger
 import util.IOLock
+import util.MOD_INFO_FILE
 import java.io.File
 import kotlin.concurrent.withLock
 
@@ -28,7 +29,7 @@ class ModInfoLoader(
                         .walkTopDown().maxDepth(1)
                         .firstOrNull {
                             Logger.trace { "  File: ${it.name}" }
-                            it.name.equals("mod_info.json")
+                            it.name.equals(MOD_INFO_FILE)
                         } ?: return@mapNotNull null
 
                     if (onlySmolManagedMods && modInfoFile.parentFile?.let { isManagedBySmol(it) } != true) {

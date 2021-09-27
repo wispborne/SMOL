@@ -2,6 +2,7 @@ package views
 
 import AppState
 import SL
+import SmolAlertDialog
 import SmolButton
 import SmolSecondaryButton
 import androidx.compose.desktop.ui.tooling.preview.Preview
@@ -108,8 +109,7 @@ fun AppState.homeView(
             }
 
             if (showConfirmMigrateDialog) {
-                AlertDialog(
-                    modifier = Modifier.width(400.dp).align(Alignment.Center),
+                SmolAlertDialog(
                     title = { Text("Warning") },
                     text = {
                         Text(

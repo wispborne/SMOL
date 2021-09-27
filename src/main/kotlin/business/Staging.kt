@@ -74,7 +74,7 @@ class Staging(
                 SevenZip.openInArchive(null, fileInStream).use { inArchive ->
                     val archiveItems = inArchive.simpleInterface.archiveItems
                     val files = archiveItems.map { File(it.path) }
-                    val modInfoFile = files.find { it.name.equals("mod_info.json", ignoreCase = true) }
+                    val modInfoFile = files.find { it.name.equals(MOD_INFO_FILE, ignoreCase = true) }
                         ?: return failLogging("mod_info.json not found. $modVariant")
 
                     val archiveBaseFolder: File? = modInfoFile.parentFile

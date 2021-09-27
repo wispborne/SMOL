@@ -5,9 +5,7 @@ import SL
 import SmolButton
 import SmolTheme
 import androidx.compose.desktop.ui.tooling.preview.Preview
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,6 +15,7 @@ import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
@@ -38,7 +37,8 @@ private val buttonWidth = 180
 
 @OptIn(
     ExperimentalMaterialApi::class,
-    androidx.compose.foundation.ExperimentalFoundationApi::class, androidx.compose.ui.unit.ExperimentalUnitApi::class
+    ExperimentalFoundationApi::class, ExperimentalUnitApi::class, ExperimentalDesktopApi::class,
+    ExperimentalComposeUiApi::class
 )
 @Composable
 @Preview
@@ -89,11 +89,16 @@ fun AppState.ModGridView(
                                 items = mods.map { ModRow(mod = it) }
                             ) { modRow ->
                                 val mod = modRow.mod
+                                var showContextMenu by remember { mutableStateOf(false) }
                                 ListItem(Modifier
                                     .fillMaxWidth()
-                                    .clickable {
-                                        selectedRow =
-                                            (if (selectedRow == modRow) null else modRow)
+                                    .mouseClickable {
+                                        if (this.buttons.isPrimaryPressed) {
+                                            selectedRow =
+                                                (if (selectedRow === modRow) null else modRow)
+                                        } else if (this.buttons.isSecondaryPressed) {
+                                            showContextMenu = !showContextMenu
+                                        }
                                     }) {
                                     Row(Modifier.fillMaxWidth()) {
                                         modStateDropdown(
@@ -110,6 +115,12 @@ fun AppState.ModGridView(
                                             mod.variants.values.first().modInfo.version.toString(),
                                             Modifier.weight(1f).align(Alignment.CenterVertically)
                                         )
+                                        CursorDropdownMenu(expanded = showContextMenu,
+                                            onDismissRequest = { showContextMenu = false }) {
+                                            DropdownMenuItem(onClick = {}) {
+                                                Text("test")
+                                            }
+                                        }
                                     }
                                 }
                             }

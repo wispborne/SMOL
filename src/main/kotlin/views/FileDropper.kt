@@ -2,6 +2,7 @@ package views
 
 import AppState
 import SL
+import SmolAlertDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CutCornerShape
@@ -11,6 +12,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import org.tinylog.Logger
 import java.awt.dnd.*
 import java.io.File
@@ -27,6 +30,7 @@ fun AppState.FileDropper(
     var lastDragSeen by remember { mutableStateOf(System.currentTimeMillis()) }
     var initialized by remember { mutableStateOf(false) }
     var error: Throwable? by remember { mutableStateOf(null) }
+    val scope = rememberCoroutineScope()
 
     if (!initialized) {
         val listener = object : DropTarget() {
@@ -63,16 +67,18 @@ fun AppState.FileDropper(
             @Synchronized
             override fun drop(evt: DropTargetDropEvent) {
                 evt.acceptDrop(evt.dropAction)
+                isHovering = false
                 val droppedFiles =
                     evt.transferable.getTransferData(java.awt.datatransfer.DataFlavor.javaFileListFlavor) as List<*>
 
                 droppedFiles.firstOrNull()?.let {
                     val name = (it as File).absolutePath
-
-                    kotlin.runCatching {
-                        SL.archives.archiveModsInFolder(it)
+                    scope.launch {
+                        kotlin.runCatching {
+                            SL.archives.archiveModsInFolder(it).collect()
+                        }
+                            .onFailure { throwable -> error = throwable }
                     }
-                        .onFailure { throwable -> error = throwable }
                 }
             }
 
@@ -111,19 +117,19 @@ fun AppState.FileDropper(
                     Text(text = file.name, modifier = modifier)
                 }
             }
-
-            if (error != null) {
-                AlertDialog(
-                    onDismissRequest = { error = null },
-                    confirmButton = {
-                        Button(onClick = { error = null }) {
-                            Text("OK, sorry")
-                        }
-                    },
-                    title = { Text("Error") },
-                    text = { Text("Unable to install.\n${error?.message}") }
-                )
-            }
         }
+    }
+
+    if (error != null) {
+        SmolAlertDialog(
+            onDismissRequest = { error = null },
+            confirmButton = {
+                Button(onClick = { error = null }) {
+                    Text("OK, sorry")
+                }
+            },
+            title = { Text("Error") },
+            text = { Text("Unable to install.\n${error?.message}") }
+        )
     }
 }

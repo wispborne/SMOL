@@ -2,6 +2,7 @@ package views
 
 import AppState
 import SL
+import SmolAlertDialog
 import SmolButton
 import SmolSecondaryButton
 import androidx.compose.desktop.ui.tooling.preview.Preview
@@ -58,8 +59,7 @@ fun AppState.settingsView(
                 }
 
                 if (alertDialogMessage != null) {
-                    AlertDialog(
-                        modifier = Modifier.width(400.dp),
+                    SmolAlertDialog(
                         title = { Text("Error") },
                         text = { alertDialogMessage?.let { Text(alertDialogMessage!!) } },
                         onDismissRequest = { alertDialogMessage = null },

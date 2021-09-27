@@ -18,6 +18,7 @@ import net.sf.sevenzipjbinding.impl.RandomAccessFileOutStream
 import net.sf.sevenzipjbinding.util.ByteArrayStream
 import org.tinylog.Logger
 import util.IOLock
+import util.MOD_INFO_FILE
 import util.mkdirsIfNotExist
 import java.io.File
 import java.io.FileWriter
@@ -65,13 +66,20 @@ class Archives(
             .getOrDefault(ArchivesManifest())
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun archiveModsInFolder(modFolder: File): Flow<String> {
+    fun archiveModsInFolder(inputModFolder: File): Flow<String> {
         IOLock.withLock {
             return callbackFlow<String> {
                 if (config.archivesPath == null)
                     throw RuntimeException("Not adding mods to archives folder; archives folder is null.")
 
-                if (!modFolder.exists()) throw RuntimeException("Mod folder doesn't exist.")
+                if (!inputModFolder.exists()) throw RuntimeException("Mod folder doesn't exist.")
+
+                if (inputModFolder.isFile && inputModFolder.name != MOD_INFO_FILE) throw RuntimeException("Not a mod folder.")
+
+                // If they dropped mod_info.json, use the parent folder
+                val modFolder =
+                    if (inputModFolder.isFile && inputModFolder.name == MOD_INFO_FILE) inputModFolder.parentFile ?: inputModFolder
+                    else inputModFolder
 
                 val scope = this
 //                val modsPath = gamePath.getModsPath()
