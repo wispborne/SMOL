@@ -16,7 +16,7 @@ class GameEnabledMods(
     private val gamePath: GamePath
 ) {
     companion object {
-        private const val FILE = "enabled_mods.json"
+        const val ENABLED_MODS_FILENAME = "enabled_mods.json"
     }
 
     fun getEnabledMods(): EnabledMods =
@@ -94,7 +94,7 @@ class GameEnabledMods(
 
     private fun createBackupFileIfDoesntExist(enabledModsFile: File) {
         IOLock.withLock {
-            val backupFile = gamePath.getModsPath().resolve("$FILE.bak")
+            val backupFile = gamePath.getModsPath().resolve("$ENABLED_MODS_FILENAME.bak")
 
             // Make a backup before modifying it for the first time
             if (!backupFile.exists()) {
@@ -103,7 +103,7 @@ class GameEnabledMods(
         }
     }
 
-    private fun getEnabledModsFile() = gamePath.getModsPath().resolve(FILE)
+    private fun getEnabledModsFile() = gamePath.getModsPath().resolve(ENABLED_MODS_FILENAME)
 }
 
 data class EnabledMods(

@@ -8,6 +8,7 @@ package business
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import org.tinylog.Logger
 import java.io.File
 import java.nio.file.*
 import java.nio.file.StandardWatchEventKinds.*
@@ -25,12 +26,14 @@ import java.util.concurrent.TimeUnit
 fun File.asWatchChannel(
     mode: KWatchChannel.Mode? = null,
     tag: Any? = null,
-    scope: CoroutineScope = GlobalScope
+    scope: CoroutineScope = GlobalScope,
+    ignorePatterns: List<Regex> = listOf(Regex(".*\\.bak"))
 ) = KWatchChannel(
     file = this,
     mode = mode ?: if (isFile) KWatchChannel.Mode.SingleFile else KWatchChannel.Mode.Recursive,
     scope = scope,
-    tag = tag
+    tag = tag,
+    ignorePatterns = ignorePatterns
 )
 
 /**
@@ -47,6 +50,7 @@ class KWatchChannel(
     val scope: CoroutineScope,
     val mode: Mode,
     val tag: Any? = null,
+    val ignorePatterns: List<Regex>,
     private val flow: MutableSharedFlow<KWatchEvent> = MutableSharedFlow(
         extraBufferCapacity = 1,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
@@ -73,8 +77,13 @@ class KWatchChannel(
         if (mode == Mode.Recursive) {
             Files.walkFileTree(path, object : SimpleFileVisitor<Path>() {
                 override fun preVisitDirectory(subPath: Path, attrs: BasicFileAttributes): FileVisitResult {
-                    registeredKeys += subPath.register(watchService, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE)
-                    return FileVisitResult.CONTINUE
+                    return if (ignorePatterns.any { ignorePattern -> subPath.toString().matches(ignorePattern) }) {
+                        Logger.info { "Ignored change to file ${subPath.fileName} as it matched one of ${ignorePatterns.joinToString { it.pattern }}" }
+                        FileVisitResult.CONTINUE
+                    } else {
+                        registeredKeys += subPath.register(watchService, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE)
+                        FileVisitResult.CONTINUE
+                    }
                 }
             })
         } else {

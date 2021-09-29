@@ -2,6 +2,7 @@ package business
 
 import com.github.salomonbrys.kotson.fromJson
 import com.google.gson.Gson
+import com.squareup.moshi.Moshi
 import config.AppConfig
 import config.GamePath
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -35,10 +36,11 @@ class Archives(
     private val config: AppConfig,
     private val gamePath: GamePath,
     private val gson: Gson,
+    private val moshi: Moshi,
     private val modInfoLoader: ModInfoLoader
 ) {
     companion object {
-        const val ARCHIVES_FILENAME = "manifest.json"
+        const val ARCHIVE_MANIFEST_FILENAME = "manifest.json"
     }
 
     val archiveMovementStatusFlow = MutableStateFlow<String>("")
@@ -47,16 +49,18 @@ class Archives(
 
     fun getArchivesManifest(): ArchivesManifest? =
         kotlin.runCatching {
-            gson.fromJson<ArchivesManifest>(File(config.archivesPath!!, ARCHIVES_FILENAME).readText())
+//            moshi.adapter<ArchivesManifest>().fromJson(File(config.archivesPath!!, ARCHIVES_FILENAME).readText())
+            gson.fromJson<ArchivesManifest>(File(config.archivesPath!!, ARCHIVE_MANIFEST_FILENAME).readText())
         }
             .onFailure { Logger.warn(it) }
             .recover {
                 IOLock.withLock {
-                    // Try to make a backup of the file
-                    val file = config.archivesPath?.let { File(it, ARCHIVES_FILENAME) }
+                    // Make a backup of the file before we overwrite it with a blank one.
+                    val file = config.archivesPath?.let { File(it, ARCHIVE_MANIFEST_FILENAME) }
                     if (file?.exists() == true) {
                         kotlin.runCatching {
-                            file.copyTo(File(file.parentFile, file.name + ".bak"), overwrite = true)
+                            val backupManifestFile = file.parentFile.resolve(file.name + ".bak")
+                            if (!backupManifestFile.exists()) file.copyTo(backupManifestFile, overwrite = false)
                         }
                             .onFailure { Logger.error(it) }
                     }
@@ -179,6 +183,10 @@ class Archives(
                         }
                     }
                     return
+                } else {
+                    val ex = RuntimeException("Archive did not have a valid $MOD_INFO_FILE inside!")
+                    Logger.warn(ex)
+                    throw ex
                 }
             }
         } else if (inputFile.isDirectory) {
@@ -468,7 +476,7 @@ class Archives(
         mutator(originalManifest)
             .run {
                 IOLock.withLock {
-                    val file = File(config.archivesPath!!, ARCHIVES_FILENAME)
+                    val file = File(config.archivesPath!!, ARCHIVE_MANIFEST_FILENAME)
                     FileWriter(file).use { writer ->
                         gson.toJson(this, writer)
                     }

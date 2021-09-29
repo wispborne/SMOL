@@ -13,18 +13,22 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import business.Archives
+import business.GameEnabledMods.Companion.ENABLED_MODS_FILENAME
 import business.KWatchEvent
 import business.asWatchChannel
 import com.arkivanov.decompose.push
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.merge
 import model.Mod
 import navigation.Screen
 import org.tinylog.Logger
-import util.*
+import util.IOLock
+import util.appName
+import util.toFileOrNull
 
 private var isRefreshingMods = false
 
@@ -153,38 +157,36 @@ fun AppState.homeView(
 private suspend fun watchDirsAndReloadOnChange(
     mods: SnapshotStateList<Mod>
 ) {
-    val stagingWatcher = SL.staging.getStagingPath()?.toFileOrNull()?.asWatchChannel()
-    val gameModsWatcher = SL.gamePath.getModsPath().asWatchChannel()
-    val archivesWatcher =
-        SL.archives.getArchivesPath()?.toFileOrNull()?.asWatchChannel()
+    val NSA: List<Flow<KWatchEvent>> = listOf(
+        SL.staging.getStagingPath()?.toFileOrNull()?.asWatchChannel() ?: emptyFlow(),
+        SL.staging.getStagingPath()?.toFileOrNull()?.resolve(Archives.ARCHIVE_MANIFEST_FILENAME) // Watch manifest.json
+            ?.run { if (this.exists()) this.asWatchChannel() else emptyFlow() } ?: emptyFlow(),
+        SL.gamePath.getModsPath().asWatchChannel(),
+        SL.gamePath.getModsPath().resolve(ENABLED_MODS_FILENAME) // Watch enabled_mods.json
+            .run { if (this.exists()) this.asWatchChannel() else emptyFlow() },
+        SL.archives.getArchivesPath()?.toFileOrNull()?.asWatchChannel() ?: emptyFlow()
+    )
 
     reloadMods(mods)
     Logger.debug {
         "Started watching folders ${
-            listOf(
-                stagingWatcher?.file?.path,
-                gameModsWatcher.file.path,
-                archivesWatcher?.file?.path
-            ).joinToString()
+            NSA.joinToString()
         }"
     }
-    merge(stagingWatcher ?: emptyFlow(), gameModsWatcher, archivesWatcher ?: emptyFlow())
-        .also { NSA ->
-            NSA
-                .collectLatest {
-                    if (!IOLock.stateFlow.value) {
-                        if (it.kind == KWatchEvent.Kind.Initialized)
-                            return@collectLatest
-                        // Short delay so that if a new file change comes in during this time,
-                        // this is canceled in favor of the new change. This should prevent
-                        // refreshing 500 times if 500 files are changed in a few millis.
-                        delay(100)
-                        Logger.debug { "File change: $it" }
-                        reloadMods(mods)
-                    } else {
-                        Logger.debug { "Skipping mod reload while IO locked." }
-                    }
-                }
+    NSA.merge()
+        .collectLatest {
+            if (!IOLock.stateFlow.value) {
+                if (it.kind == KWatchEvent.Kind.Initialized)
+                    return@collectLatest
+                // Short delay so that if a new file change comes in during this time,
+                // this is canceled in favor of the new change. This should prevent
+                // refreshing 500 times if 500 files are changed in a few millis.
+                delay(100)
+                Logger.debug { "File change: $it" }
+                reloadMods(mods)
+            } else {
+                Logger.debug { "Skipping mod reload while IO locked." }
+            }
         }
 }
 
@@ -199,7 +201,7 @@ private fun reloadMods(mods: SnapshotStateList<Mod>) {
         mods.clear()
         mods.addAll(SL.modLoader.getMods())
     } catch (e: Exception) {
-        Logger.trace(e)
+        Logger.debug(e)
     } finally {
         isRefreshingMods = false
     }

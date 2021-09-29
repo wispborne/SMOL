@@ -2,6 +2,7 @@ package business
 
 import com.google.gson.Gson
 import com.squareup.moshi.Moshi
+import com.squareup.moshi.adapter
 import model.ModInfo
 import org.hjson.JsonValue
 import org.tinylog.Logger
@@ -46,11 +47,18 @@ class ModInfoLoader(
             modFolder.walkTopDown().maxDepth(1).any { it.isSmolStagingMarker() }
         }
 
+    @OptIn(ExperimentalStdlibApi::class)
     fun readModInfoFile(modInfoJson: String): ModInfo {
-        val json = JsonValue.readHjson(modInfoJson)
-        val jsonStr = json.toString()
-            .also { Logger.trace { it } }
+        try {
+            val json = JsonValue.readHjson(modInfoJson)
+            val jsonStr = json.toString()
+                .also { Logger.trace { it } }
 
         return gson.fromJson(jsonStr, ModInfo::class.java)
+//            return moshi.adapter<ModInfo>().fromJson(jsonStr)!!
+        } catch (ex: Exception) {
+            Logger.warn(ex) { "Error reading mod_info.json: $modInfoJson" }
+            throw ex
+        }
     }
 }

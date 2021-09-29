@@ -72,11 +72,10 @@ fun AppState.FileDropper(
                     evt.transferable.getTransferData(java.awt.datatransfer.DataFlavor.javaFileListFlavor) as List<*>
 
                 droppedFiles.firstOrNull()?.let {
-                    val name = (it as File).absolutePath
                     scope.launch {
                         kotlin.runCatching {
                             SL.archives.installFromUnknownSource(
-                                it,
+                                it as File,
                                 SL.archives.getArchivesPath().toFileOrNull()!!,
                                 shouldCompressModFolder = true
                             )
@@ -129,14 +128,14 @@ fun AppState.FileDropper(
 
     if (error != null) {
         SmolAlertDialog(
-            onDismissRequest = { error = null },
+            title = { Text("Unable to install") },
+            text = { Text("${error?.message}") },
             confirmButton = {
                 Button(onClick = { error = null }) {
                     Text("OK, sorry")
                 }
             },
-            title = { Text("Error") },
-            text = { Text("Unable to install.\n${error?.message}") }
+            onDismissRequest = { error = null }
         )
     }
 }

@@ -1,10 +1,10 @@
 package business
 
+import config.AppConfig
+import config.GamePath
 import model.Mod
 import model.ModVariant
 import org.tinylog.Logger
-import config.AppConfig
-import config.GamePath
 import util.toFileOrNull
 import java.io.File
 
@@ -37,7 +37,9 @@ class ModLoader(
                     isEnabledInGame = archivedItem.modInfo.id in enabledModIds,
                     variants = mapOf(modVariant.smolId to modVariant)
                 )
-            } ?: emptyList()
+            }
+            ?.onEach { Logger.trace { "Found archived mod $it" } }
+            ?: emptyList()
 
         // Get items in staging
         val stagingMods: File = config.stagingPath?.toFileOrNull()!!
@@ -58,6 +60,7 @@ class ModLoader(
                 )
             }
             .toList()
+            .onEach { Logger.trace { "Found staged/installed mod $it" } }
 
         // Get items in /mods folder
         val modsFolder = gamePath.getModsPath()
@@ -77,6 +80,7 @@ class ModLoader(
                 )
             }
             .toList()
+            .onEach { Logger.trace { "Found /mods mod $it" } }
 
         // Merge all items together, replacing nulls with data.
         val result = (archivedMods + stagedMods + modsFolderMods)

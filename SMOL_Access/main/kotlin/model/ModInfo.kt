@@ -1,5 +1,6 @@
 package model
 
+import com.google.gson.annotations.SerializedName
 import com.squareup.moshi.Json
 
 sealed class ModInfo(
@@ -25,13 +26,15 @@ sealed class ModInfo(
 
     //    @JsonClass(generateAdapter = true)
     data class v091(
-        private val _id: String,
+        private val _id: String = "",
         private val _name: String = "",
         private val _author: String = "",
         private val _utilityString: String = "false",
-        @Json(name = "version") private val versionString: String,
+        @SerializedName("version")
+        @Json(name = "version")
+        private val versionString: String,
         private val _description: String = "",
-        private val _gameVersion: String,
+        private val _gameVersion: String = "",
         private val _jars: List<String> = emptyList(),
         private val _modPlugin: String = ""
     ) : ModInfo(
@@ -44,18 +47,21 @@ sealed class ModInfo(
         _jars,
         _modPlugin
     ) {
-        override val version: Version by lazy { Version.parse(versionString) }
+        override val version: Version
+            get() = Version.parse(versionString)
     }
 
     //    @JsonClass(generateAdapter = true)
     data class v095(
-        private val _id: String,
+        private val _id: String = "",
         private val _name: String = "",
         private val _author: String = "",
         private val _utilityString: String = "false",
-        @Json(name = "version") private val versionString: Version,
+        @SerializedName("version")
+        @Json(name = "version")
+        private val versionString: Version,
         private val _description: String = "",
-        private val _gameVersion: String,
+        private val _gameVersion: String = "",
         private val _jars: List<String> = emptyList(),
         private val _modPlugin: String = ""
     ) : ModInfo(
@@ -68,7 +74,8 @@ sealed class ModInfo(
         _jars,
         _modPlugin
     ) {
-        override val version: Version by lazy { versionString }
+        override val version: Version
+            get() = versionString
     }
 }
 

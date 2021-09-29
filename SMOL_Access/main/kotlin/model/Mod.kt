@@ -23,11 +23,12 @@ data class Mod(
         val folder: File
     )
 
-    val state: ModState = when {
-        variants.values.any { isEnabled(it) } -> ModState.Enabled
-        variants.values.any { it.stagingInfo != null } -> ModState.Disabled
-        else -> ModState.Uninstalled
-    }
+    val state: ModState
+        get() = when {
+            variants.values.any { isEnabled(it) } -> ModState.Enabled
+            variants.values.any { it.stagingInfo != null } -> ModState.Disabled
+            else -> ModState.Uninstalled
+        }
 
     val findFirstEnabled: ModVariant?
         get() = variants.values.firstOrNull { isEnabled(it) }
@@ -48,13 +49,15 @@ data class ModVariant(
     /**
      * Composite key: mod id + mod version.
      */
-    val smolId: Int = Objects.hash(modInfo.id, modInfo.version.toString())
+    val smolId: Int
+        get() = Objects.hash(modInfo.id, modInfo.version.toString())
 
     // incredibly inelegant way of doing a parent-child relationship
     @Transient
     lateinit var mod: Mod
 
-    val exists = stagingInfo != null || archiveInfo != null
+    val exists: Boolean
+        get() = stagingInfo != null || archiveInfo != null
 
     data class ArchiveInfo(
         val folder: File
