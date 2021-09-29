@@ -36,11 +36,7 @@ class ModInfoLoader(
                         return@mapNotNull null
                     }
 
-                    val json = JsonValue.readHjson(modInfoFile.readText())
-                    val jsonStr = json.toString()
-                        .also { Logger.trace { it } }
-
-                    modFolder to gson.fromJson(jsonStr, ModInfo::class.java)
+                    modFolder to readModInfoFile(modInfoFile.readText())
                     //moshi.adapter<ModInfo>().fromJson(jsonStr)!!
                 }
         }
@@ -49,4 +45,12 @@ class ModInfoLoader(
         IOLock.withLock {
             modFolder.walkTopDown().maxDepth(1).any { it.isSmolStagingMarker() }
         }
+
+    fun readModInfoFile(modInfoJson: String): ModInfo {
+        val json = JsonValue.readHjson(modInfoJson)
+        val jsonStr = json.toString()
+            .also { Logger.trace { it } }
+
+        return gson.fromJson(jsonStr, ModInfo::class.java)
+    }
 }

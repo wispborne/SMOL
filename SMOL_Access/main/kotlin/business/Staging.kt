@@ -8,7 +8,10 @@ import net.sf.sevenzipjbinding.ExtractOperationResult
 import net.sf.sevenzipjbinding.SevenZip
 import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream
 import org.tinylog.Logger
-import util.*
+import util.IOLock
+import util.MOD_INFO_FILE
+import util.mkdirsIfNotExist
+import util.toFileOrNull
 import java.io.File
 import java.io.RandomAccessFile
 import java.nio.file.AccessDeniedException
@@ -23,7 +26,8 @@ class Staging(
     private val config: AppConfig,
     private val gamePath: GamePath,
     private val modLoader: ModLoader,
-    private val gameEnabledMods: GameEnabledMods
+    private val gameEnabledMods: GameEnabledMods,
+    private val archives: Archives
 ) {
     enum class LinkMethod {
         HardLink,
@@ -60,60 +64,14 @@ class Staging(
             return Result.success(Unit)
         }
 
-        if (modVariant.archiveInfo == null) {
-            return failLogging("Cannot stage mod not archived: $modVariant")
-        }
 
         val stagingFolder = config.stagingPath.toFileOrNull()
             ?: return failLogging("No staging folder: $modVariant")
 
-        IOLock.withLock {
-            RandomAccessFileInStream(
-                RandomAccessFile(modVariant.archiveInfo.folder, "r")
-            ).use { fileInStream ->
-                SevenZip.openInArchive(null, fileInStream).use { inArchive ->
-                    val archiveItems = inArchive.simpleInterface.archiveItems
-                    val files = archiveItems.map { File(it.path) }
-                    val modInfoFile = files.find { it.name.equals(MOD_INFO_FILE, ignoreCase = true) }
-                        ?: return failLogging("mod_info.json not found. $modVariant")
-
-                    val archiveBaseFolder: File? = modInfoFile.parentFile
-
-                    val destFolder = if (modInfoFile.parent == null)
-                        File(stagingFolder, modVariant.modInfo.name)
-                    else {
-                        File(stagingFolder, modInfoFile.parentFile.path)
-                    }
-
-                    destFolder.mkdirsIfNotExist()
-
-                    archiveItems.forEach { item ->
-                        val result = item.extractSlow { bytes ->
-                            val fileRelativeToBase =
-                                archiveBaseFolder?.let { File(item.path).toRelativeString(it) } ?: item.path
-                            File(destFolder, fileRelativeToBase).run {
-                                // Delete file if it exists so we replace it.
-                                if (this.exists()) {
-                                    this.delete()
-                                }
-
-                                parentFile?.mkdirsIfNotExist()
-                                writeBytes(bytes)
-                            }
-                            bytes.size
-                        }
-
-                        if (result == ExtractOperationResult.OK) {
-                            Logger.debug { "Extracted ${item.path}" }
-                        } else {
-                            Logger.warn { result }
-                        }
-                    }
-
-                    markManagedBySmol(destFolder)
-                }
-            }
+        kotlin.runCatching {
+            archives.extractMod(modVariant, stagingFolder)
         }
+            .onFailure { return failLogging(it.message ?: "") }
 
 
         return Result.success(Unit)
@@ -316,13 +274,6 @@ class Staging(
         }
 
         return Result.success(Unit)
-    }
-
-    fun markManagedBySmol(modInStagingFolder: File) {
-        IOLock.withLock {
-            val marker = File(modInStagingFolder, MARKER_FILE_NAME)
-            marker.createNewFile()
-        }
     }
 
     @Suppress("NOTHING_TO_INLINE")

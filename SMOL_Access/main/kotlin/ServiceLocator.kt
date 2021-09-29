@@ -25,9 +25,9 @@ class ServiceLocator(
         .build(),
     val gson: Gson = buildGson(),
     val appConfig: AppConfig = AppConfig(moshi = moshi),
-    val modInfoLoader: ModInfoLoader = ModInfoLoader(moshi = moshi, gson = gson),
+    internal val modInfoLoader: ModInfoLoader = ModInfoLoader(moshi = moshi, gson = gson),
     val gamePath: GamePath = GamePath(appConfig = appConfig, moshi = moshi),
-    val gameEnabledMods: GameEnabledMods = GameEnabledMods(gson, gamePath),
+    internal val gameEnabledMods: GameEnabledMods = GameEnabledMods(gson, gamePath),
     val archives: Archives = Archives(
         config = appConfig,
         gamePath = gamePath,
@@ -45,7 +45,8 @@ class ServiceLocator(
         config = appConfig,
         gamePath = gamePath,
         modLoader = modLoader,
-        gameEnabledMods = gameEnabledMods
+        gameEnabledMods = gameEnabledMods,
+        archives = archives
     ),
 ) {
 }

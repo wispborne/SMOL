@@ -44,8 +44,7 @@ sealed class ModInfo(
         _jars,
         _modPlugin
     ) {
-        override val version: Version = Version.parse(versionString)
-
+        override val version: Version by lazy { Version.parse(versionString) }
     }
 
     //    @JsonClass(generateAdapter = true)
@@ -69,7 +68,7 @@ sealed class ModInfo(
         _jars,
         _modPlugin
     ) {
-        override val version: Version = versionString
+        override val version: Version by lazy { versionString }
     }
 }
 

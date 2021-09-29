@@ -121,10 +121,7 @@ fun AppState.homeView(
                     confirmButton = {
                         SmolButton(onClick = {
                             composableScope.launch {
-                                SL.archives.archiveModsInFolder(SL.gamePath.getModsPath())
-                                    .collect { mod ->
-                                        // TODO
-                                    }
+                                SL.archives.compressModsInFolder(SL.gamePath.getModsPath())
                             }
                             showConfirmMigrateDialog = false
                         }) { Text("Migrate") }

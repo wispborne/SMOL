@@ -3,7 +3,6 @@ package config
 import com.squareup.moshi.Moshi
 import com.sun.jna.platform.win32.Advapi32Util
 import com.sun.jna.platform.win32.WinReg
-import org.jetbrains.skija.impl.Platform
 import org.tinylog.Logger
 import util.IOLock
 import util.mkdirsIfNotExist
@@ -34,18 +33,17 @@ class GamePath(
         }
     }
 
-    fun getDefaultStarsectorPath(): File? =
+    fun getDefaultStarsectorPath(platform: Platform): File? =
         kotlin.runCatching {
-            when (Platform.CURRENT) {
-                Platform.WINDOWS ->
+            when (platform) {
+                Platform.Windows ->
                     Advapi32Util.registryGetStringValue(
                         WinReg.HKEY_CURRENT_USER,
                         "SOFTWARE\\Fractal Softworks\\Starsector",
                         ""
                     )
-                Platform.MACOS_X64,
-                Platform.MACOS_ARM64 -> "" // TODO
-                Platform.LINUX -> "" // TODO
+                Platform.MacOS -> "" // TODO
+                Platform.Linux -> "" // TODO
                 else -> "" // TODO
             }
         }
@@ -68,4 +66,10 @@ class GamePath(
 
         return mods
     }
+}
+
+enum class Platform {
+    Windows,
+    MacOS,
+    Linux
 }

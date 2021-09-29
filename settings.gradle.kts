@@ -7,3 +7,4 @@ pluginManagement {
 
 }
 rootProject.name = "SMOL"
+include("SMOL_Access")

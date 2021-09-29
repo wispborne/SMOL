@@ -12,10 +12,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import org.tinylog.Logger
-import java.awt.dnd.*
+import util.toFileOrNull
+import java.awt.dnd.DropTarget
+import java.awt.dnd.DropTargetDragEvent
+import java.awt.dnd.DropTargetDropEvent
+import java.awt.dnd.DropTargetEvent
 import java.io.File
 
 
@@ -24,10 +27,8 @@ import java.io.File
 fun AppState.FileDropper(
     modifier: Modifier = Modifier
 ) {
-    val acceptableActions = DnDConstants.ACTION_COPY_OR_MOVE
     var fileBeingHovered: File? by remember { mutableStateOf(null) }
     var isHovering: Boolean by remember { mutableStateOf(false) }
-    var lastDragSeen by remember { mutableStateOf(System.currentTimeMillis()) }
     var initialized by remember { mutableStateOf(false) }
     var error: Throwable? by remember { mutableStateOf(null) }
     val scope = rememberCoroutineScope()
@@ -53,7 +54,6 @@ fun AppState.FileDropper(
                         val file = (it as File)
                         Logger.debug { "Accepted drag." }
                         fileBeingHovered = file
-                        lastDragSeen = System.currentTimeMillis()
                         if (!isHovering) isHovering = true
                         return
                     }
@@ -75,9 +75,15 @@ fun AppState.FileDropper(
                     val name = (it as File).absolutePath
                     scope.launch {
                         kotlin.runCatching {
-                            SL.archives.archiveModsInFolder(it).collect()
+                            SL.archives.installFromUnknownSource(
+                                it,
+                                SL.archives.getArchivesPath().toFileOrNull()!!,
+                                shouldCompressModFolder = true
+                            )
                         }
-                            .onFailure { throwable -> error = throwable }
+                            .onFailure { throwable ->
+                                error = throwable
+                            }
                     }
                 }
             }
@@ -93,6 +99,7 @@ fun AppState.FileDropper(
         }
 
         window.contentPane.dropTarget = listener
+        @Suppress("UNUSED_VALUE")
         initialized = true
     }
 

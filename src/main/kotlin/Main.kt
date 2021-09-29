@@ -4,22 +4,35 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
 import com.arkivanov.decompose.Router
+import config.UIConfig
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import navigation.Screen
 import navigation.rememberRouter
 import net.sf.sevenzipjbinding.SevenZip
+import org.jetbrains.skija.impl.Platform
 import org.tinylog.Logger
 import org.tinylog.configuration.Configuration
+import toothpick.ktp.KTP
+import toothpick.ktp.binding.bind
+import toothpick.ktp.binding.module
+import toothpick.ktp.extension.getInstance
 import util.SmolPair
 import util.SmolWindowState
-import util.toFileOrNull
+import util.makeFinite
 import views.FileDropper
-import java.io.File
 
 var safeMode = false
 
 fun main() = application {
+    val scope = KTP.openRootScope().installModules(module {
+        bind<UIConfig>().toInstance { UIConfig(SL.moshi) }
+        bind<Access>().toInstance { Access() }
+    })
+
+    val uiConfig: UIConfig = scope.getInstance()
+    val access: Access = scope.getInstance()
+
     // Logger
     kotlin.runCatching {
         val format = "{date} {class}.{method}:{line} {level}: {message}"
@@ -51,10 +64,19 @@ fun main() = application {
     if (!safeMode) {
         SevenZip.initSevenZipFromPlatformJAR()
 
-        checkAndSetDefaultPaths()
+        val currentPlatform =
+            when (Platform.CURRENT) {
+                Platform.WINDOWS -> config.Platform.Windows
+                Platform.MACOS_X64,
+                Platform.MACOS_ARM64 -> config.Platform.MacOS
+                Platform.LINUX -> config.Platform.Linux
+                else -> TODO()
+            }
+
+        access.checkAndSetDefaultPaths(currentPlatform)
 
         kotlin.runCatching {
-            val savedState = SL.appConfig.windowState!!
+            val savedState = uiConfig.windowState!!
             rememberWindowState(
                 placement = WindowPlacement.valueOf(savedState.placement),
                 isMinimized = savedState.isMinimized,
@@ -64,7 +86,7 @@ fun main() = application {
         }
             .onSuccess { newState = it }
             .onFailure {
-                SL.appConfig.windowState = SmolWindowState(
+                uiConfig.windowState = SmolWindowState(
                     "", false, SmolPair(0f, 0f), SmolPair(0f, 0f)
                 )
             }
@@ -80,7 +102,7 @@ fun main() = application {
         LaunchedEffect(newState) {
             snapshotFlow { newState.size }
                 .onEach {
-                    SL.appConfig.windowState = SL.appConfig.windowState?.copy(
+                    uiConfig.windowState = uiConfig.windowState?.copy(
                         size = SmolPair(it.width.value.makeFinite(), it.height.value.makeFinite())
                     )
                 }
@@ -88,7 +110,7 @@ fun main() = application {
 
             snapshotFlow { newState.isMinimized }
                 .onEach {
-                    SL.appConfig.windowState = SL.appConfig.windowState?.copy(
+                    uiConfig.windowState = uiConfig.windowState?.copy(
                         isMinimized = it
                     )
                 }
@@ -96,7 +118,7 @@ fun main() = application {
 
             snapshotFlow { newState.placement }
                 .onEach {
-                    SL.appConfig.windowState = SL.appConfig.windowState?.copy(
+                    uiConfig.windowState = uiConfig.windowState?.copy(
                         placement = it.name
                     )
                 }
@@ -104,7 +126,7 @@ fun main() = application {
 
             snapshotFlow { newState.position }
                 .onEach {
-                    SL.appConfig.windowState = SL.appConfig.windowState?.copy(
+                    uiConfig.windowState = uiConfig.windowState?.copy(
                         position = SmolPair(it.x.value.makeFinite(), it.y.value.makeFinite()),
                     )
                 }
@@ -121,33 +143,6 @@ fun main() = application {
         appState.appView()
         appState.FileDropper()
     }
-}
-
-fun Float.makeFinite() =
-    if (!this.isFinite()) 0f
-    else this
-
-fun checkAndSetDefaultPaths() {
-    val appConfig = SL.appConfig
-
-    if (!SL.gamePath.isValidGamePath(appConfig.gamePath ?: "")) {
-        appConfig.gamePath = SL.gamePath.getDefaultStarsectorPath()?.absolutePath
-    }
-
-    if (appConfig.archivesPath.toFileOrNull()?.exists() != true) {
-        appConfig.archivesPath = File(System.getProperty("user.home"), "SMOL/archives").absolutePath
-    }
-
-    SL.archives.getArchivesManifest()
-        .also { Logger.debug { "Archives folder manifest: ${it?.manifestItems?.keys?.joinToString()}" } }
-
-    if (appConfig.stagingPath.toFileOrNull()?.exists() != true) {
-        appConfig.stagingPath = File(System.getProperty("user.home"), "SMOL/staging").absolutePath
-    }
-
-    Logger.debug { "Game: ${appConfig.gamePath}" }
-    Logger.debug { "Archives: ${appConfig.archivesPath}" }
-    Logger.debug { "Staging: ${appConfig.stagingPath}" }
 }
 
 class AppState(

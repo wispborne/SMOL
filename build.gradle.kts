@@ -4,8 +4,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 
 plugins {
-    val kotlinVer = "1.5.21"
-    kotlin("jvm") version kotlinVer
+    kotlin("jvm") version "1.5.21"
 //    kotlin("kapt") version kotlinVer
     id("org.jetbrains.compose") version "1.0.0-alpha3"
 }
@@ -25,18 +24,21 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2-native-mt")
 
     implementation(fileTree("libs") { include("**/*.jar") })
+    implementation(project("SMOL_Access"))
+
+    implementation(project.property("toothpick")!!)
 
     // JSON
     val moshiVer = "1.12.0"
     implementation("com.squareup.moshi:moshi-kotlin:$moshiVer")
 //    kapt("com.squareup.moshi:moshi-kotlin:$moshiVer")
-    implementation("com.squareup.moshi:moshi-adapters:$moshiVer")
+//    implementation("com.squareup.moshi:moshi-adapters:$moshiVer")
     // Gson
-    implementation("com.github.salomonbrys.kotson:kotson:2.5.0")
+//    implementation("com.github.salomonbrys.kotson:kotson:2.5.0")
 
     // Arrow
-    implementation("io.arrow-kt:arrow-core:1.0.0")
-    implementation("io.arrow-kt:arrow-optics:1.0.0")
+    implementation(project.property("arrowCore")!!)
+    implementation(project.property("arrowOptics")!!)
 
     // Navigation
     val decomposeVer = "0.3.1"
@@ -66,14 +68,14 @@ compose.desktop {
             }
 
             // task suggestRuntimeModules to generate this
-//            modules(
-//                "java.instrument",
-//                "java.management",
-//                "java.prefs",
-//                "java.sql",
-//                "jdk.unsupported"
-//            )
-            includeAllModules = true
+            modules(
+                "java.instrument",
+                "java.management",
+                "java.prefs",
+                "java.sql",
+                "jdk.unsupported"
+            )
+//            includeAllModules = true
         }
     }
 }

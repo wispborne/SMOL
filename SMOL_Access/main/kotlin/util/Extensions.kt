@@ -52,3 +52,7 @@ fun <T> Collection<T>.prefer(predicate: (item: T) -> Boolean): Collection<T> =
         .ifEmpty { this }
 
 fun <T> T?.asList(): List<T> = if (this == null) emptyList() else listOf(this)
+
+fun Float.makeFinite() =
+    if (!this.isFinite()) 0f
+    else this
