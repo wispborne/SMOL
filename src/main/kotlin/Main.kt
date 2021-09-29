@@ -20,7 +20,6 @@ import toothpick.ktp.extension.getInstance
 import util.SmolPair
 import util.SmolWindowState
 import util.makeFinite
-import views.FileDropper
 
 var safeMode = false
 
@@ -141,7 +140,6 @@ fun main() = application {
         val appState by remember { mutableStateOf(AppState(router, window)) }
 
         appState.appView()
-        appState.FileDropper()
     }
 }
 

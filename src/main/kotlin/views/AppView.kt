@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.TextStyle
 import com.arkivanov.decompose.extensions.compose.jetbrains.Children
 import navigation.Screen
+import views.FileDropper
 import views.homeView
 import views.settingsView
 
@@ -23,6 +24,7 @@ fun AppState.appView() {
                 is Screen.Home -> homeView()
                 is Screen.Settings -> settingsView()
             }
+            FileDropper()
         }
     }
 }
