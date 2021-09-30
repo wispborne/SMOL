@@ -31,6 +31,7 @@ dependencies {
     // Arrow
     implementation(project.property("arrowCore")!!)
     implementation(project.property("arrowOptics")!!)
+    implementation(project.property("arrowFxCoroutines")!!)
 
 }
 

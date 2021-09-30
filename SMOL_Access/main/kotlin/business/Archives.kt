@@ -19,10 +19,7 @@ import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem
 import net.sf.sevenzipjbinding.util.ByteArrayStream
 import org.apache.commons.io.FileUtils
 import org.tinylog.Logger
-import util.IOLock
-import util.MOD_INFO_FILE
-import util.mkdirsIfNotExist
-import util.toFileOrNull
+import util.*
 import java.io.File
 import java.io.FileWriter
 import java.io.RandomAccessFile
@@ -171,10 +168,18 @@ class Archives(
                                 RandomAccessFile(inputFile, "r")
                             ).use { fileInStream ->
                                 SevenZip.openInArchive(null, fileInStream).use { inArchive ->
-                                    inArchive.simpleInterface.archiveItems.forEach { item ->
-                                        extraParentFolder.mkdirsIfNotExist()
-                                        item.extractFile(archiveBaseFolder = null, destFolder = extraParentFolder)
-                                    }
+                                    inArchive.extract(
+                                        null, false,
+                                        ArchiveExtractCallback(extraParentFolder, inArchive)
+                                    )
+                                    // TODO try moving to extractslow to ironically make extraction faster
+//                                    inArchive.simpleInterface.archiveItems.forEach { item ->
+//                                        extraParentFolder.mkdirsIfNotExist()
+//                                        item.extractFile(
+//                                            archiveBaseFolder = null,
+//                                            destFolder = extraParentFolder
+//                                        )
+//                                    }
                                 }
                             }
 
@@ -262,16 +267,7 @@ class Archives(
 
                     destFolder.mkdirsIfNotExist()
 
-                    archiveItems.forEach { item ->
-                        val result = item.extractFile(archiveBaseFolder, destFolder)
-
-                        if (result == ExtractOperationResult.OK) {
-                            Logger.debug { "Extracted ${item.path}" }
-                        } else {
-                            Logger.warn { result }
-                        }
-                    }
-
+                    inArchive.extract(null, false, ArchiveExtractCallback(destFolder, inArchive))
                     markManagedBySmol(destFolder)
                 }
             }

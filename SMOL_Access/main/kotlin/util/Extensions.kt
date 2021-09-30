@@ -7,7 +7,9 @@ import java.util.*
 fun String?.toFileOrNull() = this?.let { File(it) }
 
 fun File.mkdirsIfNotExist() {
-    if (!this.exists()) {
+    if (this.isFile) {
+        this.parentFile.mkdirsIfNotExist()
+    } else if (!this.exists()) {
         this.mkdirs()
     }
 }
