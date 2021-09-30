@@ -1,6 +1,8 @@
 package util
 
+import org.apache.commons.io.FileUtils
 import java.io.File
+import java.io.IOException
 import java.lang.reflect.Modifier
 import java.util.*
 
@@ -58,3 +60,27 @@ fun <T> T?.asList(): List<T> = if (this == null) emptyList() else listOf(this)
 fun Float.makeFinite() =
     if (!this.isFinite()) 0f
     else this
+
+/**
+ * From FileUtils in apache commons.
+ */
+@Throws(IOException::class)
+fun File.moveDirectory(destDir: File) {
+    val srcDir = this
+//    FileUtils.validateMoveParameters(srcDir, destDir)
+//    FileUtils.requireDirectory(srcDir, "srcDir")
+//    FileUtils.requireAbsent(destDir, "destDir")
+    if (!srcDir.renameTo(destDir)) {
+        if (destDir.canonicalPath.startsWith(srcDir.canonicalPath + File.separator)) {
+            throw IOException("Cannot move directory: $srcDir to a subdirectory of itself: $destDir")
+        }
+        FileUtils.copyDirectory(srcDir, destDir)
+        FileUtils.deleteDirectory(srcDir)
+        if (srcDir.exists()) {
+            throw IOException(
+                "Failed to delete original directory '" + srcDir +
+                        "' after copy to '" + destDir + "'"
+            )
+        }
+    }
+}

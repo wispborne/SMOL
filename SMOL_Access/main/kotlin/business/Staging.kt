@@ -2,18 +2,14 @@ package business
 
 import config.AppConfig
 import config.GamePath
+import kotlinx.coroutines.runBlocking
 import model.Mod
 import model.ModVariant
-import net.sf.sevenzipjbinding.ExtractOperationResult
-import net.sf.sevenzipjbinding.SevenZip
-import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream
 import org.tinylog.Logger
 import util.IOLock
-import util.MOD_INFO_FILE
 import util.mkdirsIfNotExist
 import util.toFileOrNull
 import java.io.File
-import java.io.RandomAccessFile
 import java.nio.file.AccessDeniedException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -58,7 +54,7 @@ class Staging(
         }
     }
 
-    fun install(modVariant: ModVariant): Result<Unit> {
+    suspend fun install(modVariant: ModVariant): Result<Unit> {
         if (modVariant.stagingInfo != null) {
             Logger.debug { "Mod already staged! $modVariant" }
             return Result.success(Unit)
@@ -77,7 +73,7 @@ class Staging(
         return Result.success(Unit)
     }
 
-    fun uninstall(mod: Mod): Result<Unit> {
+    suspend fun uninstall(mod: Mod): Result<Unit> {
         mod.variants.values.forEach { modVariant ->
             if (modVariant.stagingInfo == null || !modVariant.stagingInfo.folder.exists()) {
                 Logger.debug { "Mod not installed! $modVariant" }
@@ -105,7 +101,7 @@ class Staging(
         return Result.success(Unit)
     }
 
-    fun enable(modToEnable: ModVariant): Result<Unit> {
+    suspend fun enable(modToEnable: ModVariant): Result<Unit> {
         if (modToEnable.mod.isEnabled(modToEnable)) {
             Logger.info { "Already enabled!: $modToEnable" }
             return Result.success(Unit)
@@ -128,7 +124,7 @@ class Staging(
         return Result.success((Unit))
     }
 
-    fun disable(modVariant: ModVariant): Result<Unit> {
+    suspend fun disable(modVariant: ModVariant): Result<Unit> {
         // If it's not installed, install it (but it'll stay disabled)
         if (modVariant.stagingInfo == null) {
             install(modVariant)
@@ -155,12 +151,12 @@ class Staging(
         return Result.success((Unit))
     }
 
-    private fun enableInSmol(modToEnable: ModVariant): Result<Unit> {
+    private suspend fun enableInSmol(modToEnable: ModVariant): Result<Unit> {
         IOLock.withLock {
             var mod = modToEnable
 
             if (mod.stagingInfo == null || !mod.stagingInfo!!.folder.exists()) {
-                install(mod)
+                runBlocking { install(mod) }
                 mod = modLoader.getMods()
                     .asSequence()
                     .flatMap { it.variants.values }

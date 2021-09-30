@@ -8,6 +8,7 @@ import config.GamePath
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.runBlocking
 import model.ModInfo
 import model.ModVariant
 import model.Version
@@ -114,9 +115,7 @@ class Archives(
                 // Input was a file but not mod_info.json, try as an archive.
                 val modInfo: ModInfo? = kotlin.runCatching {
                     IOLock.withLock {
-                        RandomAccessFileInStream(
-                            RandomAccessFile(inputFile, "r")
-                        ).use { fileInStream ->
+                        RandomAccessFileInStream(RandomAccessFile(inputFile, "r")).use { fileInStream ->
                             SevenZip.openInArchive(null, fileInStream).use { inArchive ->
                                 val items = inArchive.simpleInterface.archiveItems
                                 val modInfoFile = items
@@ -172,18 +171,10 @@ class Archives(
                                         null, false,
                                         ArchiveExtractCallback(extraParentFolder, inArchive)
                                     )
-                                    // TODO try moving to extractslow to ironically make extraction faster
-//                                    inArchive.simpleInterface.archiveItems.forEach { item ->
-//                                        extraParentFolder.mkdirsIfNotExist()
-//                                        item.extractFile(
-//                                            archiveBaseFolder = null,
-//                                            destFolder = extraParentFolder
-//                                        )
-//                                    }
                                 }
                             }
 
-                            removedNestedFolders(extraParentFolder)
+                            runBlocking { removedNestedFolders(extraParentFolder) }
                             return
                         }
                     }
@@ -205,24 +196,33 @@ class Archives(
     /**
      * Given a folder with a single mod somewhere inside, rearranges folders to match `./ModName/mod_info.json`.
      *
-     * @param folderContainingSingleMod A folder with a single mod somewhere inside.
+     * @param folderContainingSingleMod A folder with a single mod somewhere inside, eg Seeker in `Seeker/mod_info.json`.
      */
-    fun removedNestedFolders(folderContainingSingleMod: File) {
+    suspend fun removedNestedFolders(folderContainingSingleMod: File) {
         kotlin.runCatching {
             if (!folderContainingSingleMod.isDirectory)
                 throw RuntimeException("folderContainingSingleMod must be a folder! It's in the name!")
 
-            val modInfoFile = folderContainingSingleMod.listFiles { _, name -> name == MOD_INFO_FILE }.singleOrNull()
-                ?: throw RuntimeException("Expected a single $MOD_INFO_FILE in ${folderContainingSingleMod.absolutePath}")
+            val modInfoFile = folderContainingSingleMod.walkTopDown().firstOrNull { it.name == MOD_INFO_FILE }
+                ?: throw RuntimeException("Expected a $MOD_INFO_FILE in ${folderContainingSingleMod.absolutePath}")
 
-            val modInfo = modInfoLoader.readModInfoFile(modInfoFile.readText())
+//            val modInfo = modInfoLoader.readModInfoFile(modInfoFile.readText())
 
             if (folderContainingSingleMod == modInfoFile.parentFile) {
                 // Mod info file is one folder deep, all is well.
                 return
             } else {
                 // Is nested, move the folder above mod_info.json to the top level folder
-                FileUtils.moveDirectory(modInfoFile.parentFile, folderContainingSingleMod)
+
+                // chosen by fair dice roll.
+                // guaranteed to be random.
+                val randomTempFile = folderContainingSingleMod.resolve("3f8cd1b8-daea-435a-a932-da0a522438b1")
+                // First make a temp dir and copy mod into that, then delete original mod location, then copy from temp into desired location.
+                // This prevents being unable to move from /modname/modname to /modname.
+                // Instead it will copy /modname/modname to /modname/temp, then delete /modname/modname, then copy /modname/temp to /modname.
+                modInfoFile.parentFile.moveDirectory(randomTempFile)
+                modInfoFile.deleteRecursively()
+                randomTempFile.moveDirectory(folderContainingSingleMod)
             }
         }
             .onFailure {
@@ -231,7 +231,7 @@ class Archives(
             }
     }
 
-    fun extractMod(
+    suspend fun extractMod(
         modVariant: ModVariant,
         destinationFolder: File
     ) {
@@ -239,18 +239,18 @@ class Archives(
             throw RuntimeException("Cannot stage mod not archived: $modVariant")
         }
 
-        extractArchive(modVariant.archiveInfo.folder, destinationFolder, modVariant.modInfo.name)
+        val modFolder = extractArchive(modVariant.archiveInfo.folder, destinationFolder, modVariant.modInfo.name)
+        removedNestedFolders(modFolder)
     }
 
     private fun extractArchive(
         archiveFile: File,
         destinationFolder: File,
         defaultFolderName: String
-    ) {
+    ): File {
         IOLock.withLock {
-            RandomAccessFileInStream(
-                RandomAccessFile(archiveFile, "r")
-            ).use { fileInStream ->
+            var modFolder: File
+            RandomAccessFileInStream(RandomAccessFile(archiveFile, "r")).use { fileInStream ->
                 SevenZip.openInArchive(null, fileInStream).use { inArchive ->
                     val archiveItems = inArchive.simpleInterface.archiveItems
                     val files = archiveItems.map { File(it.path) }
@@ -259,40 +259,21 @@ class Archives(
 
                     val archiveBaseFolder: File? = modInfoFile.parentFile
 
-                    val destFolder = if (modInfoFile.parent == null)
+                    modFolder = if (modInfoFile.parent == null)
                         File(destinationFolder, defaultFolderName)
                     else {
                         File(destinationFolder, modInfoFile.parentFile.path)
                     }
 
-                    destFolder.mkdirsIfNotExist()
+                    modFolder.mkdirsIfNotExist()
 
-                    inArchive.extract(null, false, ArchiveExtractCallback(destFolder, inArchive))
-                    markManagedBySmol(destFolder)
+                    inArchive.extract(null, false, ArchiveExtractCallback(modFolder, inArchive))
+                    markManagedBySmol(modFolder)
                 }
             }
-        }
-    }
 
-    private fun ISimpleInArchiveItem.extractFile(
-        archiveBaseFolder: File?,
-        destFolder: File
-    ): ExtractOperationResult? {
-        val result = this.extractSlow { bytes ->
-            val fileRelativeToBase =
-                archiveBaseFolder?.let { File(this.path).toRelativeString(it) } ?: this.path
-            File(destFolder, fileRelativeToBase).run {
-                // Delete file if it exists so we replace it.
-                if (this.exists()) {
-                    this.delete()
-                }
-
-                parentFile?.mkdirsIfNotExist()
-                writeBytes(bytes)
-            }
-            bytes.size
+            return modFolder
         }
-        return result
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -317,7 +298,6 @@ class Archives(
                         else inputModFolder
 
                     val scope = this
-//                val modsPath = gamePath.getModsPath()
                     val manifest = getArchivesManifest()
                     val mods = modInfoLoader.readModInfosFromFolderOfMods(modFolder, onlySmolManagedMods = false)
 
@@ -347,87 +327,85 @@ class Archives(
 
                             var wasCanceled = false
 
-                            SevenZip.openOutArchive7z().use { archive7z ->
-                                fun cancelProcess() {
-                                    if (!wasCanceled) {
-                                        Logger.warn { "Canceled archive process." }
-                                        wasCanceled = true
-                                        archive7z.close()
+                            RandomAccessFile(archiveFile, "rw").use { randomAccessFile ->
+                                SevenZip.openOutArchive7z().use { archive7z ->
+                                    fun cancelProcess() {
+                                        if (!wasCanceled) {
+                                            Logger.warn { "Canceled archive process." }
+                                            wasCanceled = true
+                                            archive7z.close()
 
-                                        if (!archiveFile.delete()) {
-                                            archiveFile.deleteOnExit()
+                                            if (!archiveFile.delete()) {
+                                                archiveFile.deleteOnExit()
+                                            }
                                         }
                                     }
+
+                                    archive7z.createArchive(
+                                        RandomAccessFileOutStream(randomAccessFile),
+                                        filesToArchive.size,
+                                        object : IOutCreateCallback<IOutItem7z> {
+                                            var currentTotal: Float = 0f
+                                            var currentFilepath: String = ""
+
+                                            override fun setTotal(total: Long) {
+                                                if (!scope.isActive) {
+                                                    cancelProcess()
+                                                    return
+                                                }
+
+                                                currentTotal = total.toFloat()
+                                            }
+
+                                            override fun setCompleted(complete: Long) {
+                                                if (!scope.isActive) {
+                                                    cancelProcess()
+                                                    return
+                                                }
+
+                                                val percentComplete =
+                                                    "%.2f".format((complete.toFloat() / currentTotal) * 100f)
+                                                val progressMessage =
+                                                    "[$percentComplete%] Moving '${modInfo.id} v${modInfo.version}' to archives. File: $currentFilepath"
+                                                trySend(progressMessage)
+                                                Logger.debug { progressMessage }
+                                            }
+
+                                            override fun setOperationResult(wasSuccessful: Boolean) {}
+
+                                            override fun getItemInformation(
+                                                index: Int,
+                                                outItemFactory: OutItemFactory<IOutItem7z>
+                                            ): IOutItem7z? {
+                                                if (!scope.isActive) {
+                                                    cancelProcess()
+                                                    return null
+                                                }
+
+                                                val item = outItemFactory.createOutItem()
+                                                val file = filesToArchive[index]
+
+                                                if (file.isDirectory) {
+                                                    item.propertyIsDir = true
+                                                } else {
+                                                    item.dataSize = file.readBytes().size.toLong()
+                                                }
+
+                                                item.propertyPath = file.toRelativeString(modFolder)
+                                                return item
+                                            }
+
+                                            override fun getStream(index: Int): ISequentialInStream? {
+                                                if (!scope.isActive) {
+                                                    cancelProcess()
+                                                    return null
+                                                }
+
+                                                currentFilepath = filesToArchive[index].relativeTo(modFolder).path
+                                                return ByteArrayStream(filesToArchive[index].readBytes(), true)
+                                            }
+                                        })
                                 }
-
-                                archive7z.createArchive(
-                                    RandomAccessFileOutStream(
-                                        RandomAccessFile(
-                                            archiveFile, "rw"
-                                        )
-                                    ),
-                                    filesToArchive.size,
-                                    object : IOutCreateCallback<IOutItem7z> {
-                                        var currentTotal: Float = 0f
-                                        var currentFilepath: String = ""
-
-                                        override fun setTotal(total: Long) {
-                                            if (!scope.isActive) {
-                                                cancelProcess()
-                                                return
-                                            }
-
-                                            currentTotal = total.toFloat()
-                                        }
-
-                                        override fun setCompleted(complete: Long) {
-                                            if (!scope.isActive) {
-                                                cancelProcess()
-                                                return
-                                            }
-
-                                            val percentComplete =
-                                                "%.2f".format((complete.toFloat() / currentTotal) * 100f)
-                                            val progressMessage =
-                                                "[$percentComplete%] Moving '${modInfo.id} v${modInfo.version}' to archives. File: $currentFilepath"
-                                            trySend(progressMessage)
-                                            Logger.debug { progressMessage }
-                                        }
-
-                                        override fun setOperationResult(wasSuccessful: Boolean) {}
-
-                                        override fun getItemInformation(
-                                            index: Int,
-                                            outItemFactory: OutItemFactory<IOutItem7z>
-                                        ): IOutItem7z? {
-                                            if (!scope.isActive) {
-                                                cancelProcess()
-                                                return null
-                                            }
-
-                                            val item = outItemFactory.createOutItem()
-                                            val file = filesToArchive[index]
-
-                                            if (file.isDirectory) {
-                                                item.propertyIsDir = true
-                                            } else {
-                                                item.dataSize = file.readBytes().size.toLong()
-                                            }
-
-                                            item.propertyPath = file.toRelativeString(modFolder)
-                                            return item
-                                        }
-
-                                        override fun getStream(index: Int): ISequentialInStream? {
-                                            if (!scope.isActive) {
-                                                cancelProcess()
-                                                return null
-                                            }
-
-                                            currentFilepath = filesToArchive[index].relativeTo(modFolder).path
-                                            return ByteArrayStream(filesToArchive[index].readBytes(), true)
-                                        }
-                                    })
                             }
 
                             if (wasCanceled) {
@@ -517,6 +495,27 @@ class Archives(
         }
             .onFailure { Logger.error(it) }
             .getOrThrow()
+    }
+
+    private fun ISimpleInArchiveItem.extractFile(
+        archiveBaseFolder: File?,
+        destFolder: File
+    ): ExtractOperationResult? {
+        val result = this.extractSlow { bytes ->
+            val fileRelativeToBase =
+                archiveBaseFolder?.let { File(this.path).toRelativeString(it) } ?: this.path
+            File(destFolder, fileRelativeToBase).run {
+                // Delete file if it exists so we replace it.
+                if (this.exists()) {
+                    this.delete()
+                }
+
+                parentFile?.mkdirsIfNotExist()
+                writeBytes(bytes)
+            }
+            bytes.size
+        }
+        return result
     }
 
     data class ArchivesManifest(
