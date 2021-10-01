@@ -1,4 +1,5 @@
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -7,8 +8,9 @@ import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.platform.Font
 import androidx.compose.ui.unit.dp
@@ -135,4 +137,26 @@ fun SmolAlertDialog(
             dialogProvider = dialogProvider
         )
     }
+}
+
+@Composable
+fun TiledImage(
+    modifier: Modifier = Modifier,
+    imageBitmap: ImageBitmap
+) {
+    Canvas(
+        modifier = modifier
+            .clipToBounds()
+    ) {
+        val paint = Paint().asFrameworkPaint().apply {
+            isAntiAlias = true
+            shader = ImageShader(imageBitmap, TileMode.Repeated, TileMode.Repeated)
+        }
+
+        drawIntoCanvas {
+            it.nativeCanvas.drawPaint(paint)
+        }
+        paint.reset()
+    }
+    Box(modifier.fillMaxWidth().fillMaxHeight())
 }

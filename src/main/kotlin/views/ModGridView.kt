@@ -3,7 +3,7 @@ package views
 import AppState
 import SL
 import SmolButton
-import SmolTheme
+import TiledImage
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -20,11 +20,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.ExperimentalUnitApi
-import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import model.Mod
@@ -43,14 +42,18 @@ private val buttonWidth = 180
 @Composable
 @Preview
 fun AppState.ModGridView(
-    mods: SnapshotStateList<Mod>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    mods: SnapshotStateList<Mod>
 ) {
     var selectedRow: ModRow? by remember { mutableStateOf(null) }
 
     Box(modifier) {
+        TiledImage(
+            modifier = Modifier.background(Color.Gray.copy(alpha = .1f)),
+            imageBitmap = imageResource("panel00_center.png")
+        )
         Column(Modifier.padding(16.dp)) {
-            ListItem(Modifier.background(MaterialTheme.colors.background)) {
+            ListItem(Modifier.background(MaterialTheme.colors.background.copy(alpha = ContentAlpha.medium))) {
                 Row {
                     Spacer(Modifier.width(buttonWidth.dp))
                     Text("Name", Modifier.weight(1f), fontWeight = FontWeight.Bold)
@@ -136,49 +139,7 @@ fun AppState.ModGridView(
         }
 
         if (selectedRow != null) {
-            detailsPanel(modifier, selectedRow)
-        }
-    }
-}
-
-@OptIn(ExperimentalUnitApi::class)
-@Composable
-private fun BoxScope.detailsPanel(
-    modifier: Modifier = Modifier,
-    selectedRow: ModRow?
-) {
-    run {
-        val row = selectedRow ?: return@run
-        Card(
-            modifier.width(400.dp)
-                .align(Alignment.CenterEnd)
-                .fillMaxHeight()
-        ) {
-            Column(
-                Modifier
-                    .padding(16.dp)
-            ) {
-                val modInfo = (row.mod.findFirstEnabled ?: row.mod.variants.values.firstOrNull())
-                    ?.modInfo
-                Text(
-                    modInfo?.name ?: "VNSector",
-                    fontWeight = FontWeight.ExtraBold,
-                    fontFamily = SmolTheme.orbitronSpaceFont,
-                    fontSize = TextUnit(18f, TextUnitType.Sp)
-                )
-                Text(
-                    modInfo?.id ?: "vnsector",
-                    modifier = Modifier.padding(top = 4.dp),
-                    fontSize = TextUnit(12f, TextUnitType.Sp),
-                    fontFamily = SmolTheme.fireCodeFont
-                )
-                Text("Author(s)", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
-                Text(modInfo?.author ?: "It's always Techpriest", modifier = Modifier.padding(top = 2.dp))
-                Text("Version", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
-                Text(modInfo?.version?.toString() ?: "no version", modifier = Modifier.padding(top = 2.dp))
-                Text("Description", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
-                Text(modInfo?.description ?: "", modifier = Modifier.padding(top = 2.dp))
-            }
+            detailsPanel(selectedRow = selectedRow)
         }
     }
 }

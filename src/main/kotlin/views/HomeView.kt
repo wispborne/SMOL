@@ -91,9 +91,7 @@ fun AppState.homeView(
     }, content = {
         Box {
             if (SL.gamePath.isValidGamePath(SL.appConfig.gamePath ?: "")) {
-                ModGridView(
-                    mods
-                )
+                ModGridView(modifier = Modifier.fillMaxWidth().fillMaxHeight().padding(bottom = 40.dp), mods = mods)
             } else {
                 Column(
                     Modifier.fillMaxWidth().fillMaxHeight(),
