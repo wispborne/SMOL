@@ -60,13 +60,15 @@ fun AppState.ModGridView(
             Box {
                 LazyColumn(Modifier.fillMaxWidth()) {
                     mods
-                        .groupBy { shouldShowAsEnabled(it) }
-                        .forEach { (isEnabled, mods) ->
+                        .groupBy { it.state }
+                        .toSortedMap(compareBy { it.ordinal })
+                        .forEach { (modState, mods) ->
                             stickyHeader() {
                                 Card(
                                     elevation = 8.dp,
                                     modifier = Modifier
                                         .fillMaxWidth()
+                                        .padding(top = 8.dp, bottom = 8.dp)
                                 ) {
                                     Row {
                                         Icon(
@@ -77,7 +79,11 @@ fun AppState.ModGridView(
                                             contentDescription = null,
                                         )
                                         Text(
-                                            text = if (isEnabled) "Enabled" else "Disabled",
+                                            text = when (modState) {
+                                                ModState.Enabled -> "Enabled"
+                                                ModState.Disabled -> "Disabled"
+                                                ModState.Uninstalled -> "Uninstalled"
+                                            },
                                             modifier = Modifier
                                                 .padding(8.dp),
                                             fontWeight = FontWeight.Bold

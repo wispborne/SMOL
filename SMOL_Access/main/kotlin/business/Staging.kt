@@ -7,6 +7,7 @@ import model.Mod
 import model.ModVariant
 import org.tinylog.Logger
 import util.IOLock
+import util.ManualReloadTrigger
 import util.mkdirsIfNotExist
 import util.toFileOrNull
 import java.io.File
@@ -23,7 +24,8 @@ class Staging(
     private val gamePath: GamePath,
     private val modLoader: ModLoader,
     private val gameEnabledMods: GameEnabledMods,
-    private val archives: Archives
+    private val archives: Archives,
+    private val manualReloadTrigger: ManualReloadTrigger
 ) {
     enum class LinkMethod {
         HardLink,
@@ -55,79 +57,41 @@ class Staging(
     }
 
     suspend fun install(modVariant: ModVariant): Result<Unit> {
-        if (modVariant.stagingInfo != null) {
-            Logger.debug { "Mod already staged! $modVariant" }
-            return Result.success(Unit)
+        try {
+            return installInternal(modVariant)
+        } finally {
+            manualReloadTrigger.trigger.emit("Installed mod: $modVariant")
         }
-
-
-        val stagingFolder = config.stagingPath.toFileOrNull()
-            ?: return failLogging("No staging folder: $modVariant")
-
-        kotlin.runCatching {
-            archives.extractMod(modVariant, stagingFolder)
-        }
-            .onFailure { return failLogging(it.message ?: "") }
-
-
-        return Result.success(Unit)
     }
 
     suspend fun uninstall(mod: Mod): Result<Unit> {
-        mod.variants.values.forEach { modVariant ->
-            if (modVariant.stagingInfo == null || !modVariant.stagingInfo.folder.exists()) {
-                Logger.debug { "Mod not installed! $modVariant" }
-                return@forEach
-            }
-
-            if (modVariant.archiveInfo == null) {
-                Logger.warn { "Cannot uninstall mod not archived: $modVariant" }
-                return@forEach
-            }
-
-            // Make sure it's disabled before uninstalling
-            disable(modVariant)
-
-            IOLock.withLock {
-                kotlin.runCatching {
-                    modVariant.stagingInfo.folder.deleteRecursively()
-                }
-                    .onFailure { Logger.error(it) }
-                    .getOrThrow()
-            }
+        try {
+            return uninstallInternal(mod)
+        } finally {
+            manualReloadTrigger.trigger.emit("Mod uninstalled: $mod")
         }
-
-        Logger.debug { "Mod uninstalled: $mod" }
-        return Result.success(Unit)
     }
 
     suspend fun enable(modToEnable: ModVariant): Result<Unit> {
-        if (modToEnable.mod.isEnabled(modToEnable)) {
-            Logger.info { "Already enabled!: $modToEnable" }
-            return Result.success(Unit)
+        try {
+            return enableInternal(modToEnable)
+        } finally {
+            manualReloadTrigger.trigger.emit("Enabled mod: $modToEnable")
         }
-
-        if (!modToEnable.isEnabledInSmol) {
-            val result = enableInSmol(modToEnable)
-
-            if (result != Result.success(Unit)) {
-                return result
-            }
-
-            Logger.info { "Enabled mod for SMOL: $modToEnable" }
-        }
-
-        if (!modToEnable.mod.isEnabledInGame) {
-            gameEnabledMods.enable(modToEnable.modInfo.id)
-        }
-
-        return Result.success((Unit))
     }
 
     suspend fun disable(modVariant: ModVariant): Result<Unit> {
+        try {
+            return disableInternal(modVariant)
+        } finally {
+            manualReloadTrigger.trigger.emit("Disabled mod: $modVariant")
+        }
+    }
+
+    private suspend fun disableInternal(modVariant: ModVariant): Result<Unit> {
         // If it's not installed, install it (but it'll stay disabled)
         if (modVariant.stagingInfo == null) {
-            install(modVariant)
+            installInternal(modVariant)
         }
 
         if (!modVariant.mod.isEnabled(modVariant)) {
@@ -151,12 +115,81 @@ class Staging(
         return Result.success((Unit))
     }
 
+    private suspend fun installInternal(modVariant: ModVariant): Result<Unit> {
+        if (modVariant.stagingInfo != null) {
+            Logger.debug { "Mod already staged! $modVariant" }
+            return Result.success(Unit)
+        }
+
+
+        val stagingFolder = config.stagingPath.toFileOrNull()
+            ?: return failLogging("No staging folder: $modVariant")
+
+        kotlin.runCatching {
+            archives.extractMod(modVariant, stagingFolder)
+        }
+            .onFailure { return failLogging(it.message ?: "") }
+
+        return Result.success(Unit)
+    }
+
+    private suspend fun enableInternal(modToEnable: ModVariant): Result<Unit> {
+        if (modToEnable.mod.isEnabled(modToEnable)) {
+            Logger.info { "Already enabled!: $modToEnable" }
+            return Result.success(Unit)
+        }
+
+        if (!modToEnable.isEnabledInSmol) {
+            val result = enableInSmol(modToEnable)
+
+            if (result != Result.success(Unit)) {
+                return result
+            }
+
+            Logger.info { "Enabled mod for SMOL: $modToEnable" }
+        }
+
+        if (!modToEnable.mod.isEnabledInGame) {
+            gameEnabledMods.enable(modToEnable.modInfo.id)
+        }
+
+        return Result.success((Unit))
+    }
+
+    private suspend fun uninstallInternal(mod: Mod): Result<Unit> {
+        mod.variants.values.forEach { modVariant ->
+            if (modVariant.stagingInfo == null || !modVariant.stagingInfo.folder.exists()) {
+                Logger.debug { "Mod not installed! $modVariant" }
+                return@forEach
+            }
+
+            if (modVariant.archiveInfo == null) {
+                Logger.warn { "Cannot uninstall mod not archived: $modVariant" }
+                return@forEach
+            }
+
+            // Make sure it's disabled before uninstalling
+            disableInternal(modVariant)
+
+            IOLock.withLock {
+                kotlin.runCatching {
+                    modVariant.stagingInfo.folder.deleteRecursively()
+                }
+                    .onFailure { Logger.error(it) }
+                    .getOrThrow()
+            }
+        }
+
+        Logger.debug { "Mod uninstalled: $mod" }
+        return Result.success(Unit)
+    }
+
     private suspend fun enableInSmol(modToEnable: ModVariant): Result<Unit> {
         IOLock.withLock {
             var mod = modToEnable
 
             if (mod.stagingInfo == null || !mod.stagingInfo!!.folder.exists()) {
-                runBlocking { install(mod) }
+                runBlocking { installInternal(mod) }
                 mod = modLoader.getMods()
                     .asSequence()
                     .flatMap { it.variants.values }
@@ -227,7 +260,7 @@ class Staging(
                     }
                     .onSuccess {
                         succeededFiles += sourceFile
-                        Logger.debug { "Created ${linkMethod.name} at ${destFile.absolutePath}" }
+                        Logger.trace { "Created ${linkMethod.name} at ${destFile.absolutePath}" }
                     }
                     .getOrThrow()
             }

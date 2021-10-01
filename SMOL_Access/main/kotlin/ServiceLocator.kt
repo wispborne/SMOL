@@ -9,6 +9,7 @@ import config.AppConfig
 import config.GamePath
 import model.ModInfo
 import org.hjson.JsonValue
+import util.ManualReloadTrigger
 
 var SL = ServiceLocator()
 private val basicMoshi = Moshi.Builder()
@@ -17,6 +18,7 @@ private val basicGson = GsonBuilder().create()
 
 @OptIn(ExperimentalStdlibApi::class)
 class ServiceLocator(
+    val manualReloadTrigger: ManualReloadTrigger = ManualReloadTrigger(),
     val moshi: Moshi = Moshi.Builder()
         .add(ModInfoAdapter())
         .addLast(KotlinJsonAdapterFactory())
@@ -45,7 +47,8 @@ class ServiceLocator(
         gamePath = gamePath,
         modLoader = modLoader,
         gameEnabledMods = gameEnabledMods,
-        archives = archives
+        archives = archives,
+        manualReloadTrigger = manualReloadTrigger
     ),
 ) {
 }

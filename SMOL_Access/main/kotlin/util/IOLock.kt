@@ -3,6 +3,7 @@ package util
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import org.tinylog.kotlin.Logger
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReentrantLock
@@ -16,11 +17,13 @@ class ObservableLock(private val lock: Lock) : Lock by lock {
 
     override fun lock() {
         lock.lock()
+        Logger.trace { "Locked" }
         flow.tryEmit(true)
     }
 
     override fun lockInterruptibly() {
         lock.lockInterruptibly()
+        Logger.trace { "Locked" }
         flow.tryEmit(true)
     }
 
@@ -28,6 +31,7 @@ class ObservableLock(private val lock: Lock) : Lock by lock {
         val tryLock = lock.tryLock()
 
         if (tryLock) {
+            Logger.trace { "Locked" }
             flow.tryEmit(true)
         }
 
@@ -38,6 +42,7 @@ class ObservableLock(private val lock: Lock) : Lock by lock {
         val tryLock = lock.tryLock(time, unit)
 
         if (tryLock) {
+            Logger.trace { "Locked" }
             flow.tryEmit(true)
         }
 
@@ -46,6 +51,7 @@ class ObservableLock(private val lock: Lock) : Lock by lock {
 
     override fun unlock() {
         lock.unlock()
+        Logger.trace { "Unlocked" }
         flow.tryEmit(false)
     }
 }

@@ -19,16 +19,14 @@ import business.KWatchEvent
 import business.asWatchChannel
 import com.arkivanov.decompose.push
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.*
 import model.Mod
 import navigation.Screen
 import org.tinylog.Logger
 import util.IOLock
 import util.appName
 import util.toFileOrNull
+import java.io.File
 
 private var isRefreshingMods = false
 
@@ -39,7 +37,7 @@ fun AppState.homeView(
     modifier: Modifier = Modifier
 ) {
     val mods = remember { mutableStateListOf<Mod>() }
-    reloadMods(mods)
+    rememberCoroutineScope().launch { reloadMods(mods) }
 
     var job = Job()
 
@@ -164,11 +162,18 @@ private suspend fun watchDirsAndReloadOnChange(
         SL.gamePath.getModsPath().asWatchChannel(),
         SL.gamePath.getModsPath().resolve(ENABLED_MODS_FILENAME) // Watch enabled_mods.json
             .run { if (this.exists()) this.asWatchChannel() else emptyFlow() },
-        SL.archives.getArchivesPath()?.toFileOrNull()?.asWatchChannel() ?: emptyFlow()
+        SL.archives.getArchivesPath()?.toFileOrNull()?.asWatchChannel() ?: emptyFlow(),
+        SL.manualReloadTrigger.trigger.map {
+            KWatchEvent(
+                File("Mod reload triggered manually: $it"),
+                KWatchEvent.Kind.Modified,
+                null
+            )
+        }
     )
 
     reloadMods(mods)
-    Logger.debug {
+    Logger.info {
         "Started watching folders ${
             NSA.joinToString()
         }"
@@ -181,25 +186,29 @@ private suspend fun watchDirsAndReloadOnChange(
                 // Short delay so that if a new file change comes in during this time,
                 // this is canceled in favor of the new change. This should prevent
                 // refreshing 500 times if 500 files are changed in a few millis.
-                delay(100)
-                Logger.debug { "File change: $it" }
+                delay(500)
+                Logger.info { "File change: $it" }
                 reloadMods(mods)
             } else {
-                Logger.debug { "Skipping mod reload while IO locked." }
+                Logger.info { "Skipping mod reload while IO locked." }
             }
         }
 }
 
-private fun reloadMods(mods: SnapshotStateList<Mod>) {
+private suspend fun reloadMods(mods: SnapshotStateList<Mod>) {
     if (isRefreshingMods) {
-        Logger.debug { "Skipping reload of mods as they are currently refreshing already." }
+        Logger.info { "Skipping reload of mods as they are currently refreshing already." }
         return
     }
     try {
-        Logger.debug { "Reloading mods." }
-        isRefreshingMods = true
-        mods.clear()
-        mods.addAll(SL.modLoader.getMods())
+        coroutineScope {
+            Logger.info { "Reloading mods." }
+            isRefreshingMods = true
+            val freshMods =
+                withContext(Dispatchers.Default) { SL.modLoader.getMods() }
+            mods.clear()
+            mods.addAll(freshMods)
+        }
     } catch (e: Exception) {
         Logger.debug(e)
     } finally {
