@@ -19,7 +19,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -28,9 +27,10 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import model.Mod
 import model.ModState
+import model.ModVariant
 import org.tinylog.Logger
 import smolFullyClippedButtonShape
-import util.prefer
+import java.awt.Desktop
 
 private val buttonWidth = 180
 
@@ -63,8 +63,8 @@ fun AppState.ModGridView(
             Box {
                 LazyColumn(Modifier.fillMaxWidth()) {
                     mods
-                        .groupBy { it.state }
-                        .toSortedMap(compareBy { it.ordinal })
+                        .groupBy { it.findFirstEnabled != null }
+                        .toSortedMap(compareBy { !it }) // Flip to put Enabled at the top
                         .forEach { (modState, mods) ->
                             stickyHeader() {
                                 Card(
@@ -83,9 +83,8 @@ fun AppState.ModGridView(
                                         )
                                         Text(
                                             text = when (modState) {
-                                                ModState.Enabled -> "Enabled"
-                                                ModState.Disabled -> "Disabled"
-                                                ModState.Uninstalled -> "Uninstalled"
+                                                true -> "Enabled"
+                                                false -> "Disabled"
                                             },
                                             modifier = Modifier
                                                 .padding(8.dp),
@@ -117,17 +116,25 @@ fun AppState.ModGridView(
                                             mod = mod
                                         )
                                         Text(
-                                            mod.variants.values.first().modInfo.name,
-                                            Modifier.weight(1f).align(Alignment.CenterVertically)
+                                            text = (mod.findFirstEnabled ?: mod.findFirstDisabled)?.modInfo?.name ?: "",
+                                            modifier = Modifier.weight(1f).align(Alignment.CenterVertically)
                                         )
                                         Text(
-                                            mod.variants.values.first().modInfo.version.toString(),
-                                            Modifier.weight(1f).align(Alignment.CenterVertically)
+                                            text = (mod.findFirstEnabled ?: mod.findFirstDisabled)?.modInfo?.version.toString() ?: "",
+                                            modifier = Modifier.weight(1f).align(Alignment.CenterVertically)
                                         )
                                         CursorDropdownMenu(expanded = showContextMenu,
                                             onDismissRequest = { showContextMenu = false }) {
-                                            DropdownMenuItem(onClick = {}) {
-                                                Text("test")
+                                            DropdownMenuItem(onClick = {
+                                                kotlin.runCatching {
+                                                    (mod.findFirstEnabled
+                                                        ?: mod.findFirstDisabled)?.archiveInfo?.folder?.also {
+                                                        Desktop.getDesktop().open(it.parentFile)
+                                                    }
+                                                }
+                                                    .onFailure { Logger.warn(it) { "Error trying to open file browser for $mod." } }
+                                            }) {
+                                                Text("Open Archive")
                                             }
                                         }
                                     }
@@ -144,68 +151,76 @@ fun AppState.ModGridView(
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
-    val menuItems = ModState.values().filter { it != mod.state }.map { it.name }
+    val menuItems = mod.variants.values
+        .asSequence()
+        .filter { it != mod.findFirstEnabled }
+        .map { it.modInfo.version.toString() to it as ModVariant? }
+        .toMutableList()
+        .run {
+            if (mod.findFirstEnabled != null)
+                this.add("Disable" to null)
+            this
+        }
+        .toList()
 
     var expanded by remember { mutableStateOf(false) }
     var selectedIndex by remember { mutableStateOf(0) }
     Box(modifier) {
-        SmolButton(
-            onClick = { expanded = true },
-            modifier = Modifier.wrapContentWidth()
-                .align(Alignment.CenterStart),
-            shape = smolFullyClippedButtonShape(),
-            colors = ButtonDefaults.buttonColors(
-                backgroundColor = when (mod.state) {
-                    ModState.Enabled -> MaterialTheme.colors.primary
-                    ModState.Disabled -> MaterialTheme.colors.primaryVariant
-                    ModState.Uninstalled -> MaterialTheme.colors.onSurface.copy(alpha = 0.12f)
-                        .compositeOver(MaterialTheme.colors.surface)
-                }
-            )
-        ) {
-            Text(
-                text = mod.state.name,
-                fontWeight = FontWeight.Bold
-            )
-            dropdownArrow(
-                Modifier.align(Alignment.CenterVertically),
-                expanded
-            )
-        }
-        DropdownMenu(
-            expanded = expanded,
-            modifier = Modifier.background(
-                MaterialTheme.colors.background
-            ),
-            onDismissRequest = { expanded = false }
-        ) {
-            val coroutineScope = rememberCoroutineScope()
-            menuItems.forEachIndexed { index, title ->
-                DropdownMenuItem(onClick = {
-                    selectedIndex = index
-                    expanded = false
-                    Logger.debug { "Selected $title." }
-
-                    coroutineScope.launch {
-                        kotlin.runCatching {
-                            // Change mod state
-                            when (ModState.valueOf(menuItems[index])) {
-                                ModState.Enabled ->
-                                    SL.staging.enable(mod.variants.values.prefer { !mod.isEnabled(it) }.first())
-                                ModState.Disabled ->
-                                    SL.staging.disable(mod.variants.values.prefer { mod.isEnabled(it) }.first())
-                                ModState.Uninstalled -> SL.staging.uninstall(mod)
-                            }
-                        }
-                            .onFailure { Logger.error(it) }
+        Box(Modifier.width(IntrinsicSize.Min)) {
+            SmolButton(
+                onClick = { expanded = true },
+                modifier = Modifier
+                    .align(Alignment.CenterStart),
+                shape = smolFullyClippedButtonShape(),
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = when (mod.state) {
+                        ModState.Enabled -> MaterialTheme.colors.primary
+                        else -> MaterialTheme.colors.primaryVariant
                     }
-                }) {
-                    Row {
+                )
+            ) {
+                Text(
+                    text = mod.findFirstEnabled?.modInfo?.version?.toString() ?: ModState.Disabled.name,
+                    fontWeight = FontWeight.Bold
+                )
+                dropdownArrow(
+                    Modifier.align(Alignment.CenterVertically),
+                    expanded
+                )
+            }
+            DropdownMenu(
+                expanded = expanded,
+                modifier = Modifier
+                    .background(MaterialTheme.colors.background)
+                    .border(1.dp, MaterialTheme.colors.primary, shape = smolFullyClippedButtonShape()),
+                onDismissRequest = { expanded = false }
+            ) {
+                val coroutineScope = rememberCoroutineScope()
+                menuItems.forEachIndexed { index, labelAndVariant ->
+                    DropdownMenuItem(
+                        modifier = Modifier.sizeIn(maxWidth = 400.dp),
+                        onClick = {
+                            selectedIndex = index
+                            expanded = false
+                            Logger.debug { "Selected $labelAndVariant." }
+
+                            coroutineScope.launch {
+                                kotlin.runCatching {
+                                    // Change mod state
+                                    if (labelAndVariant.second != null) {
+                                        SL.staging.changeActiveVariant(mod, labelAndVariant.second)
+                                    } else {
+                                        SL.staging.disable(mod.findFirstEnabled ?: return@runCatching)
+                                    }
+                                }
+                                    .onFailure { Logger.error(it) }
+                            }
+                        }) {
                         Text(
-                            text = title,
-                            modifier = Modifier.weight(1f),
+                            text = labelAndVariant.first,
                             fontWeight = FontWeight.Bold
                         )
                     }

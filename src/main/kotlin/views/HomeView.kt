@@ -206,6 +206,7 @@ private suspend fun reloadMods(mods: SnapshotStateList<Mod>) {
                 withContext(Dispatchers.Default) { SL.modLoader.getMods() }
             mods.clear()
             mods.addAll(freshMods)
+            SL.archives.refreshManifest()
         }
     } catch (e: Exception) {
         Logger.debug(e)

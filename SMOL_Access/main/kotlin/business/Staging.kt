@@ -56,19 +56,59 @@ class Staging(
         }
     }
 
+    /**
+     * Changes the active mod variant, or disables all if `null` is set.
+     */
+    suspend fun changeActiveVariant(mod: Mod, modVariant: ModVariant?): Result<Unit> {
+        try {
+            if (modVariant?.mod != null && mod != modVariant.mod) {
+                val err = "Variant and mod were different! ${mod.id}, ${modVariant.smolId}"
+                Logger.info { err }
+                return Result.failure(RuntimeException(err))
+            }
+
+            if (modVariant != null && mod.isEnabled(modVariant)) {
+                // Check if this is the only active variant.
+                // If there are somehow more than one active, the rest of the method will clean that up.
+                if (mod.variants.values.count { mod.isEnabled(it) } <= 1) {
+                    Logger.info { "Variant is already active, nothing to do! $modVariant" }
+                    return Result.success(Unit)
+                }
+            }
+
+            val activeVariants = mod.variants.values.filter { mod.isEnabled(it) }
+
+            if (modVariant == null && activeVariants.none()) {
+                Logger.info { "No variants active, nothing to do! $mod" }
+                return Result.success(Unit)
+            }
+
+            // Disable all active mod variants.
+            // There should only ever be one active but might as well be careful.
+            mod.variants.values
+                .filter { mod.isEnabled(it) }
+                .forEach { disableInternal(it) }
+
+            return if (modVariant != null) {
+                // Enable the one we want.
+                // Slower: Reload, since we just disabled it
+//                val freshModVariant = modLoader.getMods().flatMap { it.variants.values }.first { it.smolId == modVariant.smolId }
+                // Faster: Assume we disabled it and change the mod to be disabled.
+                modVariant.mod = modVariant.mod.copy(isEnabledInGame = false)
+                enableInternal(modVariant)
+            } else {
+                Result.success(Unit)
+            }
+        } finally {
+            manualReloadTrigger.trigger.emit("For mod ${mod.id}, installed variant: $modVariant.")
+        }
+    }
+
     suspend fun install(modVariant: ModVariant): Result<Unit> {
         try {
             return installInternal(modVariant)
         } finally {
             manualReloadTrigger.trigger.emit("Installed mod: $modVariant")
-        }
-    }
-
-    suspend fun uninstall(mod: Mod): Result<Unit> {
-        try {
-            return uninstallInternal(mod)
-        } finally {
-            manualReloadTrigger.trigger.emit("Mod uninstalled: $mod")
         }
     }
 
@@ -80,6 +120,14 @@ class Staging(
         }
     }
 
+    suspend fun uninstall(mod: Mod): Result<Unit> {
+        try {
+            return uninstallInternal(mod)
+        } finally {
+            manualReloadTrigger.trigger.emit("Mod uninstalled: $mod")
+        }
+    }
+
     suspend fun disable(modVariant: ModVariant): Result<Unit> {
         try {
             return disableInternal(modVariant)
@@ -88,6 +136,11 @@ class Staging(
         }
     }
 
+    /**
+     * Disables the mod.
+     * - Removes it from /mods.
+     * - Removes it from `enabled_mods.json`.
+     */
     private suspend fun disableInternal(modVariant: ModVariant): Result<Unit> {
         // If it's not installed, install it (but it'll stay disabled)
         if (modVariant.stagingInfo == null) {
@@ -133,24 +186,24 @@ class Staging(
         return Result.success(Unit)
     }
 
-    private suspend fun enableInternal(modToEnable: ModVariant): Result<Unit> {
-        if (modToEnable.mod.isEnabled(modToEnable)) {
-            Logger.info { "Already enabled!: $modToEnable" }
+    private suspend fun enableInternal(modVariant: ModVariant): Result<Unit> {
+        if (modVariant.mod.isEnabled(modVariant)) {
+            Logger.info { "Already enabled!: $modVariant" }
             return Result.success(Unit)
         }
 
-        if (!modToEnable.isEnabledInSmol) {
-            val result = enableInSmol(modToEnable)
+        if (!modVariant.isEnabledInSmol) {
+            val result = enableInSmol(modVariant)
 
             if (result != Result.success(Unit)) {
                 return result
             }
 
-            Logger.info { "Enabled mod for SMOL: $modToEnable" }
+            Logger.info { "Enabled mod for SMOL: $modVariant" }
         }
 
-        if (!modToEnable.mod.isEnabledInGame) {
-            gameEnabledMods.enable(modToEnable.modInfo.id)
+        if (!modVariant.mod.isEnabledInGame) {
+            gameEnabledMods.enable(modVariant.modInfo.id)
         }
 
         return Result.success((Unit))
@@ -275,6 +328,9 @@ class Staging(
         }
     }
 
+    /**
+     * Removes the mod folder/files from the game /mods folder.
+     */
     private fun disableInSmol(modVariant: ModVariant): Result<Unit> {
         if (!modVariant.isEnabledInSmol) {
             Logger.warn { "Already disabled in SMOL." }

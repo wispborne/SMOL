@@ -3,13 +3,15 @@ package views
 import SmolTheme
 import TiledImage
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
@@ -30,6 +32,7 @@ fun BoxScope.detailsPanel(
     Box(
         modifier.width(400.dp)
             .align(Alignment.CenterEnd)
+            .clickable(enabled = false) { }
             .fillMaxHeight(),
     ) {
         TiledImage(
@@ -39,29 +42,35 @@ fun BoxScope.detailsPanel(
                 .fillMaxHeight(),
             imageBitmap = imageResource("panel00_center.png")
         )
-        Column(
-            Modifier.padding(36.dp)
-        ) {
-            val modInfo = (row.mod.findFirstEnabled ?: row.mod.variants.values.firstOrNull())
-                ?.modInfo
-            Text(
-                modInfo?.name ?: "VNSector",
-                fontWeight = FontWeight.ExtraBold,
-                fontFamily = SmolTheme.orbitronSpaceFont,
-                fontSize = TextUnit(18f, TextUnitType.Sp)
-            )
-            Text(
-                modInfo?.id ?: "vnsector",
-                modifier = Modifier.padding(top = 4.dp),
-                fontSize = TextUnit(12f, TextUnitType.Sp),
-                fontFamily = SmolTheme.fireCodeFont
-            )
-            Text("Author(s)", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
-            Text(modInfo?.author ?: "It's always Techpriest", modifier = Modifier.padding(top = 2.dp))
-            Text("Version", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
-            Text(modInfo?.version?.toString() ?: "no version", modifier = Modifier.padding(top = 2.dp))
-            Text("Description", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
-            Text(modInfo?.description ?: "", modifier = Modifier.padding(top = 2.dp))
+        val state = rememberScrollState()
+        SelectionContainer {
+            Column(
+                Modifier.padding(36.dp).verticalScroll(state)
+            ) {
+                val modInfo = (row.mod.findFirstEnabled ?: row.mod.variants.values.firstOrNull())
+                    ?.modInfo
+                Text(
+                    modInfo?.name ?: "VNSector",
+                    fontWeight = FontWeight.ExtraBold,
+                    fontFamily = SmolTheme.orbitronSpaceFont,
+                    fontSize = TextUnit(18f, TextUnitType.Sp)
+                )
+                Text(
+                    modInfo?.id ?: "vnsector",
+                    modifier = Modifier.padding(top = 4.dp),
+                    fontSize = TextUnit(12f, TextUnitType.Sp),
+                    fontFamily = SmolTheme.fireCodeFont
+                )
+                Text("Author", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
+                Text(modInfo?.author ?: "It's always Techpriest", modifier = Modifier.padding(top = 2.dp, start = 8.dp))
+                Text("Version", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
+                Text(
+                    modInfo?.version?.toString() ?: "no version",
+                    modifier = Modifier.padding(top = 2.dp, start = 8.dp)
+                )
+                Text("Description", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
+                Text(modInfo?.description ?: "", modifier = Modifier.padding(top = 2.dp))
+            }
         }
         TiledImage(
             modifier = Modifier.align(Alignment.CenterStart).width(32.dp).fillMaxHeight()

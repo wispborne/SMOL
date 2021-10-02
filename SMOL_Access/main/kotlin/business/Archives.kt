@@ -5,10 +5,8 @@ import com.google.gson.Gson
 import com.squareup.moshi.Moshi
 import config.AppConfig
 import config.GamePath
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.runBlocking
 import model.ModInfo
 import model.ModVariant
 import model.Version
@@ -18,7 +16,6 @@ import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream
 import net.sf.sevenzipjbinding.impl.RandomAccessFileOutStream
 import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem
 import net.sf.sevenzipjbinding.util.ByteArrayStream
-import org.apache.commons.io.FileUtils
 import org.tinylog.Logger
 import util.*
 import java.io.File
@@ -113,34 +110,7 @@ class Archives(
                 }
             } else {
                 // Input was a file but not mod_info.json, try as an archive.
-                val modInfo: ModInfo? = kotlin.runCatching {
-                    IOLock.withLock {
-                        RandomAccessFileInStream(RandomAccessFile(inputFile, "r")).use { fileInStream ->
-                            SevenZip.openInArchive(null, fileInStream).use { inArchive ->
-                                val items = inArchive.simpleInterface.archiveItems
-                                val modInfoFile = items
-                                    .asSequence()
-                                    .filter { !it.isFolder }
-                                    .firstOrNull { it.path.contains(MOD_INFO_FILE) }
-
-                                var modInfo: ModInfo? = null
-                                modInfoFile?.extractSlow { bytes ->
-                                    bytes ?: return@extractSlow 0
-                                    val modInfoJson = String(bytes = bytes)
-                                    modInfo = modInfoLoader.readModInfoFile(modInfoJson)
-                                    bytes.size
-                                }
-
-                                return@runCatching modInfo
-                            }
-                        }
-                    }
-                }
-                    .onFailure {
-                        Logger.warn(it) { "Unable to read ${inputFile.absolutePath}" }
-                        throw it
-                    }
-                    .getOrElse { null }
+                val modInfo: ModInfo? = findModInfoInArchive(inputFile)
 
                 // If mod_info.json was found in archive
                 if (modInfo != null) {
@@ -157,7 +127,8 @@ class Archives(
                                 Logger.warn(it)
                                 throw it
                             }
-                        addToManifest(modInfo = modInfo, archivePath = archivePath)
+//                        addToManifest(modInfo = modInfo, archivePath = archivePath)
+                        refreshManifest()
                     } else {
                         // Extract archive to subfolder in destination folder (in case there was no root folder, then we'll fix after).
                         IOLock.withLock {
@@ -191,6 +162,38 @@ class Archives(
             // Not file or directory?
             throw RuntimeException("${inputFile.absolutePath} not recognized as file or folder.")
         }
+    }
+
+    private fun findModInfoInArchive(inputArchiveFile: File): ModInfo? {
+        val modInfo: ModInfo? = kotlin.runCatching {
+            IOLock.withLock {
+                RandomAccessFileInStream(RandomAccessFile(inputArchiveFile, "r")).use { fileInStream ->
+                    SevenZip.openInArchive(null, fileInStream).use { inArchive ->
+                        val items = inArchive.simpleInterface.archiveItems
+                        val modInfoFile = items
+                            .asSequence()
+                            .filter { !it.isFolder }
+                            .firstOrNull { it.path.contains(MOD_INFO_FILE) }
+
+                        var modInfo: ModInfo? = null
+                        modInfoFile?.extractSlow { bytes ->
+                            bytes ?: return@extractSlow 0
+                            val modInfoJson = String(bytes = bytes)
+                            modInfo = modInfoLoader.readModInfoFile(modInfoJson)
+                            bytes.size
+                        }
+
+                        return@runCatching modInfo
+                    }
+                }
+            }
+        }
+            .onFailure {
+                Logger.warn(it) { "Unable to read ${inputArchiveFile.absolutePath}" }
+                throw it
+            }
+            .getOrElse { null }
+        return modInfo
     }
 
     /**
@@ -239,9 +242,12 @@ class Archives(
             throw RuntimeException("Cannot stage mod not archived: $modVariant")
         }
 
-        val modFolder = extractArchive(modVariant.archiveInfo.folder, destinationFolder, modVariant.modInfo.name)
+        val modFolder =
+            extractArchive(modVariant.archiveInfo.folder, destinationFolder, createVariantFolderName(modVariant))
         removedNestedFolders(modFolder)
     }
+
+    private fun createVariantFolderName(variant: ModVariant) = "${variant.modInfo.name}_${variant.smolId}"
 
     private fun extractArchive(
         archiveFile: File,
@@ -259,11 +265,13 @@ class Archives(
 
                     val archiveBaseFolder: File? = modInfoFile.parentFile
 
-                    modFolder = if (modInfoFile.parent == null)
+                    modFolder =
+                            // Create new parent folder with id in it, don't reuse mod folder parent because different variants will have same folder name.
+//                        if (modInfoFile.parent == null)
                         File(destinationFolder, defaultFolderName)
-                    else {
-                        File(destinationFolder, modInfoFile.parentFile.path)
-                    }
+//                    else {
+//                        File(destinationFolder, modInfoFile.parentFile.path)
+//                    }
 
                     modFolder.mkdirsIfNotExist()
 
@@ -407,59 +415,78 @@ class Archives(
                                         })
                                 }
                             }
-
-                            if (wasCanceled) {
-                                removeFromManifest(modInfo)
-                            } else {
-                                addToManifest(modInfo, archiveFile)
-                            }
                         }
 
                     close()
                 }
-            }.onFailure { Logger.warn(it); throw it }
+            }
+                .onFailure { Logger.warn(it); throw it }
+            refreshManifest()
         }
             .onEach { archiveMovementStatusFlow.value = it }
             .onCompletion { archiveMovementStatusFlow.value = it?.message ?: "Finished adding mods to archive." }
             .collect()
     }
 
-    fun addToManifest(modInfo: ModInfo, archivePath: File) {
+    /**
+     * Idempotently reads all modinfos from all archives in /archives and rebuilds the manifest.
+     */
+    suspend fun refreshManifest() {
+        val startTime = System.currentTimeMillis()
+        val archives = getArchivesPath().toFileOrNull() ?: return
+        val files = archives.listFiles().toList()
+            .filter { !it.name.startsWith(ARCHIVE_MANIFEST_FILENAME) }
+
+        val modInfos = coroutineScope {
+            withContext(Dispatchers.IO) {
+                files
+                    .parallelMap { archive ->
+                        // Swallow exception, it has already been logged.
+                        kotlin.runCatching {
+                            val modTime = System.currentTimeMillis()
+                            findModInfoInArchive(archive)?.let { archive to it }
+                                .also { Logger.debug { "Time to get mod_info.json from ${it?.second?.id}, ${it?.second?.version}: ${System.currentTimeMillis() - modTime}ms." } }
+                        }
+                            .getOrNull()
+                    }
+                    .filterNotNull()
+            }
+        }
+
         updateManifest { manifest ->
             manifest.copy(
-                manifestItems = manifest.manifestItems.toMutableMap().apply {
-                    this[createManifestItemKey(modInfo)] = ManifestItemValue(
-                        archivePath = archivePath.absolutePath,
-                        modInfo = modInfo
+                manifestItems = modInfos.associate {
+                    createManifestItemKey(it.second) to ManifestItemValue(
+                        it.first.absolutePath,
+                        it.second
                     )
                 })
         }
+        Logger.info { "Time to refresh manifest: ${System.currentTimeMillis() - startTime}ms (${modInfos.count()} items)." }
     }
 
-    fun removeFromManifest(modInfo: ModInfo) {
-        updateManifest { manifest ->
-            manifest.copy(
-                manifestItems = manifest.manifestItems.toMutableMap().apply {
-                    this.remove(createManifestItemKey(modInfo))
-                })
-        }
-    }
-
-    fun updateManifest(mutator: (archivesManifest: ArchivesManifest) -> ArchivesManifest) {
-        val originalManifest = getArchivesManifest()!!
-        mutator(originalManifest)
-            .run {
-                IOLock.withLock {
-                    val file = File(config.archivesPath!!, ARCHIVE_MANIFEST_FILENAME)
-                    FileWriter(file).use { writer ->
-                        gson.toJson(this, writer)
+    private fun updateManifest(mutator: (archivesManifest: ArchivesManifest) -> ArchivesManifest) {
+        IOLock.withLock {
+            val originalManifest = getArchivesManifest()!!
+            mutator(originalManifest)
+                .run {
+                    if (originalManifest == this) {
+                        Logger.info { "No manifest change, not updating file." }
+                        return@run
                     }
-                    Logger.info {
-                        "Updated manifest at ${file.absolutePath} from ${originalManifest.manifestItems.count()} " +
-                                "to ${this.manifestItems.count()} items."
+
+                    IOLock.withLock {
+                        val file = File(config.archivesPath!!, ARCHIVE_MANIFEST_FILENAME)
+                        FileWriter(file).use { writer ->
+                            gson.toJson(this, writer)
+                        }
+                        Logger.info {
+                            "Updated manifest at ${file.absolutePath} from ${originalManifest.manifestItems.count()} " +
+                                    "to ${this.manifestItems.count()} items."
+                        }
                     }
                 }
-            }
+        }
     }
 
     fun doesArchiveExistForKey(manifest: ArchivesManifest?, key: Int) =

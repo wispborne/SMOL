@@ -1,5 +1,8 @@
 package util
 
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import org.apache.commons.io.FileUtils
 import java.io.File
 import java.io.IOException
@@ -84,3 +87,11 @@ fun File.moveDirectory(destDir: File) {
         }
     }
 }
+
+/**
+ * <https://jivimberg.io/blog/2018/05/04/parallel-map-in-kotlin/>
+ */
+suspend fun <A, B> Iterable<A>.parallelMap(f: suspend (A) -> B): List<B> =
+    coroutineScope {
+        map { async { f(it) } }.awaitAll()
+    }
