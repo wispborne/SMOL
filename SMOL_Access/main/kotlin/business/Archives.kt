@@ -497,7 +497,7 @@ class Archives(
     fun createManifestItemKey(modInfo: ModInfo) = createManifestItemKey(modInfo.id, modInfo.version)
 
     private fun createArchiveName(modInfo: ModInfo) =
-        modInfo.id.replace('-', '_') + "-" + modInfo.version.toString()
+        modInfo.id.replace('-', '_') + modInfo.version.toString() + "-" + ModVariant.createSmolId(modInfo)
 
 
     fun markManagedBySmol(modInStagingFolder: File) {

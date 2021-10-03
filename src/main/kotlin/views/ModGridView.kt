@@ -19,6 +19,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerMoveFilter
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -53,7 +54,7 @@ fun AppState.ModGridView(
             imageBitmap = imageResource("panel00_center.png")
         )
         Column(Modifier.padding(16.dp)) {
-            ListItem(Modifier.background(MaterialTheme.colors.background.copy(alpha = ContentAlpha.medium))) {
+            ListItem() {
                 Row {
                     Spacer(Modifier.width(buttonWidth.dp))
                     Text("Name", Modifier.weight(1f), fontWeight = FontWeight.Bold)
@@ -120,7 +121,8 @@ fun AppState.ModGridView(
                                             modifier = Modifier.weight(1f).align(Alignment.CenterVertically)
                                         )
                                         Text(
-                                            text = (mod.findFirstEnabled ?: mod.findFirstDisabled)?.modInfo?.version.toString() ?: "",
+                                            text = (mod.findFirstEnabled
+                                                ?: mod.findFirstDisabled)?.modInfo?.version.toString() ?: "",
                                             modifier = Modifier.weight(1f).align(Alignment.CenterVertically)
                                         )
                                         CursorDropdownMenu(expanded = showContextMenu,
@@ -200,29 +202,43 @@ private fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
             ) {
                 val coroutineScope = rememberCoroutineScope()
                 menuItems.forEachIndexed { index, labelAndVariant ->
-                    DropdownMenuItem(
-                        modifier = Modifier.sizeIn(maxWidth = 400.dp),
-                        onClick = {
-                            selectedIndex = index
-                            expanded = false
-                            Logger.debug { "Selected $labelAndVariant." }
+                    Box {
+                        var background: Color? by remember { mutableStateOf(null) }
+//                        val highlightColor = MaterialTheme.colors.surface
+                        DropdownMenuItem(
+                            modifier = Modifier.sizeIn(maxWidth = 400.dp).background(background ?: MaterialTheme.colors.background)
+//                                .pointerMoveFilter( // doesn't work: https://github.com/JetBrains/compose-jb/issues/819
+//                                    onEnter = {
+//                                        Logger.debug { "Entered dropdown item" }
+//                                        background = highlightColor;true
+//                                    },
+//                                    onExit = {
+//                                        Logger.debug { "Exited dropdown item" }
+//                                        background = null;true
+//                                    }
+                                    ,
+                            onClick = {
+                                selectedIndex = index
+                                expanded = false
+                                Logger.debug { "Selected $labelAndVariant." }
 
-                            coroutineScope.launch {
-                                kotlin.runCatching {
-                                    // Change mod state
-                                    if (labelAndVariant.second != null) {
-                                        SL.staging.changeActiveVariant(mod, labelAndVariant.second)
-                                    } else {
-                                        SL.staging.disable(mod.findFirstEnabled ?: return@runCatching)
+                                coroutineScope.launch {
+                                    kotlin.runCatching {
+                                        // Change mod state
+                                        if (labelAndVariant.second != null) {
+                                            SL.staging.changeActiveVariant(mod, labelAndVariant.second)
+                                        } else {
+                                            SL.staging.disable(mod.findFirstEnabled ?: return@runCatching)
+                                        }
                                     }
+                                        .onFailure { Logger.error(it) }
                                 }
-                                    .onFailure { Logger.error(it) }
-                            }
-                        }) {
-                        Text(
-                            text = labelAndVariant.first,
-                            fontWeight = FontWeight.Bold
-                        )
+                            }) {
+                            Text(
+                                text = labelAndVariant.first,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }

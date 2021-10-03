@@ -56,18 +56,13 @@ fun BoxScope.detailsPanel(
                     fontSize = TextUnit(18f, TextUnitType.Sp)
                 )
                 Text(
-                    modInfo?.id ?: "vnsector",
+                    "${modInfo?.id ?: "vnsector"} ${modInfo?.version?.toString() ?: "no version"}",
                     modifier = Modifier.padding(top = 4.dp),
                     fontSize = TextUnit(12f, TextUnitType.Sp),
                     fontFamily = SmolTheme.fireCodeFont
                 )
                 Text("Author", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
                 Text(modInfo?.author ?: "It's always Techpriest", modifier = Modifier.padding(top = 2.dp, start = 8.dp))
-                Text("Version", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
-                Text(
-                    modInfo?.version?.toString() ?: "no version",
-                    modifier = Modifier.padding(top = 2.dp, start = 8.dp)
-                )
                 Text("Description", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
                 Text(modInfo?.description ?: "", modifier = Modifier.padding(top = 2.dp))
             }

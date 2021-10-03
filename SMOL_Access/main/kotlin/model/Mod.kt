@@ -50,7 +50,11 @@ data class ModVariant(
      * Composite key: mod id + mod version.
      */
     val smolId: Int
-        get() = Objects.hash(modInfo.id, modInfo.version.toString())
+        get() = createSmolId(modInfo)
+
+    companion object {
+        fun createSmolId(modInfo: ModInfo) = Objects.hash(modInfo.id, modInfo.version.toString())
+    }
 
     // incredibly inelegant way of doing a parent-child relationship
     @Transient

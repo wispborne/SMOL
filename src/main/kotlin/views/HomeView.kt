@@ -124,7 +124,7 @@ fun AppState.homeView(
                                 SL.archives.compressModsInFolder(SL.gamePath.getModsPath())
                             }
                             showConfirmMigrateDialog = false
-                        }) { Text("Migrate") }
+                        }) { Text("Migrate...") }
                     },
                     dismissButton = {
                         SmolSecondaryButton(onClick = { showConfirmMigrateDialog = false }) {
