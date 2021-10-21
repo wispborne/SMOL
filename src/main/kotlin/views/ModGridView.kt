@@ -2,6 +2,7 @@ package views
 
 import AppState
 import SL
+import SmolAlertDialog
 import SmolButton
 import TiledImage
 import androidx.compose.desktop.ui.tooling.preview.Preview
@@ -9,6 +10,9 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowDropDown
@@ -19,7 +23,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerMoveFilter
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -27,10 +30,13 @@ import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import model.Mod
-import model.ModState
 import model.ModVariant
 import org.tinylog.Logger
 import smolFullyClippedButtonShape
+import util.APP_NAME
+import util.ModState
+import util.state
+import util.uiEnabled
 import java.awt.Desktop
 
 private val buttonWidth = 180
@@ -47,6 +53,8 @@ fun AppState.ModGridView(
     mods: SnapshotStateList<Mod>
 ) {
     var selectedRow: ModRow? by remember { mutableStateOf(null) }
+    val state = rememberLazyListState()
+    var modInDebugDialog: Mod? by remember { mutableStateOf(null) }
 
     Box(modifier) {
         TiledImage(
@@ -64,7 +72,7 @@ fun AppState.ModGridView(
             Box {
                 LazyColumn(Modifier.fillMaxWidth()) {
                     mods
-                        .groupBy { it.findFirstEnabled != null }
+                        .groupBy { it.uiEnabled }
                         .toSortedMap(compareBy { !it }) // Flip to put Enabled at the top
                         .forEach { (modState, mods) ->
                             stickyHeader() {
@@ -138,35 +146,79 @@ fun AppState.ModGridView(
                                             }) {
                                                 Text("Open Archive")
                                             }
+
+                                            DropdownMenuItem(onClick = {
+                                                modInDebugDialog = mod
+                                            }) {
+                                                Text("Debug Info")
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
                 }
+
+                VerticalScrollbar(
+                    modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                    adapter = rememberScrollbarAdapter(
+                        scrollState = state
+                    )
+                )
             }
         }
 
         if (selectedRow != null) {
             detailsPanel(selectedRow = selectedRow)
         }
+
+        if (modInDebugDialog != null) {
+            debugDialog(mod = modInDebugDialog!!, onDismiss = { modInDebugDialog = null })
+        }
     }
+}
+
+private sealed class DropdownAction {
+    data class ChangeToVariant(val variant: ModVariant) : DropdownAction()
+    object Disable : DropdownAction()
+    data class MigrateMod(val mod: Mod) : DropdownAction()
+    data class ResetToArchive(val variant: ModVariant) : DropdownAction()
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
-    val menuItems = mod.variants.values
-        .asSequence()
-        .filter { it != mod.findFirstEnabled }
-        .map { it.modInfo.version.toString() to it as ModVariant? }
-        .toMutableList()
+    val firstEnabledVariant = mod.findFirstEnabled
+
+    /**
+     * Disable: at least one variant enabled
+     * Switch to variant: other variant (in /mods, staging, or archives)
+     * Reinstall: has archive
+     * Snapshot (bring up dialog asking which variants to snapshot): at least one variant without archive
+     */
+    val dropdownMenuItems: List<DropdownAction> = mutableListOf<DropdownAction>()
         .run {
-            if (mod.findFirstEnabled != null)
-                this.add("Disable" to null)
+            val otherVariantsThanFirstEnabled = mod.variants.values
+                .filter { firstEnabledVariant == null || it.smolId != firstEnabledVariant.smolId }
+
+            if (otherVariantsThanFirstEnabled.any()) {
+                val otherVariants = otherVariantsThanFirstEnabled
+                    .map { DropdownAction.ChangeToVariant(variant = it) }
+                this.addAll(otherVariants)
+            }
+
+            if (firstEnabledVariant != null) {
+                this.add(DropdownAction.Disable)
+            }
+
+            // If the enabled variant has an archive, they can reset the state back to the archived state.
+            if (firstEnabledVariant?.archiveInfo != null) {
+                this.add(DropdownAction.ResetToArchive(firstEnabledVariant))
+            }
+
             this
         }
-        .toList()
+
 
     var expanded by remember { mutableStateOf(false) }
     var selectedIndex by remember { mutableStateOf(0) }
@@ -184,8 +236,14 @@ private fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
                     }
                 )
             ) {
+                // Text of the dropdown menu, current state of the mod
                 Text(
-                    text = mod.findFirstEnabled?.modInfo?.version?.toString() ?: ModState.Disabled.name,
+                    text = when {
+                        // If there is an enabled variant, show its version string.
+                        firstEnabledVariant != null -> firstEnabledVariant.modInfo.version.toString()
+                        // If no enabled variant, show "Disabled"
+                        else -> "Disabled"
+                    },
                     fontWeight = FontWeight.Bold
                 )
                 dropdownArrow(
@@ -201,12 +259,13 @@ private fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
                 onDismissRequest = { expanded = false }
             ) {
                 val coroutineScope = rememberCoroutineScope()
-                menuItems.forEachIndexed { index, labelAndVariant ->
+                dropdownMenuItems.forEachIndexed { index, action ->
                     Box {
                         var background: Color? by remember { mutableStateOf(null) }
 //                        val highlightColor = MaterialTheme.colors.surface
                         DropdownMenuItem(
-                            modifier = Modifier.sizeIn(maxWidth = 400.dp).background(background ?: MaterialTheme.colors.background)
+                            modifier = Modifier.sizeIn(maxWidth = 400.dp)
+                                .background(background ?: MaterialTheme.colors.background)
 //                                .pointerMoveFilter( // doesn't work: https://github.com/JetBrains/compose-jb/issues/819
 //                                    onEnter = {
 //                                        Logger.debug { "Entered dropdown item" }
@@ -216,26 +275,43 @@ private fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
 //                                        Logger.debug { "Exited dropdown item" }
 //                                        background = null;true
 //                                    }
-                                    ,
+                            ,
                             onClick = {
                                 selectedIndex = index
                                 expanded = false
-                                Logger.debug { "Selected $labelAndVariant." }
+                                Logger.debug { "Selected $action." }
 
                                 coroutineScope.launch {
                                     kotlin.runCatching {
                                         // Change mod state
-                                        if (labelAndVariant.second != null) {
-                                            SL.staging.changeActiveVariant(mod, labelAndVariant.second)
-                                        } else {
-                                            SL.staging.disable(mod.findFirstEnabled ?: return@runCatching)
+                                        when (action) {
+                                            is DropdownAction.ChangeToVariant -> {
+                                                SL.staging.changeActiveVariant(mod, action.variant)
+                                            }
+                                            is DropdownAction.Disable -> {
+                                                SL.staging.disable(firstEnabledVariant ?: return@runCatching)
+                                            }
+                                            is DropdownAction.MigrateMod -> {
+                                                // TODO
+//                                                SL.archives.compressModsInFolder(
+//                                                    mod.modsFolderInfo?.folder ?: return@runCatching
+//                                                )
+                                            }
+                                            is DropdownAction.ResetToArchive -> {
+                                                // TODO
+                                            }
                                         }
                                     }
                                         .onFailure { Logger.error(it) }
                                 }
                             }) {
                             Text(
-                                text = labelAndVariant.first,
+                                text = when (action) {
+                                    is DropdownAction.ChangeToVariant -> action.variant.modInfo.version.toString()
+                                    is DropdownAction.Disable -> "Disable"
+                                    is DropdownAction.MigrateMod -> "Migrate to $APP_NAME"
+                                    is DropdownAction.ResetToArchive -> "Reset to default"
+                                },
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -244,6 +320,27 @@ private fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun debugDialog(
+    modifier: Modifier = Modifier,
+    mod: Mod,
+    onDismiss: () -> Unit
+) {
+    SmolAlertDialog(
+        modifier = modifier,
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            Button(onClick = onDismiss) { Text("Ok") }
+        },
+        text = {
+            SelectionContainer {
+                Text(text = mod.toString())
+            }
+        }
+    )
 }
 
 object SmolDropdown {
@@ -329,7 +426,7 @@ private fun dropdownArrow(modifier: Modifier, expanded: Boolean) {
     )
 }
 
-private fun shouldShowAsEnabled(mod: Mod) = mod.isEnabledInGame && mod.modsFolderInfo != null
+//private fun shouldShowAsEnabled(mod: Mod) = mod.isEnabledInGame && mod.modsFolderInfo != null
 
 data class ModRow(
     val mod: Mod

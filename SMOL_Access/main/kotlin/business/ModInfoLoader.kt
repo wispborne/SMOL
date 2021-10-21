@@ -18,33 +18,25 @@ class ModInfoLoader(
 
     @OptIn(ExperimentalStdlibApi::class)
     fun readModInfosFromFolderOfMods(
-        folderWithMods: File,
-        onlySmolManagedMods: Boolean
+        folderWithMods: File
     ): Sequence<Pair<File, ModInfo>> =
         IOLock.withLock {
             folderWithMods
                 .walkTopDown().maxDepth(1)
+                .filter { it.isDirectory }
                 .mapNotNull { modFolder ->
-                    Logger.trace { "Folder: ${modFolder.name}" }
+                    Logger.debug { "Looking for mod_info.json file in folder: ${modFolder.absolutePath}" }
                     val modInfoFile = modFolder
                         .walkTopDown().maxDepth(1)
+                        .filter { it != folderWithMods }
                         .firstOrNull {
                             Logger.trace { "  File: ${it.name}" }
                             it.name.equals(MOD_INFO_FILE)
                         } ?: return@mapNotNull null
 
-                    if (onlySmolManagedMods && modInfoFile.parentFile?.let { isManagedBySmol(it) } != true) {
-                        return@mapNotNull null
-                    }
-
                     modFolder to readModInfoFile(modInfoFile.readText())
                     //moshi.adapter<ModInfo>().fromJson(jsonStr)!!
                 }
-        }
-
-    private fun isManagedBySmol(modFolder: File) =
-        IOLock.withLock {
-            modFolder.walkTopDown().maxDepth(1).any { it.isSmolStagingMarker() }
         }
 
     @OptIn(ExperimentalStdlibApi::class)

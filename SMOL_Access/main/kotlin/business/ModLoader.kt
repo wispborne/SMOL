@@ -27,13 +27,12 @@ class ModLoader(
 
                 val modVariant = ModVariant(
                     modInfo = archivedItem.modInfo,
+                    modsFolderInfo = null,  // Will zip with mods items later to populate
                     stagingInfo = null, // Will zip with staged items later to populate
-                    isEnabledInSmol = false, // Archived-only items can't be enabled
                     archiveInfo = ModVariant.ArchiveInfo(File(archivedItem.archivePath)),
                 )
                 Mod(
                     id = archivedItem.modInfo.id,
-                    modsFolderInfo = null,  // Will zip with mods items later to populate
                     isEnabledInGame = archivedItem.modInfo.id in enabledModIds,
                     variants = mapOf(modVariant.smolId to modVariant)
                 )
@@ -44,17 +43,16 @@ class ModLoader(
         // Get items in staging
         val stagingMods: File = config.stagingPath?.toFileOrNull()!!
 
-        val stagedMods = modInfoLoader.readModInfosFromFolderOfMods(stagingMods, onlySmolManagedMods = true)
+        val stagedMods = modInfoLoader.readModInfosFromFolderOfMods(stagingMods)
             .map { (modFolder, modInfo) ->
                 val modVariant = ModVariant(
                     modInfo = modInfo,
+                    modsFolderInfo = null,  // Will zip with mods items later to populate
                     stagingInfo = ModVariant.StagingInfo(folder = modFolder),
-                    isEnabledInSmol = false,
                     archiveInfo = null,
                 )
                 Mod(
                     id = modInfo.id,
-                    modsFolderInfo = null,  // Will zip with mods items later to populate
                     isEnabledInGame = modInfo.id in enabledModIds,
                     variants = mapOf(modVariant.smolId to modVariant)
                 )
@@ -64,17 +62,16 @@ class ModLoader(
 
         // Get items in /mods folder
         val modsFolder = gamePath.getModsPath()
-        val modsFolderMods = modInfoLoader.readModInfosFromFolderOfMods(modsFolder, onlySmolManagedMods = true)
+        val modsFolderMods = modInfoLoader.readModInfosFromFolderOfMods(modsFolder)
             .map { (modFolder, modInfo) ->
                 val modVariant = ModVariant(
                     modInfo = modInfo,
+                    modsFolderInfo = Mod.ModsFolderInfo(folder = modFolder),
                     stagingInfo = null,
-                    isEnabledInSmol = true,
                     archiveInfo = null,
                 )
                 Mod(
                     id = modInfo.id,
-                    modsFolderInfo = Mod.ModsFolderInfo(folder = modFolder),
                     isEnabledInGame = modInfo.id in enabledModIds,
                     variants = mapOf(modVariant.smolId to modVariant)
                 )
@@ -88,7 +85,6 @@ class ModLoader(
             .reduce { _, accumulator, element ->
                 accumulator.copy(
                     isEnabledInGame = accumulator.isEnabledInGame || element.isEnabledInGame,
-                    modsFolderInfo = accumulator.modsFolderInfo ?: element.modsFolderInfo,
                     variants = kotlin.run {
                         val ret = accumulator.variants.toMutableMap()
                         element.variants.forEach { (elementKey, elementValue) ->
@@ -97,7 +93,7 @@ class ModLoader(
                             // Either merge in the new element or add it to the list.
                             if (accValue != null) {
                                 ret[elementKey] = accValue.copy(
-                                    isEnabledInSmol = accValue.isEnabledInSmol || elementValue.isEnabledInSmol,
+                                    modsFolderInfo = accValue.modsFolderInfo ?: elementValue.modsFolderInfo,
                                     stagingInfo = accValue.stagingInfo ?: elementValue.stagingInfo,
                                     archiveInfo = accValue.archiveInfo ?: elementValue.archiveInfo
                                 )
@@ -113,7 +109,15 @@ class ModLoader(
             .filter { mod -> mod.variants.any { it.value.exists } }
             .onEach { mod -> mod.variants.values.forEach { it.mod = mod } }
             .toList()
-            .onEach { Logger.debug { "Loaded mod: $it" } }
+            .onEach {
+                Logger.debug { "Loaded mod: $it" }
+
+                val variantsInModsFolder = it.variants.filter { variant -> variant.value.modsFolderInfo != null }
+
+                if (variantsInModsFolder.size > 1) {
+                    Logger.warn { "${it.id} has multiple variants in /mods: ${variantsInModsFolder.values.joinToString { it.modsFolderInfo!!.folder.absolutePath }}" }
+                }
+            }
 
         return result
     }

@@ -276,7 +276,7 @@ class Archives(
                     modFolder.mkdirsIfNotExist()
 
                     inArchive.extract(null, false, ArchiveExtractCallback(modFolder, inArchive))
-                    markManagedBySmol(modFolder)
+//                    markManagedBySmol(modFolder)
                 }
             }
 
@@ -307,7 +307,7 @@ class Archives(
 
                     val scope = this
                     val manifest = getArchivesManifest()
-                    val mods = modInfoLoader.readModInfosFromFolderOfMods(modFolder, onlySmolManagedMods = false)
+                    val mods = modInfoLoader.readModInfosFromFolderOfMods(modFolder)
 
                     if (mods.none()) {
                         val runtimeException = RuntimeException("No mods found in ${modFolder.absolutePath}.")
@@ -500,12 +500,12 @@ class Archives(
         modInfo.id.replace('-', '_') + modInfo.version.toString() + "-" + ModVariant.createSmolId(modInfo)
 
 
-    fun markManagedBySmol(modInStagingFolder: File) {
-        IOLock.withLock {
-            val marker = File(modInStagingFolder, Staging.MARKER_FILE_NAME)
-            marker.createNewFile()
-        }
-    }
+//    fun markManagedBySmol(modInStagingFolder: File) {
+//        IOLock.withLock {
+//            val marker = File(modInStagingFolder, Staging.MARKER_FILE_NAME)
+//            marker.createNewFile()
+//        }
+//    }
 
     fun changePath(newPath: String) {
         kotlin.runCatching {

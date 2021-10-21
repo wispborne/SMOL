@@ -112,7 +112,7 @@ fun SmolAlertDialog(
         .fillMaxWidth()
         .fillMaxHeight()
         .background(Color.Black.copy(alpha = ContentAlpha.medium)),
-    dialogModifier: Modifier = Modifier.width(400.dp),
+    modifier: Modifier = Modifier.width(400.dp),
     dismissButton: @Composable (() -> Unit)? = null,
     title: @Composable (() -> Unit)? = null,
     text: @Composable (() -> Unit)? = null,
@@ -127,7 +127,7 @@ fun SmolAlertDialog(
         AlertDialog(
             onDismissRequest = onDismissRequest,
             confirmButton = confirmButton,
-            modifier = dialogModifier,
+            modifier = modifier,
             dismissButton = dismissButton,
             title = title,
             text = text,

@@ -19,6 +19,7 @@ import toothpick.ktp.binding.module
 import toothpick.ktp.extension.getInstance
 import util.SmolPair
 import util.SmolWindowState
+import util.APP_NAME
 import util.makeFinite
 
 var safeMode = false
@@ -94,7 +95,7 @@ fun main() = application {
     Window(
         onCloseRequest = ::exitApplication,
         state = newState,
-        title = "SMOL",
+        title = APP_NAME,
         icon = painterResource("kotlin-icon.svg")
     ) {
 

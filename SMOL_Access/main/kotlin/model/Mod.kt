@@ -6,7 +6,6 @@ import java.util.*
 data class Mod(
     val id: String,
     val isEnabledInGame: Boolean,
-    val modsFolderInfo: ModsFolderInfo?,
     val variants: Map<Int, ModVariant>,
 ) {
 
@@ -14,21 +13,16 @@ data class Mod(
      * A mod is enabled if:
      * 1. It's in enabled_mods.json.
      * 2. Its mod folder is in the /mods folder.
-     * 3. It's marked as enabled in SMOL (by the user).
      */
     fun isEnabled(modVariant: ModVariant) =
-        isEnabledInGame && modVariant.isEnabledInSmol && modsFolderInfo != null
+        isEnabledInGame && modVariant.modsFolderInfo != null
+
+//    val isManagedBySmol: Boolean
+//        get() = variants.any { it.value.isEnabledInSmol || it.value.stagingInfo != null || it.value.archiveInfo != null }
 
     data class ModsFolderInfo(
         val folder: File
     )
-
-    val state: ModState
-        get() = when {
-            variants.values.any { isEnabled(it) } -> ModState.Enabled
-            variants.values.any { it.stagingInfo != null } -> ModState.Disabled
-            else -> ModState.Uninstalled
-        }
 
     val findFirstEnabled: ModVariant?
         get() = variants.values.firstOrNull { isEnabled(it) }
@@ -42,7 +36,7 @@ data class Mod(
  */
 data class ModVariant(
     val modInfo: ModInfo,
-    val isEnabledInSmol: Boolean,
+    val modsFolderInfo: Mod.ModsFolderInfo?,
     val stagingInfo: StagingInfo?,
     val archiveInfo: ArchiveInfo?,
 ) {

@@ -142,7 +142,7 @@ class Staging(
      * - Removes it from `enabled_mods.json`.
      */
     private suspend fun disableInternal(modVariant: ModVariant): Result<Unit> {
-        // If it's not installed, install it (but it'll stay disabled)
+        // If it's not installed, install it (to the staging folder) (but it'll stay disabled)
         if (modVariant.stagingInfo == null) {
             installInternal(modVariant)
         }
@@ -151,8 +151,8 @@ class Staging(
             return Result.success(Unit)
         }
 
-        if (modVariant.isEnabledInSmol) {
-            val result = disableInSmol(modVariant)
+        if (modVariant.modsFolderInfo != null) {
+            val result = removeFromModsFolder(modVariant)
 
             if (result != Result.success(Unit)) {
                 return result
@@ -174,7 +174,6 @@ class Staging(
             return Result.success(Unit)
         }
 
-
         val stagingFolder = config.stagingPath.toFileOrNull()
             ?: return failLogging("No staging folder: $modVariant")
 
@@ -192,7 +191,7 @@ class Staging(
             return Result.success(Unit)
         }
 
-        if (!modVariant.isEnabledInSmol) {
+        if (modVariant.modsFolderInfo == null) {
             val result = enableInSmol(modVariant)
 
             if (result != Result.success(Unit)) {
@@ -331,15 +330,15 @@ class Staging(
     /**
      * Removes the mod folder/files from the game /mods folder.
      */
-    private fun disableInSmol(modVariant: ModVariant): Result<Unit> {
-        if (!modVariant.isEnabledInSmol) {
-            Logger.warn { "Already disabled in SMOL." }
+    private fun removeFromModsFolder(modVariant: ModVariant): Result<Unit> {
+        if (modVariant.modsFolderInfo == null) {
+            Logger.warn { "Not found in /mods folder: ${modVariant.smolId}." }
             return Result.success(Unit)
         }
 
-        val modsFolderInfo = modVariant.mod.modsFolderInfo
+        val modsFolderInfo = modVariant.modsFolderInfo
 
-        if (modsFolderInfo?.folder?.exists() != true) {
+        if (!modsFolderInfo.folder.exists()) {
             Logger.warn { "Nothing to remove. Folder doesn't exist in /mods. $modVariant" }
             return Result.success(Unit)
         }
@@ -366,10 +365,4 @@ class Staging(
         Logger.warn { error }
         return Result.failure(RuntimeException(error))
     }
-
-    companion object {
-        const val MARKER_FILE_NAME = ".managed-by-smol"
-    }
 }
-
-fun File.isSmolStagingMarker() = if (this.exists()) this.name == Staging.MARKER_FILE_NAME else false

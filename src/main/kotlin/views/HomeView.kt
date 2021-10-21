@@ -24,7 +24,7 @@ import model.Mod
 import navigation.Screen
 import org.tinylog.Logger
 import util.IOLock
-import util.appName
+import util.APP_NAME
 import util.toFileOrNull
 import java.io.File
 
@@ -113,7 +113,7 @@ fun AppState.homeView(
                     title = { Text("Warning") },
                     text = {
                         Text(
-                            "Are you sure you want to migrate the Starsector mods folder to be managed by $appName?" +
+                            "Are you sure you want to migrate the Starsector mods folder to be managed by $APP_NAME?" +
                                     "\nThis will not affect the mods. It will save their current state to the Archives folder so they may be reinstalled cleanly in the future."
                         )
                     },
