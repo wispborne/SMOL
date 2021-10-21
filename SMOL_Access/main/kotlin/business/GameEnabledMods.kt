@@ -21,7 +21,7 @@ class GameEnabledMods(
 
     fun getEnabledMods(): EnabledMods =
         kotlin.runCatching {
-            IOLock.withLock {
+            IOLock.write {
                 val enabledModsFile = getEnabledModsFile()
 
                 if (!enabledModsFile.exists()) {
@@ -77,7 +77,7 @@ class GameEnabledMods(
 
     private fun updateEnabledModsFile(mutator: (EnabledMods) -> EnabledMods?) {
         kotlin.runCatching {
-            IOLock.withLock {
+            IOLock.write {
                 val enabledModsFile = getEnabledModsFile()
                 createBackupFileIfDoesntExist(enabledModsFile)
                 val prevEnabledMods = getEnabledMods()
@@ -93,7 +93,7 @@ class GameEnabledMods(
     }
 
     private fun createBackupFileIfDoesntExist(enabledModsFile: File) {
-        IOLock.withLock {
+        IOLock.write {
             val backupFile = gamePath.getModsPath().resolve("$ENABLED_MODS_FILENAME.bak")
 
             // Make a backup before modifying it for the first time

@@ -40,7 +40,7 @@ class Staging(
      * @throws Exception
      */
     fun changePath(newPath: String) {
-        IOLock.withLock {
+        IOLock.write {
             kotlin.runCatching {
                 val newFolder = File(newPath)
                 val oldFolder = File(config.stagingPath ?: return).also { if (!it.exists()) return }
@@ -223,7 +223,7 @@ class Staging(
             // Make sure it's disabled before uninstalling
             disableInternal(modVariant)
 
-            IOLock.withLock {
+            IOLock.write {
                 kotlin.runCatching {
                     modVariant.stagingInfo.folder.deleteRecursively()
                 }
@@ -237,7 +237,7 @@ class Staging(
     }
 
     private suspend fun enableInSmol(modToEnable: ModVariant): Result<Unit> {
-        IOLock.withLock {
+        IOLock.write {
             var mod = modToEnable
 
             if (mod.stagingInfo == null || !mod.stagingInfo!!.folder.exists()) {
@@ -343,7 +343,7 @@ class Staging(
             return Result.success(Unit)
         }
 
-        IOLock.withLock {
+        IOLock.write {
             kotlin.runCatching {
                 if (!modsFolderInfo.folder.deleteRecursively()) {
                     Logger.warn { "Error deleting ${modsFolderInfo.folder.absolutePath}. Marking for deletion on exit." }

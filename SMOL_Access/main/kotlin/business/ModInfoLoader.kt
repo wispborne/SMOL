@@ -20,7 +20,7 @@ class ModInfoLoader(
     fun readModInfosFromFolderOfMods(
         folderWithMods: File
     ): Sequence<Pair<File, ModInfo>> =
-        IOLock.withLock {
+        IOLock.read {
             folderWithMods
                 .walkTopDown().maxDepth(1)
                 .filter { it.isDirectory }

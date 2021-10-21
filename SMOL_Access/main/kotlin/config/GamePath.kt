@@ -15,7 +15,7 @@ class GamePath(
     private val moshi: Moshi
 ) {
     fun isValidGamePath(path: String): Boolean {
-        IOLock.withLock {
+        IOLock.read {
             val file = File(path)
 
             if (!file.exists()) return false
@@ -60,7 +60,7 @@ class GamePath(
     ): File {
         val mods = File(starsectorPath, "mods")
 
-        IOLock.withLock {
+        IOLock.write {
             mods.mkdirsIfNotExist()
         }
 

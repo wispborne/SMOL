@@ -49,7 +49,7 @@ class Archives(
         }
             .onFailure { Logger.warn(it) }
             .recover {
-                IOLock.withLock {
+                IOLock.write {
                     // Make a backup of the file before we overwrite it with a blank one.
                     val file = config.archivesPath?.let { File(it, ARCHIVE_MANIFEST_FILENAME) }
                     if (file?.exists() == true) {
@@ -131,7 +131,7 @@ class Archives(
                         refreshManifest()
                     } else {
                         // Extract archive to subfolder in destination folder (in case there was no root folder, then we'll fix after).
-                        IOLock.withLock {
+                        IOLock.write {
                             val extraParentFolder = destinationFolder.resolve("tempRootFolder")
 
                             RandomAccessFileInStream(
@@ -166,7 +166,7 @@ class Archives(
 
     private fun findModInfoInArchive(inputArchiveFile: File): ModInfo? {
         val modInfo: ModInfo? = kotlin.runCatching {
-            IOLock.withLock {
+            IOLock.read {
                 RandomAccessFileInStream(RandomAccessFile(inputArchiveFile, "r")).use { fileInStream ->
                     SevenZip.openInArchive(null, fileInStream).use { inArchive ->
                         val items = inArchive.simpleInterface.archiveItems
@@ -254,7 +254,7 @@ class Archives(
         destinationFolder: File,
         defaultFolderName: String
     ): File {
-        IOLock.withLock {
+        IOLock.write {
             var modFolder: File
             RandomAccessFileInStream(RandomAccessFile(archiveFile, "r")).use { fileInStream ->
                 SevenZip.openInArchive(null, fileInStream).use { inArchive ->
@@ -290,7 +290,7 @@ class Archives(
         destinationFolder: File? = config.archivesPath?.toFileOrNull()
     ) {
         return callbackFlow<String> {
-            IOLock.withLock {
+            IOLock.write {
                 kotlin.runCatching {
                     if (destinationFolder == null)
                         throw RuntimeException("Not adding mods to archives folder; destination folder is null.")
@@ -444,7 +444,8 @@ class Archives(
                         // Swallow exception, it has already been logged.
                         kotlin.runCatching {
                             val modTime = System.currentTimeMillis()
-                            findModInfoInArchive(archive)?.let { archive to it }
+                            findModInfoInArchive(archive)
+                                ?.let { archive to it }
                                 .also { Logger.debug { "Time to get mod_info.json from ${it?.second?.id}, ${it?.second?.version}: ${System.currentTimeMillis() - modTime}ms." } }
                         }
                             .getOrNull()
@@ -466,7 +467,7 @@ class Archives(
     }
 
     private fun updateManifest(mutator: (archivesManifest: ArchivesManifest) -> ArchivesManifest) {
-        IOLock.withLock {
+        IOLock.write {
             val originalManifest = getArchivesManifest()!!
             mutator(originalManifest)
                 .run {
@@ -475,7 +476,7 @@ class Archives(
                         return@run
                     }
 
-                    IOLock.withLock {
+                    IOLock.write {
                         val file = File(config.archivesPath!!, ARCHIVE_MANIFEST_FILENAME)
                         FileWriter(file).use { writer ->
                             gson.toJson(this, writer)
@@ -509,7 +510,7 @@ class Archives(
 
     fun changePath(newPath: String) {
         kotlin.runCatching {
-            IOLock.withLock {
+            IOLock.write {
                 val newFolder = File(newPath)
                 val oldFolder = File(config.archivesPath ?: return).also { if (!it.exists()) return }
 

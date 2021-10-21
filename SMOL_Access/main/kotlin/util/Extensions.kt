@@ -89,7 +89,7 @@ fun File.moveDirectory(destDir: File) {
 }
 
 /**
- * <https://jivimberg.io/blog/2018/05/04/parallel-map-in-kotlin/>
+ * [https://jivimberg.io/blog/2018/05/04/parallel-map-in-kotlin/]
  */
 suspend fun <A, B> Iterable<A>.parallelMap(f: suspend (A) -> B): List<B> =
     coroutineScope {
