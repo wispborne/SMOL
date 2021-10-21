@@ -55,7 +55,9 @@ data class ModVariant(
     lateinit var mod: Mod
 
     val exists: Boolean
-        get() = stagingInfo != null || archiveInfo != null
+        get() = (stagingInfo != null && stagingInfo.folder.exists())
+                || (archiveInfo != null && archiveInfo.folder.exists())
+                || (modsFolderInfo != null && modsFolderInfo.folder.exists())
 
     data class ArchiveInfo(
         val folder: File
@@ -64,4 +66,6 @@ data class ModVariant(
     data class StagingInfo(
         val folder: File
     )
+
+    fun generateVariantFolderName() = "${modInfo.name}_${smolId}"
 }

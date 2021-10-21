@@ -2,7 +2,6 @@ package business
 
 import config.AppConfig
 import config.GamePath
-import kotlinx.coroutines.runBlocking
 import model.Mod
 import model.ModVariant
 import org.tinylog.Logger
@@ -15,7 +14,6 @@ import java.nio.file.AccessDeniedException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
-import kotlin.concurrent.withLock
 import kotlin.io.path.createLinkPointingTo
 import kotlin.io.path.createSymbolicLinkPointingTo
 
@@ -100,15 +98,15 @@ class Staging(
                 Result.success(Unit)
             }
         } finally {
-            manualReloadTrigger.trigger.emit("For mod ${mod.id}, installed variant: $modVariant.")
+            manualReloadTrigger.trigger.emit("For mod ${mod.id}, staged variant: $modVariant.")
         }
     }
 
-    suspend fun install(modVariant: ModVariant): Result<Unit> {
+    suspend fun stage(modVariant: ModVariant): Result<Unit> {
         try {
-            return installInternal(modVariant)
+            return stageInternal(modVariant)
         } finally {
-            manualReloadTrigger.trigger.emit("Installed mod: $modVariant")
+            manualReloadTrigger.trigger.emit("staged mod: $modVariant")
         }
     }
 
@@ -120,11 +118,11 @@ class Staging(
         }
     }
 
-    suspend fun uninstall(mod: Mod): Result<Unit> {
+    suspend fun unstage(mod: Mod): Result<Unit> {
         try {
-            return uninstallInternal(mod)
+            return unstageInternal(mod)
         } finally {
-            manualReloadTrigger.trigger.emit("Mod uninstalled: $mod")
+            manualReloadTrigger.trigger.emit("Mod unstaged: $mod")
         }
     }
 
@@ -142,9 +140,14 @@ class Staging(
      * - Removes it from `enabled_mods.json`.
      */
     private suspend fun disableInternal(modVariant: ModVariant): Result<Unit> {
-        // If it's not installed, install it (to the staging folder) (but it'll stay disabled)
+        // If it's not staged, stage it (to the staging folder) (but it'll stay disabled)
         if (modVariant.stagingInfo == null) {
-            installInternal(modVariant)
+            val stageResult = stageInternal(modVariant)
+
+            // If it isn't staged, stop here. Since it's not archived or staged, removing it will delete it entirely.
+            if (stageResult.isFailure) {
+                return stageResult
+            }
         }
 
         if (!modVariant.mod.isEnabled(modVariant)) {
@@ -168,7 +171,7 @@ class Staging(
         return Result.success((Unit))
     }
 
-    private suspend fun installInternal(modVariant: ModVariant): Result<Unit> {
+    private suspend fun stageInternal(modVariant: ModVariant): Result<Unit> {
         if (modVariant.stagingInfo != null) {
             Logger.debug { "Mod already staged! $modVariant" }
             return Result.success(Unit)
@@ -178,9 +181,26 @@ class Staging(
             ?: return failLogging("No staging folder: $modVariant")
 
         kotlin.runCatching {
+            // Try to stage the mod by unzipping its archive
             archives.extractMod(modVariant, stagingFolder)
         }
-            .onFailure { return failLogging(it.message ?: "") }
+            .onFailure {
+                // If we can't unzip the archive, see if it's in the /mods folder, we can get it from there.
+                if (modVariant.modsFolderInfo != null && modVariant.modsFolderInfo.folder.exists()) {
+                    val linkFoldersResult = linkFolders(
+                        modVariant.modsFolderInfo.folder,
+                        File(gamePath.getModsPath(), modVariant.generateVariantFolderName())
+                    )
+
+                    if (linkFoldersResult.isFailure) {
+                        return failLogging(linkFoldersResult.exceptionOrNull()?.message ?: "")
+                    } else {
+                        Logger.debug { "Mod staged from the /mods folder: $modVariant" }
+                    }
+                } else {
+                    return failLogging(it.message ?: "")
+                }
+            }
 
         return Result.success(Unit)
     }
@@ -192,7 +212,7 @@ class Staging(
         }
 
         if (modVariant.modsFolderInfo == null) {
-            val result = enableInSmol(modVariant)
+            val result = linkFromStagingToGameMods(modVariant)
 
             if (result != Result.success(Unit)) {
                 return result
@@ -208,19 +228,19 @@ class Staging(
         return Result.success((Unit))
     }
 
-    private suspend fun uninstallInternal(mod: Mod): Result<Unit> {
+    private suspend fun unstageInternal(mod: Mod): Result<Unit> {
         mod.variants.values.forEach { modVariant ->
             if (modVariant.stagingInfo == null || !modVariant.stagingInfo.folder.exists()) {
-                Logger.debug { "Mod not installed! $modVariant" }
+                Logger.debug { "Mod not staged! $modVariant" }
                 return@forEach
             }
 
             if (modVariant.archiveInfo == null) {
-                Logger.warn { "Cannot uninstall mod not archived: $modVariant" }
+                Logger.warn { "Cannot unstage mod not archived or else it'll be gone forever!: $modVariant" }
                 return@forEach
             }
 
-            // Make sure it's disabled before uninstalling
+            // Make sure it's disabled before unstaging
             disableInternal(modVariant)
 
             IOLock.write {
@@ -232,38 +252,43 @@ class Staging(
             }
         }
 
-        Logger.debug { "Mod uninstalled: $mod" }
+        Logger.debug { "Mod unstaged: $mod" }
         return Result.success(Unit)
     }
 
-    private suspend fun enableInSmol(modToEnable: ModVariant): Result<Unit> {
+    private suspend fun linkFromStagingToGameMods(modToEnable: ModVariant): Result<Unit> {
+        var mod = modToEnable
+
+        // If it's not staged, stage it first (from the archive).
+        if (mod.stagingInfo == null || !mod.stagingInfo!!.folder.exists()) {
+            stageInternal(mod)
+            mod = modLoader.getMods()
+                .asSequence()
+                .flatMap { it.variants.values }
+                .firstOrNull { modV -> modV.smolId == modToEnable.smolId }
+                ?: return failLogging("Mod was removed: $mod")
+
+            if (mod.stagingInfo == null) {
+                return failLogging("Unable to stage mod $mod")
+            }
+        }
+
+        if (!mod.stagingInfo!!.folder.exists()) {
+            return failLogging("Mod is not staged $mod")
+        }
+
+        val sourceFolder = mod.stagingInfo!!.folder
+
+        if (!sourceFolder.exists()) {
+            return failLogging("Staging folder doesn't exist. ${sourceFolder.path}, $mod")
+        }
+
+        val destFolder = File(gamePath.getModsPath(), sourceFolder.name)
+        return linkFolders(sourceFolder, destFolder)
+    }
+
+    private fun linkFolders(sourceFolder: File, destFolder: File): Result<Unit> {
         IOLock.write {
-            var mod = modToEnable
-
-            if (mod.stagingInfo == null || !mod.stagingInfo!!.folder.exists()) {
-                runBlocking { installInternal(mod) }
-                mod = modLoader.getMods()
-                    .asSequence()
-                    .flatMap { it.variants.values }
-                    .firstOrNull { modV -> modV.smolId == modToEnable.smolId }
-                    ?: return failLogging("Mod was removed: $mod")
-
-                if (mod.stagingInfo == null) {
-                    return failLogging("Unable to stage mod $mod")
-                }
-            }
-
-            if (!mod.stagingInfo!!.folder.exists()) {
-                return failLogging("Mod is not staged $mod")
-            }
-
-            val sourceFolder = mod.stagingInfo!!.folder
-
-            if (!sourceFolder.exists()) {
-                return failLogging("Staging folder doesn't exist. ${sourceFolder.path}, $mod")
-            }
-
-            val destFolder = File(gamePath.getModsPath(), sourceFolder.name)
             destFolder.mkdirsIfNotExist()
 
             destFolder.deleteRecursively()
@@ -322,9 +347,9 @@ class Staging(
             }
 
             Logger.info { "Created links/folders for ${succeededFiles.count()} files in ${destFolder.absolutePath}." }
-
-            return Result.success(Unit)
         }
+
+        return Result.success(Unit)
     }
 
     /**

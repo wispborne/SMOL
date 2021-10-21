@@ -24,7 +24,6 @@ import java.io.RandomAccessFile
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.util.*
-import kotlin.concurrent.withLock
 
 @OptIn(ExperimentalStdlibApi::class)
 class Archives(
@@ -243,11 +242,9 @@ class Archives(
         }
 
         val modFolder =
-            extractArchive(modVariant.archiveInfo.folder, destinationFolder, createVariantFolderName(modVariant))
+            extractArchive(modVariant.archiveInfo.folder, destinationFolder, modVariant.generateVariantFolderName())
         removedNestedFolders(modFolder)
     }
-
-    private fun createVariantFolderName(variant: ModVariant) = "${variant.modInfo.name}_${variant.smolId}"
 
     private fun extractArchive(
         archiveFile: File,
@@ -444,6 +441,7 @@ class Archives(
                         // Swallow exception, it has already been logged.
                         kotlin.runCatching {
                             val modTime = System.currentTimeMillis()
+                            Logger.trace { "Starting to look for mod_info.json in ${archive.name} at ${modTime}ms." }
                             findModInfoInArchive(archive)
                                 ?.let { archive to it }
                                 .also { Logger.debug { "Time to get mod_info.json from ${it?.second?.id}, ${it?.second?.version}: ${System.currentTimeMillis() - modTime}ms." } }
