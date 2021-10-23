@@ -143,12 +143,14 @@ fun AppState.ModGridView(
                                                     }
                                                 }
                                                     .onFailure { Logger.warn(it) { "Error trying to open file browser for $mod." } }
+                                                showContextMenu = false
                                             }) {
                                                 Text("Open Archive")
                                             }
 
                                             DropdownMenuItem(onClick = {
                                                 modInDebugDialog = mod
+                                                showContextMenu = false
                                             }) {
                                                 Text("Debug Info")
                                             }

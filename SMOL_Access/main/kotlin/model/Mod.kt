@@ -36,6 +36,7 @@ data class Mod(
  */
 data class ModVariant(
     val modInfo: ModInfo,
+    val versionCheckerInfo: VersionCheckerInfo?,
     val modsFolderInfo: Mod.ModsFolderInfo?,
     val stagingInfo: StagingInfo?,
     val archiveInfo: ArchiveInfo?,

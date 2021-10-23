@@ -27,6 +27,7 @@ class ModLoader(
 
                 val modVariant = ModVariant(
                     modInfo = archivedItem.modInfo,
+                    versionCheckerInfo = archivedItem.versionCheckerInfo,
                     modsFolderInfo = null,  // Will zip with mods items later to populate
                     stagingInfo = null, // Will zip with staged items later to populate
                     archiveInfo = ModVariant.ArchiveInfo(File(archivedItem.archivePath)),
@@ -43,41 +44,47 @@ class ModLoader(
         // Get items in staging
         val stagingMods: File = config.stagingPath?.toFileOrNull()!!
 
-        val stagedMods = modInfoLoader.readModInfosFromFolderOfMods(stagingMods)
-            .map { (modFolder, modInfo) ->
-                val modVariant = ModVariant(
-                    modInfo = modInfo,
-                    modsFolderInfo = null,  // Will zip with mods items later to populate
-                    stagingInfo = ModVariant.StagingInfo(folder = modFolder),
-                    archiveInfo = null,
-                )
-                Mod(
-                    id = modInfo.id,
-                    isEnabledInGame = modInfo.id in enabledModIds,
-                    variants = mapOf(modVariant.smolId to modVariant)
-                )
-            }
-            .toList()
-            .onEach { Logger.trace { "Found staged/installed mod $it" } }
+        val stagedMods =
+            modInfoLoader.readModDataFilesFromFolderOfMods(stagingMods, listOf(ModInfoLoader.DataFile.VERSION_CHECKER))
+                .map { (modFolder, dataFiles) ->
+                    val modInfo = dataFiles.modInfo
+                    val modVariant = ModVariant(
+                        modInfo = modInfo,
+                        versionCheckerInfo = dataFiles.versionCheckerInfo,
+                        modsFolderInfo = null,  // Will zip with mods items later to populate
+                        stagingInfo = ModVariant.StagingInfo(folder = modFolder),
+                        archiveInfo = null,
+                    )
+                    Mod(
+                        id = modInfo.id,
+                        isEnabledInGame = modInfo.id in enabledModIds,
+                        variants = mapOf(modVariant.smolId to modVariant)
+                    )
+                }
+                .toList()
+                .onEach { Logger.trace { "Found staged/installed mod $it" } }
 
         // Get items in /mods folder
         val modsFolder = gamePath.getModsPath()
-        val modsFolderMods = modInfoLoader.readModInfosFromFolderOfMods(modsFolder)
-            .map { (modFolder, modInfo) ->
-                val modVariant = ModVariant(
-                    modInfo = modInfo,
-                    modsFolderInfo = Mod.ModsFolderInfo(folder = modFolder),
-                    stagingInfo = null,
-                    archiveInfo = null,
-                )
-                Mod(
-                    id = modInfo.id,
-                    isEnabledInGame = modInfo.id in enabledModIds,
-                    variants = mapOf(modVariant.smolId to modVariant)
-                )
-            }
-            .toList()
-            .onEach { Logger.trace { "Found /mods mod $it" } }
+        val modsFolderMods =
+            modInfoLoader.readModDataFilesFromFolderOfMods(modsFolder, listOf(ModInfoLoader.DataFile.VERSION_CHECKER))
+                .map { (modFolder, dataFiles) ->
+                    val modInfo = dataFiles.modInfo
+                    val modVariant = ModVariant(
+                        modInfo = modInfo,
+                        versionCheckerInfo = dataFiles.versionCheckerInfo,
+                        modsFolderInfo = Mod.ModsFolderInfo(folder = modFolder),
+                        stagingInfo = null,
+                        archiveInfo = null,
+                    )
+                    Mod(
+                        id = modInfo.id,
+                        isEnabledInGame = modInfo.id in enabledModIds,
+                        variants = mapOf(modVariant.smolId to modVariant)
+                    )
+                }
+                .toList()
+                .onEach { Logger.trace { "Found /mods mod $it" } }
 
         // Merge all items together, replacing nulls with data.
         val result = (archivedMods + stagedMods + modsFolderMods)
@@ -87,18 +94,19 @@ class ModLoader(
                     isEnabledInGame = accumulator.isEnabledInGame || element.isEnabledInGame,
                     variants = kotlin.run {
                         val ret = accumulator.variants.toMutableMap()
-                        element.variants.forEach { (elementKey, elementValue) ->
-                            val accValue = ret[elementKey]
+                        element.variants.forEach { (elementKey, element) ->
+                            val acc = ret[elementKey]
 
                             // Either merge in the new element or add it to the list.
-                            if (accValue != null) {
-                                ret[elementKey] = accValue.copy(
-                                    modsFolderInfo = accValue.modsFolderInfo ?: elementValue.modsFolderInfo,
-                                    stagingInfo = accValue.stagingInfo ?: elementValue.stagingInfo,
-                                    archiveInfo = accValue.archiveInfo ?: elementValue.archiveInfo
+                            if (acc != null) {
+                                ret[elementKey] = acc.copy(
+                                    modsFolderInfo = acc.modsFolderInfo ?: element.modsFolderInfo,
+                                    stagingInfo = acc.stagingInfo ?: element.stagingInfo,
+                                    archiveInfo = acc.archiveInfo ?: element.archiveInfo,
+                                    versionCheckerInfo = acc.versionCheckerInfo ?: element.versionCheckerInfo
                                 )
                             } else {
-                                ret[elementKey] = elementValue
+                                ret[elementKey] = element
                             }
                         }
                         ret

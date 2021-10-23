@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.*
 import model.ModInfo
 import model.ModVariant
 import model.Version
+import model.VersionCheckerInfo
 import net.sf.sevenzipjbinding.*
 import net.sf.sevenzipjbinding.impl.OutItemFactory
 import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream
@@ -109,10 +110,10 @@ class Archives(
                 }
             } else {
                 // Input was a file but not mod_info.json, try as an archive.
-                val modInfo: ModInfo? = findModInfoInArchive(inputFile)
+                val dataFiles: DataFiles? = findDataFilesInArchive(inputFile)
 
                 // If mod_info.json was found in archive
-                if (modInfo != null) {
+                if (dataFiles != null) {
                     if (shouldCompressModFolder) {
                         val archivePath = destinationFolder.resolve(inputFile.name)
                         kotlin.runCatching {
@@ -163,26 +164,35 @@ class Archives(
         }
     }
 
-    private fun findModInfoInArchive(inputArchiveFile: File): ModInfo? {
-        val modInfo: ModInfo? = kotlin.runCatching {
+    private fun findDataFilesInArchive(inputArchiveFile: File): DataFiles? {
+        val dataFiles: DataFiles? = kotlin.runCatching {
             IOLock.read {
                 RandomAccessFileInStream(RandomAccessFile(inputArchiveFile, "r")).use { fileInStream ->
                     SevenZip.openInArchive(null, fileInStream).use { inArchive ->
                         val items = inArchive.simpleInterface.archiveItems
-                        val modInfoFile = items
-                            .asSequence()
                             .filter { !it.isFolder }
+                        val modInfoFile = items
                             .firstOrNull { it.path.contains(MOD_INFO_FILE) }
+                        val versionCheckerFile = items
+                            .firstOrNull { it.path.contains(VERSION_CHECKER_FILE_PATTERN) }
 
                         var modInfo: ModInfo? = null
                         modInfoFile?.extractSlow { bytes ->
                             bytes ?: return@extractSlow 0
                             val modInfoJson = String(bytes = bytes)
-                            modInfo = modInfoLoader.readModInfoFile(modInfoJson)
+                            modInfo = modInfoLoader.deserializeModInfoFile(modInfoJson)
                             bytes.size
                         }
 
-                        return@runCatching modInfo
+                        var versionCheckerInfo: VersionCheckerInfo? = null
+                        versionCheckerFile?.extractSlow { bytes ->
+                            bytes ?: return@extractSlow 0
+                            val versionCheckerFileJson = String(bytes = bytes)
+                            versionCheckerInfo = modInfoLoader.deserializeVersionCheckerFile(versionCheckerFileJson)
+                            bytes.size
+                        }
+
+                        return@runCatching modInfo?.let { DataFiles(it, versionCheckerInfo) }
                     }
                 }
             }
@@ -192,8 +202,13 @@ class Archives(
                 throw it
             }
             .getOrElse { null }
-        return modInfo
+        return dataFiles
     }
+
+    data class DataFiles(
+        val modInfo: ModInfo,
+        val versionCheckerInfo: VersionCheckerInfo?
+    )
 
     /**
      * Given a folder with a single mod somewhere inside, rearranges folders to match `./ModName/mod_info.json`.
@@ -304,7 +319,10 @@ class Archives(
 
                     val scope = this
                     val manifest = getArchivesManifest()
-                    val mods = modInfoLoader.readModInfosFromFolderOfMods(modFolder)
+                    val mods = modInfoLoader.readModDataFilesFromFolderOfMods(
+                        folderWithMods = modFolder,
+                        desiredFiles = emptyList()
+                    )
 
                     if (mods.none()) {
                         val runtimeException = RuntimeException("No mods found in ${modFolder.absolutePath}.")
@@ -313,14 +331,16 @@ class Archives(
                     }
 
                     mods
-                        .filter { (modFolder, modInfo) ->
+                        .filter { (modFolder, dataFiles) ->
                             // Only add mods to archives folder if they aren't already there
+                            val modInfo = dataFiles.modInfo
                             val key = createManifestItemKey(modInfo)
                             val doesArchiveAlreadyExist = doesArchiveExistForKey(manifest, key)
                             Logger.debug { "[${modInfo.id}, ${modInfo.version}] archive already exists? $doesArchiveAlreadyExist" }
                             !doesArchiveAlreadyExist
                         }
-                        .forEach { (modFolder, modInfo) ->
+                        .forEach { (modFolder, dataFiles) ->
+                            val modInfo = dataFiles.modInfo
                             val filesToArchive =
                                 modFolder.walkTopDown().toList()
 
@@ -442,9 +462,12 @@ class Archives(
                         kotlin.runCatching {
                             val modTime = System.currentTimeMillis()
                             Logger.trace { "Starting to look for mod_info.json in ${archive.name} at ${modTime}ms." }
-                            findModInfoInArchive(archive)
+                            findDataFilesInArchive(archive)
                                 ?.let { archive to it }
-                                .also { Logger.debug { "Time to get mod_info.json from ${it?.second?.id}, ${it?.second?.version}: ${System.currentTimeMillis() - modTime}ms." } }
+                                .also {
+                                    val modInfo = it?.second?.modInfo
+                                    Logger.debug { "Time to get mod_info.json from ${modInfo?.id}, ${modInfo?.version}: ${System.currentTimeMillis() - modTime}ms." }
+                                }
                         }
                             .getOrNull()
                     }
@@ -455,9 +478,10 @@ class Archives(
         updateManifest { manifest ->
             manifest.copy(
                 manifestItems = modInfos.associate {
-                    createManifestItemKey(it.second) to ManifestItemValue(
-                        it.first.absolutePath,
-                        it.second
+                    createManifestItemKey(it.second.modInfo) to ManifestItemValue(
+                        archivePath = it.first.absolutePath,
+                        modInfo = it.second.modInfo,
+                        versionCheckerInfo = it.second.versionCheckerInfo
                     )
                 })
         }
@@ -550,6 +574,7 @@ class Archives(
 
     data class ManifestItemValue(
         val archivePath: String,
-        val modInfo: ModInfo
+        val modInfo: ModInfo,
+        val versionCheckerInfo: VersionCheckerInfo?
     )
 }

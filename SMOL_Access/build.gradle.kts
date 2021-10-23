@@ -27,6 +27,8 @@ dependencies {
     implementation("com.squareup.moshi:moshi-adapters:$moshiVer")
     // Gson
     implementation("com.github.salomonbrys.kotson:kotson:2.5.0")
+    // CSV
+    implementation("org.apache.commons:commons-csv:1.8")
 
     // Arrow
     implementation(project.property("arrowCore")!!)
