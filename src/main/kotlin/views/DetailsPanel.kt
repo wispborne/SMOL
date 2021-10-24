@@ -2,26 +2,32 @@ package views
 
 import SmolTheme
 import TiledImage
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerIcon
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
+import util.openModThread
 
-@OptIn(ExperimentalUnitApi::class)
+@OptIn(
+    ExperimentalUnitApi::class, androidx.compose.foundation.ExperimentalDesktopApi::class,
+    androidx.compose.ui.ExperimentalComposeUiApi::class
+)
 @Composable
 fun BoxScope.detailsPanel(
     modifier: Modifier = Modifier,
@@ -65,6 +71,24 @@ fun BoxScope.detailsPanel(
                 Text(modInfo?.author ?: "It's always Techpriest", modifier = Modifier.padding(top = 2.dp, start = 8.dp))
                 Text("Description", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
                 Text(modInfo?.description ?: "", modifier = Modifier.padding(top = 2.dp))
+
+                val versionCheckerInfo = row.mod.findHighestVersion?.versionCheckerInfo
+                if (versionCheckerInfo?.modThreadId != null) {
+                    DisableSelection {
+                        Text(
+                            text = "Forum Thread",
+                            modifier = Modifier.padding(top = 16.dp)
+                                .pointerIcon(PointerIcon.Hand)
+                                .mouseClickable {
+                                    if (this.buttons.isPrimaryPressed) {
+                                        versionCheckerInfo.modThreadId!!.openModThread()
+                                    }
+                                },
+                            color = Color.Cyan,
+                            textDecoration = TextDecoration.Underline
+                        )
+                    }
+                }
             }
         }
         TiledImage(
