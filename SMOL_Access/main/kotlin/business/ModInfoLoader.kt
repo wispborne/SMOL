@@ -64,8 +64,16 @@ class ModInfoLoader(
                                     versionCheckerInfo =
                                         deserializeVersionCheckerFile(File(modFolder, versionFilePath).readText())
 
-                                    if (versionCheckerInfo?.modThreadId?.isEmpty() == true) {
-                                        versionCheckerInfo = versionCheckerInfo!!.copy(modThreadId = null)
+                                    if (versionCheckerInfo?.modThreadId != null) {
+                                        versionCheckerInfo = versionCheckerInfo!!.copy(
+                                            modThreadId = versionCheckerInfo!!.modThreadId!!.replace(
+                                                regex = Regex("[^0-9]"),
+                                                replacement = ""
+                                            )
+                                        )
+                                        if (versionCheckerInfo?.modThreadId?.trimStart('0')?.isEmpty() == true) {
+                                            versionCheckerInfo = versionCheckerInfo!!.copy(modThreadId = null)
+                                        }
                                     }
                                 }
                                     .onFailure { Logger.warn(it) }

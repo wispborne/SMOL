@@ -22,9 +22,11 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -34,7 +36,6 @@ import org.tinylog.Logger
 import smolFullyClippedButtonShape
 import util.*
 import java.awt.Desktop
-import java.net.URI
 
 private val buttonWidth = 180
 
@@ -130,7 +131,8 @@ fun AppState.ModGridView(
                                                 ?: mod.findFirstDisabled)?.modInfo?.version.toString() ?: "",
                                             modifier = Modifier.weight(1f).align(Alignment.CenterVertically)
                                         )
-                                        CursorDropdownMenu(expanded = showContextMenu,
+                                        CursorDropdownMenu(
+                                            expanded = showContextMenu,
                                             onDismissRequest = { showContextMenu = false }) {
                                             DropdownMenuItem(onClick = {
                                                 kotlin.runCatching {
@@ -144,14 +146,27 @@ fun AppState.ModGridView(
                                             }) {
                                                 Text("Open Archive")
                                             }
-                                            val modThreadId = mod.findFirstEnabled?.versionCheckerInfo?.modThreadId
-                                                ?: mod.findHighestVersion?.versionCheckerInfo?.modThreadId
+                                            val modThreadId = mod.getModThreadId()
                                             if (modThreadId != null) {
-                                                DropdownMenuItem(onClick = {
-                                                    Desktop.getDesktop().browse(URI(FORUM_PAGE_URL + modThreadId))
-                                                    showContextMenu = false
-                                                }) {
-                                                    Text("Forum Page")
+                                                DropdownMenuItem(
+                                                    onClick = {
+                                                        modThreadId.openModThread()
+                                                        showContextMenu = false
+                                                    },
+                                                    modifier = Modifier.width(200.dp)
+                                                ) {
+                                                    Image(
+                                                        painter = painterResource("open-in-new.svg"),
+                                                        colorFilter = ColorFilter.tint(MaterialTheme.colors.onSurface),
+                                                        modifier = Modifier.padding(end = 8.dp),
+                                                        contentDescription = null
+                                                    )
+                                                    Text(
+                                                        text = "Forum Page",
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis,
+                                                        modifier = Modifier.align(Alignment.CenterVertically)
+                                                    )
                                                 }
                                             }
                                             DropdownMenuItem(onClick = {
