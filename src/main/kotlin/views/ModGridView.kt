@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -33,11 +32,9 @@ import model.Mod
 import model.ModVariant
 import org.tinylog.Logger
 import smolFullyClippedButtonShape
-import util.APP_NAME
-import util.ModState
-import util.state
-import util.uiEnabled
+import util.*
 import java.awt.Desktop
+import java.net.URI
 
 private val buttonWidth = 180
 
@@ -147,7 +144,16 @@ fun AppState.ModGridView(
                                             }) {
                                                 Text("Open Archive")
                                             }
-
+                                            val modThreadId = mod.findFirstEnabled?.versionCheckerInfo?.modThreadId
+                                                ?: mod.findHighestVersion?.versionCheckerInfo?.modThreadId
+                                            if (modThreadId != null) {
+                                                DropdownMenuItem(onClick = {
+                                                    Desktop.getDesktop().browse(URI(FORUM_PAGE_URL + modThreadId))
+                                                    showContextMenu = false
+                                                }) {
+                                                    Text("Forum Page")
+                                                }
+                                            }
                                             DropdownMenuItem(onClick = {
                                                 modInDebugDialog = mod
                                                 showContextMenu = false

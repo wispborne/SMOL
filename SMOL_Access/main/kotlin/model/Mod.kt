@@ -29,6 +29,9 @@ data class Mod(
 
     val findFirstDisabled: ModVariant?
         get() = variants.values.firstOrNull { !isEnabled(it) }
+
+    val findHighestVersion: ModVariant?
+        get() = variants.values.maxByOrNull { it.modInfo.version }
 }
 
 /**
