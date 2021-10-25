@@ -39,6 +39,8 @@ object SmolTheme {
     val fireCodeFont = FontFamily(
         Font("Font-Fire_Mono/FiraMono-Regular.ttf")
     )
+
+    val warningOrange = Color(java.awt.Color.decode("#F95D13").rgb)
 }
 
 @Composable

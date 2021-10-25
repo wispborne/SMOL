@@ -260,10 +260,26 @@ private fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
                 )
             ) {
                 // Text of the dropdown menu, current state of the mod
+                if (mod.enabledVariants.size > 1) {
+                    BoxWithTooltip(tooltip = {
+                        Text(
+                            modifier = Modifier.background(MaterialTheme.colors.background).padding(8.dp),
+                            text = "Warning: ${mod.enabledVariants.size} versions of " +
+                                    "${mod.findHighestVersion!!.modInfo.name} in the mods folder." +
+                                    " Remove one."
+                        )
+                    }) {
+                        Image(
+                            painter = painterResource("beacon_med.png"),
+                            modifier = Modifier.width(40.dp).height(28.dp).padding(end = 12.dp),
+                            contentDescription = null
+                        )
+                    }
+                }
                 Text(
                     text = when {
                         // If there is an enabled variant, show its version string.
-                        firstEnabledVariant != null -> firstEnabledVariant.modInfo.version.toString()
+                        mod.enabledVariants.isNotEmpty() -> mod.enabledVariants.joinToString { it.modInfo.version.toString() }
                         // If no enabled variant, show "Disabled"
                         else -> "Disabled"
                     },

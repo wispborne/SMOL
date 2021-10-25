@@ -17,12 +17,12 @@ data class Mod(
     fun isEnabled(modVariant: ModVariant) =
         isEnabledInGame && modVariant.modsFolderInfo != null
 
-//    val isManagedBySmol: Boolean
-//        get() = variants.any { it.value.isEnabledInSmol || it.value.stagingInfo != null || it.value.archiveInfo != null }
-
     data class ModsFolderInfo(
         val folder: File
     )
+
+    val enabledVariants: List<ModVariant>
+        get() = variants.values.filter { isEnabled(it) }
 
     val findFirstEnabled: ModVariant?
         get() = variants.values.firstOrNull { isEnabled(it) }
