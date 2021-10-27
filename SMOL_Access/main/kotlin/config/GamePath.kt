@@ -7,10 +7,9 @@ import org.tinylog.Logger
 import util.IOLock
 import util.mkdirsIfNotExist
 import java.io.File
-import kotlin.concurrent.withLock
 
 
-class GamePath(
+class GamePath internal constructor(
     private val appConfig: AppConfig,
     private val moshi: Moshi
 ) {

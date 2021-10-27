@@ -3,7 +3,10 @@ import com.github.salomonbrys.kotson.*
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
-import com.squareup.moshi.*
+import com.squareup.moshi.FromJson
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.ToJson
+import com.squareup.moshi.adapter
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import config.AppConfig
 import config.GamePath
@@ -17,7 +20,7 @@ private val basicMoshi = Moshi.Builder()
 private val basicGson = GsonBuilder().create()
 
 @OptIn(ExperimentalStdlibApi::class)
-class ServiceLocator(
+class ServiceLocator internal constructor(
     val manualReloadTrigger: ManualReloadTrigger = ManualReloadTrigger(),
     val moshi: Moshi = Moshi.Builder()
         .add(ModInfoAdapter())
@@ -50,8 +53,10 @@ class ServiceLocator(
         archives = archives,
         manualReloadTrigger = manualReloadTrigger
     ),
-) {
-}
+    val userManager: UserManager = UserManager(
+        appConfig = appConfig, staging = staging, modLoader = modLoader
+    )
+)
 
 private fun buildGson() = GsonBuilder()
     .setPrettyPrinting()

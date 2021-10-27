@@ -12,25 +12,28 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.unit.dp
 import business.Archives
 import business.GameEnabledMods.Companion.ENABLED_MODS_FILENAME
 import business.KWatchEvent
 import business.asWatchChannel
+import cli.SmolCli
 import com.arkivanov.decompose.push
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import model.Mod
 import navigation.Screen
 import org.tinylog.Logger
-import util.IOLock
-import util.APP_NAME
-import util.toFileOrNull
+import util.*
 import java.io.File
 
 private var isRefreshingMods = false
 
-@OptIn(ExperimentalCoroutinesApi::class, androidx.compose.material.ExperimentalMaterialApi::class)
+@OptIn(
+    ExperimentalCoroutinesApi::class, androidx.compose.material.ExperimentalMaterialApi::class,
+    androidx.compose.ui.ExperimentalComposeUiApi::class
+)
 @Composable
 @Preview
 fun AppState.homeView(
@@ -137,13 +140,45 @@ fun AppState.homeView(
     },
         bottomBar = {
             BottomAppBar(
-                modifier = Modifier.fillMaxWidth().height(40.dp)
+                modifier = Modifier.fillMaxWidth().height(50.dp)
             ) {
-                var status by remember { mutableStateOf("") }
-                rememberCoroutineScope().launch {
-                    SL.archives.archiveMovementStatusFlow.collectLatest { status = it }
+                Column(Modifier.weight(1f)) {
+                    Row {
+                        var status by remember { mutableStateOf("") }
+                        rememberCoroutineScope().launch {
+                            SL.archives.archiveMovementStatusFlow.collectLatest { status = it }
+                        }
+                        Text(text = status, modifier = Modifier.align(Alignment.CenterVertically).padding(8.dp))
+                    }
                 }
-                Text(text = status, modifier = Modifier.align(Alignment.CenterVertically).padding(8.dp))
+                Column(Modifier.weight(1f)) {
+                    Row {
+                        var consoleText by remember { mutableStateOf("") }
+                        TextField(
+                            value = consoleText,
+                            label = { Text("Console") },
+                            maxLines = 1,
+                            onValueChange = { newStr ->
+                                consoleText = newStr
+                            },
+                            modifier = Modifier.onKeyEvent { event ->
+                                return@onKeyEvent if (event.type == KeyEventType.KeyUp && (event.key.equalsAny(
+                                        Key.Enter,
+                                        Key.NumPadEnter
+                                    ))
+                                ) {
+                                    kotlin.runCatching {
+                                        SmolCli(SL.staging, SL.userManager)
+                                            .parse(consoleText.asList())
+                                        consoleText = ""
+                                    }
+                                        .onFailure { Logger.warn(it) }
+                                    true
+                                } else false
+                            }
+                        )
+                    }
+                }
             }
         }
     )

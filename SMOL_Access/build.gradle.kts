@@ -22,7 +22,7 @@ dependencies {
 
     // JSON
     val moshiVer = "1.12.0"
-    implementation("com.squareup.moshi:moshi-kotlin:$moshiVer")
+    api("com.squareup.moshi:moshi-kotlin:$moshiVer")
 //    kapt("com.squareup.moshi:moshi-kotlin:$moshiVer")
     implementation("com.squareup.moshi:moshi-adapters:$moshiVer")
     // Gson

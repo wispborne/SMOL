@@ -11,7 +11,7 @@ data class UserProfile(
         get() = modProfiles.firstOrNull { it.id == activeModProfileId } ?: modProfiles.first()
 
 
-    class EnabledMods(
+    data class EnabledMods(
         val id: String,
         val name: String,
         val description: String,

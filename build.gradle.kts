@@ -29,16 +29,17 @@ dependencies {
     implementation(project.property("toothpick")!!)
 
     // JSON
-    val moshiVer = "1.12.0"
-    implementation("com.squareup.moshi:moshi-kotlin:$moshiVer")
+//    val moshiVer = "1.12.0"
+//    implementation("com.squareup.moshi:moshi-kotlin:$moshiVer")
 //    kapt("com.squareup.moshi:moshi-kotlin:$moshiVer")
 //    implementation("com.squareup.moshi:moshi-adapters:$moshiVer")
-    // Gson
-//    implementation("com.github.salomonbrys.kotson:kotson:2.5.0")
+
+    // CLI builder, Clikt
+    implementation("com.github.ajalt.clikt:clikt:3.3.0")
 
     // Arrow
-    implementation(project.property("arrowCore")!!)
-    implementation(project.property("arrowOptics")!!)
+//    implementation(project.property("arrowCore")!!)
+//    implementation(project.property("arrowOptics")!!)
 
     // Navigation
     val decomposeVer = "0.3.1"

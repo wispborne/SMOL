@@ -17,7 +17,7 @@ import java.nio.file.StandardCopyOption
 import kotlin.io.path.createLinkPointingTo
 import kotlin.io.path.createSymbolicLinkPointingTo
 
-class Staging(
+class Staging internal constructor(
     private val config: AppConfig,
     private val gamePath: GamePath,
     private val modLoader: ModLoader,
@@ -262,7 +262,7 @@ class Staging(
         // If it's not staged, stage it first (from the archive).
         if (mod.stagingInfo == null || !mod.stagingInfo!!.folder.exists()) {
             stageInternal(mod)
-            mod = modLoader.getMods()
+            mod = modLoader.getMods(noCache = true)
                 .asSequence()
                 .flatMap { it.variants }
                 .firstOrNull { modV -> modV.smolId == modToEnable.smolId }

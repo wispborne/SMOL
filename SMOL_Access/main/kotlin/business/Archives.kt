@@ -27,7 +27,7 @@ import java.nio.file.StandardCopyOption
 import java.util.*
 
 @OptIn(ExperimentalStdlibApi::class)
-class Archives(
+class Archives internal constructor(
     private val config: AppConfig,
     private val gamePath: GamePath,
     private val gson: Gson,
