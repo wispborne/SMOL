@@ -122,13 +122,15 @@ fun AppState.ModGridView(
                                                 .align(Alignment.CenterVertically),
                                             mod = mod
                                         )
+                                        // Mod name
                                         Text(
                                             text = (mod.findFirstEnabled ?: mod.findFirstDisabled)?.modInfo?.name ?: "",
                                             modifier = Modifier.weight(1f).align(Alignment.CenterVertically)
                                         )
+                                        // Mod version (active or highest)
                                         Text(
-                                            text = (mod.findFirstEnabled
-                                                ?: mod.findFirstDisabled)?.modInfo?.version.toString() ?: "",
+                                            text = mod.variants
+                                                .joinToString() { it.modInfo.version.toString() },
                                             modifier = Modifier.weight(1f).align(Alignment.CenterVertically)
                                         )
                                         CursorDropdownMenu(
@@ -221,11 +223,14 @@ private fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
      */
     val dropdownMenuItems: List<DropdownAction> = mutableListOf<DropdownAction>()
         .run {
-            val otherVariantsThanFirstEnabled = mod.variants.values
-                .filter { firstEnabledVariant == null || it.smolId != firstEnabledVariant.smolId }
+            val otherVariantsThanEnabled = mod.variants
+                .filter { variant ->
+                    firstEnabledVariant == null
+                            || mod.enabledVariants.any { enabledVariant -> enabledVariant.smolId != variant.smolId }
+                }
 
-            if (otherVariantsThanFirstEnabled.any()) {
-                val otherVariants = otherVariantsThanFirstEnabled
+            if (otherVariantsThanEnabled.any()) {
+                val otherVariants = otherVariantsThanEnabled
                     .map { DropdownAction.ChangeToVariant(variant = it) }
                 this.addAll(otherVariants)
             }
@@ -271,7 +276,7 @@ private fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
                     }) {
                         Image(
                             painter = painterResource("beacon_med.png"),
-                            modifier = Modifier.width(40.dp).height(28.dp).padding(end = 12.dp),
+                            modifier = Modifier.width(38.dp).height(28.dp).padding(end = 8.dp),
                             contentDescription = null
                         )
                     }

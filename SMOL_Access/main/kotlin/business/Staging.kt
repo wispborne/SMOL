@@ -68,13 +68,13 @@ class Staging(
             if (modVariant != null && mod.isEnabled(modVariant)) {
                 // Check if this is the only active variant.
                 // If there are somehow more than one active, the rest of the method will clean that up.
-                if (mod.variants.values.count { mod.isEnabled(it) } <= 1) {
+                if (mod.variants.count { mod.isEnabled(it) } <= 1) {
                     Logger.info { "Variant is already active, nothing to do! $modVariant" }
                     return Result.success(Unit)
                 }
             }
 
-            val activeVariants = mod.variants.values.filter { mod.isEnabled(it) }
+            val activeVariants = mod.variants.filter { mod.isEnabled(it) }
 
             if (modVariant == null && activeVariants.none()) {
                 Logger.info { "No variants active, nothing to do! $mod" }
@@ -83,14 +83,14 @@ class Staging(
 
             // Disable all active mod variants.
             // There should only ever be one active but might as well be careful.
-            mod.variants.values
+            mod.variants
                 .filter { mod.isEnabled(it) }
                 .forEach { disableInternal(it) }
 
             return if (modVariant != null) {
                 // Enable the one we want.
                 // Slower: Reload, since we just disabled it
-//                val freshModVariant = modLoader.getMods().flatMap { it.variants.values }.first { it.smolId == modVariant.smolId }
+//                val freshModVariant = modLoader.getMods().flatMap { it.variants }.first { it.smolId == modVariant.smolId }
                 // Faster: Assume we disabled it and change the mod to be disabled.
                 modVariant.mod = modVariant.mod.copy(isEnabledInGame = false)
                 enableInternal(modVariant)
@@ -229,7 +229,7 @@ class Staging(
     }
 
     private suspend fun unstageInternal(mod: Mod): Result<Unit> {
-        mod.variants.values.forEach { modVariant ->
+        mod.variants.forEach { modVariant ->
             if (modVariant.stagingInfo == null || !modVariant.stagingInfo.folder.exists()) {
                 Logger.debug { "Mod not staged! $modVariant" }
                 return@forEach
@@ -264,7 +264,7 @@ class Staging(
             stageInternal(mod)
             mod = modLoader.getMods()
                 .asSequence()
-                .flatMap { it.variants.values }
+                .flatMap { it.variants }
                 .firstOrNull { modV -> modV.smolId == modToEnable.smolId }
                 ?: return failLogging("Mod was removed: $mod")
 

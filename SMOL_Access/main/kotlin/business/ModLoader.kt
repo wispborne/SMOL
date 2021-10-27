@@ -5,19 +5,25 @@ import config.GamePath
 import model.Mod
 import model.ModVariant
 import org.tinylog.Logger
+import util.asList
 import util.toFileOrNull
 import java.io.File
 
-class ModLoader(
+class ModLoader internal constructor(
     private val gamePath: GamePath,
     private val config: AppConfig,
     private val archives: Archives,
     private val modInfoLoader: ModInfoLoader,
     private val gameEnabledMods: GameEnabledMods
 ) {
+    private var lastLoadedMods: List<Mod>? = null
 
     @OptIn(ExperimentalStdlibApi::class)
-    fun getMods(): List<Mod> {
+    fun getMods(noCache: Boolean): List<Mod> {
+        if (!noCache && lastLoadedMods != null) {
+            return lastLoadedMods!!
+        }
+
         val enabledModIds = gameEnabledMods.getEnabledMods().enabledMods
 
         // Get items in archives
@@ -35,7 +41,7 @@ class ModLoader(
                 Mod(
                     id = archivedItem.modInfo.id,
                     isEnabledInGame = archivedItem.modInfo.id in enabledModIds,
-                    variants = mapOf(modVariant.smolId to modVariant)
+                    variants = listOf(modVariant)
                 )
             }
             ?.onEach { Logger.trace { "Found archived mod $it" } }
@@ -58,7 +64,7 @@ class ModLoader(
                     Mod(
                         id = modInfo.id,
                         isEnabledInGame = modInfo.id in enabledModIds,
-                        variants = mapOf(modVariant.smolId to modVariant)
+                        variants = modVariant.asList()
                     )
                 }
                 .toList()
@@ -80,7 +86,7 @@ class ModLoader(
                     Mod(
                         id = modInfo.id,
                         isEnabledInGame = modInfo.id in enabledModIds,
-                        variants = mapOf(modVariant.smolId to modVariant)
+                        variants = modVariant.asList()
                     )
                 }
                 .toList()
@@ -89,44 +95,45 @@ class ModLoader(
         // Merge all items together, replacing nulls with data.
         val result = (archivedMods + stagedMods + modsFolderMods)
             .groupingBy { it.id }
-            .reduce { _, accumulator, element ->
+            .reduce { _, accumulator, newElement ->
                 accumulator.copy(
-                    isEnabledInGame = accumulator.isEnabledInGame || element.isEnabledInGame,
+                    isEnabledInGame = accumulator.isEnabledInGame || newElement.isEnabledInGame,
                     variants = kotlin.run {
-                        val ret = accumulator.variants.toMutableMap()
-                        element.variants.forEach { (elementKey, element) ->
-                            val acc = ret[elementKey]
+                        val mergedVariants = accumulator.variants.toMutableList()
+                        newElement.variants.forEach { element ->
+                            val acc = mergedVariants.firstOrNull { it.smolId == element.smolId }
 
                             // Either merge in the new element or add it to the list.
                             if (acc != null) {
-                                ret[elementKey] = acc.copy(
+                                mergedVariants[mergedVariants.indexOf(acc)] = acc.copy(
                                     modsFolderInfo = acc.modsFolderInfo ?: element.modsFolderInfo,
                                     stagingInfo = acc.stagingInfo ?: element.stagingInfo,
                                     archiveInfo = acc.archiveInfo ?: element.archiveInfo,
                                     versionCheckerInfo = acc.versionCheckerInfo ?: element.versionCheckerInfo
                                 )
                             } else {
-                                ret[elementKey] = element
+                                mergedVariants.add(element)
                             }
                         }
-                        ret
+                        mergedVariants
                     }
                 )
             }
             .values
-            .filter { mod -> mod.variants.any { it.value.exists } }
-            .onEach { mod -> mod.variants.values.forEach { it.mod = mod } }
+            .filter { mod -> mod.variants.any { it.exists } }
+            .onEach { mod -> mod.variants.forEach { it.mod = mod } }
             .toList()
             .onEach {
                 Logger.debug { "Loaded mod: $it" }
 
-                val variantsInModsFolder = it.variants.filter { variant -> variant.value.modsFolderInfo != null }
+                val variantsInModsFolder = it.variants.filter { variant -> variant.modsFolderInfo != null }
 
                 if (variantsInModsFolder.size > 1) {
-                    Logger.warn { "${it.id} has multiple variants in /mods: ${variantsInModsFolder.values.joinToString { it.modsFolderInfo!!.folder.absolutePath }}" }
+                    Logger.warn { "${it.id} has multiple variants in /mods: ${variantsInModsFolder.joinToString { it.modsFolderInfo!!.folder.absolutePath }}" }
                 }
             }
 
+        lastLoadedMods = result
         return result
     }
 }

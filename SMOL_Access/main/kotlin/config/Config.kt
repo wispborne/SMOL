@@ -8,19 +8,19 @@ import kotlin.reflect.KProperty
 abstract class Config(private val moshi: Moshi) {
 
     @OptIn(ExperimentalStdlibApi::class)
-    inner class pref<T>(val prefKey: String? = null, val defaultValue: T?) {
-        operator fun getValue(thisRef: Any?, property: KProperty<*>): T? =
+    inner class pref<T>(val prefKey: String? = null, val defaultValue: T) {
+        operator fun getValue(thisRef: Any?, property: KProperty<*>): T =
             when (property.returnType) {
                 String::class ->
-                    Preferences.userRoot().get(prefKey ?: property.name, defaultValue as String) as T?
+                    Preferences.userRoot().get(prefKey ?: property.name, defaultValue as String) as T
                 Int::class ->
-                    Preferences.userRoot().getInt(prefKey ?: property.name, defaultValue as Int) as T?
+                    Preferences.userRoot().getInt(prefKey ?: property.name, defaultValue as Int) as T
                 Float::class ->
-                    Preferences.userRoot().getFloat(prefKey ?: property.name, defaultValue as Float) as T?
+                    Preferences.userRoot().getFloat(prefKey ?: property.name, defaultValue as Float) as T
                 Boolean::class ->
-                    Preferences.userRoot().getBoolean(prefKey ?: property.name, defaultValue as Boolean) as T?
+                    Preferences.userRoot().getBoolean(prefKey ?: property.name, defaultValue as Boolean) as T
                 Long::class ->
-                    Preferences.userRoot().getLong(prefKey ?: property.name, defaultValue as Long) as T?
+                    Preferences.userRoot().getLong(prefKey ?: property.name, defaultValue as Long) as T
                 else ->
                     (Preferences.userRoot().get(prefKey ?: property.name, defaultValue as String?))
                         ?.let {
@@ -28,7 +28,7 @@ abstract class Config(private val moshi: Moshi) {
                         } ?: defaultValue
             }
 
-        operator fun setValue(thisRef: Any?, property: KProperty<*>, value: T?) {
+        operator fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
             when (property.returnType) {
                 String::class ->
                     Preferences.userRoot().put(prefKey ?: property.name, value as String)

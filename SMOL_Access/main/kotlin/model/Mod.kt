@@ -6,7 +6,7 @@ import java.util.*
 data class Mod(
     val id: String,
     val isEnabledInGame: Boolean,
-    val variants: Map<Int, ModVariant>,
+    val variants: List<ModVariant>,
 ) {
 
     /**
@@ -22,16 +22,16 @@ data class Mod(
     )
 
     val enabledVariants: List<ModVariant>
-        get() = variants.values.filter { isEnabled(it) }
+        get() = variants.filter { isEnabled(it) }
 
     val findFirstEnabled: ModVariant?
-        get() = variants.values.firstOrNull { isEnabled(it) }
+        get() = variants.firstOrNull { isEnabled(it) }
 
     val findFirstDisabled: ModVariant?
-        get() = variants.values.firstOrNull { !isEnabled(it) }
+        get() = variants.firstOrNull { !isEnabled(it) }
 
     val findHighestVersion: ModVariant?
-        get() = variants.values.maxByOrNull { it.modInfo.version }
+        get() = variants.maxByOrNull { it.modInfo.version }
 }
 
 /**

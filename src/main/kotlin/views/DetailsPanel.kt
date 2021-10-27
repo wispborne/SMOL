@@ -53,7 +53,7 @@ fun BoxScope.detailsPanel(
             Column(
                 Modifier.padding(36.dp).verticalScroll(state)
             ) {
-                val modInfo = (row.mod.findFirstEnabled ?: row.mod.variants.values.firstOrNull())
+                val modInfo = (row.mod.findFirstEnabled ?: row.mod.variants.firstOrNull())
                     ?.modInfo
                 Text(
                     modInfo?.name ?: "VNSector",

@@ -1,5 +1,6 @@
 package util
 
+import arrow.core.filterMap
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -95,3 +96,17 @@ suspend fun <A, B> Iterable<A>.parallelMap(f: suspend (A) -> B): List<B> =
     coroutineScope {
         map { async { f(it) } }.awaitAll()
     }
+
+fun <T, K> List<T>.diff(newList: List<T>, keyFinder: (item: T) -> K): DiffResult<T> {
+    val cur = this.associateBy { keyFinder(it) }
+    val new = newList.associateBy { keyFinder(it) }
+    return DiffResult(
+        removed = cur.filter { it.key !in new.keys }.values.toList(),
+        added = new.filter { it.key !in cur.keys }.values.toList()
+    )
+}
+
+data class DiffResult<T>(
+    val removed: List<T>,
+    val added: List<T>
+)
