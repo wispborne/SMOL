@@ -12,6 +12,9 @@ import config.AppConfig
 import config.GamePath
 import model.ModInfo
 import org.hjson.JsonValue
+import toothpick.ktp.KTP
+import toothpick.ktp.binding.bind
+import toothpick.ktp.binding.module
 import util.ManualReloadTrigger
 
 var SL = ServiceLocator()
@@ -45,7 +48,7 @@ class ServiceLocator internal constructor(
         config = appConfig,
         gameEnabledMods = gameEnabledMods
     ),
-    val staging: Staging = Staging(
+    internal val staging: Staging = Staging(
         config = appConfig,
         gamePath = gamePath,
         modLoader = modLoader,
@@ -53,10 +56,15 @@ class ServiceLocator internal constructor(
         archives = archives,
         manualReloadTrigger = manualReloadTrigger
     ),
+    val access: Access = Access(staging = staging, config = appConfig),
     val userManager: UserManager = UserManager(
-        appConfig = appConfig, staging = staging, modLoader = modLoader
-    )
+        appConfig = appConfig, access = access, modLoader = modLoader
+    ),
 )
+
+val scope = KTP.openRootScope().installModules(module {
+    bind<Access>().toInstance { Access(SL.staging, SL.appConfig) }
+})
 
 private fun buildGson() = GsonBuilder()
     .setPrettyPrinting()

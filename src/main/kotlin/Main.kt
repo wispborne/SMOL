@@ -27,7 +27,6 @@ var safeMode = false
 fun main() = application {
     val scope = KTP.openRootScope().installModules(module {
         bind<UIConfig>().toInstance { UIConfig(SL.moshi) }
-        bind<Access>().toInstance { Access() }
     })
 
     val uiConfig: UIConfig = scope.getInstance()

@@ -1,6 +1,5 @@
 package cli
 
-import business.Staging
 import business.UserManager
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.subcommands
@@ -8,8 +7,7 @@ import com.github.ajalt.clikt.output.TermUi
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 
-class SmolCli(
-    private val staging: Staging,
+class SmolCLI(
     private val userManager: UserManager
 ) {
     val chainOfCommand = Smol()

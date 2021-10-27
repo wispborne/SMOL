@@ -47,7 +47,7 @@ fun AppState.settingsView(
 
                     kotlin.runCatching {
                         SL.archives.changePath(archivesPath)
-                        SL.staging.changePath(stagingPath)
+                        SL.access.changeStagingPath(stagingPath)
                     }
                         .onFailure { ex ->
                             alertDialogMessage =

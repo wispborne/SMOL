@@ -1,5 +1,6 @@
 package business
 
+import Access
 import config.AppConfig
 import model.UserProfile
 import org.tinylog.kotlin.Logger
@@ -8,7 +9,7 @@ import java.util.*
 
 class UserManager internal constructor(
     private val appConfig: AppConfig,
-    private val staging: Staging,
+    private val access: Access,
     private val modLoader: ModLoader
 ) {
     fun getUserProfile(): UserProfile {
@@ -54,7 +55,7 @@ class UserManager internal constructor(
                     }
             }
             .forEach { variant ->
-                staging.disable(variant)
+                access.disable(variant)
             }
 
         variantsToEnable
@@ -67,7 +68,7 @@ class UserManager internal constructor(
                     }
             }
             .forEach { variant ->
-                staging.enable(variant)
+                access.enable(variant)
             }
     }
 }

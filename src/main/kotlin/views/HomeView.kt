@@ -18,7 +18,7 @@ import business.Archives
 import business.GameEnabledMods.Companion.ENABLED_MODS_FILENAME
 import business.KWatchEvent
 import business.asWatchChannel
-import cli.SmolCli
+import cli.SmolCLI
 import com.arkivanov.decompose.push
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -168,7 +168,7 @@ fun AppState.homeView(
                                     ))
                                 ) {
                                     kotlin.runCatching {
-                                        SmolCli(SL.staging, SL.userManager)
+                                        SmolCLI(userManager = SL.userManager)
                                             .parse(consoleText.asList())
                                         consoleText = ""
                                     }
@@ -189,8 +189,8 @@ private suspend fun watchDirsAndReloadOnChange(
     mods: SnapshotStateList<Mod>
 ) {
     val NSA: List<Flow<KWatchEvent>> = listOf(
-        SL.staging.getStagingPath()?.toFileOrNull()?.asWatchChannel() ?: emptyFlow(),
-        SL.staging.getStagingPath()?.toFileOrNull()?.resolve(Archives.ARCHIVE_MANIFEST_FILENAME) // Watch manifest.json
+        SL.access.getStagingPath()?.toFileOrNull()?.asWatchChannel() ?: emptyFlow(),
+        SL.access.getStagingPath()?.toFileOrNull()?.resolve(Archives.ARCHIVE_MANIFEST_FILENAME) // Watch manifest.json
             ?.run { if (this.exists()) this.asWatchChannel() else emptyFlow() } ?: emptyFlow(),
         SL.gamePath.getModsPath().asWatchChannel(),
         SL.gamePath.getModsPath().resolve(ENABLED_MODS_FILENAME) // Watch enabled_mods.json

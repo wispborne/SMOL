@@ -330,10 +330,10 @@ private fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
                                         // Change mod state
                                         when (action) {
                                             is DropdownAction.ChangeToVariant -> {
-                                                SL.staging.changeActiveVariant(mod, action.variant)
+                                                SL.access.changeActiveVariant(mod, action.variant)
                                             }
                                             is DropdownAction.Disable -> {
-                                                SL.staging.disable(firstEnabledVariant ?: return@runCatching)
+                                                SL.access.disable(firstEnabledVariant ?: return@runCatching)
                                             }
                                             is DropdownAction.MigrateMod -> {
                                                 // TODO
