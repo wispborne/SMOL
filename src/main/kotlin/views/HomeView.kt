@@ -238,7 +238,7 @@ private suspend fun reloadMods(mods: SnapshotStateList<Mod>) {
             Logger.info { "Reloading mods." }
             isRefreshingMods = true
             val freshMods =
-                withContext(Dispatchers.Default) { SL.modLoader.getMods(noCache = true) }
+                withContext(Dispatchers.Default) { SL.access.getMods(noCache = true) }
             mods.clear()
             mods.addAll(freshMods)
             SL.archives.refreshManifest()

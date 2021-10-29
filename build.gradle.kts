@@ -5,7 +5,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.5.21"
-//    kotlin("kapt") version kotlinVer
     id("org.jetbrains.compose") version "1.0.0-alpha3"
 }
 
@@ -25,8 +24,6 @@ dependencies {
 
     implementation(fileTree("libs") { include("**/*.jar") })
     implementation(project("SMOL_Access"))
-
-    implementation(project.property("toothpick")!!)
 
     // JSON
 //    val moshiVer = "1.12.0"

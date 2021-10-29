@@ -18,6 +18,10 @@ class ModLoader internal constructor(
 ) {
     private var lastLoadedMods: List<Mod>? = null
 
+    /**
+     * Reads all mods from /mods, staging, and archive folders.
+     * @param noCache When true, will never return cached information.
+     */
     @OptIn(ExperimentalStdlibApi::class)
     fun getMods(noCache: Boolean): List<Mod> {
         if (!noCache && lastLoadedMods != null) {

@@ -18,8 +18,6 @@ dependencies {
 
     implementation(fileTree("../libs") { include("**/*.jar") })
 
-    implementation(project.property("toothpick")!!)
-
     // JSON
     val moshiVer = "1.12.0"
     api("com.squareup.moshi:moshi-kotlin:$moshiVer")

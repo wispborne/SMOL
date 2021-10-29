@@ -13,24 +13,16 @@ import net.sf.sevenzipjbinding.SevenZip
 import org.jetbrains.skija.impl.Platform
 import org.tinylog.Logger
 import org.tinylog.configuration.Configuration
-import toothpick.ktp.KTP
-import toothpick.ktp.binding.bind
-import toothpick.ktp.binding.module
-import toothpick.ktp.extension.getInstance
+import util.APP_NAME
 import util.SmolPair
 import util.SmolWindowState
-import util.APP_NAME
 import util.makeFinite
 
 var safeMode = false
 
 fun main() = application {
-    val scope = KTP.openRootScope().installModules(module {
-        bind<UIConfig>().toInstance { UIConfig(SL.moshi) }
-    })
-
-    val uiConfig: UIConfig = scope.getInstance()
-    val access: Access = scope.getInstance()
+    val uiConfig = UIConfig(SL.moshi)
+    val access = SL.access
 
     // Logger
     kotlin.runCatching {
