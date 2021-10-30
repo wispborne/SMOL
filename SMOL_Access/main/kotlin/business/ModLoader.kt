@@ -2,8 +2,10 @@ package business
 
 import config.AppConfig
 import config.GamePath
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import model.Mod
 import model.ModVariant
 import org.tinylog.Logger
@@ -16,7 +18,8 @@ class ModLoader internal constructor(
     private val config: AppConfig,
     private val archives: Archives,
     private val modInfoLoader: ModInfoLoader,
-    private val gameEnabledMods: GameEnabledMods
+    private val gameEnabledMods: GameEnabledMods,
+    private val versionChecker: VersionChecker
 ) {
     private var lastLoadedMods: List<Mod>? = null
 
@@ -144,6 +147,9 @@ class ModLoader internal constructor(
 
         onModsReloadedEmitter.tryEmit(result)
         lastLoadedMods = result
+        GlobalScope.launch {
+            versionChecker.lookUpVersions(result.flatMap { it.variants }.filter { it.mod.isEnabled(it) })
+        }
         return result
     }
 }

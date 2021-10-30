@@ -27,6 +27,10 @@ dependencies {
     implementation("com.github.salomonbrys.kotson:kotson:2.5.0")
     // CSV
     implementation("org.apache.commons:commons-csv:1.8")
+    // API
+    api("io.ktor:ktor-client-core:1.6.4")
+    api("io.ktor:ktor-client-cio:1.6.4")
+    api("io.ktor:ktor-client-logging:1.6.4")
 
     // Arrow
     implementation(project.property("arrowCore")!!)

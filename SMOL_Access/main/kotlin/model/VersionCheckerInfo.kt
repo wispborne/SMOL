@@ -11,5 +11,7 @@ data class VersionCheckerInfo(
         @Json(name = "major") val major: String?,
         @Json(name = "minor") val minor: String?,
         @Json(name = "patch") val patch: String?
-    )
+    ) {
+        override fun toString() = listOfNotNull(major, minor, patch).joinToString(separator = ".")
+    }
 }
