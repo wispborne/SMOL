@@ -14,10 +14,17 @@ class UserManager internal constructor(
     private val access: Access,
     private val modLoader: ModLoader
 ) {
+    /**
+     * Prevent profiles updating while we're switching mod profiles.
+     */
+    var isModProfileSwitching = false
+
     init {
         GlobalScope.launch {
             modLoader.onModsReloaded.collect { newMods ->
                 newMods ?: return@collect
+                if (isModProfileSwitching) return@collect
+
                 updateUserProfile { oldProfile ->
                     oldProfile.copy(
                         modProfiles = oldProfile.modProfiles
@@ -58,59 +65,84 @@ class UserManager internal constructor(
     fun updateUserProfile(mutator: (oldProfile: UserProfile) -> UserProfile) {
         val newProfile = mutator(getUserProfile())
         appConfig.userProfile = newProfile
-        Logger.debug { "Updated active profile ${newProfile.activeModProfile.name} to ${newProfile.activeModProfile}" }
+        Logger.debug { "Updated active profile ${newProfile.username} to $newProfile" }
     }
 
-    suspend fun changeModProfile(newModProfile: UserProfile.ModProfile) {
-        val diff =
-            getUserProfile().activeModProfile.enabledModVariants.diff(newModProfile.enabledModVariants) { it }
-
-        val variantsToDisable = diff.removed
-        val variantsToEnable = diff.added
-        val allKnownVariants = modLoader.getMods(noCache = false).flatMap { it.variants }
-
-        variantsToDisable
-            .mapNotNull { varToDisable ->
-                allKnownVariants.firstOrNull { knownVar -> knownVar.smolId == varToDisable.smolVariantId }
-                    .also {
-                        if (it == null) {
-                            // Just log as debug, not an issue if we can't disable something that doesn't exist anyway.
-                            Logger.debug { "Cannot disable variant $varToDisable, as it cannot be found." }
-                        }
-                    }
-            }
-            .forEach { variant ->
-                access.disable(variant)
-            }
-
-        variantsToEnable
-            .mapNotNull { varToEnable ->
-                allKnownVariants.firstOrNull { knownVar -> knownVar.smolId == varToEnable.smolVariantId }
-                    .also {
-                        if (it == null) {
-                            Logger.error { "Cannot enable variant $varToEnable, as it cannot be found." }
-                        }
-                    }
-            }
-            .forEach { variant ->
-                access.enable(variant)
-            }
-
-        Logger.debug { "Changed mod profile to $newModProfile" }
+    fun createModProfile(
+        name: String,
+        description: String?,
+        sortOrder: Int?,
+    ) {
+        updateUserProfile { userProfile ->
+            val newModProfile = UserProfile.ModProfile(
+                id = userProfile.modProfiles.maxOf { it.id } + 1, // New id is the previous highest id +1
+                name = name,
+                description = description ?: "",
+                sortOrder = sortOrder ?: (userProfile.modProfiles.maxOf { it.sortOrder } + 1),
+                enabledModVariants = emptyList()
+            )
+            userProfile.copy(modProfiles = userProfile.modProfiles + newModProfile)
+                .also { Logger.debug { "Created mod profile $newModProfile" } }
+        }
     }
 
-    fun removeModProfile(profileId: Int) {
+    fun removeModProfile(modProfileId: Int) {
         updateUserProfile { oldProfile ->
-            val profileToRemove = oldProfile.modProfiles.firstOrNull { it.id == profileId }
+            val profileToRemove = oldProfile.modProfiles.firstOrNull { it.id == modProfileId }
 
             if (profileToRemove == null) {
-                throw RuntimeException("Profile $profileId not found.")
+                throw RuntimeException("Profile $modProfileId not found.")
             } else {
-                return@updateUserProfile oldProfile.copy(modProfiles = oldProfile.modProfiles.filterNot { it.id == profileId })
-                    .also {
-                        Logger.debug { "Removed mod profile $profileToRemove" }
-                    }
+                return@updateUserProfile oldProfile.copy(modProfiles = oldProfile.modProfiles.filterNot { it.id == modProfileId })
+                    .also { Logger.debug { "Removed mod profile $profileToRemove" } }
             }
+        }
+    }
+
+    suspend fun switchModProfile(newModProfileId: Int) {
+        try {
+            isModProfileSwitching = true
+            val newModProfile = getUserProfile().modProfiles.firstOrNull { it.id == newModProfileId }
+                ?: throw NullPointerException("Unable to find mod profile $newModProfileId.")
+
+            val diff =
+                getUserProfile().activeModProfile.enabledModVariants.diff(newModProfile.enabledModVariants) { it }
+
+            val variantsToDisable = diff.removed
+            val variantsToEnable = diff.added
+            val allKnownVariants = modLoader.getMods(noCache = false).flatMap { it.variants }
+
+            variantsToDisable
+                .mapNotNull { varToDisable ->
+                    allKnownVariants.firstOrNull { knownVar -> knownVar.smolId == varToDisable.smolVariantId }
+                        .also {
+                            if (it == null) {
+                                // Just log as debug, not an issue if we can't disable something that doesn't exist anyway.
+                                Logger.debug { "Cannot disable variant $varToDisable, as it cannot be found." }
+                            }
+                        }
+                }
+                .forEach { variant ->
+                    access.disable(variant)
+                }
+
+            variantsToEnable
+                .mapNotNull { varToEnable ->
+                    allKnownVariants.firstOrNull { knownVar -> knownVar.smolId == varToEnable.smolVariantId }
+                        .also {
+                            if (it == null) {
+                                Logger.error { "Cannot enable variant $varToEnable, as it cannot be found." }
+                            }
+                        }
+                }
+                .forEach { variant ->
+                    access.enable(variant)
+                }
+
+            updateUserProfile { it.copy(activeModProfileId = newModProfileId) }
+            Logger.debug { "Changed mod profile to $newModProfile" }
+        } finally {
+            isModProfileSwitching = false
         }
     }
 }

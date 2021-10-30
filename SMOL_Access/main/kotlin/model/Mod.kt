@@ -2,6 +2,7 @@ package model
 
 import java.io.File
 import java.util.*
+import kotlin.math.absoluteValue
 
 data class Mod(
     val id: String,
@@ -63,6 +64,7 @@ data class ModVariant(
                         modInfo.id,
                         modInfo.version.toString()
                     )
+                        .absoluteValue // Increases chance of a collision but ids look less confusing.
                 )
             }
     }

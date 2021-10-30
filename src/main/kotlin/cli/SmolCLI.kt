@@ -7,7 +7,8 @@ import com.github.ajalt.clikt.output.TermUi
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import com.github.ajalt.clikt.parameters.types.int
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 class SmolCLI(
     private val userManager: UserManager
@@ -16,18 +17,24 @@ class SmolCLI(
         .subcommands(
             Help(),
             ModProfileList(),
+            ModProfileCreate(),
             ModProfileSet(),
             ModProfileRemove()
         )
 
-    fun parse(args: List<String>) {
+    fun parse(command: String) {
         kotlin.runCatching {
             chainOfCommand
-                .parse(args)
+                .parse(
+                    command
+                        .removePrefix("smol")
+                        .trim()
+                        .split(" ")
+                )
         }
             .onFailure {
-                TermUi.echo(it.message)
-                TermUi.echo(chainOfCommand.getFormattedHelp())
+                TermUi.echo(it)
+//                TermUi.echo(chainOfCommand.getFormattedHelp())
             }
     }
 
@@ -43,7 +50,18 @@ class SmolCLI(
 
     inner class ModProfileList : CliktCommand(name = "modprofile-list", help = "List all mod profiles") {
         override fun run() {
-            echo(userManager.getUserProfile().modProfiles.joinToString { it.toString() })
+            echo(userManager.getUserProfile().modProfiles.joinToString(separator = "\n") { it.toString() })
+        }
+    }
+
+    inner class ModProfileCreate : CliktCommand(name = "modprofile-create", help = "Create a new mod profile") {
+        val name by option().required()
+        val description by option()
+        val sortOrder by option().int()
+
+        override fun run() {
+            val profile = userManager.createModProfile(name = name, description = description, sortOrder = sortOrder)
+            echo("Created mod profile $profile (not yet active).")
         }
     }
 
@@ -51,9 +69,11 @@ class SmolCLI(
         val profileId by option().int().required()
 
         override fun run() {
-            val profile = userManager.getUserProfile().modProfiles.single { it.id == profileId }
-            runBlocking { userManager.changeModProfile(profile) }
-            echo("Changed mod profile to $profile")
+            GlobalScope.launch {
+                userManager.switchModProfile(profileId)
+                val profile = userManager.getUserProfile().modProfiles.single { it.id == profileId }
+                echo("Changed mod profile to $profile.")
+            }
         }
     }
 
@@ -61,8 +81,8 @@ class SmolCLI(
         val profileId by option().int().required()
 
         override fun run() {
-            runBlocking { userManager.removeModProfile(profileId) }
-            echo("Removed mod profile $profileId")
+            userManager.removeModProfile(profileId)
+            echo("Removed mod profile $profileId.")
         }
     }
 }

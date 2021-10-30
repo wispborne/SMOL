@@ -31,6 +31,9 @@ dependencies {
     // CLI builder, Clikt
     implementation("com.github.ajalt.clikt:clikt:3.3.0")
 
+    // CLI builder, Kotlin
+    implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.3")
+
     // Arrow
 //    implementation(project.property("arrowCore")!!)
 //    implementation(project.property("arrowOptics")!!)

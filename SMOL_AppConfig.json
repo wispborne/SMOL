@@ -1,5 +1,5 @@
 {
-  "gamePath": "C:\\Program Files (x86)\\Fractal Softworks\\Starsector",
+  "gamePath": "C:\\Program Files (x86)\\Fractal Softworks\\Starsector - Playground",
   "archivesPath": "C:\\Users\\whitm\\SMOL\\archives",
   "stagingPath": "C:\\Users\\whitm\\SMOL\\staging",
   "userProfile": {
@@ -14,6 +14,10 @@
         "sortOrder": 0,
         "enabledModVariants": [
           {
+            "modId": "GachaSMods",
+            "smolVariantId": "GachaS-1.1.0-88767989"
+          },
+          {
             "modId": "lw_console",
             "smolVariantId": "lw_con-2021.4.10-1559603688"
           },
@@ -23,37 +27,16 @@
           },
           {
             "modId": "MagicLib",
-            "smolVariantId": "MagicL-0.36--161229334"
-          },
-          {
-            "modId": "wisp_NeutrinoDetectorMkII",
-            "smolVariantId": "wisp_N-1.2.0-1321544566"
-          },
-          {
-            "modId": "yourName_uniqueid",
-            "smolVariantId": "yourNa-1.0.0--1106969175"
-          },
-          {
-            "modId": "diableavionics",
-            "smolVariantId": "diable-2.61--961494029"
-          },
-          {
-            "modId": "$$$_lightshow",
-            "smolVariantId": "_light-1.41--1741429277"
-          },
-          {
-            "modId": "locknloaded",
-            "smolVariantId": "locknl-0.10--167441674"
-          },
-          {
-            "modId": "tahlan_scalartech",
-            "smolVariantId": "tahlan-0.7-1257560791"
-          },
-          {
-            "modId": "$$$_trailermoments",
-            "smolVariantId": "_trail-1.1a--1817388941"
+            "smolVariantId": "MagicL-0.35-161229335"
           }
         ]
+      },
+      {
+        "id": 1,
+        "name": "test",
+        "description": "",
+        "sortOrder": 1,
+        "enabledModVariants": []
       }
     ],
     "profileVersion": 0

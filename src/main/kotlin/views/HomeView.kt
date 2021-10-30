@@ -169,7 +169,7 @@ fun AppState.homeView(
                                 ) {
                                     kotlin.runCatching {
                                         SmolCLI(userManager = SL.userManager)
-                                            .parse(consoleText.asList())
+                                            .parse(consoleText)
                                         consoleText = ""
                                     }
                                         .onFailure { Logger.warn(it) }
