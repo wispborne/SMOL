@@ -1,8 +1,13 @@
-package config
-
-import com.squareup.moshi.Moshi
+import com.google.gson.Gson
+import config.Config
 import util.SmolWindowState
+import java.nio.file.Paths
 
-class UIConfig(moshi: Moshi) : Config(moshi) {
+class UIConfig(gson: Gson) : Config(
+    gson, JsonFilePrefStorage(
+        gson = gson,
+        file = Paths.get("").toFile().resolve("SMOL_UIConfig.json")
+    )
+) {
     var windowState: SmolWindowState? by pref(prefKey = "windowState", defaultValue = null)
 }

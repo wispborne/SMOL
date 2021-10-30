@@ -1,18 +1,18 @@
 package model
 
 data class UserProfile(
-    val id: String,
+    val id: Int,
     val username: String,
-    val activeModProfileId: String,
-    val modProfiles: List<EnabledMods>,
+    val activeModProfileId: Int,
+    val modProfiles: List<ModProfile>,
     val profileVersion: Int
 ) {
-    val activeModProfile: EnabledMods
+    val activeModProfile: ModProfile
         get() = modProfiles.firstOrNull { it.id == activeModProfileId } ?: modProfiles.first()
 
 
-    data class EnabledMods(
-        val id: String,
+    data class ModProfile(
+        val id: Int,
         val name: String,
         val description: String,
         val sortOrder: Int,
@@ -20,7 +20,7 @@ data class UserProfile(
     ) {
         data class EnabledModVariant(
             val modId: String,
-            val smolVariantId: Int
+            val smolVariantId: String
         )
     }
 }

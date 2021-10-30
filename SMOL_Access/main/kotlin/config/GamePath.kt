@@ -10,8 +10,7 @@ import java.io.File
 
 
 class GamePath internal constructor(
-    private val appConfig: AppConfig,
-    private val moshi: Moshi
+    private val appConfig: AppConfig
 ) {
     fun isValidGamePath(path: String): Boolean {
         IOLock.read {

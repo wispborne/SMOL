@@ -4,7 +4,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
 import com.arkivanov.decompose.Router
-import config.UIConfig
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import navigation.Screen
@@ -21,7 +20,7 @@ import util.makeFinite
 var safeMode = false
 
 fun main() = application {
-    val uiConfig = UIConfig(SL.moshi)
+    val uiConfig = UIConfig(SL.gson)
     val access = SL.access
 
     // Logger
@@ -52,19 +51,28 @@ fun main() = application {
 
     var newState = rememberWindowState()
 
+
+    val currentPlatform =
+        when (Platform.CURRENT) {
+            Platform.WINDOWS -> config.Platform.Windows
+            Platform.MACOS_X64,
+            Platform.MACOS_ARM64 -> config.Platform.MacOS
+            Platform.LINUX -> config.Platform.Linux
+            else -> config.Platform.Windows // *crosses fingers*
+        }
+
+    kotlin.runCatching {
+        access.checkAndSetDefaultPaths(currentPlatform)
+    }
+        .onFailure {
+            if (safeMode) {
+                SL.appConfig.clear()
+                Logger.warn(it) { "SAFE MODE: Cleared app config due to error." }
+            }
+        }
+
     if (!safeMode) {
         SevenZip.initSevenZipFromPlatformJAR()
-
-        val currentPlatform =
-            when (Platform.CURRENT) {
-                Platform.WINDOWS -> config.Platform.Windows
-                Platform.MACOS_X64,
-                Platform.MACOS_ARM64 -> config.Platform.MacOS
-                Platform.LINUX -> config.Platform.Linux
-                else -> TODO()
-            }
-
-        access.checkAndSetDefaultPaths(currentPlatform)
 
         kotlin.runCatching {
             val savedState = uiConfig.windowState!!

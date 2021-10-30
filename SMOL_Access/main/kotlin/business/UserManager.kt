@@ -2,20 +2,43 @@ package business
 
 import Access
 import config.AppConfig
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import model.UserProfile
 import org.tinylog.kotlin.Logger
 import util.diff
-import java.util.*
 
 class UserManager internal constructor(
     private val appConfig: AppConfig,
     private val access: Access,
     private val modLoader: ModLoader
 ) {
+    init {
+        GlobalScope.launch {
+            modLoader.onModsReloaded.collect { newMods ->
+                newMods ?: return@collect
+                updateUserProfile { oldProfile ->
+                    oldProfile.copy(
+                        modProfiles = oldProfile.modProfiles
+                            .map { profile ->
+                                if (profile.id == oldProfile.activeModProfileId) {
+                                    profile.copy(enabledModVariants = newMods
+                                        .flatMap { it.enabledVariants }
+                                        .map { UserProfile.ModProfile.EnabledModVariant(it.mod.id, it.smolId) })
+                                } else
+                                    profile
+                            }
+                    )
+                }
+            }
+        }
+    }
+
     fun getUserProfile(): UserProfile {
         return appConfig.userProfile ?: kotlin.run {
-            val defaultModProfile = UserProfile.EnabledMods(
-                id = UUID.randomUUID().toString(),
+            val defaultModProfile = UserProfile.ModProfile(
+                id = 0,
                 name = "default",
                 description = "Default profile",
                 sortOrder = 0,
@@ -23,7 +46,7 @@ class UserManager internal constructor(
             )
 
             return@run UserProfile(
-                id = UUID.randomUUID().toString(),
+                id = 0,
                 username = "default",
                 activeModProfileId = defaultModProfile.id,
                 modProfiles = listOf(defaultModProfile),
@@ -32,13 +55,15 @@ class UserManager internal constructor(
         }
     }
 
-    fun updateUserProfile(newProfile: UserProfile) {
+    fun updateUserProfile(mutator: (oldProfile: UserProfile) -> UserProfile) {
+        val newProfile = mutator(getUserProfile())
         appConfig.userProfile = newProfile
+        Logger.debug { "Updated active profile ${newProfile.activeModProfile.name} to ${newProfile.activeModProfile}" }
     }
 
-    suspend fun changeUserProfile(newProfile: UserProfile) {
+    suspend fun changeModProfile(newModProfile: UserProfile.ModProfile) {
         val diff =
-            getUserProfile().activeModProfile.enabledModVariants.diff(newProfile.activeModProfile.enabledModVariants) { it }
+            getUserProfile().activeModProfile.enabledModVariants.diff(newModProfile.enabledModVariants) { it }
 
         val variantsToDisable = diff.removed
         val variantsToEnable = diff.added
@@ -70,5 +95,22 @@ class UserManager internal constructor(
             .forEach { variant ->
                 access.enable(variant)
             }
+
+        Logger.debug { "Changed mod profile to $newModProfile" }
+    }
+
+    fun removeModProfile(profileId: Int) {
+        updateUserProfile { oldProfile ->
+            val profileToRemove = oldProfile.modProfiles.firstOrNull { it.id == profileId }
+
+            if (profileToRemove == null) {
+                throw RuntimeException("Profile $profileId not found.")
+            } else {
+                return@updateUserProfile oldProfile.copy(modProfiles = oldProfile.modProfiles.filterNot { it.id == profileId })
+                    .also {
+                        Logger.debug { "Removed mod profile $profileToRemove" }
+                    }
+            }
+        }
     }
 }

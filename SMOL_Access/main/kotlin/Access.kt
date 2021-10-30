@@ -5,17 +5,13 @@ import config.Platform
 import model.Mod
 import model.ModVariant
 import org.tinylog.Logger
-import toothpick.InjectConstructor
 import util.IOLock
 import util.mkdirsIfNotExist
 import util.toFileOrNull
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
-import javax.inject.Singleton
 
-@Singleton
-@InjectConstructor
 class Access internal constructor(
     private val staging: Staging,
     private val config: AppConfig,
@@ -26,7 +22,7 @@ class Access internal constructor(
      * Checks the /mods, archives, and staging paths and sets them to null if they don't exist.
      */
     fun checkAndSetDefaultPaths(platform: Platform) {
-        val uiConfig: AppConfig = SL.appConfig // KTP.openRootScope().getInstance()
+        val uiConfig: AppConfig = SL.appConfig
 
         if (!SL.gamePath.isValidGamePath(uiConfig.gamePath ?: "")) {
             uiConfig.gamePath = SL.gamePath.getDefaultStarsectorPath(platform)?.absolutePath

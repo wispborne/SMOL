@@ -25,11 +25,8 @@ dependencies {
     implementation(fileTree("libs") { include("**/*.jar") })
     implementation(project("SMOL_Access"))
 
-    // JSON
-//    val moshiVer = "1.12.0"
-//    implementation("com.squareup.moshi:moshi-kotlin:$moshiVer")
-//    kapt("com.squareup.moshi:moshi-kotlin:$moshiVer")
-//    implementation("com.squareup.moshi:moshi-adapters:$moshiVer")
+    // Gson
+    implementation("com.github.salomonbrys.kotson:kotson:2.5.0")
 
     // CLI builder, Clikt
     implementation("com.github.ajalt.clikt:clikt:3.3.0")

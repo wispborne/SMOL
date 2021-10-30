@@ -27,9 +27,9 @@ class ServiceLocator internal constructor(
         .addLast(KotlinJsonAdapterFactory())
         .build(),
     val gson: Gson = buildGson(),
-    val appConfig: AppConfig = AppConfig(moshi = moshi),
+    val appConfig: AppConfig = AppConfig(gson = gson),
     internal val modInfoLoader: ModInfoLoader = ModInfoLoader(moshi = moshi, gson = gson),
-    val gamePath: GamePath = GamePath(appConfig = appConfig, moshi = moshi),
+    val gamePath: GamePath = GamePath(appConfig = appConfig),
     internal val gameEnabledMods: GameEnabledMods = GameEnabledMods(gson, gamePath),
     val archives: Archives = Archives(
         config = appConfig,

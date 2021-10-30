@@ -1,50 +1,103 @@
 package config
 
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.adapter
+import com.google.gson.Gson
+import com.google.gson.JsonElement
+import util.mkdirsIfNotExist
+import java.io.File
 import java.util.prefs.Preferences
 import kotlin.reflect.KProperty
+import kotlin.reflect.javaType
+import kotlin.reflect.typeOf
 
-abstract class Config(private val moshi: Moshi) {
+abstract class Config(
+    @Transient private val gson: Gson,
+    @Transient private val prefStorage: PrefStorage
+) {
 
     @OptIn(ExperimentalStdlibApi::class)
     inner class pref<T>(val prefKey: String? = null, val defaultValue: T) {
         operator fun getValue(thisRef: Any?, property: KProperty<*>): T =
+            prefStorage.get(
+                key = prefKey ?: property.name,
+                defaultValue = defaultValue,
+                property = property as KProperty<T>
+            )
+
+        operator fun setValue(thisRef: Any?, property: KProperty<*>, value: T) =
+            prefStorage.put(prefKey ?: property.name, value ?: defaultValue, property)
+    }
+
+    fun clear() = prefStorage.clear()
+
+    interface PrefStorage {
+        fun <T> get(key: String, defaultValue: T, property: KProperty<T>): T
+        fun <T> put(key: String, value: T?, property: KProperty<T>)
+        fun clear()
+    }
+
+    class JsonFilePrefStorage(private val gson: Gson, private val file: File) : PrefStorage {
+        init {
+            if (!file.exists()) {
+                file.parentFile?.mkdirsIfNotExist()
+                file.createNewFile()
+            }
+        }
+
+        @OptIn(ExperimentalStdlibApi::class)
+        override fun <T> get(key: String, defaultValue: T, property: KProperty<T>): T =
+            ((gson.fromJson<Map<*, JsonElement>>(file.readText(), typeOf<Map<*, JsonElement>?>().javaType)
+                ?: emptyMap<Any, JsonElement>())
+                .get(key))
+                ?.run { gson.fromJson<T>(this, property.returnType.javaType) }
+                ?: defaultValue
+
+        @OptIn(ExperimentalStdlibApi::class)
+        override fun <T> put(key: String, value: T?, property: KProperty<T>) =
+            (gson.fromJson<Map<*, *>>(file.readText(), typeOf<Map<*, *>?>().javaType) ?: emptyMap<Any, Any>())
+                .toMutableMap().apply { this[key] = value as T }
+                .run { file.writeText(gson.toJson(this)) }
+
+        override fun clear() = Preferences.userRoot().clear()
+    }
+
+    class JavaRegistryPrefStorage(private val gson: Gson) : PrefStorage {
+        @OptIn(ExperimentalStdlibApi::class)
+        override fun <T> get(key: String, defaultValue: T, property: KProperty<T>): T =
             when (property.returnType) {
                 String::class ->
-                    Preferences.userRoot().get(prefKey ?: property.name, defaultValue as String) as T
+                    Preferences.userRoot().get(key, defaultValue as String) as T
                 Int::class ->
-                    Preferences.userRoot().getInt(prefKey ?: property.name, defaultValue as Int) as T
+                    Preferences.userRoot().getInt(key, defaultValue as Int) as T
                 Float::class ->
-                    Preferences.userRoot().getFloat(prefKey ?: property.name, defaultValue as Float) as T
+                    Preferences.userRoot().getFloat(key, defaultValue as Float) as T
                 Boolean::class ->
-                    Preferences.userRoot().getBoolean(prefKey ?: property.name, defaultValue as Boolean) as T
+                    Preferences.userRoot().getBoolean(key, defaultValue as Boolean) as T
                 Long::class ->
-                    Preferences.userRoot().getLong(prefKey ?: property.name, defaultValue as Long) as T
+                    Preferences.userRoot().getLong(key, defaultValue as Long) as T
                 else ->
-                    (Preferences.userRoot().get(prefKey ?: property.name, defaultValue as String?))
-                        ?.let {
-                            moshi.adapter<T>(property.returnType).fromJson(it)
+                    (Preferences.userRoot().get(key, defaultValue as String? ?: ""))
+                        .let {
+                            gson.fromJson<T>(it, property.returnType.javaType)
                         } ?: defaultValue
             }
 
-        operator fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
+        override fun <T> put(key: String, value: T?, property: KProperty<T>) =
             when (property.returnType) {
                 String::class ->
-                    Preferences.userRoot().put(prefKey ?: property.name, value as String)
+                    Preferences.userRoot().put(key, value as String)
                 Int::class ->
-                    Preferences.userRoot().putInt(prefKey ?: property.name, value as Int)
+                    Preferences.userRoot().putInt(key, value as Int)
                 Float::class ->
-                    Preferences.userRoot().putFloat(prefKey ?: property.name, value as Float)
+                    Preferences.userRoot().putFloat(key, value as Float)
                 Boolean::class ->
-                    Preferences.userRoot().putBoolean(prefKey ?: property.name, value as Boolean)
+                    Preferences.userRoot().putBoolean(key, value as Boolean)
                 Long::class ->
-                    Preferences.userRoot().putLong(prefKey ?: property.name, value as Long)
+                    Preferences.userRoot().putLong(key, value as Long)
                 else ->
                     Preferences.userRoot()
-                        .put(prefKey ?: property.name, value
-                            ?.let { moshi.adapter<T>(property.returnType).toJson(value) })
+                        .put(key, value?.let { gson.toJson(value) })
             }
-        }
+
+        override fun clear() = Preferences.userRoot().clear()
     }
 }

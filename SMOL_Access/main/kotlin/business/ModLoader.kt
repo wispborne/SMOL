@@ -2,6 +2,8 @@ package business
 
 import config.AppConfig
 import config.GamePath
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import model.Mod
 import model.ModVariant
 import org.tinylog.Logger
@@ -17,6 +19,9 @@ class ModLoader internal constructor(
     private val gameEnabledMods: GameEnabledMods
 ) {
     private var lastLoadedMods: List<Mod>? = null
+
+    val onModsReloadedEmitter = MutableStateFlow<List<Mod>?>(null)
+    val onModsReloaded = onModsReloadedEmitter.asStateFlow()
 
     /**
      * Reads all mods from /mods, staging, and archive folders.
@@ -137,6 +142,7 @@ class ModLoader internal constructor(
                 }
             }
 
+        onModsReloadedEmitter.tryEmit(result)
         lastLoadedMods = result
         return result
     }

@@ -6,6 +6,8 @@ import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.output.TermUi
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
+import com.github.ajalt.clikt.parameters.types.int
+import kotlinx.coroutines.runBlocking
 
 class SmolCLI(
     private val userManager: UserManager
@@ -13,9 +15,9 @@ class SmolCLI(
     val chainOfCommand = Smol()
         .subcommands(
             Help(),
-            ProfileList(),
-            ProfileSet(),
-            ProfileRemove()
+            ModProfileList(),
+            ModProfileSet(),
+            ModProfileRemove()
         )
 
     fun parse(args: List<String>) {
@@ -39,25 +41,28 @@ class SmolCLI(
         }
     }
 
-    inner class ProfileList : CliktCommand(help = "List all profiles") {
+    inner class ModProfileList : CliktCommand(name = "modprofile-list", help = "List all mod profiles") {
         override fun run() {
             echo(userManager.getUserProfile().modProfiles.joinToString { it.toString() })
         }
     }
 
-    inner class ProfileSet : CliktCommand(help = "Set active profile") {
-        val name by option().required()
+    inner class ModProfileSet : CliktCommand(name = "modprofile-set", help = "Set active mod profile") {
+        val profileId by option().int().required()
 
         override fun run() {
-
+            val profile = userManager.getUserProfile().modProfiles.single { it.id == profileId }
+            runBlocking { userManager.changeModProfile(profile) }
+            echo("Changed mod profile to $profile")
         }
     }
 
-    inner class ProfileRemove : CliktCommand(help = "Remove a profile") {
-        val name by option().required()
+    inner class ModProfileRemove : CliktCommand(name = "modprofile-remove", help = "Remove a mod profile") {
+        val profileId by option().int().required()
 
         override fun run() {
-
+            runBlocking { userManager.removeModProfile(profileId) }
+            echo("Removed mod profile $profileId")
         }
     }
 }

@@ -47,11 +47,24 @@ data class ModVariant(
     /**
      * Composite key: mod id + mod version.
      */
-    val smolId: Int
+    val smolId: String
         get() = createSmolId(modInfo)
 
     companion object {
-        fun createSmolId(modInfo: ModInfo) = Objects.hash(modInfo.id, modInfo.version.toString())
+        private val filter = Regex("""[^0-9a-zA-Z\\.\-_]""")
+        fun createSmolId(modInfo: ModInfo) =
+            buildString {
+                append(modInfo.id.replace(filter, "").take(6))
+                append("-")
+                append(modInfo.version.toString().replace(filter, "").take(9))
+                append("-")
+                append(
+                    Objects.hash(
+                        modInfo.id,
+                        modInfo.version.toString()
+                    )
+                )
+            }
     }
 
     // incredibly inelegant way of doing a parent-child relationship
