@@ -48,7 +48,7 @@ data class ModVariant(
     /**
      * Composite key: mod id + mod version.
      */
-    val smolId: String
+    val smolId: SmolId
         get() = createSmolId(modInfo)
 
     companion object {
@@ -88,3 +88,5 @@ data class ModVariant(
 
     fun generateVariantFolderName() = "${modInfo.name}_${smolId}"
 }
+
+typealias SmolId = String

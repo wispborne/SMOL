@@ -9,8 +9,8 @@ import org.apache.commons.csv.CSVParser
 import org.hjson.JsonValue
 import org.tinylog.Logger
 import util.IOLock
-import util.MOD_INFO_FILE
-import util.VERSION_CHECKER_CSV_PATH
+import MOD_INFO_FILE
+import VERSION_CHECKER_CSV_PATH
 import java.io.File
 
 class ModInfoLoader(

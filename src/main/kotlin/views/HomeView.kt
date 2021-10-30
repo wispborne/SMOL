@@ -1,5 +1,6 @@
 package views
 
+import APP_NAME
 import AppState
 import SL
 import SmolAlertDialog

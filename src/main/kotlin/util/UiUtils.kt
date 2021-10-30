@@ -1,7 +1,7 @@
 package util
 
+import FORUM_PAGE_URL
 import model.Mod
-import model.VersionCheckerInfo
 import java.awt.Desktop
 import java.net.URI
 

@@ -10,6 +10,7 @@ import com.squareup.moshi.adapter
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import config.AppConfig
 import config.GamePath
+import config.VersionCheckerCache
 import model.ModInfo
 import org.hjson.JsonValue
 import util.ManualReloadTrigger
@@ -27,7 +28,8 @@ class ServiceLocator internal constructor(
         .addLast(KotlinJsonAdapterFactory())
         .build(),
     val gson: Gson = buildGson(),
-    val versionChecker: VersionChecker = VersionChecker(gson),
+    val versionCheckerCache: VersionCheckerCache = VersionCheckerCache(gson = gson),
+    val versionChecker: VersionChecker = VersionChecker(gson = gson, versionCheckerCache = versionCheckerCache),
     val appConfig: AppConfig = AppConfig(gson = gson),
     internal val modInfoLoader: ModInfoLoader = ModInfoLoader(moshi = moshi, gson = gson),
     val gamePath: GamePath = GamePath(appConfig = appConfig),

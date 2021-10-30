@@ -12,7 +12,6 @@ import net.sf.sevenzipjbinding.SevenZip
 import org.jetbrains.skija.impl.Platform
 import org.tinylog.Logger
 import org.tinylog.configuration.Configuration
-import util.APP_NAME
 import util.SmolPair
 import util.SmolWindowState
 import util.makeFinite

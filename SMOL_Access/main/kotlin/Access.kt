@@ -29,14 +29,14 @@ class Access internal constructor(
         }
 
         if (uiConfig.archivesPath.toFileOrNull()?.exists() != true) {
-            uiConfig.archivesPath = File(System.getProperty("user.home"), "SMOL/archives").absolutePath
+            uiConfig.archivesPath = ARCHIVES_FOLDER_DEFAULT.absolutePath
         }
 
         SL.archives.getArchivesManifest()
             .also { Logger.debug { "Archives folder manifest: ${it?.manifestItems?.keys?.joinToString()}" } }
 
         if (uiConfig.stagingPath.toFileOrNull()?.exists() != true) {
-            uiConfig.stagingPath = File(System.getProperty("user.home"), "SMOL/staging").absolutePath
+            uiConfig.stagingPath = STAGING_FOLDER_DEFAULT.absolutePath
         }
 
         Logger.debug { "Game: ${uiConfig.gamePath}" }
