@@ -6,6 +6,7 @@ import androidx.compose.ui.text.TextStyle
 import com.arkivanov.decompose.extensions.compose.jetbrains.Children
 import navigation.Screen
 import views.FileDropper
+import views.ProfilesView
 import views.homeView
 import views.settingsView
 
@@ -23,7 +24,8 @@ fun AppState.appView() {
             when (screen.configuration) {
                 is Screen.Home -> homeView()
                 is Screen.Settings -> settingsView()
-            }
+                is Screen.Profiles -> ProfilesView()
+            }.run { }
             FileDropper()
         }
     }

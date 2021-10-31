@@ -91,6 +91,8 @@ fun AppState.homeView(
             ) {
                 Text("Refresh")
             }
+
+            profilesButton()
         }
     }, content = {
         Box {
@@ -258,5 +260,15 @@ private fun AppState.settingsButton() {
         modifier = Modifier.padding(start = 16.dp)
     ) {
         Text("Settings")
+    }
+}
+
+@Composable
+private fun AppState.profilesButton() {
+    SmolButton(
+        onClick = { router.push(Screen.Profiles) },
+        modifier = Modifier.padding(start = 16.dp)
+    ) {
+        Text("Profiles")
     }
 }
