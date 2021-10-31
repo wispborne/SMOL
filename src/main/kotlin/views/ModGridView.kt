@@ -5,6 +5,7 @@ import AppState
 import SL
 import SmolAlertDialog
 import SmolButton
+import SmolTooltipText
 import TiledImage
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.*
@@ -106,6 +107,10 @@ fun AppState.ModGridView(
                             ) { modRow ->
                                 val mod = modRow.mod
                                 var showContextMenu by remember { mutableStateOf(false) }
+                                val highestLocalVersion =
+                                    mod.findHighestVersion?.versionCheckerInfo?.modVersion
+                                val onlineVersion = SL.versionChecker.getOnlineVersion(modId = mod.id)
+
                                 ListItem(Modifier
                                     .fillMaxWidth()
                                     .mouseClickable {
@@ -129,11 +134,33 @@ fun AppState.ModGridView(
                                             modifier = Modifier.weight(1f).align(Alignment.CenterVertically)
                                         )
                                         // Mod version (active or highest)
-                                        Text(
-                                            text = mod.variants
-                                                .joinToString() { it.modInfo.version.toString() },
-                                            modifier = Modifier.weight(1f).align(Alignment.CenterVertically)
-                                        )
+                                        Row(Modifier.weight(1f)) {
+                                            Text(
+                                                text = mod.variants
+                                                    .joinToString() { it.modInfo.version.toString() },
+                                                modifier = Modifier.align(Alignment.CenterVertically)
+                                            )
+                                            if (highestLocalVersion != null && onlineVersion != null && onlineVersion > highestLocalVersion) {
+                                                BoxWithTooltip(
+                                                    modifier = Modifier.mouseClickable {
+                                                        if (this.buttons.isPrimaryPressed) {
+                                                            mod.findHighestVersion?.versionCheckerInfo?.modThreadId?.openModThread()
+                                                        }
+                                                    }
+                                                        .align(Alignment.CenterVertically),
+                                                    tooltip = {
+                                                        SmolTooltipText(text = "Newer version available: $onlineVersion")
+                                                    }) {
+                                                    Image(
+                                                        painter = painterResource("news64.png"),
+                                                        contentDescription = null,
+                                                        modifier = Modifier.width(26.dp).height(26.dp)
+                                                            .padding(start = 8.dp)
+                                                            .align(Alignment.CenterVertically)
+                                                    )
+                                                }
+                                            }
+                                        }
                                         CursorDropdownMenu(
                                             expanded = showContextMenu,
                                             onDismissRequest = { showContextMenu = false }) {
@@ -268,8 +295,7 @@ private fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
                 // Text of the dropdown menu, current state of the mod
                 if (mod.enabledVariants.size > 1) {
                     BoxWithTooltip(tooltip = {
-                        Text(
-                            modifier = Modifier.background(MaterialTheme.colors.background).padding(8.dp),
+                        SmolTooltipText(
                             text = "Warning: ${mod.enabledVariants.size} versions of " +
                                     "${mod.findHighestVersion!!.modInfo.name} in the mods folder." +
                                     " Remove one."

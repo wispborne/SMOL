@@ -33,6 +33,9 @@ data class Mod(
 
     val findHighestVersion: ModVariant?
         get() = variants.maxByOrNull { it.modInfo.version }
+
+    val hasEnabledVariant: Boolean
+        get() = findFirstEnabled != null
 }
 
 /**
@@ -90,3 +93,4 @@ data class ModVariant(
 }
 
 typealias SmolId = String
+typealias ModId = String

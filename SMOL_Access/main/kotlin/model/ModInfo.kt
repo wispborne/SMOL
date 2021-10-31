@@ -115,7 +115,7 @@ data class Version(
      * to the specified [other] object, a negative number if it's less than [other], or a positive number
      * if it's greater than [other].
      */
-    override fun compareTo(other: Version): Int {
+    override operator fun compareTo(other: Version): Int {
         this.major.compareTo(other.major, ignoreCase = true).run { if (this != 0) return this }
         this.minor.compareTo(other.minor, ignoreCase = true).run { if (this != 0) return this }
         this.patch.compareTo(other.patch, ignoreCase = true).run { if (this != 0) return this }

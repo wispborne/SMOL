@@ -148,7 +148,7 @@ class ModLoader internal constructor(
         onModsReloadedEmitter.tryEmit(result)
         lastLoadedMods = result
         GlobalScope.launch {
-            versionChecker.lookUpVersions(result.flatMap { it.variants }.filter { it.mod.isEnabled(it) })
+            versionChecker.lookUpVersions(result.filter { it.hasEnabledVariant })
         }
         return result
     }

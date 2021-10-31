@@ -11,7 +11,11 @@ fun Mod.getModThreadId(): ModThreadId? =
         ?: findHighestVersion?.versionCheckerInfo?.modThreadId
 
 fun ModThreadId.openModThread() {
-    Desktop.getDesktop().browse(URI(FORUM_PAGE_URL + this))
+    (FORUM_PAGE_URL + this).openAsUriInBrowser()
+}
+
+fun String.openAsUriInBrowser() {
+    Desktop.getDesktop().browse(URI(this))
 }
 
 typealias ModThreadId = String

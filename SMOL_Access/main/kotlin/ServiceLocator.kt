@@ -28,7 +28,7 @@ class ServiceLocator internal constructor(
         .addLast(KotlinJsonAdapterFactory())
         .build(),
     val gson: Gson = buildGson(),
-    val versionCheckerCache: VersionCheckerCache = VersionCheckerCache(gson = gson),
+    internal val versionCheckerCache: VersionCheckerCache = VersionCheckerCache(gson = gson),
     val versionChecker: VersionChecker = VersionChecker(gson = gson, versionCheckerCache = versionCheckerCache),
     val appConfig: AppConfig = AppConfig(gson = gson),
     internal val modInfoLoader: ModInfoLoader = ModInfoLoader(moshi = moshi, gson = gson),
