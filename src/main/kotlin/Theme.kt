@@ -49,6 +49,10 @@ object SmolTheme {
     )
 
     val warningOrange = Color(java.awt.Color.decode("#F95D13").rgb)
+
+    val cornerClipping = 8.dp
+    fun smolNormalButtonShape() = CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp)
+    fun smolFullyClippedButtonShape() = CutCornerShape(size = SmolTheme.cornerClipping)
 }
 
 @Composable
@@ -68,7 +72,7 @@ fun SmolButton(
     Button(
         modifier = modifier,
         border = border,
-        shape = shape ?: smolNormalButtonShape(),
+        shape = shape ?: SmolTheme.smolNormalButtonShape(),
         onClick = onClick,
         enabled = enabled,
         interactionSource = interactionSource,
@@ -78,9 +82,6 @@ fun SmolButton(
         content = content,
     )
 }
-
-fun smolNormalButtonShape() = CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp)
-fun smolFullyClippedButtonShape() = CutCornerShape(size = 8.dp)
 
 @Composable
 @OptIn(ExperimentalMaterialApi::class)
@@ -102,7 +103,7 @@ fun SmolSecondaryButton(
     SmolButton(
         modifier = modifier,
         border = border,
-        shape = shape ?: smolNormalButtonShape(),
+        shape = shape ?: SmolTheme.smolNormalButtonShape(),
         onClick = onClick,
         enabled = enabled,
         interactionSource = interactionSource,

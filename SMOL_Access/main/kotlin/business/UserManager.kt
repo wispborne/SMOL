@@ -62,18 +62,19 @@ class UserManager internal constructor(
         }
     }
 
-    fun updateUserProfile(mutator: (oldProfile: UserProfile) -> UserProfile) {
+    fun updateUserProfile(mutator: (oldProfile: UserProfile) -> UserProfile): UserProfile {
         val newProfile = mutator(getUserProfile())
         appConfig.userProfile = newProfile
         Logger.debug { "Updated active profile ${newProfile.username} to $newProfile" }
+        return newProfile
     }
 
     fun createModProfile(
         name: String,
         description: String?,
         sortOrder: Int?,
-    ) {
-        updateUserProfile { userProfile ->
+    ): UserProfile {
+        return updateUserProfile { userProfile ->
             val newModProfile = UserProfile.ModProfile(
                 id = userProfile.modProfiles.maxOf { it.id } + 1, // New id is the previous highest id +1
                 name = name,

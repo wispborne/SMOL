@@ -35,7 +35,6 @@ import kotlinx.coroutines.launch
 import model.Mod
 import model.ModVariant
 import org.tinylog.Logger
-import smolFullyClippedButtonShape
 import util.*
 import java.awt.Desktop
 
@@ -284,7 +283,7 @@ private fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
                 onClick = { expanded = true },
                 modifier = Modifier
                     .align(Alignment.CenterStart),
-                shape = smolFullyClippedButtonShape(),
+                shape = SmolTheme.smolFullyClippedButtonShape(),
                 colors = ButtonDefaults.buttonColors(
                     backgroundColor = when (mod.state) {
                         ModState.Enabled -> MaterialTheme.colors.primary
@@ -326,7 +325,7 @@ private fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
                 expanded = expanded,
                 modifier = Modifier
                     .background(MaterialTheme.colors.background)
-                    .border(1.dp, MaterialTheme.colors.primary, shape = smolFullyClippedButtonShape()),
+                    .border(1.dp, MaterialTheme.colors.primary, shape = SmolTheme.smolFullyClippedButtonShape()),
                 onDismissRequest = { expanded = false }
             ) {
                 val coroutineScope = rememberCoroutineScope()
@@ -435,7 +434,7 @@ object SmolDropdown {
                 onClick = { expanded = true },
                 modifier = Modifier.wrapContentWidth()
                     .align(Alignment.CenterStart),
-                shape = smolFullyClippedButtonShape(),
+                shape = SmolTheme.smolFullyClippedButtonShape(),
                 colors = ButtonDefaults.buttonColors(
                     backgroundColor = selectedItem.backgroundColor
                 )
