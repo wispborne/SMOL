@@ -53,6 +53,9 @@ object SmolTheme {
     val cornerClipping = 8.dp
     fun smolNormalButtonShape() = CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp)
     fun smolFullyClippedButtonShape() = CutCornerShape(size = SmolTheme.cornerClipping)
+
+    @Composable
+    fun highlight() = MaterialTheme.colors.onSurface.copy(alpha = .70f)
 }
 
 @Composable

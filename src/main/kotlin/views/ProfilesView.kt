@@ -5,6 +5,7 @@ import SL
 import SmolButton
 import SmolTheme
 import androidx.compose.desktop.ui.tooling.preview.Preview
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -15,13 +16,14 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.arkivanov.decompose.pop
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import model.UserProfile
 import util.ellipsizeAfter
 
 @OptIn(
@@ -48,15 +50,21 @@ fun AppState.ProfilesView(
             }
 
             LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                this.items(items = userProfile.modProfiles) { modProfile ->
+                this.items(items = userProfile.modProfiles
+                    .sortedWith(
+                        compareByDescending<UserProfile.ModProfile> { it.id == userProfile.activeModProfileId }
+                            .thenBy { it.sortOrder })
+                ) { modProfile ->
                     val isActiveProfile = userProfile.activeModProfileId == modProfile.id
+                    var isEditMode by remember { mutableStateOf(false) }
+                    var modProfileName by remember { mutableStateOf(modProfile.name) }
                     Card(
                         modifier = Modifier.width(370.dp).wrapContentHeight()
                             .run {
                                 // Highlight active profile
                                 if (isActiveProfile) this.border(
                                     width = 4.dp,
-                                    color = MaterialTheme.colors.onSurface.copy(alpha = .45f),
+                                    color = SmolTheme.highlight(),
                                     shape = SmolTheme.smolFullyClippedButtonShape()
                                 ) else this
                             },
@@ -65,18 +73,38 @@ fun AppState.ProfilesView(
                         SelectionContainer {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Row {
-                                    Text(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .padding(start = 16.dp, end = 16.dp)
-                                            .align(Alignment.CenterVertically),
-                                        fontWeight = FontWeight.Bold,
-                                        text = modProfile.name,
-                                        textAlign = TextAlign.Center
-                                    )
+                                    if (!isEditMode) {
+                                        Text(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .padding(end = 16.dp)
+                                                .align(Alignment.CenterVertically),
+                                            fontWeight = FontWeight.Bold,
+                                            text = modProfileName
+                                        )
+                                    } else {
+                                        TextField(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .padding(end = 16.dp)
+                                                .align(Alignment.CenterVertically),
+                                            value = modProfileName,
+                                            label = { Text(text = "Profile Name") },
+                                            onValueChange = { newValue ->
+                                                modProfileName = newValue
+                                                SL.userManager.updateUserProfile { old ->
+                                                    old.copy(modProfiles = old.modProfiles.map { profile ->
+                                                        if (profile.id == modProfile.id) {
+                                                            profile.copy(name = newValue)
+                                                        } else profile
+                                                    })
+                                                }
+                                            }
+                                        )
+                                    }
                                     Text(
                                         modifier = Modifier.align(Alignment.CenterVertically),
-                                        text = "#${modProfile.id}",
+                                        text = "${modProfile.enabledModVariants.count()} mods",
                                         fontFamily = SmolTheme.fireCodeFont,
                                         fontSize = 12.sp,
                                     )
@@ -102,26 +130,55 @@ fun AppState.ProfilesView(
                                         })
                                 }
                                 DisableSelection {
-                                    if (isActiveProfile) {
-                                        Text(
-                                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                                            textAlign = TextAlign.Center,
-                                            fontWeight = FontWeight.SemiBold,
-                                            text = "Active"
-                                        )
-                                    } else {
-                                        Button(modifier = Modifier.align(Alignment.CenterHorizontally),
+                                    Row(
+                                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                                            .padding(top = 16.dp)
+                                    ) {
+                                        SmolButton(
+                                            enabled = !isActiveProfile,
                                             onClick = {
-                                                GlobalScope.launch {
-                                                    SL.userManager.switchModProfile(modProfile.id)
-                                                    userProfile = SL.userManager.getUserProfile()
-                                                    modVariants =
-                                                        SL.access.getMods(noCache = false).flatMap { it.variants }
-                                                            .associateBy { it.smolId }
+                                                if (!isActiveProfile) {
+                                                    GlobalScope.launch {
+                                                        SL.userManager.switchModProfile(modProfile.id)
+                                                        userProfile = SL.userManager.getUserProfile()
+                                                        modVariants =
+                                                            SL.access.getMods(noCache = false).flatMap { it.variants }
+                                                                .associateBy { it.smolId }
+                                                    }
                                                 }
                                             }) {
-                                            Text(
-                                                text = "Activate"
+                                            if (isActiveProfile)
+                                                Text(
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    text = "Active"
+                                                )
+                                            else
+                                                Text(
+                                                    text = "Activate"
+                                                )
+                                        }
+                                        IconToggleButton(
+                                            modifier = Modifier
+                                                .padding(start = 8.dp)
+                                                .background(
+                                                    shape = SmolTheme.smolNormalButtonShape(),
+                                                    color = MaterialTheme.colors.primary
+                                                )
+                                                .run {
+                                                    if (isEditMode) this.border(
+                                                        width = 2.dp,
+                                                        color = SmolTheme.highlight(),
+                                                        shape = SmolTheme.smolNormalButtonShape()
+                                                    ) else this
+                                                }
+                                                .height(ButtonDefaults.MinHeight)
+                                                .width(ButtonDefaults.MinHeight),
+                                            checked = isEditMode,
+                                            onCheckedChange = { isEditMode = !isEditMode }
+                                        ) {
+                                            Icon(
+                                                painter = painterResource("pencil-outline.svg"),
+                                                contentDescription = null
                                             )
                                         }
                                     }
