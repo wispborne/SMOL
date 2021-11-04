@@ -90,6 +90,7 @@ fun AppState.ProfilesView(
                                                 .align(Alignment.CenterVertically),
                                             value = modProfileName,
                                             label = { Text(text = "Profile Name") },
+                                            singleLine = true,
                                             onValueChange = { newValue ->
                                                 modProfileName = newValue
                                                 SL.userManager.updateUserProfile { old ->

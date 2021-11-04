@@ -14,6 +14,7 @@ import org.tinylog.Logger
 import org.tinylog.configuration.Configuration
 import util.SmolPair
 import util.SmolWindowState
+import util.currentPlatform
 import util.makeFinite
 
 var safeMode = false
@@ -50,15 +51,6 @@ fun main() = application {
 
     var newState = rememberWindowState()
 
-
-    val currentPlatform =
-        when (Platform.CURRENT) {
-            Platform.WINDOWS -> config.Platform.Windows
-            Platform.MACOS_X64,
-            Platform.MACOS_ARM64 -> config.Platform.MacOS
-            Platform.LINUX -> config.Platform.Linux
-            else -> config.Platform.Windows // *crosses fingers*
-        }
 
     kotlin.runCatching {
         access.checkAndSetDefaultPaths(currentPlatform)

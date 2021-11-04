@@ -2,6 +2,7 @@ package util
 
 import FORUM_PAGE_URL
 import model.Mod
+import org.jetbrains.skija.impl.Platform
 import java.awt.Desktop
 import java.net.URI
 import kotlin.math.ceil
@@ -37,3 +38,12 @@ fun String.ellipsizeAfter(length: Int): String? {
         this.substring(0, lengthMod - 3) + "…"
     } else this
 }
+
+val currentPlatform =
+    when (Platform.CURRENT) {
+        Platform.WINDOWS -> config.Platform.Windows
+        Platform.MACOS_X64,
+        Platform.MACOS_ARM64 -> config.Platform.MacOS
+        Platform.LINUX -> config.Platform.Linux
+        else -> config.Platform.Windows // *crosses fingers*
+    }

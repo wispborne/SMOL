@@ -109,6 +109,7 @@ private fun AppState.gamePathSetting(gamePath: String): String {
                 .align(Alignment.CenterVertically),
             label = { Text("Game path") },
             isError = isGamePathError,
+            singleLine = true,
             onValueChange = {
                 newGamePath = it
                 isGamePathError = !SL.gamePath.isValidGamePath(it)
@@ -148,6 +149,7 @@ private fun AppState.archivesPathSetting(archivesPath: String): String {
                 .align(Alignment.CenterVertically),
             label = { Text("Archive storage path") },
             isError = isArchivesPathError,
+            singleLine = true,
             onValueChange = {
                 archivesPathMutable = it
                 isArchivesPathError = isValidArchivesPath(it)
@@ -187,6 +189,7 @@ private fun AppState.stagingPathSetting(stagingPath: String): String {
                 .align(Alignment.CenterVertically),
             label = { Text("Staging path") },
             isError = isStagingPathError,
+            singleLine = true,
             onValueChange = {
                 stagingPathMutable = it
 //                isStagingPathError = isValidArchivesPath(it)

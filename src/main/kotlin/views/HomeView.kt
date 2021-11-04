@@ -6,7 +6,9 @@ import SL
 import SmolAlertDialog
 import SmolButton
 import SmolSecondaryButton
+import SmolTheme
 import androidx.compose.desktop.ui.tooling.preview.Preview
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.*
@@ -21,13 +23,18 @@ import business.KWatchEvent
 import business.asWatchChannel
 import cli.SmolCLI
 import com.arkivanov.decompose.push
+import config.Platform
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import model.Mod
 import navigation.Screen
 import org.tinylog.Logger
-import util.*
+import util.IOLock
+import util.currentPlatform
+import util.equalsAny
+import util.toFileOrNull
 import java.io.File
+
 
 private var isRefreshingMods = false
 
@@ -70,16 +77,16 @@ fun AppState.homeView(
     val composableScope = rememberCoroutineScope()
     Scaffold(topBar = {
         TopAppBar() {
-            settingsButton()
+            launchButton()
 
-            SmolButton(
-                onClick = {
-                    showConfirmMigrateDialog = true
-                },
-                modifier = Modifier.padding(start = 16.dp)
-            ) {
-                Text("Migrate")
-            }
+//            SmolButton(
+//                onClick = {
+//                    showConfirmMigrateDialog = true
+//                },
+//                modifier = Modifier.padding(start = 16.dp)
+//            ) {
+//                Text("Migrate")
+//            }
 
             SmolButton(
                 onClick = {
@@ -93,6 +100,7 @@ fun AppState.homeView(
             }
 
             profilesButton()
+            settingsButton()
         }
     }, content = {
         Box {
@@ -270,5 +278,29 @@ private fun AppState.profilesButton() {
         modifier = Modifier.padding(start = 16.dp)
     ) {
         Text("Profiles")
+    }
+}
+
+@Composable
+private fun AppState.launchButton() {
+    SmolButton(
+        onClick = {
+            val gameLauncher = SL.appConfig.gamePath.toFileOrNull()?.resolve("starsector.exe")
+            val commands = when (currentPlatform) {
+                Platform.Windows -> arrayOf("cmd.exe", "/C")
+                else -> arrayOf("open")
+            }
+            Logger.info { "Launching ${gameLauncher?.absolutePath} with working dir ${SL.appConfig.gamePath}." }
+            Runtime.getRuntime()
+                .exec(
+                    arrayOf(*commands, gameLauncher?.absolutePath ?: "missing"),
+                    null,
+                    SL.appConfig.gamePath.toFileOrNull()
+                )
+        },
+        modifier = Modifier.padding(start = 16.dp)
+            .border(2.dp, SmolTheme.highlight(), shape = SmolTheme.smolNormalButtonShape())
+    ) {
+        Text(text = "Launch")
     }
 }
