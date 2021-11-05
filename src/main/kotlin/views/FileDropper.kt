@@ -3,6 +3,7 @@ package views
 import AppState
 import SL
 import SmolAlertDialog
+import SmolButton
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CutCornerShape
@@ -131,7 +132,7 @@ fun AppState.FileDropper(
             title = { Text("Unable to install") },
             text = { Text("${error?.message}") },
             confirmButton = {
-                Button(onClick = { error = null }) {
+                SmolButton(onClick = { error = null }) {
                     Text("OK, sorry")
                 }
             },

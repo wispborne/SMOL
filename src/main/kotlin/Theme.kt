@@ -56,6 +56,12 @@ object SmolTheme {
 
     @Composable
     fun highlight() = MaterialTheme.colors.onSurface.copy(alpha = .70f)
+
+    @Composable
+    fun dimmedIconColor() = LocalContentColor.current.copy(alpha = .65f)
+
+    fun iconHeightWidth() = ButtonDefaults.MinHeight
+    fun textIconHeightWidth() = ButtonDefaults.IconSize
 }
 
 @Composable

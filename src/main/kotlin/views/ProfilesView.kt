@@ -2,13 +2,16 @@ package views
 
 import AppState
 import SL
+import SmolAlertDialog
 import SmolButton
+import SmolSecondaryButton
 import SmolTheme
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.GridCells
+import androidx.compose.foundation.lazy.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -35,6 +38,8 @@ import util.ellipsizeAfter
 fun AppState.ProfilesView(
     modifier: Modifier = Modifier
 ) {
+    var modProfileIdShowingDeleteConfirmation: Int? by remember { mutableStateOf(null) }
+    var userProfile by remember { mutableStateOf(SL.userManager.getUserProfile()) }
 
     Scaffold(topBar = {
         TopAppBar {
@@ -44,12 +49,15 @@ fun AppState.ProfilesView(
         }
     }) {
         Box(modifier.padding(16.dp)) {
-            var userProfile by remember { mutableStateOf(SL.userManager.getUserProfile()) }
             var modVariants by remember {
                 mutableStateOf(SL.access.getMods(noCache = false).flatMap { it.variants }.associateBy { it.smolId })
             }
 
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            LazyVerticalGrid(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                cells = GridCells.Adaptive(370.dp)
+            ) {
                 this.items(items = userProfile.modProfiles
                     .sortedWith(
                         compareByDescending<UserProfile.ModProfile> { it.id == userProfile.activeModProfileId }
@@ -59,7 +67,7 @@ fun AppState.ProfilesView(
                     var isEditMode by remember { mutableStateOf(false) }
                     var modProfileName by remember { mutableStateOf(modProfile.name) }
                     Card(
-                        modifier = Modifier.width(370.dp).wrapContentHeight()
+                        modifier = Modifier.wrapContentHeight()
                             .run {
                                 // Highlight active profile
                                 if (isActiveProfile) this.border(
@@ -132,9 +140,56 @@ fun AppState.ProfilesView(
                                 }
                                 DisableSelection {
                                     Row(
-                                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                                        modifier = Modifier.align(Alignment.Start)
                                             .padding(top = 16.dp)
                                     ) {
+                                        IconToggleButton(
+                                            modifier = Modifier
+                                                .padding(start = 8.dp)
+                                                .background(
+                                                    shape = SmolTheme.smolNormalButtonShape(),
+                                                    color = MaterialTheme.colors.primary
+                                                )
+                                                .run {
+                                                    if (isEditMode) this.border(
+                                                        width = 2.dp,
+                                                        color = SmolTheme.highlight(),
+                                                        shape = SmolTheme.smolNormalButtonShape()
+                                                    ) else this
+                                                }
+                                                .height(ButtonDefaults.MinHeight)
+                                                .width(ButtonDefaults.MinHeight),
+                                            checked = isEditMode,
+                                            onCheckedChange = { isEditMode = !isEditMode }
+                                        ) {
+                                            Icon(
+                                                painter = painterResource("pencil-outline.svg"),
+                                                contentDescription = null,
+                                                tint = SmolTheme.dimmedIconColor()
+                                            )
+                                        }
+                                        IconButton(
+                                            modifier = Modifier
+                                                .padding(start = 8.dp)
+                                                .background(
+                                                    shape = SmolTheme.smolNormalButtonShape(),
+                                                    color = MaterialTheme.colors.primary
+                                                )
+                                                .height(SmolTheme.iconHeightWidth())
+                                                .width(SmolTheme.iconHeightWidth()),
+                                            onClick = {
+                                                modProfileIdShowingDeleteConfirmation = modProfile.id
+                                            }
+                                        ) {
+                                            Icon(
+                                                painter = painterResource("trash-can-outline.svg"),
+                                                contentDescription = null,
+                                                tint = SmolTheme.dimmedIconColor()
+                                            )
+                                        }
+
+                                        Spacer(modifier = Modifier.weight(1f))
+
                                         SmolButton(
                                             enabled = !isActiveProfile,
                                             onClick = {
@@ -158,37 +213,83 @@ fun AppState.ProfilesView(
                                                     text = "Activate"
                                                 )
                                         }
-                                        IconToggleButton(
-                                            modifier = Modifier
-                                                .padding(start = 8.dp)
-                                                .background(
-                                                    shape = SmolTheme.smolNormalButtonShape(),
-                                                    color = MaterialTheme.colors.primary
-                                                )
-                                                .run {
-                                                    if (isEditMode) this.border(
-                                                        width = 2.dp,
-                                                        color = SmolTheme.highlight(),
-                                                        shape = SmolTheme.smolNormalButtonShape()
-                                                    ) else this
-                                                }
-                                                .height(ButtonDefaults.MinHeight)
-                                                .width(ButtonDefaults.MinHeight),
-                                            checked = isEditMode,
-                                            onCheckedChange = { isEditMode = !isEditMode }
-                                        ) {
-                                            Icon(
-                                                painter = painterResource("pencil-outline.svg"),
-                                                contentDescription = null
-                                            )
-                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
+
+                this.item {
+                    var newProfileName by remember { mutableStateOf("") }
+                    Card(
+                        shape = SmolTheme.smolFullyClippedButtonShape()
+                    ) {
+                        Column(Modifier.padding(16.dp).fillMaxWidth()) {
+                            TextField(
+                                value = newProfileName,
+                                onValueChange = { newProfileName = it },
+                                singleLine = true,
+                                label = { Text("Name") }
+                            )
+                            SmolButton(
+                                modifier = Modifier.padding(top = 16.dp),
+                                onClick = {
+                                    if (newProfileName.isNotBlank()) {
+                                        SL.userManager.createModProfile(
+                                            name = newProfileName,
+                                            description = null,
+                                            sortOrder = SL.userManager.getUserProfile().modProfiles.maxOf { it.sortOrder } + 1
+                                        )
+                                        newProfileName = ""
+                                        userProfile = SL.userManager.getUserProfile()
+                                    }
+                                }) {
+                                Icon(
+                                    modifier = Modifier
+                                        .height(SmolTheme.textIconHeightWidth())
+                                        .width(SmolTheme.textIconHeightWidth()),
+                                    painter = painterResource("plus.svg"),
+                                    contentDescription = null
+                                )
+                                Text(
+                                    text = "New Profile"
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
+    }
+
+    if (modProfileIdShowingDeleteConfirmation != null) {
+        val profile =
+            SL.userManager.getUserProfile().modProfiles.firstOrNull { it.id == modProfileIdShowingDeleteConfirmation }
+        SmolAlertDialog(
+            modifier = Modifier,
+            onDismissRequest = { modProfileIdShowingDeleteConfirmation = null },
+            title = { Text("Confirm deletion") },
+            text = {
+                Text("Are you sure you want to delete \"${profile?.name}\"?")
+            },
+            confirmButton = {
+                SmolButton(onClick = {
+                    SL.userManager.removeModProfile(
+                        modProfileIdShowingDeleteConfirmation ?: run {
+                            modProfileIdShowingDeleteConfirmation = null
+
+                            return@SmolButton
+                        })
+                    modProfileIdShowingDeleteConfirmation = null
+                    userProfile = SL.userManager.getUserProfile()
+                }) { Text("Delete") }
+            },
+            dismissButton = {
+                SmolSecondaryButton(onClick = { modProfileIdShowingDeleteConfirmation = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
