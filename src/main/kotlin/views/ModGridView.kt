@@ -65,6 +65,7 @@ fun AppState.ModGridView(
                 Row {
                     Spacer(Modifier.width(buttonWidth.dp))
                     Text("Name", Modifier.weight(1f), fontWeight = FontWeight.Bold)
+                    Text("Author", Modifier.weight(1f), fontWeight = FontWeight.Bold)
                     Text("Version", Modifier.weight(1f), fontWeight = FontWeight.Bold)
                 }
             }
@@ -127,13 +128,26 @@ fun AppState.ModGridView(
                                                 .align(Alignment.CenterVertically),
                                             mod = mod
                                         )
+
                                         // Mod name
                                         Text(
-                                            text = (mod.findFirstEnabled ?: mod.findFirstDisabled)?.modInfo?.name ?: "",
-                                            modifier = Modifier.weight(1f).align(Alignment.CenterVertically)
+                                            text = (mod.findFirstEnabled ?: mod.findHighestVersion)?.modInfo?.name ?: "",
+                                            modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
                                         )
+
+                                        // Mod Author
+                                        Text(
+                                            text = (mod.findFirstEnabled ?: mod.findHighestVersion)?.modInfo?.author ?: "",
+                                            color = SmolTheme.dimmedTextColor(),
+                                            modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+
                                         // Mod version (active or highest)
-                                        Row(Modifier.weight(1f)) {
+                                        Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {
                                             Text(
                                                 text = mod.variants
                                                     .joinToString() { it.modInfo.version.toString() },

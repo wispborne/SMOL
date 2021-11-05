@@ -59,6 +59,8 @@ object SmolTheme {
 
     @Composable
     fun dimmedIconColor() = LocalContentColor.current.copy(alpha = .65f)
+    @Composable
+    fun dimmedTextColor() = LocalContentColor.current.copy(alpha = .65f)
 
     fun iconHeightWidth() = ButtonDefaults.MinHeight
     fun textIconHeightWidth() = ButtonDefaults.IconSize
