@@ -11,11 +11,13 @@ sealed class ModInfo(
     @Json(name = "description") val description: String = "",
     @Json(name = "gameVersion") val gameVersion: String,
     @Json(name = "jars") val jars: List<String> = emptyList(),
-    @Json(name = "modPlugin") val modPlugin: String = ""
+    @Json(name = "modPlugin") val modPlugin: String = "",
 ) {
     abstract val version: Version
+    abstract val dependencies: List<Dependency>
     val isUtilityMod = utilityString.toBooleanStrictOrNull() ?: false
 
+    @Deprecated("Cool idea but doesn't work well, everybody formats things differently.")
     val authorsSplit: List<String> =
         kotlin.runCatching {
             author
@@ -24,7 +26,6 @@ sealed class ModInfo(
         }
             .getOrElse { emptyList() }
 
-    //    @JsonClass(generateAdapter = true)
     data class v091(
         private val _id: String = "",
         private val _name: String = "",
@@ -38,20 +39,22 @@ sealed class ModInfo(
         private val _jars: List<String> = emptyList(),
         private val _modPlugin: String = ""
     ) : ModInfo(
-        _id,
-        _name,
-        _author,
-        _utilityString,
-        _description,
-        _gameVersion,
-        _jars,
-        _modPlugin
+        id = _id,
+        name = _name,
+        author = _author,
+        utilityString = _utilityString,
+        description = _description,
+        gameVersion = _gameVersion,
+        jars = _jars,
+        modPlugin = _modPlugin
     ) {
         override val version: Version
             get() = Version.parse(versionString)
+
+        override val dependencies: List<Dependency>
+            get() = emptyList()
     }
 
-    //    @JsonClass(generateAdapter = true)
     data class v095(
         private val _id: String = "",
         private val _name: String = "",
@@ -63,23 +66,26 @@ sealed class ModInfo(
         private val _description: String = "",
         private val _gameVersion: String = "",
         private val _jars: List<String> = emptyList(),
-        private val _modPlugin: String = ""
+        private val _modPlugin: String = "",
+        @SerializedName("dependencies")
+        @Json(name = "dependencies") private val _dependencies: List<Dependency>? = emptyList()
     ) : ModInfo(
-        _id,
-        _name,
-        _author,
-        _utilityString,
-        _description,
-        _gameVersion,
-        _jars,
-        _modPlugin
+        id = _id,
+        name = _name,
+        author = _author,
+        utilityString = _utilityString,
+        description = _description,
+        gameVersion = _gameVersion,
+        jars = _jars,
+        modPlugin = _modPlugin
     ) {
         override val version: Version
             get() = versionString
+        override val dependencies: List<Dependency>
+            get() = _dependencies ?: emptyList()
     }
 }
 
-//@JsonClass(generateAdapter = true)
 data class Version(
     val raw: String?,
     val major: String = "0",
@@ -122,4 +128,13 @@ data class Version(
         (this.build ?: "0").compareTo((other.build ?: ""), ignoreCase = true).run { if (this != 0) return this }
         return 0
     }
+}
+
+data class Dependency(
+    @SerializedName("id") private val _id: String? = null,
+    @SerializedName("name") val name: String? = null,
+    @SerializedName("version") val version: String? = null
+) {
+    val id: String
+        get() = _id ?: ""
 }

@@ -46,6 +46,11 @@ fun AppState.ProfilesView(
             SmolButton(onClick = router::pop, modifier = Modifier.padding(start = 16.dp)) {
                 Text("Back")
             }
+            Text(
+                modifier = Modifier.padding(8.dp).padding(start = 16.dp),
+                text = "Mod Profiles",
+                fontWeight = FontWeight.Bold
+            )
         }
     }) {
         Box(modifier.padding(16.dp)) {

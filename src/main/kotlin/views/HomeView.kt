@@ -299,7 +299,8 @@ private fun AppState.launchButton() {
                 )
         },
         modifier = Modifier.padding(start = 16.dp)
-            .border(2.dp, SmolTheme.highlight(), shape = SmolTheme.smolNormalButtonShape())
+            .border(4.dp, SmolTheme.highlight(), shape = SmolTheme.smolFullyClippedButtonShape()),
+        shape = SmolTheme.smolFullyClippedButtonShape()
     ) {
         Text(text = "Launch")
     }

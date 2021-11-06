@@ -34,7 +34,6 @@ class SmolCLI(
         }
             .onFailure {
                 TermUi.echo(it)
-//                TermUi.echo(chainOfCommand.getFormattedHelp())
             }
     }
 

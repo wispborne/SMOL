@@ -1,5 +1,6 @@
 package views
 
+import SL
 import SmolTheme
 import TiledImage
 import androidx.compose.foundation.*
@@ -34,6 +35,7 @@ fun BoxScope.detailsPanel(
     selectedRow: ModRow?
 ) {
     val row = selectedRow ?: return
+    val allMods = SL.access.getMods(noCache = false)
 
     Box(
         modifier.width(400.dp)
@@ -53,8 +55,8 @@ fun BoxScope.detailsPanel(
             Column(
                 Modifier.padding(36.dp).verticalScroll(state)
             ) {
-                val modInfo = (row.mod.findFirstEnabled ?: row.mod.variants.firstOrNull())
-                    ?.modInfo
+                val modVariant = row.mod.findFirstEnabled ?: row.mod.findHighestVersion
+                val modInfo = modVariant?.modInfo
                 Text(
                     modInfo?.name ?: "VNSector",
                     fontWeight = FontWeight.ExtraBold,
@@ -71,6 +73,19 @@ fun BoxScope.detailsPanel(
                 Text(modInfo?.author ?: "It's always Techpriest", modifier = Modifier.padding(top = 2.dp, start = 8.dp))
                 Text("Description", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
                 Text(modInfo?.description ?: "", modifier = Modifier.padding(top = 2.dp))
+                val dependencies = modVariant?.findDependencies(mods = allMods) ?: emptyList()
+                if (dependencies.isNotEmpty()) {
+                    Text("Dependencies", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
+                    Text(
+                        dependencies
+                            .joinToString {
+                                val depName: String =
+                                    it.second?.findHighestVersion?.modInfo?.name ?: it.second?.id ?: it.first.id
+                                depName + if (it.first.version != null) " v${it.first.version}" else ""
+                            },
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                }
 
                 val versionCheckerInfo = row.mod.findHighestVersion?.versionCheckerInfo
                 if (versionCheckerInfo?.modThreadId != null) {
