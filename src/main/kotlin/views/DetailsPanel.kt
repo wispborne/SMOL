@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
+import business.findDependencies
 import util.openModThread
 
 @OptIn(
@@ -81,7 +82,7 @@ fun BoxScope.detailsPanel(
                             .joinToString {
                                 val depName: String =
                                     it.second?.findHighestVersion?.modInfo?.name ?: it.second?.id ?: it.first.id
-                                depName + if (it.first.version != null) " v${it.first.version}" else ""
+                                depName + if (it.first.versionString != null) " v${it.first.versionString}" else ""
                             },
                         modifier = Modifier.padding(top = 2.dp)
                     )

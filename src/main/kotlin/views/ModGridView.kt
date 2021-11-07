@@ -5,6 +5,7 @@ import AppState
 import SL
 import SmolAlertDialog
 import SmolButton
+import SmolTheme
 import SmolTooltipText
 import TiledImage
 import androidx.compose.desktop.ui.tooling.preview.Preview
@@ -31,6 +32,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.dp
+import business.DependencyState
+import business.findDependencyStates
 import kotlinx.coroutines.launch
 import model.Mod
 import model.ModVariant
@@ -74,7 +77,7 @@ fun AppState.ModGridView(
                     mods
                         .groupBy { it.uiEnabled }
                         .toSortedMap(compareBy { !it }) // Flip to put Enabled at the top
-                        .forEach { (modState, mods) ->
+                        .forEach { (modState, modsInGroup) ->
                             stickyHeader() {
                                 Card(
                                     elevation = 8.dp,
@@ -103,7 +106,7 @@ fun AppState.ModGridView(
                                 }
                             }
                             this.items(
-                                items = mods.map { ModRow(mod = it) }
+                                items = modsInGroup.map { ModRow(mod = it) }
                             ) { modRow ->
                                 val mod = modRow.mod
                                 var showContextMenu by remember { mutableStateOf(false) }
@@ -131,7 +134,8 @@ fun AppState.ModGridView(
 
                                         // Mod name
                                         Text(
-                                            text = (mod.findFirstEnabled ?: mod.findHighestVersion)?.modInfo?.name ?: "",
+                                            text = (mod.findFirstEnabled ?: mod.findHighestVersion)?.modInfo?.name
+                                                ?: "",
                                             modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
@@ -139,7 +143,8 @@ fun AppState.ModGridView(
 
                                         // Mod Author
                                         Text(
-                                            text = (mod.findFirstEnabled ?: mod.findHighestVersion)?.modInfo?.author ?: "",
+                                            text = (mod.findFirstEnabled ?: mod.findHighestVersion)?.modInfo?.author
+                                                ?: "",
                                             color = SmolTheme.dimmedTextColor(),
                                             modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
                                             maxLines = 1,
@@ -147,22 +152,62 @@ fun AppState.ModGridView(
                                         )
 
                                         // Mod version (active or highest)
-                                        Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {
-                                            Text(
-                                                text = mod.variants
-                                                    .joinToString() { it.modInfo.version.toString() },
-                                                modifier = Modifier.align(Alignment.CenterVertically)
-                                            )
-                                            if (highestLocalVersion != null && onlineVersion != null && onlineVersion > highestLocalVersion) {
+                                        Row(Modifier.weight(1f)) {
+                                            Row(Modifier.align(Alignment.CenterVertically)) {
+                                                Text(
+                                                    text = mod.variants
+                                                        .joinToString() { it.modInfo.version.toString() },
+                                                    modifier = Modifier.align(Alignment.CenterVertically)
+                                                )
+                                                if (highestLocalVersion != null && onlineVersion != null && onlineVersion > highestLocalVersion) {
+                                                    BoxWithTooltip(
+                                                        modifier = Modifier.mouseClickable {
+                                                            if (this.buttons.isPrimaryPressed) {
+                                                                mod.findHighestVersion?.versionCheckerInfo?.modThreadId?.openModThread()
+                                                            }
+                                                        }
+                                                            .align(Alignment.CenterVertically),
+                                                        tooltip = {
+                                                            SmolTooltipText(text = "Newer version available: $onlineVersion")
+                                                        }) {
+                                                        Image(
+                                                            painter = painterResource("news64.png"),
+                                                            contentDescription = null,
+                                                            modifier = Modifier.width(26.dp).height(26.dp)
+                                                                .padding(start = 8.dp)
+                                                                .align(Alignment.CenterVertically)
+                                                        )
+                                                    }
+                                                }
+                                            }
+
+                                            // Dependency warning
+                                            val dependencies =
+                                                (mod.findFirstEnabled ?: mod.findHighestVersion)
+                                                    ?.findDependencyStates(mods)
+                                                    ?: emptyList()
+                                            if (dependencies.any { it is DependencyState.Missing || it is DependencyState.Disabled }) {
                                                 BoxWithTooltip(
                                                     modifier = Modifier.mouseClickable {
                                                         if (this.buttons.isPrimaryPressed) {
-                                                            mod.findHighestVersion?.versionCheckerInfo?.modThreadId?.openModThread()
+                                                            // TODO
                                                         }
                                                     }
                                                         .align(Alignment.CenterVertically),
                                                     tooltip = {
-                                                        SmolTooltipText(text = "Newer version available: $onlineVersion")
+                                                        SmolTooltipText(
+                                                            text = "Missing dependencies!\n${
+                                                                dependencies
+                                                                    .filterNot { it is DependencyState.Enabled }
+                                                                    .joinToString(separator = "\n") { depState ->
+                                                                        when (depState) {
+                                                                            is DependencyState.Disabled -> "Disabled: ${depState.variant.modInfo.name} ${depState.variant.modInfo.version}"
+                                                                            is DependencyState.Missing -> "Missing: ${depState.dependency.id}${depState.dependency.version?.let { " $it" }}"
+                                                                            is DependencyState.Enabled -> TODO("should never see this")
+                                                                        }
+                                                                    }
+                                                            }"
+                                                        )
                                                     }) {
                                                     Image(
                                                         painter = painterResource("news64.png"),
@@ -174,6 +219,8 @@ fun AppState.ModGridView(
                                                 }
                                             }
                                         }
+
+                                        // Context menu
                                         CursorDropdownMenu(
                                             expanded = showContextMenu,
                                             onDismissRequest = { showContextMenu = false }) {

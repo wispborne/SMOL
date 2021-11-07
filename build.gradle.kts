@@ -42,6 +42,9 @@ dependencies {
     val decomposeVer = "0.3.1"
     api("com.arkivanov.decompose:decompose:$decomposeVer")
     api("com.arkivanov.decompose:extensions-compose-jetbrains:$decomposeVer")
+
+    // Unit testing? ughhhhh
+    testImplementation(kotlin("test"))
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -50,6 +53,10 @@ tasks.withType<KotlinCompile>().configureEach {
         @Suppress("SuspiciousCollectionReassignment")
         freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
     }
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 compose.desktop {

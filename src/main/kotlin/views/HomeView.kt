@@ -73,7 +73,7 @@ fun AppState.homeView(
 //            }
 //    }
 
-    var showConfirmMigrateDialog: Boolean by remember { mutableStateOf(false) }
+//    var showConfirmMigrateDialog: Boolean by remember { mutableStateOf(false) }
     val composableScope = rememberCoroutineScope()
     Scaffold(topBar = {
         TopAppBar() {
@@ -122,31 +122,31 @@ fun AppState.homeView(
                 }
             }
 
-            if (showConfirmMigrateDialog) {
-                SmolAlertDialog(
-                    title = { Text("Warning") },
-                    text = {
-                        Text(
-                            "Are you sure you want to migrate the Starsector mods folder to be managed by $APP_NAME?" +
-                                    "\nThis will not affect the mods. It will save their current state to the Archives folder so they may be reinstalled cleanly in the future."
-                        )
-                    },
-                    onDismissRequest = { showConfirmMigrateDialog = false },
-                    confirmButton = {
-                        SmolButton(onClick = {
-                            composableScope.launch {
-                                SL.archives.compressModsInFolder(SL.gamePath.getModsPath())
-                            }
-                            showConfirmMigrateDialog = false
-                        }) { Text("Migrate...") }
-                    },
-                    dismissButton = {
-                        SmolSecondaryButton(onClick = { showConfirmMigrateDialog = false }) {
-                            Text("Cancel")
-                        }
-                    }
-                )
-            }
+//            if (showConfirmMigrateDialog) {
+//                SmolAlertDialog(
+//                    title = { Text("Warning") },
+//                    text = {
+//                        Text(
+//                            "Are you sure you want to migrate the Starsector mods folder to be managed by $APP_NAME?" +
+//                                    "\nThis will not affect the mods. It will save their current state to the Archives folder so they may be reinstalled cleanly in the future."
+//                        )
+//                    },
+//                    onDismissRequest = { showConfirmMigrateDialog = false },
+//                    confirmButton = {
+//                        SmolButton(onClick = {
+//                            composableScope.launch {
+//                                SL.archives.compressModsInFolder(SL.gamePath.getModsPath())
+//                            }
+//                            showConfirmMigrateDialog = false
+//                        }) { Text("Migrate...") }
+//                    },
+//                    dismissButton = {
+//                        SmolSecondaryButton(onClick = { showConfirmMigrateDialog = false }) {
+//                            Text("Cancel")
+//                        }
+//                    }
+//                )
+//            }
         }
     },
         bottomBar = {

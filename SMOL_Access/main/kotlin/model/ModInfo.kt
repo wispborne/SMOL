@@ -2,6 +2,7 @@ package model
 
 import com.google.gson.annotations.SerializedName
 import com.squareup.moshi.Json
+import org.tinylog.kotlin.Logger
 
 sealed class ModInfo(
     @Json(name = "id") val id: String,
@@ -133,8 +134,13 @@ data class Version(
 data class Dependency(
     @SerializedName("id") private val _id: String? = null,
     @SerializedName("name") val name: String? = null,
-    @SerializedName("version") val version: String? = null
+    @SerializedName("version") val versionString: String? = null
 ) {
     val id: String
         get() = _id ?: ""
+
+    val version: Version?
+        get() = kotlin.runCatching { Version.parse(versionString!!) }
+            .onFailure { Logger.trace(it) }
+            .getOrNull()
 }

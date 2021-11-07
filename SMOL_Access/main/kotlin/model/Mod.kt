@@ -90,10 +90,6 @@ data class ModVariant(
     )
 
     fun generateVariantFolderName() = "${modInfo.name}_${smolId}"
-
-    fun findDependencies(mods: List<Mod>): List<Pair<Dependency, Mod?>> =
-        this.modInfo.dependencies
-            .map { dep -> dep to mods.firstOrNull { it.id == dep.id } }
 }
 
 typealias SmolId = String
