@@ -15,7 +15,7 @@ fun ModVariant.findDependencyStates(mods: List<Mod>): List<DependencyState> =
         .map { (dependency, foundDependencyMod) ->
             // Mod not found or has no variants, it's missing.
             if (foundDependencyMod == null || foundDependencyMod.variants.isEmpty())
-                return@map DependencyState.Missing(dependency)
+                return@map DependencyState.Missing(dependency = dependency, outdatedModIfFound = null)
 
             return@map if (dependency.version == null) {
                 if (foundDependencyMod.hasEnabledVariant) {
@@ -31,7 +31,7 @@ fun ModVariant.findDependencyStates(mods: List<Mod>): List<DependencyState> =
 
                 if (variantsMeetingVersionReq.isEmpty()) {
                     // No variants found will work.
-                    DependencyState.Missing(dependency)
+                    DependencyState.Missing(dependency, foundDependencyMod)
                 } else {
                     val alreadyEnabledAndValidDependency = variantsMeetingVersionReq
                         .filter { foundDependencyMod.isEnabled(it) }
@@ -44,7 +44,7 @@ fun ModVariant.findDependencyStates(mods: List<Mod>): List<DependencyState> =
                             .maxByOrNull { it.modInfo.version }
                         if (validButDisabledDependency == null) {
                             Logger.warn { "Unexpected scenario finding dependency for mod ${mod.id} with dependency: $dependency." }
-                            DependencyState.Missing(dependency)
+                            DependencyState.Missing(dependency, foundDependencyMod)
                         } else {
                             DependencyState.Disabled(dependency, validButDisabledDependency)
                         }
@@ -63,7 +63,7 @@ fun ModVariant.findDependencyStates(mods: List<Mod>): List<DependencyState> =
 sealed class DependencyState {
     abstract val dependency: Dependency
 
-    data class Missing(override val dependency: Dependency) : DependencyState()
+    data class Missing(override val dependency: Dependency, val outdatedModIfFound: Mod?) : DependencyState()
     data class Disabled(override val dependency: Dependency, val variant: ModVariant) : DependencyState()
     data class Enabled(override val dependency: Dependency, val variant: ModVariant) : DependencyState()
 }

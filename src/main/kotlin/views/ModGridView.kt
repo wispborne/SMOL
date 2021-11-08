@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.dp
 import business.DependencyState
 import business.findDependencyStates
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import model.Mod
 import model.ModVariant
@@ -41,7 +42,7 @@ import org.tinylog.Logger
 import util.*
 import java.awt.Desktop
 
-private val buttonWidth = 180
+private val modGridViewDropdownWidth = 180
 
 @OptIn(
     ExperimentalMaterialApi::class,
@@ -66,7 +67,7 @@ fun AppState.ModGridView(
         Column(Modifier.padding(16.dp)) {
             ListItem() {
                 Row {
-                    Spacer(Modifier.width(buttonWidth.dp))
+                    Spacer(Modifier.width(modGridViewDropdownWidth.dp))
                     Text("Name", Modifier.weight(1f), fontWeight = FontWeight.Bold)
                     Text("Author", Modifier.weight(1f), fontWeight = FontWeight.Bold)
                     Text("Version", Modifier.weight(1f), fontWeight = FontWeight.Bold)
@@ -124,41 +125,37 @@ fun AppState.ModGridView(
                                             showContextMenu = !showContextMenu
                                         }
                                     }) {
-                                    Row(Modifier.fillMaxWidth()) {
-                                        modStateDropdown(
-                                            modifier = Modifier
-                                                .width(buttonWidth.dp)
-                                                .align(Alignment.CenterVertically),
-                                            mod = mod
-                                        )
+                                    Column {
+                                        Row(Modifier.fillMaxWidth()) {
+                                            modStateDropdown(
+                                                modifier = Modifier
+                                                    .width(modGridViewDropdownWidth.dp)
+                                                    .align(Alignment.CenterVertically),
+                                                mod = mod
+                                            )
 
-                                        // Mod name
-                                        Text(
-                                            text = (mod.findFirstEnabled ?: mod.findHighestVersion)?.modInfo?.name
-                                                ?: "",
-                                            modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
+                                            // Mod name
+                                            Text(
+                                                modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
+                                                text = (mod.findFirstEnabled ?: mod.findHighestVersion)?.modInfo?.name
+                                                    ?: "",
+                                                fontWeight = FontWeight.SemiBold,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
 
-                                        // Mod Author
-                                        Text(
-                                            text = (mod.findFirstEnabled ?: mod.findHighestVersion)?.modInfo?.author
-                                                ?: "",
-                                            color = SmolTheme.dimmedTextColor(),
-                                            modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
+                                            // Mod Author
+                                            Text(
+                                                text = (mod.findFirstEnabled ?: mod.findHighestVersion)?.modInfo?.author
+                                                    ?: "",
+                                                color = SmolTheme.dimmedTextColor(),
+                                                modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
 
-                                        // Mod version (active or highest)
-                                        Row(Modifier.weight(1f)) {
-                                            Row(Modifier.align(Alignment.CenterVertically)) {
-                                                Text(
-                                                    text = mod.variants
-                                                        .joinToString() { it.modInfo.version.toString() },
-                                                    modifier = Modifier.align(Alignment.CenterVertically)
-                                                )
+                                            // Mod version (active or highest)
+                                            Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {
                                                 if (highestLocalVersion != null && onlineVersion != null && onlineVersion > highestLocalVersion) {
                                                     BoxWithTooltip(
                                                         modifier = Modifier.mouseClickable {
@@ -174,97 +171,30 @@ fun AppState.ModGridView(
                                                             painter = painterResource("news64.png"),
                                                             contentDescription = null,
                                                             modifier = Modifier.width(26.dp).height(26.dp)
-                                                                .padding(start = 8.dp)
+                                                                .padding(end = 8.dp)
                                                                 .align(Alignment.CenterVertically)
                                                         )
                                                     }
                                                 }
+                                                Text(
+                                                    text = mod.variants
+                                                        .joinToString() { it.modInfo.version.toString() },
+                                                    modifier = Modifier.align(Alignment.CenterVertically)
+                                                )
                                             }
-
-                                            // Dependency warning
-                                            val dependencies =
-                                                (mod.findFirstEnabled ?: mod.findHighestVersion)
-                                                    ?.findDependencyStates(mods)
-                                                    ?: emptyList()
-                                            if (dependencies.any { it is DependencyState.Missing || it is DependencyState.Disabled }) {
-                                                BoxWithTooltip(
-                                                    modifier = Modifier.mouseClickable {
-                                                        if (this.buttons.isPrimaryPressed) {
-                                                            // TODO
-                                                        }
-                                                    }
-                                                        .align(Alignment.CenterVertically),
-                                                    tooltip = {
-                                                        SmolTooltipText(
-                                                            text = "Missing dependencies!\n${
-                                                                dependencies
-                                                                    .filterNot { it is DependencyState.Enabled }
-                                                                    .joinToString(separator = "\n") { depState ->
-                                                                        when (depState) {
-                                                                            is DependencyState.Disabled -> "Disabled: ${depState.variant.modInfo.name} ${depState.variant.modInfo.version}"
-                                                                            is DependencyState.Missing -> "Missing: ${depState.dependency.id}${depState.dependency.version?.let { " $it" }}"
-                                                                            is DependencyState.Enabled -> TODO("should never see this")
-                                                                        }
-                                                                    }
-                                                            }"
-                                                        )
-                                                    }) {
-                                                    Image(
-                                                        painter = painterResource("news64.png"),
-                                                        contentDescription = null,
-                                                        modifier = Modifier.width(26.dp).height(26.dp)
-                                                            .padding(start = 8.dp)
-                                                            .align(Alignment.CenterVertically)
-                                                    )
-                                                }
-                                            }
+                                            // Context menu
+                                            ModContextMenu(
+                                                showContextMenu = showContextMenu,
+                                                onShowContextMenuChange = { showContextMenu = it },
+                                                mod = mod,
+                                                modInDebugDialog = modInDebugDialog,
+                                                onModInDebugDialogChanged = { modInDebugDialog = it })
                                         }
 
-                                        // Context menu
-                                        CursorDropdownMenu(
-                                            expanded = showContextMenu,
-                                            onDismissRequest = { showContextMenu = false }) {
-                                            DropdownMenuItem(onClick = {
-                                                kotlin.runCatching {
-                                                    (mod.findFirstEnabled
-                                                        ?: mod.findFirstDisabled)?.archiveInfo?.folder?.also {
-                                                        Desktop.getDesktop().open(it.parentFile)
-                                                    }
-                                                }
-                                                    .onFailure { Logger.warn(it) { "Error trying to open file browser for $mod." } }
-                                                showContextMenu = false
-                                            }) {
-                                                Text("Open Archive")
-                                            }
-                                            val modThreadId = mod.getModThreadId()
-                                            if (modThreadId != null) {
-                                                DropdownMenuItem(
-                                                    onClick = {
-                                                        modThreadId.openModThread()
-                                                        showContextMenu = false
-                                                    },
-                                                    modifier = Modifier.width(200.dp)
-                                                ) {
-                                                    Image(
-                                                        painter = painterResource("open-in-new.svg"),
-                                                        colorFilter = ColorFilter.tint(MaterialTheme.colors.onSurface),
-                                                        modifier = Modifier.padding(end = 8.dp),
-                                                        contentDescription = null
-                                                    )
-                                                    Text(
-                                                        text = "Forum Page",
-                                                        maxLines = 1,
-                                                        overflow = TextOverflow.Ellipsis,
-                                                        modifier = Modifier.align(Alignment.CenterVertically)
-                                                    )
-                                                }
-                                            }
-                                            DropdownMenuItem(onClick = {
-                                                modInDebugDialog = mod
-                                                showContextMenu = false
-                                            }) {
-                                                Text("Debug Info")
-                                            }
+                                        Row {
+                                            Spacer(Modifier.width(modGridViewDropdownWidth.dp))
+                                            // Dependency warning
+                                            DependencyFixerRow(mod, mods)
                                         }
                                     }
                                 }
@@ -289,6 +219,130 @@ fun AppState.ModGridView(
             debugDialog(mod = modInDebugDialog!!, onDismiss = { modInDebugDialog = null })
         }
     }
+}
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+private fun ModContextMenu(
+    showContextMenu: Boolean,
+    onShowContextMenuChange: (Boolean) -> Unit,
+    mod: Mod,
+    modInDebugDialog: Mod?,
+    onModInDebugDialogChanged: (Mod?) -> Unit
+) {
+    CursorDropdownMenu(
+        expanded = showContextMenu,
+        onDismissRequest = { onShowContextMenuChange(false) }) {
+        DropdownMenuItem(onClick = {
+            kotlin.runCatching {
+                (mod.findFirstEnabled
+                    ?: mod.findFirstDisabled)?.archiveInfo?.folder?.also {
+                    Desktop.getDesktop().open(it.parentFile)
+                }
+            }
+                .onFailure { Logger.warn(it) { "Error trying to open file browser for $mod." } }
+            onShowContextMenuChange(false)
+        }) {
+            Text("Open Archive")
+        }
+        val modThreadId = mod.getModThreadId()
+        if (modThreadId != null) {
+            DropdownMenuItem(
+                onClick = {
+                    modThreadId.openModThread()
+                    onShowContextMenuChange(false)
+                },
+                modifier = Modifier.width(200.dp)
+            ) {
+                Image(
+                    painter = painterResource("open-in-new.svg"),
+                    colorFilter = ColorFilter.tint(MaterialTheme.colors.onSurface),
+                    modifier = Modifier.padding(end = 8.dp),
+                    contentDescription = null
+                )
+                Text(
+                    text = "Forum Page",
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.align(Alignment.CenterVertically)
+                )
+            }
+        }
+        DropdownMenuItem(onClick = {
+            onModInDebugDialogChanged(mod)
+            onShowContextMenuChange(false)
+        }) {
+            Text("Debug Info")
+        }
+    }
+}
+
+@OptIn(ExperimentalDesktopApi::class)
+@Composable
+private fun DependencyFixerRow(
+    mod: Mod,
+    allMods: SnapshotStateList<Mod>
+) {
+    val dependencies =
+        (mod.findFirstEnabled ?: mod.findHighestVersion)
+            ?.findDependencyStates(allMods)
+            ?.sortedWith(compareByDescending { it is DependencyState.Disabled })
+            ?: emptyList()
+    dependencies
+        .filter { it is DependencyState.Missing || it is DependencyState.Disabled }
+        .forEach { depState ->
+            Row(Modifier.padding(start = 16.dp)) {
+                Image(
+                    painter = painterResource("beacon_med.png"),
+                    modifier = Modifier
+                        .width(38.dp)
+                        .height(28.dp)
+                        .padding(end = 8.dp)
+                        .align(Alignment.CenterVertically),
+                    contentDescription = null
+                )
+                Text(
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                    text = when (depState) {
+                        is DependencyState.Disabled -> "Disabled dependency: ${depState.variant.modInfo.name} ${depState.variant.modInfo.version}"
+                        is DependencyState.Missing -> "Missing dependency: ${depState.dependency.name?.ifBlank { null } ?: depState.dependency.id}${depState.dependency.version?.let { " $it" }}"
+                        is DependencyState.Enabled -> "you should never see this"
+                    }
+                )
+                SmolButton(
+                    modifier = Modifier.align(Alignment.CenterVertically).padding(start = 16.dp),
+                    onClick = {
+                        when (depState) {
+                            is DependencyState.Disabled -> GlobalScope.launch { SL.access.enable(depState.variant) }
+                            is DependencyState.Missing -> {
+                                GlobalScope.launch {
+                                    depState.outdatedModIfFound?.getModThreadId()?.openModThread()
+                                        ?: "https://google.com/search?q=starsector+${depState.dependency.name ?: depState.dependency.id}+${depState.dependency.versionString}"
+                                            .openAsUriInBrowser()
+                                }
+                            }
+                            is DependencyState.Enabled -> TODO("you should never see this")
+                        }
+                    }
+                ) {
+                    Text(
+                        text = when (depState) {
+                            is DependencyState.Disabled -> "Enable"
+                            is DependencyState.Missing -> "Search"
+                            is DependencyState.Enabled -> "you should never see this"
+                        }
+                    )
+                    if (depState is DependencyState.Missing) {
+                        Image(
+                            painter = painterResource("open-in-new.svg"),
+                            colorFilter = ColorFilter.tint(SmolTheme.dimmedIconColor()),
+                            modifier = Modifier.padding(start = 8.dp),
+                            contentDescription = null
+                        )
+                    }
+                }
+            }
+        }
 }
 
 private sealed class DropdownAction {
