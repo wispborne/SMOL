@@ -142,7 +142,7 @@ class Archives internal constructor(
                                 SevenZip.openInArchive(null, fileInStream).use { inArchive ->
                                     inArchive.extract(
                                         null, false,
-                                        ArchiveExtractCallback(extraParentFolder, inArchive)
+                                        ArchiveExtractToFolderCallback(extraParentFolder, inArchive)
                                     )
                                 }
                             }
@@ -178,23 +178,43 @@ class Archives internal constructor(
                         val versionCheckerFile = items
                             .firstOrNull { it.path.contains(VERSION_CHECKER_FILE_PATTERN) }
 
-                        var modInfo: ModInfo? = null
-                        modInfoFile?.extractSlow { bytes ->
-                            bytes ?: return@extractSlow 0
-                            val modInfoJson = String(bytes = bytes)
-                            modInfo = modInfoLoader.deserializeModInfoFile(modInfoJson)
-                            bytes.size
-                        }
+                        val dataFiles =
+                            trace({ _, time ->
+                                Logger.debug {
+                                    "Time to extract mod_info.json ${
+                                        if (versionCheckerFile != null) "& vercheck file " else ""
+                                    }from ${inputArchiveFile.absolutePath}: ${time}ms."
+                                }
+                            }) {
+                                var modInfo: ModInfo? = null
+                                var versionCheckerInfo: VersionCheckerInfo? = null
 
-                        var versionCheckerInfo: VersionCheckerInfo? = null
-                        versionCheckerFile?.extractSlow { bytes ->
-                            bytes ?: return@extractSlow 0
-                            val versionCheckerFileJson = String(bytes = bytes)
-                            versionCheckerInfo = modInfoLoader.deserializeVersionCheckerFile(versionCheckerFileJson)
-                            bytes.size
-                        }
+                                val indicesToExtract = listOfNotNull(
+                                    modInfoFile?.itemIndex,
+                                    versionCheckerFile?.itemIndex
+                                )
+                                    .toIntArray()
 
-                        return@runCatching modInfo?.let { DataFiles(it, versionCheckerInfo) }
+                                inArchive.extract(
+                                    indicesToExtract, false,
+                                    ArchiveExtractToMemoryCallback(indicesToExtract, inArchive) { results ->
+                                        modInfo = modInfoFile?.let {
+                                            results[modInfoFile.itemIndex]?.let {
+                                                modInfoLoader.deserializeModInfoFile(modInfoJson = it)
+                                            }
+                                        }
+
+                                        versionCheckerFile?.let {
+                                            results[versionCheckerFile.itemIndex]?.let {
+                                                versionCheckerInfo = modInfoLoader.deserializeVersionCheckerFile(it)
+                                            }
+                                        }
+                                    }
+                                )
+                                modInfo?.let { DataFiles(it, versionCheckerInfo) }
+                            }
+
+                        return@runCatching dataFiles
                     }
                 }
             }
@@ -289,7 +309,7 @@ class Archives internal constructor(
 
                     modFolder.mkdirsIfNotExist()
 
-                    inArchive.extract(null, false, ArchiveExtractCallback(modFolder, inArchive))
+                    inArchive.extract(null, false, ArchiveExtractToFolderCallback(modFolder, inArchive))
 //                    markManagedBySmol(modFolder)
                 }
             }
@@ -456,20 +476,18 @@ class Archives internal constructor(
         val files = archives.listFiles().toList()
             .filter { !it.name.startsWith(ARCHIVE_MANIFEST_FILENAME) }
 
-        val modInfos = coroutineScope {
+        val modInfos: List<Pair<File, DataFiles>> = coroutineScope {
             withContext(Dispatchers.IO) {
                 files
                     .parallelMap { archive ->
                         // Swallow exception, it has already been logged.
                         kotlin.runCatching {
-                            val modTime = System.currentTimeMillis()
-                            Logger.trace { "Starting to look for mod_info.json in ${archive.name} at ${modTime}ms." }
-                            findDataFilesInArchive(archive)
-                                ?.let { archive to it }
-                                .also {
-                                    val modInfo = it?.second?.modInfo
-                                    Logger.debug { "Time to get mod_info.json from ${modInfo?.id}, ${modInfo?.version}: ${System.currentTimeMillis() - modTime}ms." }
-                                }
+                            trace({ pair, time ->
+                                Logger.debug { "Time to get mod_info.json from ${pair?.second?.modInfo?.id}, ${pair?.second?.modInfo?.version}: ${time}ms." }
+                            }) {
+                                findDataFilesInArchive(archive)
+                                    ?.let { archive to it }
+                            }
                         }
                             .getOrNull()
                     }

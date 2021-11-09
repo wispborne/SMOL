@@ -2,30 +2,32 @@ package util
 
 import net.sf.sevenzipjbinding.*
 import org.tinylog.Logger
-import java.io.File
 import java.util.*
 
 
-class ArchiveExtractCallback(
-    private val parentFolder: File,
-    private val inArchive: IInArchive
+class ArchiveExtractToMemoryCallback(
+    private val itemsToExtract: IntArray,
+    private val inArchive: IInArchive,
+    private val onComplete: (Map<Int, String>) -> Unit
 ) : IArchiveExtractCallback {
     private val startTime = System.currentTimeMillis()
     private var hash = 0
     private var size = 0
-    var currentFile: File? = null
     private var index = 0
     private var skipExtraction = false
     private var bytes = byteArrayOf()
     private var total = -1L
+    private val results = mutableMapOf<Int, String>()
 
     override fun getStream(
         index: Int,
         extractAskMode: ExtractAskMode?
     ): ISequentialOutStream? {
         this.index = index
-        skipExtraction = inArchive
+        val isFolder = inArchive
             .getProperty(index, PropID.IS_FOLDER) as Boolean
+        skipExtraction = isFolder || index !in itemsToExtract
+
         if (skipExtraction || extractAskMode !== ExtractAskMode.EXTRACT) {
             return null
         }
@@ -44,7 +46,8 @@ class ArchiveExtractCallback(
 
     override fun setCompleted(complete: Long) {
         if (complete == total) {
-            Logger.info { "Total extraction time: ${System.currentTimeMillis() - startTime}ms." }
+            Logger.trace { "Total extraction time: ${System.currentTimeMillis() - startTime}ms." }
+            onComplete(results)
         }
     }
 
@@ -59,19 +62,13 @@ class ArchiveExtractCallback(
         } else {
             val filePath = inArchive.getProperty(index, PropID.PATH) as String
 
-            Logger.debug {
-                String.format("Extracted %10sb | %s", size, filePath)
-            }
+            Logger.trace { String.format("Extracted %10sb | %s", size, filePath) }
 
-            val file = parentFolder.resolve(filePath)
-            file.parentFile.mkdirsIfNotExist()
-            currentFile = file
-            file.writeBytes(bytes)
+            results[index] = bytes.decodeToString()
 
             hash = 0
             size = 0
             bytes = byteArrayOf()
         }
-
     }
 }

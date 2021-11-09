@@ -1,6 +1,5 @@
 package util
 
-import arrow.core.filterMap
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -9,6 +8,7 @@ import java.io.File
 import java.io.IOException
 import java.lang.reflect.Modifier
 import java.util.*
+import kotlin.system.measureTimeMillis
 
 fun String?.toFileOrNull() = this?.let { File(it) }
 
@@ -110,3 +110,10 @@ data class DiffResult<T>(
     val removed: List<T>,
     val added: List<T>
 )
+
+fun <T> trace(onFinished: (T, Long) -> Unit, func: () -> T): T {
+    var result: T
+    val millis = measureTimeMillis { result = func() }
+    onFinished(result, millis)
+    return result
+}
