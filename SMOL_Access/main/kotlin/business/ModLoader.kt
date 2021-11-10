@@ -10,9 +10,10 @@ import model.Mod
 import model.ModVariant
 import org.tinylog.Logger
 import util.asList
-import util.toFileOrNull
+import util.toPathOrNull
 import util.trace
-import java.io.File
+import java.nio.file.Path
+import kotlin.io.path.absolutePathString
 
 class ModLoader internal constructor(
     private val gamePath: GamePath,
@@ -50,7 +51,7 @@ class ModLoader internal constructor(
                         versionCheckerInfo = archivedItem.versionCheckerInfo,
                         modsFolderInfo = null,  // Will zip with mods items later to populate
                         stagingInfo = null, // Will zip with staged items later to populate
-                        archiveInfo = ModVariant.ArchiveInfo(File(archivedItem.archivePath)),
+                        archiveInfo = ModVariant.ArchiveInfo(Path.of(archivedItem.archivePath)),
                     )
                     Mod(
                         id = archivedItem.modInfo.id,
@@ -62,7 +63,7 @@ class ModLoader internal constructor(
                 ?: emptyList()
 
             // Get items in staging
-            val stagingMods: File = config.stagingPath?.toFileOrNull()!!
+            val stagingMods = config.stagingPath?.toPathOrNull()!!
 
             val stagedMods =
                 modInfoLoader.readModDataFilesFromFolderOfMods(
@@ -149,7 +150,13 @@ class ModLoader internal constructor(
                     val variantsInModsFolder = it.variants.filter { variant -> variant.modsFolderInfo != null }
 
                     if (variantsInModsFolder.size > 1) {
-                        Logger.warn { "${it.id} has multiple variants in /mods: ${variantsInModsFolder.joinToString { it.modsFolderInfo!!.folder.absolutePath }}" }
+                        Logger.warn {
+                            "${it.id} has multiple variants in /mods: ${
+                                variantsInModsFolder.joinToString {
+                                    it.modsFolderInfo!!.folder.absolutePathString()
+                                }
+                            }"
+                        }
                     }
                 }
 

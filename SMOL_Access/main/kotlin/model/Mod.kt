@@ -1,7 +1,9 @@
 package model
 
 import java.io.File
+import java.nio.file.Path
 import java.util.*
+import kotlin.io.path.exists
 import kotlin.math.absoluteValue
 
 data class Mod(
@@ -19,7 +21,7 @@ data class Mod(
         isEnabledInGame && modVariant.modsFolderInfo != null
 
     data class ModsFolderInfo(
-        val folder: File
+        val folder: Path
     )
 
     val enabledVariants: List<ModVariant>
@@ -82,11 +84,11 @@ data class ModVariant(
                 || (modsFolderInfo != null && modsFolderInfo.folder.exists())
 
     data class ArchiveInfo(
-        val folder: File
+        val folder: Path
     )
 
     data class StagingInfo(
-        val folder: File
+        val folder: Path
     )
 
     fun generateVariantFolderName() = "${modInfo.name}_${smolId}"

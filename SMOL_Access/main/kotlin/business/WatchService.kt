@@ -9,11 +9,13 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import org.tinylog.Logger
-import java.io.File
 import java.nio.file.*
 import java.nio.file.StandardWatchEventKinds.*
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.concurrent.TimeUnit
+import kotlin.io.path.absolutePathString
+import kotlin.io.path.isDirectory
+import kotlin.io.path.isRegularFile
 
 /**
  * Watches directory. If file is supplied it will use parent directory. If it's an intent to watch just file,
@@ -23,14 +25,14 @@ import java.util.concurrent.TimeUnit
  * @param [tag] - any kind of data that should be associated with this channel
  * @param [scope] - coroutine context for the channel, optional
  */
-fun File.asWatchChannel(
+fun Path.asWatchChannel(
     mode: KWatchChannel.Mode? = null,
     tag: Any? = null,
     scope: CoroutineScope = GlobalScope,
     ignorePatterns: List<Regex> = listOf(Regex(".*\\.bak"))
 ) = KWatchChannel(
     file = this,
-    mode = mode ?: if (isFile) KWatchChannel.Mode.SingleFile else KWatchChannel.Mode.Recursive,
+    mode = mode ?: if (isRegularFile()) KWatchChannel.Mode.SingleFile else KWatchChannel.Mode.Recursive,
     scope = scope,
     tag = tag,
     ignorePatterns = ignorePatterns
@@ -46,7 +48,7 @@ fun File.asWatchChannel(
  * @param [tag] - any kind of data that should be associated with this channel, optional
  */
 class KWatchChannel(
-    val file: File,
+    val file: Path,
     val scope: CoroutineScope,
     val mode: Mode,
     val tag: Any? = null,
@@ -59,11 +61,11 @@ class KWatchChannel(
 
     private val watchService: WatchService = FileSystems.getDefault().newWatchService()
     private val registeredKeys = ArrayList<WatchKey>()
-    private val path: Path = if (file.isFile) {
-        file.parentFile
+    private val path: Path = if (file.isRegularFile()) {
+        file.parent
     } else {
         file
-    }.toPath()
+    }
 
     /**
      * Registers this channel to watch any changes in path directory and its subdirectories
@@ -98,7 +100,7 @@ class KWatchChannel(
             // sending channel initalization event
             flow.emit(
                 KWatchEvent(
-                    file = path.toFile(),
+                    file = path,
                     tag = tag,
                     kind = KWatchEvent.Kind.Initialized
                 )
@@ -118,7 +120,7 @@ class KWatchChannel(
                 monitorKey.pollEvents().forEach {
                     val eventPath = dirPath.resolve(it.context() as Path)
 
-                    if (mode == Mode.SingleFile && eventPath.toFile().absolutePath != file.absolutePath) {
+                    if (mode == Mode.SingleFile && eventPath.absolutePathString() != file.absolutePathString()) {
                         return@forEach
                     }
 
@@ -129,7 +131,7 @@ class KWatchChannel(
                     }
 
                     val event = KWatchEvent(
-                        file = eventPath.toFile(),
+                        file = eventPath,
                         tag = tag,
                         kind = eventType
                     )
@@ -138,7 +140,7 @@ class KWatchChannel(
                     // to watch subtree we re-register the whole tree
                     if (mode == Mode.Recursive &&
                         event.kind in listOf(KWatchEvent.Kind.Created, KWatchEvent.Kind.Deleted) &&
-                        event.file.isDirectory
+                        event.file.isDirectory()
                     ) {
                         shouldRegisterPath = true
                     }
@@ -198,7 +200,7 @@ data class KWatchEvent(
     /**
      * Abolute path of modified folder/file
      */
-    val file: File,
+    val file: Path,
 
     /**
      * Kind of file system event

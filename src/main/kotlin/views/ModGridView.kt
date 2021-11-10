@@ -237,7 +237,7 @@ private fun ModContextMenu(
             kotlin.runCatching {
                 (mod.findFirstEnabled
                     ?: mod.findFirstDisabled)?.archiveInfo?.folder?.also {
-                    Desktop.getDesktop().open(it.parentFile)
+                    Desktop.getDesktop().open(it.toFile())
                 }
             }
                 .onFailure { Logger.warn(it) { "Error trying to open file browser for $mod." } }

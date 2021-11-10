@@ -25,8 +25,10 @@ import java.io.File
 import java.io.FileWriter
 import java.io.RandomAccessFile
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.util.*
+import kotlin.io.path.*
 
 @OptIn(ExperimentalStdlibApi::class)
 class Archives internal constructor(
@@ -74,19 +76,19 @@ class Archives internal constructor(
      * @param destinationFolder The folder to place the result into. Not the mod folder, but the parent of that (eg /mods).
      * @param shouldCompressModFolder If true, will compress the mod as needed and place the archive in the folder.
      */
-    suspend fun installFromUnknownSource(inputFile: File, destinationFolder: File, shouldCompressModFolder: Boolean) {
-        if (!inputFile.exists()) throw RuntimeException("File does not exist: ${inputFile.absolutePath}")
-        if (!destinationFolder.exists()) throw RuntimeException("File does not exist: ${destinationFolder.absolutePath}")
+    suspend fun installFromUnknownSource(inputFile: Path, destinationFolder: Path, shouldCompressModFolder: Boolean) {
+        if (!inputFile.exists()) throw RuntimeException("File does not exist: ${inputFile.absolutePathString()}")
+        if (!destinationFolder.exists()) throw RuntimeException("File does not exist: ${destinationFolder.absolutePathString()}")
 
-        suspend fun copyOrCompressDir(modFolder: File) {
+        suspend fun copyOrCompressDir(modFolder: Path) {
             if (shouldCompressModFolder) {
                 // Create an archive from the parent folder
                 compressModsInFolder(inputModFolder = modFolder, destinationFolder = destinationFolder)
             } else {
                 kotlin.runCatching {
                     // Or just copy the files
-                    modFolder.copyRecursively(
-                        target = destinationFolder.resolve(modFolder.name),
+                    modFolder.toFile().copyRecursively(
+                        target = destinationFolder.resolve(modFolder.name).toFile(),
                         overwrite = true,
                         onError = { _, ioException ->
                             Logger.error(ioException)
@@ -97,12 +99,12 @@ class Archives internal constructor(
             }
         }
 
-        if (inputFile.isFile) {
+        if (inputFile.isRegularFile()) {
             if (inputFile.name == MOD_INFO_FILE) {
                 // Input file is mod_info.json, parent folder is mod folder
-                val modFolder = inputFile.parentFile
+                val modFolder = inputFile.parent
 
-                if (modFolder.exists() && modFolder.isDirectory) {
+                if (modFolder.exists() && modFolder.isDirectory()) {
                     copyOrCompressDir(modFolder)
                     return
                 } else {
@@ -137,7 +139,7 @@ class Archives internal constructor(
                             val extraParentFolder = destinationFolder.resolve("tempRootFolder")
 
                             RandomAccessFileInStream(
-                                RandomAccessFile(inputFile, "r")
+                                RandomAccessFile(inputFile.toFile(), "r")
                             ).use { fileInStream ->
                                 SevenZip.openInArchive(null, fileInStream).use { inArchive ->
                                     inArchive.extract(
@@ -158,18 +160,18 @@ class Archives internal constructor(
                     throw ex
                 }
             }
-        } else if (inputFile.isDirectory) {
+        } else if (inputFile.isDirectory()) {
             copyOrCompressDir(inputFile)
         } else {
             // Not file or directory?
-            throw RuntimeException("${inputFile.absolutePath} not recognized as file or folder.")
+            throw RuntimeException("${inputFile.absolutePathString()} not recognized as file or folder.")
         }
     }
 
-    private fun findDataFilesInArchive(inputArchiveFile: File): DataFiles? {
+    private fun findDataFilesInArchive(inputArchiveFile: Path): DataFiles? {
         val dataFiles: DataFiles? = kotlin.runCatching {
             IOLock.read {
-                RandomAccessFileInStream(RandomAccessFile(inputArchiveFile, "r")).use { fileInStream ->
+                RandomAccessFileInStream(RandomAccessFile(inputArchiveFile.toFile(), "r")).use { fileInStream ->
                     SevenZip.openInArchive(null, fileInStream).use { inArchive ->
                         val items = inArchive.simpleInterface.archiveItems
                             .filter { !it.isFolder }
@@ -183,7 +185,7 @@ class Archives internal constructor(
                                 Logger.debug {
                                     "Time to extract mod_info.json ${
                                         if (versionCheckerFile != null) "& vercheck file " else ""
-                                    }from ${inputArchiveFile.absolutePath}: ${time}ms."
+                                    }from ${inputArchiveFile.absolutePathString()}: ${time}ms."
                                 }
                             }) {
                                 var modInfo: ModInfo? = null
@@ -220,7 +222,7 @@ class Archives internal constructor(
             }
         }
             .onFailure {
-                Logger.warn(it) { "Unable to read ${inputArchiveFile.absolutePath}" }
+                Logger.warn(it) { "Unable to read ${inputArchiveFile.absolutePathString()}" }
                 throw it
             }
             .getOrElse { null }
@@ -237,17 +239,17 @@ class Archives internal constructor(
      *
      * @param folderContainingSingleMod A folder with a single mod somewhere inside, eg Seeker in `Seeker/mod_info.json`.
      */
-    suspend fun removedNestedFolders(folderContainingSingleMod: File) {
+    suspend fun removedNestedFolders(folderContainingSingleMod: Path) {
         kotlin.runCatching {
-            if (!folderContainingSingleMod.isDirectory)
+            if (!folderContainingSingleMod.isDirectory())
                 throw RuntimeException("folderContainingSingleMod must be a folder! It's in the name!")
 
-            val modInfoFile = folderContainingSingleMod.walkTopDown().firstOrNull { it.name == MOD_INFO_FILE }
-                ?: throw RuntimeException("Expected a $MOD_INFO_FILE in ${folderContainingSingleMod.absolutePath}")
+            val modInfoFile = folderContainingSingleMod.walk(maxDepth = 2).firstOrNull { it.name == MOD_INFO_FILE }
+                ?: throw RuntimeException("Expected a $MOD_INFO_FILE in ${folderContainingSingleMod.absolutePathString()}")
 
 //            val modInfo = modInfoLoader.readModInfoFile(modInfoFile.readText())
 
-            if (folderContainingSingleMod == modInfoFile.parentFile) {
+            if (folderContainingSingleMod == modInfoFile.parent) {
                 // Mod info file is one folder deep, all is well.
                 return
             } else {
@@ -259,9 +261,9 @@ class Archives internal constructor(
                 // First make a temp dir and copy mod into that, then delete original mod location, then copy from temp into desired location.
                 // This prevents being unable to move from /modname/modname to /modname.
                 // Instead it will copy /modname/modname to /modname/temp, then delete /modname/modname, then copy /modname/temp to /modname.
-                modInfoFile.parentFile.moveDirectory(randomTempFile)
+                modInfoFile.parent.toFile().moveDirectory(randomTempFile.toFile())
                 modInfoFile.deleteRecursively()
-                randomTempFile.moveDirectory(folderContainingSingleMod)
+                randomTempFile.toFile().moveDirectory(folderContainingSingleMod.toFile())
             }
         }
             .onFailure {
@@ -272,7 +274,7 @@ class Archives internal constructor(
 
     suspend fun extractMod(
         modVariant: ModVariant,
-        destinationFolder: File
+        destinationFolder: Path
     ) {
         if (modVariant.archiveInfo == null) {
             throw RuntimeException("Cannot stage mod not archived: $modVariant")
@@ -284,30 +286,30 @@ class Archives internal constructor(
     }
 
     private fun extractArchive(
-        archiveFile: File,
-        destinationFolder: File,
+        archiveFile: Path,
+        destinationFolder: Path,
         defaultFolderName: String
-    ): File {
+    ): Path {
         IOLock.write {
-            var modFolder: File
-            RandomAccessFileInStream(RandomAccessFile(archiveFile, "r")).use { fileInStream ->
+            var modFolder: Path
+            RandomAccessFileInStream(RandomAccessFile(archiveFile.toFile(), "r")).use { fileInStream ->
                 SevenZip.openInArchive(null, fileInStream).use { inArchive ->
                     val archiveItems = inArchive.simpleInterface.archiveItems
                     val files = archiveItems.map { File(it.path) }
                     val modInfoFile = files.find { it.name.equals(MOD_INFO_FILE, ignoreCase = true) }
-                        ?: throw RuntimeException("mod_info.json not found. ${archiveFile.absolutePath}")
+                        ?: throw RuntimeException("mod_info.json not found. ${archiveFile.absolutePathString()}")
 
-                    val archiveBaseFolder: File? = modInfoFile.parentFile
+                    val archiveBaseFolder: Path? = modInfoFile.parentFile.toPath()
 
                     modFolder =
                             // Create new parent folder with id in it, don't reuse mod folder parent because different variants will have same folder name.
 //                        if (modInfoFile.parent == null)
-                        File(destinationFolder, defaultFolderName)
+                        destinationFolder.resolve(defaultFolderName)
 //                    else {
 //                        File(destinationFolder, modInfoFile.parentFile.path)
 //                    }
 
-                    modFolder.mkdirsIfNotExist()
+                    modFolder.createDirectories()
 
                     inArchive.extract(null, false, ArchiveExtractToFolderCallback(modFolder, inArchive))
 //                    markManagedBySmol(modFolder)
@@ -320,8 +322,8 @@ class Archives internal constructor(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun compressModsInFolder(
-        inputModFolder: File,
-        destinationFolder: File? = config.archivesPath?.toFileOrNull()
+        inputModFolder: Path,
+        destinationFolder: Path? = config.archivesPath?.toPathOrNull()
     ) {
         return callbackFlow<String> {
             IOLock.write {
@@ -329,13 +331,13 @@ class Archives internal constructor(
                     if (destinationFolder == null)
                         throw RuntimeException("Not adding mods to archives folder; destination folder is null.")
 
-                    if (!inputModFolder.exists()) throw RuntimeException("Mod folder doesn't exist:  ${inputModFolder.absolutePath}.")
+                    if (!inputModFolder.exists()) throw RuntimeException("Mod folder doesn't exist:  ${inputModFolder.absolutePathString()}.")
 
-                    if (inputModFolder.isFile && inputModFolder.name != MOD_INFO_FILE) throw RuntimeException("Not a mod folder: ${inputModFolder.absolutePath}.")
+                    if (inputModFolder.isRegularFile() && inputModFolder.name != MOD_INFO_FILE) throw RuntimeException("Not a mod folder: ${inputModFolder.absolutePathString()}.")
 
                     // If they dropped mod_info.json, use the parent folder
                     val modFolder =
-                        if (inputModFolder.isFile && inputModFolder.name == MOD_INFO_FILE) inputModFolder.parentFile
+                        if (inputModFolder.isRegularFile() && inputModFolder.name == MOD_INFO_FILE) inputModFolder.parent
                             ?: inputModFolder
                         else inputModFolder
 
@@ -347,7 +349,7 @@ class Archives internal constructor(
                     )
 
                     if (mods.none()) {
-                        val runtimeException = RuntimeException("No mods found in ${modFolder.absolutePath}.")
+                        val runtimeException = RuntimeException("No mods found in ${modFolder.absolutePathString()}.")
                         Logger.warn(runtimeException)
                         throw runtimeException
                     }
@@ -364,17 +366,16 @@ class Archives internal constructor(
                         .forEach { (modFolder, dataFiles) ->
                             val modInfo = dataFiles.modInfo
                             val filesToArchive =
-                                modFolder.walkTopDown().toList()
+                                modFolder.walk().toList()
 
-                            val archiveFile = File(
-                                destinationFolder,
+                            val archiveFile = destinationFolder.resolve(
                                 createArchiveName(modInfo) + ".7z"
                             )
-                                .apply { parentFile.mkdirsIfNotExist() }
+                                .apply { this.parent.createDirectories() }
 
                             var wasCanceled = false
 
-                            RandomAccessFile(archiveFile, "rw").use { randomAccessFile ->
+                            RandomAccessFile(archiveFile.toFile(), "rw").use { randomAccessFile ->
                                 SevenZip.openOutArchive7z().use { archive7z ->
                                     fun cancelProcess() {
                                         if (!wasCanceled) {
@@ -382,8 +383,8 @@ class Archives internal constructor(
                                             wasCanceled = true
                                             archive7z.close()
 
-                                            if (!archiveFile.delete()) {
-                                                archiveFile.deleteOnExit()
+                                            if (!archiveFile.toFile().delete()) {
+                                                archiveFile.toFile().deleteOnExit()
                                             }
                                         }
                                     }
@@ -432,13 +433,13 @@ class Archives internal constructor(
                                                 val item = outItemFactory.createOutItem()
                                                 val file = filesToArchive[index]
 
-                                                if (file.isDirectory) {
+                                                if (file.isDirectory()) {
                                                     item.propertyIsDir = true
                                                 } else {
                                                     item.dataSize = file.readBytes().size.toLong()
                                                 }
 
-                                                item.propertyPath = file.toRelativeString(modFolder)
+                                                item.propertyPath = file.relativeTo(modFolder).pathString
                                                 return item
                                             }
 
@@ -448,7 +449,7 @@ class Archives internal constructor(
                                                     return null
                                                 }
 
-                                                currentFilepath = filesToArchive[index].relativeTo(modFolder).path
+                                                currentFilepath = filesToArchive[index].relativeTo(modFolder).pathString
                                                 return ByteArrayStream(filesToArchive[index].readBytes(), true)
                                             }
                                         })
@@ -472,11 +473,11 @@ class Archives internal constructor(
      */
     suspend fun refreshManifest() {
         val startTime = System.currentTimeMillis()
-        val archives = getArchivesPath().toFileOrNull() ?: return
-        val files = archives.listFiles().toList()
+        val archives = getArchivesPath().toPathOrNull() ?: return
+        val files = archives.walk().toList()
             .filter { !it.name.startsWith(ARCHIVE_MANIFEST_FILENAME) }
 
-        val modInfos: List<Pair<File, DataFiles>> = coroutineScope {
+        val modInfos: List<Pair<Path, DataFiles>> = coroutineScope {
             withContext(Dispatchers.IO) {
                 files
                     .parallelMap { archive ->
@@ -499,7 +500,7 @@ class Archives internal constructor(
             manifest.copy(
                 manifestItems = modInfos.associate {
                     createManifestItemKey(it.second.modInfo) to ManifestItemValue(
-                        archivePath = it.first.absolutePath,
+                        archivePath = it.first.absolutePathString(),
                         modInfo = it.second.modInfo,
                         versionCheckerInfo = it.second.versionCheckerInfo
                     )
@@ -519,12 +520,12 @@ class Archives internal constructor(
                     }
 
                     IOLock.write {
-                        val file = File(config.archivesPath!!, ARCHIVE_MANIFEST_FILENAME)
-                        FileWriter(file).use { writer ->
+                        val file = Path.of(config.archivesPath!!, ARCHIVE_MANIFEST_FILENAME)
+                        FileWriter(file.toFile()).use { writer ->
                             gson.toJson(this, writer)
                         }
                         Logger.info {
-                            "Updated manifest at ${file.absolutePath} from ${originalManifest.manifestItems.count()} " +
+                            "Updated manifest at ${file.absolutePathString()} from ${originalManifest.manifestItems.count()} " +
                                     "to ${this.manifestItems.count()} items."
                         }
                     }
@@ -543,7 +544,7 @@ class Archives internal constructor(
         modInfo.id.replace('-', '_') + modInfo.version.toString() + "-" + ModVariant.createSmolId(modInfo)
 
 
-//    fun markManagedBySmol(modInStagingFolder: File) {
+//    fun markManagedBySmol(modInStagingFolder: _root_ide_package_.java.nio.file.Path) {
 //        IOLock.withLock {
 //            val marker = File(modInStagingFolder, Staging.MARKER_FILE_NAME)
 //            marker.createNewFile()
@@ -568,19 +569,19 @@ class Archives internal constructor(
     }
 
     private fun ISimpleInArchiveItem.extractFile(
-        archiveBaseFolder: File?,
-        destFolder: File
+        archiveBaseFolder: Path?,
+        destFolder: Path
     ): ExtractOperationResult? {
         val result = this.extractSlow { bytes ->
             val fileRelativeToBase =
-                archiveBaseFolder?.let { File(this.path).toRelativeString(it) } ?: this.path
-            File(destFolder, fileRelativeToBase).run {
+                archiveBaseFolder?.let { Path.of(this.path).relativeTo(it).pathString } ?: this.path
+            destFolder.resolve(fileRelativeToBase).run {
                 // Delete file if it exists so we replace it.
                 if (this.exists()) {
-                    this.delete()
+                    this.deleteIfExists()
                 }
 
-                parentFile?.mkdirsIfNotExist()
+                parent?.createDirectories()
                 writeBytes(bytes)
             }
             bytes.size

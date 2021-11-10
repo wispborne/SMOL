@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.tinylog.Logger
 import util.toFileOrNull
+import util.toPathOrNull
 import java.awt.dnd.DropTarget
 import java.awt.dnd.DropTargetDragEvent
 import java.awt.dnd.DropTargetDropEvent
@@ -76,8 +77,8 @@ fun AppState.FileDropper(
                     scope.launch {
                         kotlin.runCatching {
                             SL.archives.installFromUnknownSource(
-                                it as File,
-                                SL.archives.getArchivesPath().toFileOrNull()!!,
+                                (it as File).toPath(),
+                                SL.archives.getArchivesPath().toPathOrNull()!!,
                                 shouldCompressModFolder = true
                             )
                         }

@@ -5,17 +5,10 @@ import config.GamePath
 import model.Mod
 import model.ModVariant
 import org.tinylog.Logger
-import util.IOLock
-import util.ManualReloadTrigger
-import util.mkdirsIfNotExist
-import util.toFileOrNull
-import java.io.File
+import util.*
 import java.nio.file.AccessDeniedException
-import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.StandardCopyOption
-import kotlin.io.path.createLinkPointingTo
-import kotlin.io.path.createSymbolicLinkPointingTo
+import kotlin.io.path.*
 
 internal class Staging(
     private val config: AppConfig,
@@ -75,7 +68,7 @@ internal class Staging(
             return Result.success(Unit)
         }
 
-        val stagingFolder = config.stagingPath.toFileOrNull()
+        val stagingFolder = config.stagingPath.toPathOrNull()
             ?: return failLogging("No staging folder: $modVariant")
 
         kotlin.runCatching {
@@ -87,7 +80,7 @@ internal class Staging(
                 if (modVariant.modsFolderInfo != null && modVariant.modsFolderInfo.folder.exists()) {
                     val linkFoldersResult = linkFolders(
                         modVariant.modsFolderInfo.folder,
-                        File(gamePath.getModsPath(), modVariant.generateVariantFolderName())
+                        gamePath.getModsPath().resolve(modVariant.generateVariantFolderName())
                     )
 
                     if (linkFoldersResult.isFailure) {
@@ -181,76 +174,76 @@ internal class Staging(
         val sourceFolder = mod.stagingInfo!!.folder
 
         if (!sourceFolder.exists()) {
-            return failLogging("Staging folder doesn't exist. ${sourceFolder.path}, $mod")
+            return failLogging("Staging folder doesn't exist. ${sourceFolder.pathString}, $mod")
         }
 
-        val destFolder = File(gamePath.getModsPath(), sourceFolder.name)
+        val destFolder = gamePath.getModsPath().resolve(sourceFolder.name)
         return linkFolders(sourceFolder, destFolder)
     }
 
     /**
      * Creates (hard)links for all files in the source folder to the destination folder.
      */
-    private fun linkFolders(sourceFolder: File, destFolder: File): Result<Unit> {
+    private fun linkFolders(sourceFolder: Path, destFolder: Path): Result<Unit> {
         IOLock.write {
-            destFolder.mkdirsIfNotExist()
+            if (!destFolder.exists()) destFolder.createDirectories()
 
             destFolder.deleteRecursively()
-            destFolder.createNewFile()
-            val failedFiles = mutableListOf<File>()
-            val succeededFiles = mutableListOf<File>()
+            destFolder.createFile()
+            val failedFiles = mutableListOf<Path>()
+            val succeededFiles = mutableListOf<Path>()
 
-            sourceFolder.walkTopDown().forEach { sourceFile ->
+            sourceFolder.walk().forEach { sourceFile ->
                 //        listOf(sourceFolder).forEach { sourceFile ->
                 //            if (sourceFile.path == sourceFolder.path) return@forEach
-                val sourceRelativePath = Path.of(sourceFile.toRelativeString(sourceFolder))
-                val destFile = File(destFolder.absolutePath, sourceRelativePath.toString())
+                val sourceRelativePath = sourceFile.relativeTo(sourceFolder)
+                val destFile = Path(destFolder.absolutePathString(), sourceRelativePath.toString())
 
                 if (!sourceFile.exists()) {
-                    failedFiles += sourceFile
-                    Logger.warn { "Couldn't create ${linkMethod.name}, as source didn't exist. ${sourceFile.absolutePath}" }
+                    failedFiles.add(sourceFile)
+                    Logger.warn { "Couldn't create ${linkMethod.name}, as source didn't exist. ${sourceFile.absolutePathString()}" }
                 }
 
 
                 when {
-                    sourceFile.isDirectory -> destFile.deleteRecursively()
-                    sourceFile.isFile -> destFile.delete()
+                    sourceFile.isDirectory() -> destFile.deleteRecursively()
+                    sourceFile.isRegularFile() -> destFile.deleteIfExists()
                 }
 
                 kotlin.runCatching {
                     when (linkMethod) {
                         LinkMethod.HardLink ->
                             when {
-                                sourceFile.isDirectory -> destFile.mkdirsIfNotExist()
-                                sourceFile.isFile -> destFile.toPath().createLinkPointingTo(sourceFile.toPath())
+                                sourceFile.isDirectory() -> destFile.createDirectories()
+                                sourceFile.isRegularFile() -> destFile.createLinkPointingTo(sourceFile)
                                 else -> Logger.warn { "Not sure what kind of file this is: $sourceFile" }
                             }
-                        LinkMethod.Symlink -> destFile.toPath().createSymbolicLinkPointingTo(sourceFile.toPath())
+                        LinkMethod.Symlink -> destFile.createSymbolicLinkPointingTo(sourceFile)
                     }
                 }
                     .onFailure { ex ->
-                        failedFiles += sourceFile
+                        failedFiles.add(sourceFile)
                         Logger.warn(ex) {
                             "Error creating ${linkMethod.name}.\n" +
-                                    "      Source: ${sourceFile.absolutePath}\n" +
-                                    "      Dest: ${destFile.absolutePath}"
+                                    "      Source: ${sourceFile.absolutePathString()}\n" +
+                                    "      Dest: ${destFile.absolutePathString()}"
                         }
                         if (linkMethod == LinkMethod.HardLink && ex is AccessDeniedException) {
                             Logger.warn { "Remember that hard links cannot cross disk partitions." }
                         }
                     }
                     .onSuccess {
-                        succeededFiles += sourceFile
-                        Logger.trace { "Created ${linkMethod.name} at ${destFile.absolutePath}" }
+                        succeededFiles.add(sourceFile)
+                        Logger.trace { "Created ${linkMethod.name} at ${destFile.absolutePathString()}" }
                     }
                     .getOrThrow()
             }
 
             if (failedFiles.any()) {
-                Logger.warn { "Failed to create links/folders for ${failedFiles.count()} files in ${destFolder.absolutePath}." }
+                Logger.warn { "Failed to create links/folders for ${failedFiles.count()} files in ${destFolder.absolutePathString()}." }
             }
 
-            Logger.info { "Created links/folders for ${succeededFiles.count()} files in ${destFolder.absolutePath}." }
+            Logger.info { "Created links/folders for ${succeededFiles.count()} files in ${destFolder.absolutePathString()}." }
         }
 
         return Result.success(Unit)
@@ -274,11 +267,12 @@ internal class Staging(
 
         IOLock.write {
             kotlin.runCatching {
-                if (!modsFolderInfo.folder.deleteRecursively()) {
-                    Logger.warn { "Error deleting ${modsFolderInfo.folder.absolutePath}. Marking for deletion on exit." }
-                    modsFolderInfo.folder.deleteOnExit()
-                }
+                modsFolderInfo.folder.deleteRecursively()
             }
+                .recover {
+                    Logger.warn(it) { "Error deleting ${modsFolderInfo.folder.absolutePathString()}. Marking for deletion on exit." }
+                    modsFolderInfo.folder.toFile().deleteOnExit()
+                }
                 .onFailure {
                     Logger.error(it)
                     return Result.failure(it)

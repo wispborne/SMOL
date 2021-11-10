@@ -1,11 +1,8 @@
 package views
 
-import APP_NAME
 import AppState
 import SL
-import SmolAlertDialog
 import SmolButton
-import SmolSecondaryButton
 import SmolTheme
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.border
@@ -29,11 +26,8 @@ import kotlinx.coroutines.flow.*
 import model.Mod
 import navigation.Screen
 import org.tinylog.Logger
-import util.IOLock
-import util.currentPlatform
-import util.equalsAny
-import util.toFileOrNull
-import java.io.File
+import util.*
+import kotlin.io.path.exists
 
 
 private var isRefreshingMods = false
@@ -199,21 +193,14 @@ fun AppState.homeView(
 private suspend fun watchDirsAndReloadOnChange(
     mods: SnapshotStateList<Mod>
 ) {
-    val NSA: List<Flow<KWatchEvent>> = listOf(
-        SL.access.getStagingPath()?.toFileOrNull()?.asWatchChannel() ?: emptyFlow(),
-        SL.access.getStagingPath()?.toFileOrNull()?.resolve(Archives.ARCHIVE_MANIFEST_FILENAME) // Watch manifest.json
+    val NSA: List<Flow<KWatchEvent?>> = listOf(
+        SL.access.getStagingPath()?.toPathOrNull()?.asWatchChannel() ?: emptyFlow(),
+        SL.access.getStagingPath()?.toPathOrNull()?.resolve(Archives.ARCHIVE_MANIFEST_FILENAME) // Watch manifest.json
             ?.run { if (this.exists()) this.asWatchChannel() else emptyFlow() } ?: emptyFlow(),
         SL.gamePath.getModsPath().asWatchChannel(),
         SL.gamePath.getModsPath().resolve(ENABLED_MODS_FILENAME) // Watch enabled_mods.json
             .run { if (this.exists()) this.asWatchChannel() else emptyFlow() },
-        SL.archives.getArchivesPath()?.toFileOrNull()?.asWatchChannel() ?: emptyFlow(),
-        SL.manualReloadTrigger.trigger.map {
-            KWatchEvent(
-                File("Mod reload triggered manually: $it"),
-                KWatchEvent.Kind.Modified,
-                null
-            )
-        }
+        SL.archives.getArchivesPath()?.toPathOrNull()?.asWatchChannel() ?: emptyFlow(),
     )
 
     reloadMods(mods)
@@ -222,10 +209,12 @@ private suspend fun watchDirsAndReloadOnChange(
             NSA.joinToString()
         }"
     }
-    NSA.merge()
+    NSA
+        .plus(SL.manualReloadTrigger.trigger.map { null })
+        .merge()
         .collectLatest {
             if (!IOLock.stateFlow.value) {
-                if (it.kind == KWatchEvent.Kind.Initialized)
+                if (it?.kind == KWatchEvent.Kind.Initialized)
                     return@collectLatest
                 // Short delay so that if a new file change comes in during this time,
                 // this is canceled in favor of the new change. This should prevent

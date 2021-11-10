@@ -2,18 +2,20 @@ package util
 
 import net.sf.sevenzipjbinding.*
 import org.tinylog.Logger
-import java.io.File
+import java.nio.file.Path
 import java.util.*
+import kotlin.io.path.createDirectories
+import kotlin.io.path.writeBytes
 
 
 class ArchiveExtractToFolderCallback(
-    private val parentFolder: File,
+    private val parentFolder: Path,
     private val inArchive: IInArchive
 ) : IArchiveExtractCallback {
     private val startTime = System.currentTimeMillis()
     private var hash = 0
     private var size = 0
-    var currentFile: File? = null
+    var currentFile: Path? = null
     private var index = 0
     private var skipExtraction = false
     private var bytes = byteArrayOf()
@@ -64,7 +66,7 @@ class ArchiveExtractToFolderCallback(
             }
 
             val file = parentFolder.resolve(filePath)
-            file.parentFile.mkdirsIfNotExist()
+            file.parent.createDirectories()
             currentFile = file
             file.writeBytes(bytes)
 

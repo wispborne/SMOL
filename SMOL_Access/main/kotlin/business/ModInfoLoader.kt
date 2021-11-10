@@ -1,5 +1,7 @@
 package business
 
+import MOD_INFO_FILE
+import VERSION_CHECKER_CSV_PATH
 import com.google.gson.Gson
 import com.squareup.moshi.Moshi
 import model.ModInfo
@@ -9,9 +11,10 @@ import org.apache.commons.csv.CSVParser
 import org.hjson.JsonValue
 import org.tinylog.Logger
 import util.IOLock
-import MOD_INFO_FILE
-import VERSION_CHECKER_CSV_PATH
-import java.io.File
+import util.walk
+import java.nio.file.FileVisitOption
+import java.nio.file.Path
+import kotlin.io.path.*
 
 class ModInfoLoader(
     private val moshi: Moshi,
@@ -20,13 +23,12 @@ class ModInfoLoader(
 
     @OptIn(ExperimentalStdlibApi::class)
     fun readModDataFilesFromFolderOfMods(
-        folderWithMods: File,
+        folderWithMods: Path,
         desiredFiles: List<DataFile>
-    ): Sequence<Pair<File, DataFiles>> =
+    ): Sequence<Pair<Path, DataFiles>> =
         IOLock.read {
-            folderWithMods
-                .walkTopDown().maxDepth(1)
-                .filter { it.isDirectory }
+            folderWithMods.walk(maxDepth = 1, FileVisitOption.FOLLOW_LINKS)
+                .filter { it.isDirectory() }
                 .mapNotNull { modFolder ->
                     var modInfo: ModInfo? = null
 
@@ -35,10 +37,9 @@ class ModInfoLoader(
                             if (desiredFiles.isEmpty())
                                 "nothing else"
                             else desiredFiles.joinToString()
-                        } in folder: ${modFolder.absolutePath}"
+                        } in folder: ${modFolder.absolutePathString()}"
                     }
-                    modFolder
-                        .walkTopDown().maxDepth(1)
+                    modFolder.walk(maxDepth = 1, FileVisitOption.FOLLOW_LINKS)
                         .filter { it != folderWithMods }
                         .forEach { file ->
                             Logger.trace { "  File: ${file.name}" }
@@ -54,7 +55,7 @@ class ModInfoLoader(
                         var versionCheckerInfo: VersionCheckerInfo? = null
 
                         if (desiredFiles.contains(DataFile.VERSION_CHECKER)) {
-                            val verCheckerCsv = File(modFolder, VERSION_CHECKER_CSV_PATH)
+                            val verCheckerCsv = modFolder.resolve(VERSION_CHECKER_CSV_PATH)
 
                             if (verCheckerCsv.exists()) {
                                 kotlin.runCatching {
@@ -62,7 +63,7 @@ class ModInfoLoader(
                                         CSVParser(verCheckerCsv.bufferedReader(), CSVFormat.DEFAULT).records[1][0]
 
                                     versionCheckerInfo =
-                                        deserializeVersionCheckerFile(File(modFolder, versionFilePath).readText())
+                                        deserializeVersionCheckerFile(modFolder.resolve(versionFilePath).readText())
 
                                     if (versionCheckerInfo?.modThreadId != null) {
                                         versionCheckerInfo = versionCheckerInfo!!.copy(

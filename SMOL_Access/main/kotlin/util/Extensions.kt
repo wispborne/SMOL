@@ -7,11 +7,23 @@ import org.apache.commons.io.FileUtils
 import java.io.File
 import java.io.IOException
 import java.lang.reflect.Modifier
+import java.nio.file.FileVisitOption
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.*
+import kotlin.io.path.Path
+import kotlin.io.path.deleteIfExists
+import kotlin.io.path.exists
+import kotlin.io.path.isSameFileAs
+import kotlin.streams.asSequence
 import kotlin.system.measureTimeMillis
 
-fun String?.toFileOrNull() = this?.let { File(it) }
 
+@Deprecated("Use Path instead", replaceWith = ReplaceWith("toPathOrNull()"))
+fun String?.toFileOrNull() = this?.let { File(it) }
+fun String?.toPathOrNull() = this?.let { Path(it) }
+
+@Deprecated("Use Path.createDirectories() instead")
 fun File.mkdirsIfNotExist() {
     if (this.isFile) {
         this.parentFile.mkdirsIfNotExist()
@@ -19,6 +31,25 @@ fun File.mkdirsIfNotExist() {
         this.mkdirs()
     }
 }
+
+/**
+ * [https://stackoverflow.com/a/35989142/1622788]
+ */
+fun Path.deleteRecursively(vararg options: FileVisitOption = arrayOf(FileVisitOption.FOLLOW_LINKS)) {
+    if (!this.exists()) return
+
+    Files.walk(this, *options).use { walk ->
+        walk.sorted(Comparator.reverseOrder())
+//            .map { obj: Path -> obj.toFile() }
+//            .peek { x: File? -> println(x) }
+            .forEach { obj -> obj.deleteIfExists() }
+    }
+}
+
+fun Path.walk(maxDepth: Int = Int.MAX_VALUE, vararg options: FileVisitOption): Sequence<Path> =
+    Files.walk(this, maxDepth, *options)
+        .asSequence()
+        .filter { !it.isSameFileAs(this) }
 
 fun Throwable.rootCause(): Throwable {
     return if (this.cause != null && this !== this.cause)

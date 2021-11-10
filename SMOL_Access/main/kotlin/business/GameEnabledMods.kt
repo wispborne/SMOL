@@ -3,13 +3,16 @@ package business
 import com.github.salomonbrys.kotson.fromJson
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
+import config.GamePath
 import model.ModInfo
 import org.hjson.JsonObject
 import org.tinylog.kotlin.Logger
-import config.GamePath
 import util.IOLock
-import java.io.File
-import kotlin.concurrent.withLock
+import java.nio.file.Path
+import kotlin.io.path.copyTo
+import kotlin.io.path.exists
+import kotlin.io.path.reader
+import kotlin.io.path.writer
 
 class GameEnabledMods(
     private val gson: Gson,
@@ -92,7 +95,7 @@ class GameEnabledMods(
             .getOrThrow()
     }
 
-    private fun createBackupFileIfDoesntExist(enabledModsFile: File) {
+    private fun createBackupFileIfDoesntExist(enabledModsFile: Path) {
         IOLock.write {
             val backupFile = gamePath.getModsPath().resolve("$ENABLED_MODS_FILENAME.bak")
 

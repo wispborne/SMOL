@@ -5,7 +5,11 @@ import com.sun.jna.platform.win32.WinReg
 import org.tinylog.Logger
 import util.IOLock
 import util.mkdirsIfNotExist
+import util.toPathOrNull
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
+import kotlin.io.path.createDirectories
 
 
 class GamePath internal constructor(
@@ -52,13 +56,13 @@ class GamePath internal constructor(
             .getOrNull()
 
     fun getModsPath(
-        starsectorPath: File = appConfig.gamePath?.let { File(it) }
+        starsectorPath: Path = appConfig.gamePath?.toPathOrNull()
             ?: throw NullPointerException("Game path not found")
-    ): File {
-        val mods = File(starsectorPath, "mods")
+    ): Path {
+        val mods = starsectorPath.resolve("mods")
 
         IOLock.write {
-            mods.mkdirsIfNotExist()
+            mods.createDirectories()
         }
 
         return mods
