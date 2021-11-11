@@ -7,7 +7,10 @@ import SmolButton
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CutCornerShape
-import androidx.compose.material.*
+import androidx.compose.material.Card
+import androidx.compose.material.ContentAlpha
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -15,7 +18,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.tinylog.Logger
-import util.toFileOrNull
 import util.toPathOrNull
 import java.awt.dnd.DropTarget
 import java.awt.dnd.DropTargetDragEvent
@@ -76,9 +78,8 @@ fun AppState.FileDropper(
                 droppedFiles.firstOrNull()?.let {
                     scope.launch {
                         kotlin.runCatching {
-                            SL.archives.installFromUnknownSource(
-                                (it as File).toPath(),
-                                SL.archives.getArchivesPath().toPathOrNull()!!,
+                            SL.access.installFromUnknownSource(
+                                inputFile = (it as File).toPath(),
                                 shouldCompressModFolder = true
                             )
                         }

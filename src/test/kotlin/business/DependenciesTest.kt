@@ -2,7 +2,7 @@ package business
 
 import model.*
 import org.junit.jupiter.api.Test
-import java.io.File
+import java.nio.file.Path
 import kotlin.test.assertTrue
 
 internal class DependenciesTest {
@@ -49,9 +49,9 @@ internal class DependenciesTest {
                         modThreadId = "16680",
                         modVersion = VersionCheckerInfo.Version("1", "3", "0")
                     ),
-                    modsFolderInfo = Mod.ModsFolderInfo(folder = File("""C:\Program Files (x86)\Fractal Softworks\Starsector - Playground\mods\UnofficialNewGamePlus""")),
+                    modsFolderInfo = Mod.ModsFolderInfo(folder = Path.of("""C:\Program Files (x86)\Fractal Softworks\Starsector - Playground\mods\UnofficialNewGamePlus""")),
                     stagingInfo = null,
-                    archiveInfo = ModVariant.ArchiveInfo(folder = File("""C:\Users\whitm\SMOL\archives\ungp-1.3.0.7z"""))
+                    archiveInfo = ModVariant.ArchiveInfo(folder = Path.of("""C:\Users\whitm\SMOL\archives\ungp-1.3.0.7z"""))
                 )
             )
         ),
@@ -77,9 +77,9 @@ internal class DependenciesTest {
                         modThreadId = "0",
                         modVersion = VersionCheckerInfo.Version("2", "6", "0")
                     ),
-                    modsFolderInfo = Mod.ModsFolderInfo(folder = File("""C:\Program Files (x86)\Fractal Softworks\Starsector - Playground\mods\UnofficialNewGamePlus""")),
+                    modsFolderInfo = Mod.ModsFolderInfo(folder = Path.of("""C:\Program Files (x86)\Fractal Softworks\Starsector - Playground\mods\UnofficialNewGamePlus""")),
                     stagingInfo = null,
-                    archiveInfo = ModVariant.ArchiveInfo(folder = File("""C:\Users\whitm\SMOL\archives\ungp-1.3.0.7z"""))
+                    archiveInfo = ModVariant.ArchiveInfo(Path.of("""C:\Users\whitm\SMOL\archives\ungp-1.3.0.7z"""))
                 )
             )
         )

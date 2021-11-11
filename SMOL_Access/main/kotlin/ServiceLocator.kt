@@ -57,7 +57,7 @@ class ServiceLocator internal constructor(
         archives = archives,
         manualReloadTrigger = manualReloadTrigger
     ),
-    val access: Access = Access(staging = staging, config = appConfig, modLoader = modLoader),
+    val access: Access = Access(staging = staging, config = appConfig, modLoader = modLoader, archives = archives),
     val userManager: UserManager = UserManager(
         appConfig = appConfig, access = access, modLoader = modLoader
     ),

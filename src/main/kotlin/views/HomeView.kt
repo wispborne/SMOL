@@ -4,7 +4,9 @@ import AppState
 import SL
 import SmolButton
 import SmolTheme
+import SmolTooltipText
 import androidx.compose.desktop.ui.tooling.preview.Preview
+import androidx.compose.foundation.BoxWithTooltip
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
@@ -13,6 +15,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.*
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import business.Archives
 import business.GameEnabledMods.Companion.ENABLED_MODS_FILENAME
@@ -27,6 +30,7 @@ import model.Mod
 import navigation.Screen
 import org.tinylog.Logger
 import util.*
+import java.awt.FileDialog
 import kotlin.io.path.exists
 
 
@@ -95,6 +99,7 @@ fun AppState.homeView(
 
             profilesButton()
             settingsButton()
+            installModsButton()
         }
     }, content = {
         Box {
@@ -292,5 +297,43 @@ private fun AppState.launchButton() {
         shape = SmolTheme.smolFullyClippedButtonShape()
     ) {
         Text(text = "Launch")
+    }
+}
+
+@Composable
+private fun AppState.installModsButton() {
+    BoxWithTooltip(
+        tooltip = { SmolTooltipText(text = "Install mod(s)") }
+    ) {
+        SmolButton(
+            onClick = {
+                with(FileDialog(this.window, "Choose a file", FileDialog.LOAD)
+                    .apply {
+                        this.isMultipleMode = true
+                        this.directory = SL.appConfig.lastFilePickerDirectory
+                        this.isVisible = true
+                    })
+                {
+                    SL.appConfig.lastFilePickerDirectory = this.directory
+
+                    this.files
+                        .map { it.toPath() }
+                        .onEach { Logger.debug { "Chose file: $it" } }
+                        .forEach {
+                            GlobalScope.launch {
+                                SL.access.installFromUnknownSource(inputFile = it, shouldCompressModFolder = true)
+                            }
+                        }
+                }
+            },
+            modifier = Modifier.padding(start = 16.dp),
+            shape = SmolTheme.smolFullyClippedButtonShape()
+        ) {
+            Icon(
+                painter = painterResource("plus.svg"),
+                contentDescription = null,
+                tint = MaterialTheme.colors.onSurface
+            )
+        }
     }
 }

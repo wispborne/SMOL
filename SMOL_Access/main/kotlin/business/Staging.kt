@@ -189,7 +189,7 @@ internal class Staging(
             if (!destFolder.exists()) destFolder.createDirectories()
 
             destFolder.deleteRecursively()
-            destFolder.createFile()
+            destFolder.createDirectories()
             val failedFiles = mutableListOf<Path>()
             val succeededFiles = mutableListOf<Path>()
 

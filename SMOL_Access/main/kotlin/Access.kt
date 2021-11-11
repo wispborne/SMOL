@@ -1,3 +1,4 @@
+import business.Archives
 import business.ModLoader
 import business.Staging
 import config.AppConfig
@@ -8,14 +9,17 @@ import org.tinylog.Logger
 import util.IOLock
 import util.mkdirsIfNotExist
 import util.toFileOrNull
+import util.toPathOrNull
 import java.io.File
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 
 class Access internal constructor(
     private val staging: Staging,
     private val config: AppConfig,
-    private val modLoader: ModLoader
+    private val modLoader: ModLoader,
+    private val archives: Archives
 ) {
 
     /**
@@ -74,6 +78,13 @@ class Access internal constructor(
      * @param noCache When true, will never return cached information.
      */
     fun getMods(noCache: Boolean): List<Mod> = modLoader.getMods(noCache = noCache)
+
+    suspend fun installFromUnknownSource(
+        inputFile: Path,
+        destinationFolder: Path = archives.getArchivesPath().toPathOrNull()!!,
+        shouldCompressModFolder: Boolean
+    ) =
+        archives.installFromUnknownSource(inputFile, destinationFolder, shouldCompressModFolder)
 
     /**
      * Changes the active mod variant, or disables all if `null` is set.
