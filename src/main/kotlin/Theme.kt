@@ -101,7 +101,7 @@ fun SmolSecondaryButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    elevation: ButtonElevation? = null,
+    elevation: ButtonElevation? = ButtonDefaults.elevation(),
     shape: Shape? = null,
     border: BorderStroke? = null,
     colors: ButtonColors = ButtonDefaults.buttonColors(

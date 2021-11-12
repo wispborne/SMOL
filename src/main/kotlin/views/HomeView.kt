@@ -305,7 +305,8 @@ private fun AppState.launchButton() {
                     SL.appConfig.gamePath.toFileOrNull()
                 )
         },
-        modifier = Modifier.padding(start = 16.dp)
+        modifier = Modifier
+            .padding(start = 16.dp)
             .border(4.dp, SmolTheme.highlight(), shape = SmolTheme.smolFullyClippedButtonShape()),
         shape = SmolTheme.smolFullyClippedButtonShape()
     ) {
@@ -334,7 +335,7 @@ private fun vmParamsContextMenu(
             text = "Current: $assignedRam"
         )
         LazyVerticalGrid(
-            modifier = Modifier.width(width).height(150.dp).padding(top = 16.dp),
+            modifier = Modifier.width(width).height(180.dp).padding(top = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             cells = GridCells.Adaptive(80.dp)
@@ -404,7 +405,7 @@ private fun AppState.installModsButton() {
             Icon(
                 painter = painterResource("plus.svg"),
                 contentDescription = null,
-                tint = MaterialTheme.colors.onSurface
+                tint = SmolTheme.dimmedIconColor()
             )
         }
     }

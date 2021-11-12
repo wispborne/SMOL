@@ -26,7 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.input.pointer.isPrimaryPressed
+import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -46,7 +47,7 @@ private val modGridViewDropdownWidth = 180
 
 @OptIn(
     ExperimentalMaterialApi::class,
-    ExperimentalFoundationApi::class, ExperimentalUnitApi::class, ExperimentalDesktopApi::class,
+    ExperimentalFoundationApi::class, ExperimentalUnitApi::class,
     ExperimentalComposeUiApi::class
 )
 @Composable
@@ -277,7 +278,6 @@ private fun ModContextMenu(
     }
 }
 
-@OptIn(ExperimentalDesktopApi::class)
 @Composable
 private fun DependencyFixerRow(
     mod: Mod,

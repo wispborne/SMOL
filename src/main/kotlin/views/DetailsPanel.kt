@@ -13,9 +13,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.input.pointer.pointerIcon
+import androidx.compose.ui.input.pointer.isPrimaryPressed
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -24,11 +24,13 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import business.findDependencies
+import util.imageResource
 import util.openModThread
+import java.awt.Cursor
 
 @OptIn(
-    ExperimentalUnitApi::class, androidx.compose.foundation.ExperimentalDesktopApi::class,
-    androidx.compose.ui.ExperimentalComposeUiApi::class
+    ExperimentalUnitApi::class,
+    androidx.compose.ui.ExperimentalComposeUiApi::class, androidx.compose.foundation.ExperimentalFoundationApi::class
 )
 @Composable
 fun BoxScope.detailsPanel(
@@ -94,7 +96,7 @@ fun BoxScope.detailsPanel(
                         Text(
                             text = "Forum Thread",
                             modifier = Modifier.padding(top = 16.dp)
-                                .pointerIcon(PointerIcon.Hand)
+                                .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)))
                                 .mouseClickable {
                                     if (this.buttons.isPrimaryPressed) {
                                         versionCheckerInfo.modThreadId!!.openModThread()

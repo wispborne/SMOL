@@ -2,9 +2,14 @@ package util
 
 import FORUM_PAGE_URL
 import ServiceLocator
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.res.loadImageBitmap
+import androidx.compose.ui.res.useResource
 import business.VmParamsManager
+import config.Platform
 import model.Mod
-import org.jetbrains.skija.impl.Platform
 import java.awt.Desktop
 import java.net.URI
 import kotlin.math.ceil
@@ -41,15 +46,39 @@ fun String.ellipsizeAfter(length: Int): String? {
     } else this
 }
 
-val currentPlatform =
-    when (Platform.CURRENT) {
-        Platform.WINDOWS -> config.Platform.Windows
-        Platform.MACOS_X64,
-        Platform.MACOS_ARM64 -> config.Platform.MacOS
-        Platform.LINUX -> config.Platform.Linux
-        else -> config.Platform.Windows // *crosses fingers*
+/**
+ * From [https://github.com/JetBrains/skija/blob/ebd63708b35e23667c1bf65845182430d0cf0860/shared/java/impl/Platform.java].
+ */
+val currentPlatform: Platform
+    get() {
+        val os = System.getProperty("os.name").toLowerCase()
+
+        return if (os.contains("mac") || os.contains("darwin")) {
+            if ("aarch64" == System.getProperty("os.arch"))
+                Platform.MacOS
+            else Platform.MacOS
+        } else if (os.contains("windows"))
+            Platform.Windows
+        else if (os.contains("nux") || os.contains("nix"))
+            Platform.Linux
+        else throw RuntimeException(
+            "Unsupported platform: $os"
+        )
     }
 
+/**
+ * Synchronously load an image file stored in resources for the application.
+ * Deprecated by Compose, but the replacement doesn't give an [ImageBitmap] so it's useless.
+ *
+ * @param resourcePath path to the image file
+ * @return the decoded image data associated with the resource
+ */
+@Composable
+fun imageResource(resourcePath: String): ImageBitmap {
+    return remember(resourcePath) {
+        useResource(resourcePath, ::loadImageBitmap)
+    }
+}
 
 val ServiceLocator.vmParamsManager: VmParamsManager
     get() = VmParamsManager(gamePath, currentPlatform)

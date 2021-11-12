@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.onEach
 import navigation.Screen
 import navigation.rememberRouter
 import net.sf.sevenzipjbinding.SevenZip
-import org.jetbrains.skija.impl.Platform
 import org.tinylog.Logger
 import org.tinylog.configuration.Configuration
 import util.SmolPair
