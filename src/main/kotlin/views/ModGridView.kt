@@ -42,6 +42,7 @@ import model.ModVariant
 import org.tinylog.Logger
 import util.*
 import java.awt.Desktop
+import kotlin.io.path.exists
 
 private val modGridViewDropdownWidth = 180
 
@@ -234,18 +235,38 @@ private fun ModContextMenu(
     CursorDropdownMenu(
         expanded = showContextMenu,
         onDismissRequest = { onShowContextMenuChange(false) }) {
-        DropdownMenuItem(onClick = {
-            kotlin.runCatching {
-                (mod.findFirstEnabled
-                    ?: mod.findFirstDisabled)?.archiveInfo?.folder?.also {
-                    Desktop.getDesktop().open(it.toFile())
+        val modsFolder = (mod.findFirstEnabled
+            ?: mod.findFirstDisabled)?.modsFolderInfo?.folder
+        if (modsFolder?.exists() == true) {
+            DropdownMenuItem(onClick = {
+                kotlin.runCatching {
+                    modsFolder.also {
+                        Desktop.getDesktop().open(it.toFile())
+                    }
                 }
+                    .onFailure { Logger.warn(it) { "Error trying to open file browser for $mod." } }
+                onShowContextMenuChange(false)
+            }) {
+                Text("Open Folder")
             }
-                .onFailure { Logger.warn(it) { "Error trying to open file browser for $mod." } }
-            onShowContextMenuChange(false)
-        }) {
-            Text("Open Archive")
         }
+
+        val archiveFolder = (mod.findFirstEnabled
+            ?: mod.findFirstDisabled)?.archiveInfo?.folder
+        if (archiveFolder?.exists() == true) {
+            DropdownMenuItem(onClick = {
+                kotlin.runCatching {
+                    archiveFolder.also {
+                        Desktop.getDesktop().open(it.toFile())
+                    }
+                }
+                    .onFailure { Logger.warn(it) { "Error trying to open file browser for $mod." } }
+                onShowContextMenuChange(false)
+            }) {
+                Text("Open Archive")
+            }
+        }
+
         val modThreadId = mod.getModThreadId()
         if (modThreadId != null) {
             DropdownMenuItem(
@@ -269,6 +290,7 @@ private fun ModContextMenu(
                 )
             }
         }
+
         DropdownMenuItem(onClick = {
             onModInDebugDialogChanged(mod)
             onShowContextMenuChange(false)
