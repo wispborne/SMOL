@@ -1,6 +1,8 @@
 package util
 
 import FORUM_PAGE_URL
+import ServiceLocator
+import business.VmParamsManager
 import model.Mod
 import org.jetbrains.skija.impl.Platform
 import java.awt.Desktop
@@ -47,3 +49,7 @@ val currentPlatform =
         Platform.LINUX -> config.Platform.Linux
         else -> config.Platform.Windows // *crosses fingers*
     }
+
+
+val ServiceLocator.vmParamsManager: VmParamsManager
+    get() = VmParamsManager(gamePath, currentPlatform)

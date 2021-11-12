@@ -1,9 +1,11 @@
 package cli
 
 import business.UserManager
+import business.VmParamsManager
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.output.TermUi
+import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import com.github.ajalt.clikt.parameters.types.int
@@ -11,7 +13,8 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
 class SmolCLI(
-    private val userManager: UserManager
+    private val userManager: UserManager,
+    private val vmParamsManager: VmParamsManager
 ) {
     val chainOfCommand = Smol()
         .subcommands(
@@ -19,7 +22,8 @@ class SmolCLI(
             ModProfileList(),
             ModProfileCreate(),
             ModProfileSet(),
-            ModProfileRemove()
+            ModProfileRemove(),
+            SetRam(),
         )
 
     fun parse(command: String) {
@@ -82,6 +86,15 @@ class SmolCLI(
         override fun run() {
             userManager.removeModProfile(profileId)
             echo("Removed mod profile $profileId.")
+        }
+    }
+
+    inner class SetRam : CliktCommand(name = "set-ram", help = "Set vmparams RAM (MB).") {
+        val megabytes by argument().int()
+
+        override fun run() {
+            vmParamsManager.update { it?.withMb(megabytes) }
+            echo("Set vmparams to use $megabytes MB.")
         }
     }
 }

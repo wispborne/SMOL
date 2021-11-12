@@ -96,8 +96,8 @@ fun AppState.ModGridView(
                                         )
                                         Text(
                                             text = when (modState) {
-                                                true -> "Enabled"
-                                                false -> "Disabled"
+                                                true -> "Enabled (${modsInGroup.count()})"
+                                                false -> "Disabled (${modsInGroup.count()})"
                                             },
                                             modifier = Modifier
                                                 .padding(8.dp),
