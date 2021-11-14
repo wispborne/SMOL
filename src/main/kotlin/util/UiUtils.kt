@@ -47,6 +47,12 @@ fun String.ellipsizeAfter(length: Int): String? {
 }
 
 /**
+ * A mebibyte is 2^20 bytes (1024 KiB instead of 1000 KB).
+ */
+val Long.bytesAsReadableMiB: String
+    get() = "%.3f MiB".format(this / 1048576f)
+
+/**
  * From [https://github.com/JetBrains/skija/blob/ebd63708b35e23667c1bf65845182430d0cf0860/shared/java/impl/Platform.java].
  */
 val currentPlatform: Platform

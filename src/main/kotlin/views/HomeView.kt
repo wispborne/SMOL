@@ -7,7 +7,7 @@ import SmolSecondaryButton
 import SmolTheme
 import SmolTooltipText
 import androidx.compose.desktop.ui.tooling.preview.Preview
-import androidx.compose.foundation.BoxWithTooltip
+import androidx.compose.foundation.TooltipArea
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.GridCells
@@ -40,6 +40,7 @@ import utilities.equalsAny
 import utilities.toFileOrNull
 import utilities.toPathOrNull
 import java.awt.FileDialog
+import kotlin.io.path.absolutePathString
 import kotlin.io.path.exists
 
 
@@ -55,7 +56,7 @@ fun AppState.homeView(
     modifier: Modifier = Modifier
 ) {
     val mods = remember { mutableStateListOf<Mod>() }
-    rememberCoroutineScope().launch { reloadMods(mods) }
+    rememberCoroutineScope().launch { reloadMods(mods, forceRefresh = false) }
 
     var job = Job()
 
@@ -107,7 +108,7 @@ fun AppState.homeView(
             SmolButton(
                 onClick = {
                     composableScope.launch {
-                        reloadMods(mods)
+                        reloadMods(mods, forceRefresh = true)
                     }
                 },
                 modifier = Modifier.padding(start = 16.dp)
@@ -231,7 +232,7 @@ private suspend fun watchDirsAndReloadOnChange(
         SL.archives.getArchivesPath()?.toPathOrNull()?.asWatchChannel() ?: emptyFlow(),
     )
 
-    reloadMods(mods)
+    reloadMods(mods, forceRefresh = false)
     Logger.info {
         "Started watching folders ${
             NSA.joinToString()
@@ -249,14 +250,14 @@ private suspend fun watchDirsAndReloadOnChange(
                 // refreshing 500 times if 500 files are changed in a few millis.
                 delay(500)
                 Logger.info { "File change: $it" }
-                reloadMods(mods)
+                reloadMods(mods, forceRefresh = false)
             } else {
                 Logger.info { "Skipping mod reload while IO locked." }
             }
         }
 }
 
-private suspend fun reloadMods(mods: SnapshotStateList<Mod>) {
+private suspend fun reloadMods(mods: SnapshotStateList<Mod>, forceRefresh: Boolean) {
     if (isRefreshingMods) {
         Logger.info { "Skipping reload of mods as they are currently refreshing already." }
         return
@@ -267,9 +268,14 @@ private suspend fun reloadMods(mods: SnapshotStateList<Mod>) {
             isRefreshingMods = true
             val freshMods =
                 withContext(Dispatchers.Default) { SL.access.getMods(noCache = true) }
+            // TODO replace using differ rather than clear and addAll
             mods.clear()
             mods.addAll(freshMods)
-            SL.archives.refreshManifest()
+            val manifest = async { SL.archives.refreshManifest() }
+            val vramCheckerAsync = async { SL.vramChecker.getVramUsage(forceRefresh = forceRefresh) }
+
+            manifest.await()
+            vramCheckerAsync.await()
         }
     } catch (e: Exception) {
         Logger.debug(e)
@@ -302,15 +308,15 @@ private fun AppState.profilesButton() {
 private fun AppState.launchButton() {
     SmolButton(
         onClick = {
-            val gameLauncher = SL.appConfig.gamePath.toFileOrNull()?.resolve("starsector.exe")
+            val gameLauncher = SL.appConfig.gamePath.toPathOrNull()?.resolve("starsector.exe")
             val commands = when (currentPlatform) {
                 Platform.Windows -> arrayOf("cmd.exe", "/C")
                 else -> arrayOf("open")
             }
-            Logger.info { "Launching ${gameLauncher?.absolutePath} with working dir ${SL.appConfig.gamePath}." }
+            Logger.info { "Launching ${gameLauncher?.absolutePathString()} with working dir ${SL.appConfig.gamePath}." }
             Runtime.getRuntime()
                 .exec(
-                    arrayOf(*commands, gameLauncher?.absolutePath ?: "missing"),
+                    arrayOf(*commands, gameLauncher?.absolutePathString() ?: "missing"),
                     null,
                     SL.appConfig.gamePath.toFileOrNull()
                 )
@@ -385,7 +391,7 @@ private fun vmParamsContextMenu(
 
 @Composable
 private fun AppState.installModsButton() {
-    BoxWithTooltip(
+    TooltipArea(
         tooltip = { SmolTooltipText(text = "Install mod(s)") }
     ) {
         SmolButton(

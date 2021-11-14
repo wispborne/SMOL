@@ -71,8 +71,31 @@ fun AppState.ModGridView(
                 Row {
                     Spacer(Modifier.width(modGridViewDropdownWidth.dp))
                     Text("Name", Modifier.weight(1f), fontWeight = FontWeight.Bold)
+
                     Text("Author", Modifier.weight(1f), fontWeight = FontWeight.Bold)
-                    Text("Version", Modifier.weight(1f), fontWeight = FontWeight.Bold)
+
+                    TooltipArea(modifier = Modifier.weight(1f),
+                        tooltip = { SmolTooltipText(text = "The version(s) tracked by SMOL.") }) {
+                        Text(text = "Version", fontWeight = FontWeight.Bold)
+                    }
+
+                    TooltipArea(modifier = Modifier.weight(1f),
+                        tooltip = {
+                            SmolTooltipText(
+                                text = "An estimate of how much VRAM the mod will use." +
+                                        "\nAll images are counted, even if not used by the game."
+                            )
+                        }) {
+                        Row {
+                            Text(text = "VRAM Impact", fontWeight = FontWeight.Bold)
+                            Icon(
+                                modifier = Modifier.padding(start = 8.dp).width(16.dp).height(16.dp)
+                                    .align(Alignment.Top),
+                                painter = painterResource("more_info.png"),
+                                contentDescription = null
+                            )
+                        }
+                    }
                 }
             }
             Box {
@@ -159,16 +182,14 @@ fun AppState.ModGridView(
                                             // Mod version (active or highest)
                                             Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {
                                                 if (highestLocalVersion != null && onlineVersion != null && onlineVersion > highestLocalVersion) {
-                                                    BoxWithTooltip(
-                                                        modifier = Modifier.mouseClickable {
-                                                            if (this.buttons.isPrimaryPressed) {
-                                                                mod.findHighestVersion?.versionCheckerInfo?.modThreadId?.openModThread()
-                                                            }
+                                                    TooltipArea(tooltip = {
+                                                        SmolTooltipText(text = "Newer version available: $onlineVersion")
+                                                    }, modifier = Modifier.mouseClickable {
+                                                        if (this.buttons.isPrimaryPressed) {
+                                                            mod.findHighestVersion?.versionCheckerInfo?.modThreadId?.openModThread()
                                                         }
-                                                            .align(Alignment.CenterVertically),
-                                                        tooltip = {
-                                                            SmolTooltipText(text = "Newer version available: $onlineVersion")
-                                                        }) {
+                                                    }
+                                                        .align(Alignment.CenterVertically)) {
                                                         Image(
                                                             painter = painterResource("news64.png"),
                                                             contentDescription = null,
@@ -181,9 +202,34 @@ fun AppState.ModGridView(
                                                 Text(
                                                     text = mod.variants
                                                         .joinToString() { it.modInfo.version.toString() },
-                                                    modifier = Modifier.align(Alignment.CenterVertically)
+                                                    modifier = Modifier.align(Alignment.CenterVertically),
+                                                    color = SmolTheme.dimmedTextColor()
                                                 )
                                             }
+
+                                            // VRAM
+                                            Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {
+                                                val vramResult =
+                                                    SL.vramChecker.cached?.get(mod.findHighestVersion?.smolId)
+                                                TooltipArea(tooltip = {
+                                                    if (vramResult != null) {
+                                                        val impactText =
+                                                            vramResult.bytesForMod.bytesAsReadableMiB
+                                                                .let { if (vramResult.bytesForMod == 0L) "No impact" else it }
+                                                        SmolTooltipText(text = "$impactText\n${vramResult.imageCount} images")
+                                                    }
+                                                }) {
+                                                    Text(
+                                                        text =
+                                                        vramResult?.bytesForMod?.bytesAsReadableMiB
+                                                            ?.let { if (vramResult.bytesForMod == 0L) "None" else it }
+                                                            ?: "-",
+                                                        modifier = Modifier.align(Alignment.CenterVertically),
+                                                        color = SmolTheme.dimmedTextColor()
+                                                    )
+                                                }
+                                            }
+
                                             // Context menu
                                             ModContextMenu(
                                                 showContextMenu = showContextMenu,

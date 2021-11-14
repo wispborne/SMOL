@@ -3,7 +3,7 @@ package business
 import GraphicsLibConfig
 import VramChecker
 import config.GamePath
-import model.ModId
+import config.VramCheckerCache
 import model.ModVariant
 import model.SmolId
 import model.Version
@@ -11,15 +11,22 @@ import org.tinylog.kotlin.Logger
 
 class VramCheckerManager(
     private val modLoader: ModLoader,
-    private val gamePath: GamePath
+    private val gamePath: GamePath,
+    private val vramCheckerCache: VramCheckerCache
 ) {
-    private var cached: Map<SmolId, VramCheckerMod>? = null
+    var cached: Map<SmolId, VramCheckerCache.Result>? = vramCheckerCache.bytesPerVariant
+        private set(value) {
+            field = value
+            vramCheckerCache.bytesPerVariant = value
+        }
 
-    suspend fun getVramUsage(shouldRefresh: Boolean): Map<SmolId, VramCheckerMod> {
-        if (!shouldRefresh && cached != null) {
+    suspend fun getVramUsage(forceRefresh: Boolean): Map<SmolId, VramCheckerCache.Result> {
+        if (!forceRefresh && cached != null) {
+            Logger.debug { "Not refreshing VRAM use. forceRefresh: $forceRefresh, cached: ${cached?.size ?: 0} entries" }
             return cached!!
         }
 
+        Logger.debug { "Refreshing VRAM use. forceRefresh: $forceRefresh, cached: ${cached?.size ?: 0} entries" }
         val results = VramChecker(
             enabledModIds = modLoader.getMods(noCache = false).map { it.id },
             gameModsFolder = gamePath.getModsPath(),
@@ -41,7 +48,7 @@ class VramCheckerManager(
             .associateBy(keySelector = {
                 ModVariant.createSmolId(it.info.id, Version.parse(it.info.version))
             }) {
-                VramCheckerMod(
+                VramCheckerCache.Result(
                     modId = it.info.id,
                     bytesForMod = it.totalBytesForMod,
                     imageCount = it.images.count()
@@ -50,10 +57,4 @@ class VramCheckerManager(
 
         return cached!!
     }
-
-    data class VramCheckerMod(
-        val modId: ModId,
-        val bytesForMod: Long,
-        val imageCount: Int,
-    )
 }

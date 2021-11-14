@@ -11,6 +11,7 @@ import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import config.AppConfig
 import config.GamePath
 import config.VersionCheckerCache
+import config.VramCheckerCache
 import model.ModInfo
 import org.hjson.JsonValue
 import util.ManualReloadTrigger
@@ -48,6 +49,11 @@ class ServiceLocator internal constructor(
         config = appConfig,
         gameEnabledMods = gameEnabledMods,
         versionChecker = versionChecker
+    ),
+    val vramChecker: VramCheckerManager = VramCheckerManager(
+        modLoader = modLoader,
+        gamePath = gamePath,
+        vramCheckerCache = VramCheckerCache(gson = gson)
     ),
     internal val staging: Staging = Staging(
         config = appConfig,
