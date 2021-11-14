@@ -9,9 +9,9 @@ import kotlinx.coroutines.launch
 import model.Mod
 import model.ModVariant
 import org.tinylog.Logger
-import util.asList
-import util.toPathOrNull
-import util.trace
+import utilities.asList
+import utilities.toPathOrNull
+import utilities.trace
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 

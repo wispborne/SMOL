@@ -11,7 +11,7 @@ import org.apache.commons.csv.CSVParser
 import org.hjson.JsonValue
 import org.tinylog.Logger
 import util.IOLock
-import util.walk
+import utilities.walk
 import java.nio.file.FileVisitOption
 import java.nio.file.Path
 import kotlin.io.path.*

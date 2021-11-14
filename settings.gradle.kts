@@ -7,4 +7,4 @@ pluginManagement {
 
 }
 rootProject.name = "SMOL"
-include("SMOL_Access")
+include("SMOL_Access", "VRAM_Checker", "Utilities")

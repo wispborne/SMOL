@@ -1,20 +1,29 @@
 package cli
 
+import GraphicsLibConfig
+import VramChecker
+import business.ModLoader
 import business.UserManager
 import business.VmParamsManager
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.output.TermUi
 import com.github.ajalt.clikt.parameters.arguments.argument
+import com.github.ajalt.clikt.parameters.arguments.default
+import com.github.ajalt.clikt.parameters.arguments.help
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import com.github.ajalt.clikt.parameters.types.int
+import config.GamePath
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 class SmolCLI(
     private val userManager: UserManager,
-    private val vmParamsManager: VmParamsManager
+    private val vmParamsManager: VmParamsManager,
+    private val modLoader: ModLoader,
+    private val gamePath: GamePath,
 ) {
     val chainOfCommand = Smol()
         .subcommands(
@@ -24,6 +33,7 @@ class SmolCLI(
             ModProfileSet(),
             ModProfileRemove(),
             SetRam(),
+            CheckVram(),
         )
 
     fun parse(command: String) {
@@ -95,6 +105,35 @@ class SmolCLI(
         override fun run() {
             vmParamsManager.update { it?.withMb(megabytes) }
             echo("Set vmparams to use $megabytes MB.")
+        }
+    }
+
+    inner class CheckVram : CliktCommand(name = "check-vram", help = "Run Version Checker") {
+        val areGfxLibNormalMapsEnabled by argument().int()
+            .help("areGfxLibNormalMapsEnabled: 1 for true, false otherwise.").default(1)
+        val areGfxLibMaterialMapsEnabled by argument().int()
+            .help("areGfxLibMaterialMapsEnabled: 1 for true, false otherwise.").default(1)
+        val areGfxLibSurfaceMapsEnabled by argument().int()
+            .help("areGfxLibSurfaceMapsEnabled: 1 for true, false otherwise.").default(1)
+
+        override fun run() {
+            GlobalScope.launch {
+                VramChecker(
+                    enabledModIds = modLoader.getMods(noCache = false).map { it.id },
+                    gameModsFolder = gamePath.getModsPath(),
+                    showGfxLibDebugOutput = false,
+                    showPerformance = false,
+                    showSkippedFiles = false,
+                    showCountedFiles = true,
+                    graphicsLibConfig = GraphicsLibConfig(
+                        areGfxLibNormalMapsEnabled = areGfxLibNormalMapsEnabled == 1,
+                        areGfxLibMaterialMapsEnabled = areGfxLibMaterialMapsEnabled == 1,
+                        areGfxLibSurfaceMapsEnabled = areGfxLibSurfaceMapsEnabled == 1
+                    ),
+                    stdOut = { echo(it) }
+                )
+                    .check()
+            }
         }
     }
 }

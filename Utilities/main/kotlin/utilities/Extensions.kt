@@ -1,9 +1,11 @@
-package util
+package utilities
 
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import org.apache.commons.io.FileUtils
+import java.awt.Toolkit
+import java.awt.datatransfer.StringSelection
 import java.io.File
 import java.io.IOException
 import java.lang.reflect.Modifier
@@ -147,4 +149,10 @@ fun <T> trace(onFinished: (T, Long) -> Unit, func: () -> T): T {
     val millis = measureTimeMillis { result = func() }
     onFinished(result, millis)
     return result
+}
+
+fun copyToClipboard(string: String) {
+    val stringSelection = StringSelection(string)
+    val clipboard = Toolkit.getDefaultToolkit().systemClipboard
+    clipboard.setContents(stringSelection, null)
 }

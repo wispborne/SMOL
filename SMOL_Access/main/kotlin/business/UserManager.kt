@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import model.UserProfile
 import org.tinylog.kotlin.Logger
-import util.diff
+import utilities.diff
 
 class UserManager internal constructor(
     private val appConfig: AppConfig,

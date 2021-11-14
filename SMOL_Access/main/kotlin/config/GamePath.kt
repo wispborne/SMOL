@@ -4,7 +4,7 @@ import com.sun.jna.platform.win32.Advapi32Util
 import com.sun.jna.platform.win32.WinReg
 import org.tinylog.Logger
 import util.IOLock
-import util.toPathOrNull
+import utilities.toPathOrNull
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.createDirectories

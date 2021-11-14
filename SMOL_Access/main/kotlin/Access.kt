@@ -7,9 +7,9 @@ import model.Mod
 import model.ModVariant
 import org.tinylog.Logger
 import util.IOLock
-import util.mkdirsIfNotExist
-import util.toFileOrNull
-import util.toPathOrNull
+import utilities.mkdirsIfNotExist
+import utilities.toFileOrNull
+import utilities.toPathOrNull
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path

@@ -2,7 +2,7 @@ package config
 
 import com.google.gson.Gson
 import com.google.gson.JsonElement
-import util.mkdirsIfNotExist
+import utilities.mkdirsIfNotExist
 import java.io.File
 import java.util.prefs.Preferences
 import kotlin.reflect.KProperty

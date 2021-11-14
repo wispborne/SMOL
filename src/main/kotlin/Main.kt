@@ -14,7 +14,7 @@ import org.tinylog.configuration.Configuration
 import util.SmolPair
 import util.SmolWindowState
 import util.currentPlatform
-import util.makeFinite
+import utilities.makeFinite
 
 var safeMode = false
 

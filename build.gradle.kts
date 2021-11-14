@@ -24,6 +24,8 @@ dependencies {
 
     implementation(fileTree("libs") { include("**/*.jar") })
     implementation(project("SMOL_Access"))
+    implementation(project("VRAM_Checker"))
+    implementation(project("Utilities"))
 
     // Gson
     implementation("com.github.salomonbrys.kotson:kotson:2.5.0")
@@ -67,9 +69,17 @@ compose.desktop {
             outputBaseDir.set(project.projectDir.resolve("dist"))
             packageName = "SMOL"
             packageVersion = "1.0.0"
+
             windows {
                 console = true
                 upgradeUuid = "51169f8d-9aec-4abf-b30a-f5bc5a5f6509"
+                jvmArgs += listOf("-Djava.library.path=native/windows") // To use lwjgl in VRAM Checker
+            }
+            macOS {
+                jvmArgs += listOf("-Djava.library.path=native/macosx") // To use lwjgl in VRAM Checker
+            }
+            linux {
+                jvmArgs += listOf("-Djava.library.path=native/linux") // To use lwjgl in VRAM Checker
             }
 
             // task suggestRuntimeModules to generate this

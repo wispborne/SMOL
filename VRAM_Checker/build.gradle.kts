@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "com.wisp"
-version = "1.0"
+version = "1.10.1"
 
 repositories {
     google()
@@ -11,38 +11,17 @@ repositories {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:${project.property("kotlin")!!}")
+    implementation(kotlin("stdlib"))
     implementation(project(":Utilities"))
+    implementation(fileTree("libs") { include("**/*.jar") })
 
-    implementation("org.jetbrains.kotlin:kotlin-reflect:${project.property("kotlin")!!}")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:1.5.21")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2-native-mt")
-
-    implementation(fileTree("../libs") { include("**/*.jar") })
-
-    // JSON
-    val moshiVer = "1.12.0"
-    api("com.squareup.moshi:moshi-kotlin:$moshiVer")
-//    kapt("com.squareup.moshi:moshi-kotlin:$moshiVer")
-    implementation("com.squareup.moshi:moshi-adapters:$moshiVer")
-    // Gson
-    implementation("com.github.salomonbrys.kotson:kotson:2.5.0")
-    // CSV
-    implementation("org.apache.commons:commons-csv:1.8")
-    // API
-    api("io.ktor:ktor-client-core:1.6.4")
-    api("io.ktor:ktor-client-cio:1.6.4")
-    api("io.ktor:ktor-client-logging:1.6.4")
 
     // Version Checker Dependencies
     implementation("de.siegmar:fastcsv:2.1.0")
     implementation("com.fasterxml.jackson.core:jackson-core:2.13.0")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.13.0")
-
-    // Arrow
-    implementation(project.property("arrowCore")!!)
-    implementation(project.property("arrowOptics")!!)
-    implementation(project.property("arrowFxCoroutines")!!)
-
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {

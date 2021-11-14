@@ -33,7 +33,12 @@ import kotlinx.coroutines.flow.*
 import model.Mod
 import navigation.Screen
 import org.tinylog.Logger
-import util.*
+import util.IOLock
+import util.currentPlatform
+import util.vmParamsManager
+import utilities.equalsAny
+import utilities.toFileOrNull
+import utilities.toPathOrNull
 import java.awt.FileDialog
 import kotlin.io.path.exists
 
@@ -191,7 +196,12 @@ fun AppState.homeView(
                                     ))
                                 ) {
                                     kotlin.runCatching {
-                                        SmolCLI(userManager = SL.userManager, vmParamsManager = SL.vmParamsManager)
+                                        SmolCLI(
+                                            userManager = SL.userManager,
+                                            vmParamsManager = SL.vmParamsManager,
+                                            modLoader = SL.modLoader,
+                                            gamePath = SL.gamePath
+                                        )
                                             .parse(consoleText)
                                         consoleText = ""
                                     }
