@@ -13,6 +13,7 @@ repositories {
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib:${project.property("kotlin")!!}")
     implementation(project(":Utilities"))
+    implementation(project(":VRAM_Checker"))
 
     implementation("org.jetbrains.kotlin:kotlin-reflect:${project.property("kotlin")!!}")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2-native-mt")

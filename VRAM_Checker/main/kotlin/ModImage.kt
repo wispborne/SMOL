@@ -6,7 +6,7 @@ import kotlin.math.ceil
  * @param textureHeight Next highest power of two
  * @param textureWidth Next highest power of two
  */
-internal data class ModImage(
+data class ModImage(
     val file: Path,
     val textureHeight: Int,
     val textureWidth: Int,

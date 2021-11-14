@@ -1,6 +1,5 @@
 package model
 
-import java.io.File
 import java.nio.file.Path
 import java.util.*
 import kotlin.io.path.exists
@@ -58,20 +57,22 @@ data class ModVariant(
 
     companion object {
         private val filter = Regex("""[^0-9a-zA-Z\\.\-_]""")
-        fun createSmolId(modInfo: ModInfo) =
+        fun createSmolId(id: String, version: Version) =
             buildString {
-                append(modInfo.id.replace(filter, "").take(6))
+                append(id.replace(filter, "").take(6))
                 append("-")
-                append(modInfo.version.toString().replace(filter, "").take(9))
+                append(version.toString().replace(filter, "").take(9))
                 append("-")
                 append(
                     Objects.hash(
-                        modInfo.id,
-                        modInfo.version.toString()
+                        id,
+                        version.toString()
                     )
                         .absoluteValue // Increases chance of a collision but ids look less confusing.
                 )
             }
+
+        fun createSmolId(modInfo: ModInfo) = createSmolId(modInfo.id, modInfo.version)
     }
 
     // incredibly inelegant way of doing a parent-child relationship

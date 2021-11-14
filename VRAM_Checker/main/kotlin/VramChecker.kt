@@ -42,7 +42,7 @@ class VramChecker(
     var startTime = Date().time
         private set
 
-    suspend fun check() {
+    suspend fun check(): List<Mod> {
         progressText = StringBuilder()
         modTotals = StringBuilder()
         summaryText = StringBuilder()
@@ -270,6 +270,7 @@ class VramChecker(
 
         stdOut(modTotals.toString())
         stdOut(summaryText.toString())
+        return mods
     }
 
     private fun getModInfo(jsonMapper: JsonMapper, modFolder: Path, progressText: StringBuilder): ModInfo? {

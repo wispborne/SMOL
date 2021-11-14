@@ -6,6 +6,7 @@ import kotlinx.cli.*
 import kotlinx.coroutines.runBlocking
 
 @OptIn(ExperimentalCli::class)
+@Deprecated("Use SmolCLI")
 class SmolCLI2(
     private val userManager: UserManager
 ) {
