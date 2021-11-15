@@ -50,6 +50,7 @@ class VramCheckerManager(
             }) {
                 VramCheckerCache.Result(
                     modId = it.info.id,
+                    version = it.info.version,
                     bytesForMod = it.totalBytesForMod,
                     imageCount = it.images.count()
                 )

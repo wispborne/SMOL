@@ -89,7 +89,7 @@ fun AppState.ModGridView(
                         Row {
                             Text(text = "VRAM Impact", fontWeight = FontWeight.Bold)
                             Icon(
-                                modifier = Modifier.padding(start = 8.dp).width(16.dp).height(16.dp)
+                                modifier = Modifier.padding(start = 8.dp).width(12.dp).height(12.dp)
                                     .align(Alignment.Top),
                                 painter = painterResource("more_info.png"),
                                 contentDescription = null
@@ -216,14 +216,20 @@ fun AppState.ModGridView(
                                                         val impactText =
                                                             vramResult.bytesForMod.bytesAsReadableMiB
                                                                 .let { if (vramResult.bytesForMod == 0L) "No impact" else it }
-                                                        SmolTooltipText(text = "$impactText\n${vramResult.imageCount} images")
+                                                        SmolTooltipText(
+                                                            text = buildString {
+                                                                appendLine("Version: ${vramResult.version}")
+                                                                appendLine(impactText)
+                                                                appendLine("${vramResult.imageCount} images")
+                                                            }
+                                                        )
                                                     }
                                                 }) {
                                                     Text(
                                                         text =
                                                         vramResult?.bytesForMod?.bytesAsReadableMiB
                                                             ?.let { if (vramResult.bytesForMod == 0L) "None" else it }
-                                                            ?: "-",
+                                                            ?: "?",
                                                         modifier = Modifier.align(Alignment.CenterVertically),
                                                         color = SmolTheme.dimmedTextColor()
                                                     )

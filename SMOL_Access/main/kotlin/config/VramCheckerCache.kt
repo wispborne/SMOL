@@ -4,6 +4,7 @@ import VRAM_CHECKER_RESULTS_PATH
 import com.google.gson.Gson
 import model.ModId
 import model.SmolId
+import model.Version
 
 class VramCheckerCache(gson: Gson) :
     Config(
@@ -16,6 +17,7 @@ class VramCheckerCache(gson: Gson) :
 
     data class Result(
         val modId: ModId,
+        val version: String,
         val bytesForMod: Long,
         val imageCount: Int,
     )
