@@ -253,7 +253,7 @@ class VramChecker(
         }
             .onFailure {
                 summaryText.appendLine()
-                summaryText.appendLine("Enable to get GPU information due to the follow error:")
+                summaryText.appendLine("Unable to get GPU information due to the follow error:")
                 summaryText.appendLine(it.stackTraceToString())
             }
         summaryText.appendLine()

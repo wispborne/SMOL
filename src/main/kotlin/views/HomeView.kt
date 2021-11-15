@@ -3,16 +3,12 @@ package views
 import AppState
 import SL
 import SmolButton
-import SmolSecondaryButton
 import SmolTheme
 import SmolTooltipText
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.TooltipArea
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.GridCells
-import androidx.compose.foundation.lazy.LazyVerticalGrid
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -327,65 +323,6 @@ private fun AppState.launchButton() {
         shape = SmolTheme.smolFullyClippedButtonShape()
     ) {
         Text(text = "Launch")
-    }
-}
-
-@OptIn(ExperimentalMaterialApi::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
-@Composable
-private fun vmParamsContextMenu(
-    showContextMenu: Boolean,
-    onShowContextMenuChange: (Boolean) -> Unit,
-) {
-    val width = 180.dp
-    var assignedRam by remember { mutableStateOf(SL.vmParamsManager.read()?.xmx) }
-    CursorDropdownMenu(
-        modifier = Modifier.padding(16.dp).width(width),
-        expanded = showContextMenu,
-        onDismissRequest = { onShowContextMenuChange(false) }) {
-        Text(
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-            text = "Set the amount of RAM assigned to the game."
-        )
-        Text(
-            modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp),
-            text = "Current: $assignedRam"
-        )
-        LazyVerticalGrid(
-            modifier = Modifier.width(width).height(180.dp).padding(top = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            cells = GridCells.Adaptive(80.dp)
-        ) {
-            this.items(items = (2..6).toList()) { index ->
-                SmolButton(
-                    modifier = Modifier.wrapContentWidth().wrapContentHeight(),
-                    onClick = {
-                        SL.vmParamsManager.update { it?.run { withGb(index) } }
-                        assignedRam = SL.vmParamsManager.read()?.xmx
-                    }
-                ) { Text(text = "$index GB") }
-            }
-        }
-
-        var mb by remember { mutableStateOf("") }
-        TextField(
-            modifier = Modifier.padding(top = 16.dp).fillMaxWidth().align(Alignment.CenterHorizontally),
-            value = mb,
-            onValueChange = { if (it.matches(Regex("[0-9]*"))) mb = it },
-            singleLine = true,
-            maxLines = 1,
-            trailingIcon = { Text("MB") },
-            label = { Text("Custom") }
-        )
-        SmolSecondaryButton(
-            modifier = Modifier.padding(top = 8.dp, bottom = 0.dp).fillMaxWidth().align(Alignment.CenterHorizontally),
-            onClick = {
-                SL.vmParamsManager.update { it?.run { withMb(mb.toIntOrNull() ?: 1500) } }
-                assignedRam = SL.vmParamsManager.read()?.xmx
-            }
-        ) {
-            Text(text = "Apply Custom")
-        }
     }
 }
 
