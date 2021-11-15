@@ -44,7 +44,9 @@ class VramCheckerManager(
         )
             .check()
 
-        cached = results
+        val mergedResult = cached?.toMutableMap() ?: mutableMapOf()
+
+        results
             .associateBy(keySelector = {
                 ModVariant.createSmolId(it.info.id, Version.parse(it.info.version))
             }) {
@@ -55,6 +57,11 @@ class VramCheckerManager(
                     imageCount = it.images.count()
                 )
             }
+            .forEach { (smolId, result) ->
+                mergedResult[smolId] = result
+            }
+
+        cached = mergedResult
 
         return cached!!
     }
