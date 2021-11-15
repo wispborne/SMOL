@@ -35,18 +35,16 @@ internal class Staging(
      * - Removes it from `enabled_mods.json`.
      */
     suspend fun disableInternal(modVariant: ModVariant): Result<Unit> {
+        Logger.info { "Disabling variant ${modVariant.smolId}" }
         // If it's not staged, stage it (to the staging folder) (but it'll stay disabled)
         if (modVariant.stagingInfo == null) {
             val stageResult = stageInternal(modVariant)
 
             // If it isn't staged, stop here. Since it's not archived or staged, removing it will delete it entirely.
             if (stageResult.isFailure) {
+                Logger.warn(stageResult.exceptionOrNull()) { "Couldn't disable ${modVariant.smolId}, unable to stage." }
                 return stageResult
             }
-        }
-
-        if (!modVariant.mod.isEnabled(modVariant)) {
-            return Result.success(Unit)
         }
 
         if (modVariant.modsFolderInfo != null) {
@@ -56,13 +54,17 @@ internal class Staging(
                 return result
             }
 
-            Logger.info { "Disabled mod for SMOL: $modVariant" }
+            Logger.debug { "Disabling ${modVariant.smolId}: removed from /mods." }
         }
 
         if (modVariant.mod.isEnabledInGame) {
+            Logger.debug { "Disabling ${modVariant.smolId}: variant was enabled, disabling." }
             gameEnabledMods.disable(modVariant.modInfo.id)
+        } else {
+            Logger.debug { "Disabling ${modVariant.smolId}: variant was not enabled." }
         }
 
+        Logger.debug { "Disabling ${modVariant.smolId}: success." }
         return Result.success((Unit))
     }
 

@@ -113,10 +113,11 @@ class Access internal constructor(
                 return Result.success(Unit)
             }
 
-            // Disable all active mod variants.
+            // Disable all active mod variants
+            // or variants that in the mod folder while the mod itself is disabled.
             // There should only ever be one active but might as well be careful.
             mod.variants
-                .filter { mod.isEnabled(it) }
+                .filter { mod.isEnabled(it) || it.modsFolderInfo != null }
                 .forEach { staging.disableInternal(it) }
 
             return if (modVariant != null) {
