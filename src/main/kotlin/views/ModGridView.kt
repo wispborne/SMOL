@@ -220,7 +220,7 @@ fun AppState.ModGridView(
                                                             text = buildString {
                                                                 appendLine("Version: ${vramResult.version}")
                                                                 appendLine(impactText)
-                                                                appendLine("${vramResult.imageCount} images")
+                                                                append("${vramResult.imageCount} images")
                                                             }
                                                         )
                                                     }
@@ -482,7 +482,7 @@ private fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
             ) {
                 // Text of the dropdown menu, current state of the mod
                 if (mod.enabledVariants.size > 1) {
-                    BoxWithTooltip(tooltip = {
+                    TooltipArea(tooltip = {
                         SmolTooltipText(
                             text = "Warning: ${mod.enabledVariants.size} versions of " +
                                     "${mod.findHighestVersion!!.modInfo.name} in the mods folder." +
