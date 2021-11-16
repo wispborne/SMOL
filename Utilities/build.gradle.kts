@@ -32,6 +32,4 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 kotlin.sourceSets.main {
     // List of where your Kotlin source code is, if any.
     kotlin.setSrcDirs(listOf("main/kotlin"))
-    // List of where resources (the "data" folder) are.
-    resources.setSrcDirs(listOf("main/resources"))
 }
