@@ -1,4 +1,6 @@
-SMOL
+# SMOL
+
+Starsector Mod Organizer & Launcher
 
 ## Features
 
