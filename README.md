@@ -22,15 +22,15 @@ Mod folders are named using the mod version and a unique id generated from the m
 
 SMOL primarily utilizes three folders.
 
-### ~/archives
+### `~/archives`
 
 In the user's home folder. Contains compressed archives (.zip, .7z, etc) of mods that have an associated archive. Mods may be reset to default, which replaces any existing version of them with the archived version, thus wiping any changes the user might have made.
 
-### ~/staging
+### `~/staging`
 
 In the user's home folder. Mods are placed here, then hardlinked to the game's /mods folder.
 
-### /mods
+### `/mods`
 
 In the game folder. SMOL does not put files here, but rather puts them into /staging and then creates hardlinks to them here.
 
