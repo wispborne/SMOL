@@ -116,6 +116,10 @@ fun AppState.homeView(
             settingsButton()
             installModsButton()
             modBrowserButton()
+            Spacer(Modifier.weight(1f))
+            searchField(Modifier.width(250.dp)) {
+
+            }
         }
     }, content = {
         Box {
@@ -180,33 +184,34 @@ fun AppState.homeView(
                 Column(Modifier.weight(1f)) {
                     Row {
                         var consoleText by remember { mutableStateOf("") }
-                        TextField(
+                        OutlinedTextField(
                             value = consoleText,
                             label = { Text("Console") },
                             maxLines = 1,
                             onValueChange = { newStr ->
                                 consoleText = newStr
                             },
-                            modifier = Modifier.onKeyEvent { event ->
-                                return@onKeyEvent if (event.type == KeyEventType.KeyUp && (event.key.equalsAny(
-                                        Key.Enter,
-                                        Key.NumPadEnter
-                                    ))
-                                ) {
-                                    kotlin.runCatching {
-                                        SmolCLI(
-                                            userManager = SL.userManager,
-                                            vmParamsManager = SL.vmParamsManager,
-                                            modLoader = SL.modLoader,
-                                            gamePath = SL.gamePath
-                                        )
-                                            .parse(consoleText)
-                                        consoleText = ""
-                                    }
-                                        .onFailure { Logger.warn(it) }
-                                    true
-                                } else false
-                            }
+                            modifier = Modifier
+                                .onKeyEvent { event ->
+                                    return@onKeyEvent if (event.type == KeyEventType.KeyUp && (event.key.equalsAny(
+                                            Key.Enter,
+                                            Key.NumPadEnter
+                                        ))
+                                    ) {
+                                        kotlin.runCatching {
+                                            SmolCLI(
+                                                userManager = SL.userManager,
+                                                vmParamsManager = SL.vmParamsManager,
+                                                modLoader = SL.modLoader,
+                                                gamePath = SL.gamePath
+                                            )
+                                                .parse(consoleText)
+                                            consoleText = ""
+                                        }
+                                            .onFailure { Logger.warn(it) }
+                                        true
+                                    } else false
+                                }
                         )
                     }
                 }
@@ -373,4 +378,23 @@ private fun AppState.installModsButton() {
             )
         }
     }
+}
+
+@Composable
+private fun AppState.searchField(
+    modifier: Modifier = Modifier,
+    onValueChange: (String) -> Unit
+) {
+    var value by remember { mutableStateOf("") }
+    OutlinedTextField(
+        modifier = modifier.padding(end = 16.dp),
+        label = { Text(text = "Filter") },
+        value = value,
+        onValueChange = {
+            value = it
+            onValueChange(it)
+        },
+        singleLine = true,
+        maxLines = 1
+    )
 }
