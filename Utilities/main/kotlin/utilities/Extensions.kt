@@ -23,7 +23,7 @@ import kotlin.system.measureTimeMillis
 
 @Deprecated("Use Path instead", replaceWith = ReplaceWith("toPathOrNull()"))
 fun String?.toFileOrNull() = this?.let { File(it) }
-fun String?.toPathOrNull() = this?.let { Path(it) }
+fun String?.toPathOrNull() = this?.let { Path.of(it) }
 
 @Deprecated("Use Path.createDirectories() instead")
 fun File.mkdirsIfNotExist() {

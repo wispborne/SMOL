@@ -297,12 +297,12 @@ class Archives internal constructor(
             var modFolder: Path
             RandomAccessFileInStream(RandomAccessFile(archiveFile.toFile(), "r")).use { fileInStream ->
                 SevenZip.openInArchive(null, fileInStream).use { inArchive ->
-                    val archiveItems = inArchive.simpleInterface.archiveItems
-                    val files = archiveItems.map { File(it.path) }
-                    val modInfoFile = files.find { it.name.equals(MOD_INFO_FILE, ignoreCase = true) }
-                        ?: throw RuntimeException("mod_info.json not found. ${archiveFile.absolutePathString()}")
+//                    val archiveItems = inArchive.simpleInterface.archiveItems
+//                    val files = archiveItems.map { File(it.path) }
+//                    val modInfoFile = files.find { it.name.equals(MOD_INFO_FILE, ignoreCase = true) }
+//                        ?: throw RuntimeException("mod_info.json not found. ${archiveFile.absolutePathString()}")
 
-                    val archiveBaseFolder: Path? = modInfoFile.parentFile.toPath()
+//                    val archiveBaseFolder: Path? = modInfoFile.parentFile.toPath()
 
                     modFolder =
                             // Create new parent folder with id in it, don't reuse mod folder parent because different variants will have same folder name.

@@ -38,6 +38,8 @@ class ModLoader internal constructor(
             return lastLoadedMods!!
         }
 
+        Logger.info { "Refreshing mod info files." }
+
         return trace({ _, time -> Logger.info { "Time to load and merge all mod info files: ${time}ms" } }) {
             val enabledModIds = gameEnabledMods.getEnabledMods().enabledMods
 

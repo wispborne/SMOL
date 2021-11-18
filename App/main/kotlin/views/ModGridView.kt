@@ -60,6 +60,7 @@ fun AppState.ModGridView(
     var selectedRow: ModRow? by remember { mutableStateOf(null) }
     val state = rememberLazyListState()
     var modInDebugDialog: Mod? by remember { mutableStateOf(null) }
+    val largestVramUsage = SL.vramChecker.cached?.values?.maxOf { it.bytesForMod }
 
     Box(modifier) {
         TiledImage(
@@ -225,12 +226,32 @@ fun AppState.ModGridView(
                                                         )
                                                     }
                                                 }) {
+                                                    // VRAM relative size bar
+                                                    if (vramResult?.bytesForMod != null && vramResult.bytesForMod > 0 && largestVramUsage != null) {
+                                                        val widthWeight =
+                                                            (vramResult.bytesForMod.toFloat() / largestVramUsage)
+                                                                .coerceIn(0.01f, 0.99f)
+                                                        Row(Modifier.height(28.dp)) {
+                                                            Box(
+                                                                Modifier
+                                                                    .background(
+                                                                        color = MaterialTheme.colors.primary,
+                                                                        shape = SmolTheme.smolNormalButtonShape()
+                                                                    )
+                                                                    .weight(widthWeight)
+                                                                    .height(8.dp)
+                                                                    .align(Alignment.Bottom)
+                                                            )
+                                                            Spacer(Modifier.weight(1f - widthWeight))
+                                                        }
+                                                    }
                                                     Text(
                                                         text =
                                                         vramResult?.bytesForMod?.bytesAsReadableMiB
                                                             ?.let { if (vramResult.bytesForMod == 0L) "None" else it }
-                                                            ?: "?",
-                                                        modifier = Modifier.align(Alignment.CenterVertically),
+                                                            ?: "Unavailable",
+                                                        modifier = Modifier.fillMaxSize()
+                                                            .align(Alignment.CenterVertically),
                                                         color = SmolTheme.dimmedTextColor()
                                                     )
                                                 }

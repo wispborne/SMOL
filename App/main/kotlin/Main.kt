@@ -25,7 +25,7 @@ fun main() = application {
     // Logger
     kotlin.runCatching {
         val format = "{date} {class}.{method}:{line} {level}: {message}"
-        val level = if (safeMode) "trace" else "debug"
+        val level = if (safeMode) "trace" else "info"
         Configuration.replace(
             mapOf(
                 "writer1" to "console",

@@ -162,6 +162,7 @@ internal class Staging(
         // If it's not staged, stage it first (from the archive).
         if (mod.stagingInfo == null || !mod.stagingInfo!!.folder.exists()) {
             stageInternal(mod)
+            // Then reload, to get the new staging path.
             mod = modLoader.getMods(noCache = true)
                 .asSequence()
                 .flatMap { it.variants }
