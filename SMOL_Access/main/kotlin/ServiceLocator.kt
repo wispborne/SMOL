@@ -67,6 +67,7 @@ class ServiceLocator internal constructor(
     val userManager: UserManager = UserManager(
         appConfig = appConfig, access = access, modLoader = modLoader
     ),
+    val modRepo: ModRepo = ModRepo()
 )
 
 private fun buildGson() = GsonBuilder()

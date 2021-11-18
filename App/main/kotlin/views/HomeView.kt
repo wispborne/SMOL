@@ -115,6 +115,7 @@ fun AppState.homeView(
             profilesButton()
             settingsButton()
             installModsButton()
+            modBrowserButton()
         }
     }, content = {
         Box {
@@ -287,6 +288,16 @@ private fun AppState.settingsButton() {
         modifier = Modifier.padding(start = 16.dp)
     ) {
         Text("Settings")
+    }
+}
+
+@Composable
+private fun AppState.modBrowserButton() {
+    SmolButton(
+        onClick = { router.push(Screen.ModBrowser) },
+        modifier = Modifier.padding(start = 16.dp)
+    ) {
+        Text("Mod Browser")
     }
 }
 

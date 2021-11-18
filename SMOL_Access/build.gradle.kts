@@ -14,6 +14,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib:${project.property("kotlin")!!}")
     implementation(project(":Utilities"))
     implementation(project(":VRAM_Checker"))
+    api(project(":Mod_Repo"))
 
     implementation("org.jetbrains.kotlin:kotlin-reflect:${project.property("kotlin")!!}")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2-native-mt")
@@ -25,8 +26,6 @@ dependencies {
     api("com.squareup.moshi:moshi-kotlin:$moshiVer")
 //    kapt("com.squareup.moshi:moshi-kotlin:$moshiVer")
     implementation("com.squareup.moshi:moshi-adapters:$moshiVer")
-    // Gson
-    implementation("com.github.salomonbrys.kotson:kotson:2.5.0")
     // CSV
     implementation("org.apache.commons:commons-csv:1.8")
     // API

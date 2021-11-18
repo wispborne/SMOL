@@ -1,4 +1,6 @@
 import java.io.File
+import kotlin.io.path.Path
+
 
 const val APP_NAME = "SMOL"
 const val APP_NAME_LONG = "Starsector Mod Organizer and Launcher"
@@ -10,8 +12,8 @@ const val FORUM_PAGE_URL = "https://fractalsoftworks.com/forum/index.php?topic="
 
 val ARCHIVES_FOLDER_DEFAULT = File(System.getProperty("user.home"), "SMOL/archives")
 val STAGING_FOLDER_DEFAULT = File(System.getProperty("user.home"), "SMOL/staging")
-val CONFIG_FOLDER_DEFAULT = File(System.getProperty("user.home"), "SMOL/")
-val UICONFIG_PATH = File(CONFIG_FOLDER_DEFAULT, "SMOL_UIConfig.json")
-val APPCONFIG_PATH = File(CONFIG_FOLDER_DEFAULT, "SMOL_AppConfig.json")
-val VERCHECK_CACHE_PATH = File(CONFIG_FOLDER_DEFAULT, "SMOL_VerCheckCache.json")
-val VRAM_CHECKER_RESULTS_PATH = File(CONFIG_FOLDER_DEFAULT, "SMOL_VRAMCheckResults.json")
+val CONFIG_FOLDER_DEFAULT = Path(System.getProperty("user.home"), "SMOL/")
+val UICONFIG_PATH = CONFIG_FOLDER_DEFAULT.resolve("SMOL_UIConfig.json")
+val APPCONFIG_PATH = CONFIG_FOLDER_DEFAULT.resolve("SMOL_AppConfig.json")
+val VERCHECK_CACHE_PATH = CONFIG_FOLDER_DEFAULT.resolve("SMOL_VerCheckCache.json")
+val VRAM_CHECKER_RESULTS_PATH = CONFIG_FOLDER_DEFAULT.resolve("SMOL_VRAMCheckResults.json")

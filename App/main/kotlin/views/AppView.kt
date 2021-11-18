@@ -1,20 +1,17 @@
-import androidx.compose.desktop.DesktopMaterialTheme
 import androidx.compose.desktop.ui.tooling.preview.Preview
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.TextStyle
 import com.arkivanov.decompose.extensions.compose.jetbrains.Children
 import navigation.Screen
-import views.FileDropper
-import views.ProfilesView
-import views.homeView
-import views.settingsView
+import views.*
 
 @OptIn(ExperimentalStdlibApi::class)
 @Composable
 @Preview
 fun AppState.appView() {
-    DesktopMaterialTheme(
+    MaterialTheme(
         colors = SmolTheme.DarkColors,
         typography = Typography(
             button = TextStyle(fontFamily = SmolTheme.orbitronSpaceFont)
@@ -25,6 +22,7 @@ fun AppState.appView() {
                 is Screen.Home -> homeView()
                 is Screen.Settings -> settingsView()
                 is Screen.Profiles -> ProfilesView()
+                is Screen.ModBrowser -> ModBrowserView()
             }.run { }
             FileDropper()
         }

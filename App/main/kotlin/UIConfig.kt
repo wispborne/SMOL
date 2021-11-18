@@ -1,5 +1,5 @@
 import com.google.gson.Gson
-import config.Config
+import utilities.Config
 import util.SmolWindowState
 
 class UIConfig(gson: Gson) : Config(

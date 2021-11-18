@@ -1,10 +1,10 @@
-package config
+package utilities
 
 import com.google.gson.Gson
 import com.google.gson.JsonElement
-import utilities.mkdirsIfNotExist
-import java.io.File
+import java.nio.file.Path
 import java.util.prefs.Preferences
+import kotlin.io.path.*
 import kotlin.reflect.KProperty
 import kotlin.reflect.javaType
 import kotlin.reflect.typeOf
@@ -35,11 +35,11 @@ abstract class Config(
         fun clear()
     }
 
-    class JsonFilePrefStorage(private val gson: Gson, private val file: File) : PrefStorage {
+    class JsonFilePrefStorage(private val gson: Gson, private val file: Path) : PrefStorage {
         init {
             if (!file.exists()) {
-                file.parentFile?.mkdirsIfNotExist()
-                file.createNewFile()
+                file.parent?.createDirectories()
+                file.createFile()
             }
         }
 

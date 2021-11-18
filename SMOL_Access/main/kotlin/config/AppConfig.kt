@@ -3,6 +3,7 @@ package config
 import APPCONFIG_PATH
 import com.google.gson.Gson
 import model.UserProfile
+import utilities.Config
 
 class AppConfig(gson: Gson) :
     Config(

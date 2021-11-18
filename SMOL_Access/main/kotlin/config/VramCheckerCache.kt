@@ -4,7 +4,7 @@ import VRAM_CHECKER_RESULTS_PATH
 import com.google.gson.Gson
 import model.ModId
 import model.SmolId
-import model.Version
+import utilities.Config
 
 class VramCheckerCache(gson: Gson) :
     Config(

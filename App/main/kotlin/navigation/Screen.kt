@@ -6,4 +6,5 @@ sealed class Screen : Parcelable {
     object Home : Screen()
     object Settings : Screen()
     object Profiles : Screen()
+    object ModBrowser : Screen()
 }
