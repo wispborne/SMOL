@@ -3,12 +3,16 @@ package views
 import SL
 import SmolButton
 import SmolSecondaryButton
+import SmolTextField
 import SmolTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.GridCells
 import androidx.compose.foundation.lazy.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.*
+import androidx.compose.material.CursorDropdownMenu
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -115,7 +119,7 @@ fun vmParamsContextMenu(
         )
 
         var mb by remember { mutableStateOf("") }
-        TextField(
+        SmolTextField(
             modifier = Modifier.padding(top = 16.dp).fillMaxWidth().align(Alignment.CenterHorizontally),
             value = mb,
             onValueChange = { if (it.matches(Regex("[0-9]*"))) mb = it },

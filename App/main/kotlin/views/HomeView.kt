@@ -3,6 +3,7 @@ package views
 import AppState
 import SL
 import SmolButton
+import SmolOutlinedTextField
 import SmolTheme
 import SmolTooltipText
 import androidx.compose.desktop.ui.tooling.preview.Preview
@@ -13,6 +14,7 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.res.painterResource
@@ -31,6 +33,7 @@ import navigation.Screen
 import org.tinylog.Logger
 import util.IOLock
 import util.currentPlatform
+import util.filterMods
 import util.vmParamsManager
 import utilities.equalsAny
 import utilities.toFileOrNull
@@ -52,6 +55,7 @@ fun AppState.homeView(
     modifier: Modifier = Modifier
 ) {
     val mods = remember { mutableStateListOf<Mod>() }
+    val shownMods = remember { mutableStateListOf<Mod?>(*mods.toTypedArray()) }
     rememberCoroutineScope().launch { reloadMods(mods, forceRefresh = false) }
 
     var job = Job()
@@ -80,7 +84,9 @@ fun AppState.homeView(
 //    var showConfirmMigrateDialog: Boolean by remember { mutableStateOf(false) }
     val composableScope = rememberCoroutineScope()
     Scaffold(topBar = {
-        TopAppBar() {
+        TopAppBar(
+            modifier = Modifier.height(72.dp)
+        ) {
             var showVmParamsMenu by remember { mutableStateOf(false) }
             launchButton()
             SmolButton(
@@ -117,14 +123,31 @@ fun AppState.homeView(
             installModsButton()
             modBrowserButton()
             Spacer(Modifier.weight(1f))
-            searchField(Modifier.width(250.dp)) {
-
+            consoleTextField(
+                modifier = Modifier.padding(end = 16.dp)
+                    .align(Alignment.CenterVertically)
+            )
+            filterTextField(
+                Modifier
+                    .padding(end = 16.dp)
+                    .width(250.dp)
+                    .align(Alignment.CenterVertically)
+            ) { query ->
+                shownMods.clear()
+                if (query.isBlank()) {
+                    shownMods.addAll(mods)
+                } else {
+                    shownMods.addAll(filterMods(query, mods).ifEmpty { listOf(null) })
+                }
             }
         }
     }, content = {
         Box {
             if (SL.gamePath.isValidGamePath(SL.appConfig.gamePath ?: "")) {
-                ModGridView(modifier = Modifier.fillMaxWidth().fillMaxHeight().padding(bottom = 40.dp), mods = mods)
+                ModGridView(
+                    modifier = Modifier.fillMaxWidth().fillMaxHeight().padding(bottom = 40.dp),
+                    mods = (if (shownMods.isEmpty()) mods else shownMods) as SnapshotStateList<Mod?>
+                )
             } else {
                 Column(
                     Modifier.fillMaxWidth().fillMaxHeight(),
@@ -170,7 +193,7 @@ fun AppState.homeView(
     },
         bottomBar = {
             BottomAppBar(
-                modifier = Modifier.fillMaxWidth().height(50.dp)
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Column(Modifier.weight(1f)) {
                     Row {
@@ -179,40 +202,6 @@ fun AppState.homeView(
                             SL.archives.archiveMovementStatusFlow.collectLatest { status = it }
                         }
                         Text(text = status, modifier = Modifier.align(Alignment.CenterVertically).padding(8.dp))
-                    }
-                }
-                Column(Modifier.weight(1f)) {
-                    Row {
-                        var consoleText by remember { mutableStateOf("") }
-                        OutlinedTextField(
-                            value = consoleText,
-                            label = { Text("Console") },
-                            maxLines = 1,
-                            onValueChange = { newStr ->
-                                consoleText = newStr
-                            },
-                            modifier = Modifier
-                                .onKeyEvent { event ->
-                                    return@onKeyEvent if (event.type == KeyEventType.KeyUp && (event.key.equalsAny(
-                                            Key.Enter,
-                                            Key.NumPadEnter
-                                        ))
-                                    ) {
-                                        kotlin.runCatching {
-                                            SmolCLI(
-                                                userManager = SL.userManager,
-                                                vmParamsManager = SL.vmParamsManager,
-                                                modLoader = SL.modLoader,
-                                                gamePath = SL.gamePath
-                                            )
-                                                .parse(consoleText)
-                                            consoleText = ""
-                                        }
-                                            .onFailure { Logger.warn(it) }
-                                        true
-                                    } else false
-                                }
-                        )
                     }
                 }
             }
@@ -380,14 +369,56 @@ private fun AppState.installModsButton() {
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
-private fun AppState.searchField(
+private fun AppState.consoleTextField(
+    modifier: Modifier = Modifier
+) {
+    Column(modifier) {
+        Row {
+            var consoleText by remember { mutableStateOf("") }
+            SmolOutlinedTextField(
+                value = consoleText,
+                label = { Text("Console") },
+                maxLines = 1,
+                singleLine = true,
+                onValueChange = { newStr ->
+                    consoleText = newStr
+                },
+                modifier = Modifier
+                    .onKeyEvent { event ->
+                        return@onKeyEvent if (event.type == KeyEventType.KeyUp && (event.key.equalsAny(
+                                Key.Enter,
+                                Key.NumPadEnter
+                            ))
+                        ) {
+                            kotlin.runCatching {
+                                SmolCLI(
+                                    userManager = SL.userManager,
+                                    vmParamsManager = SL.vmParamsManager,
+                                    modLoader = SL.modLoader,
+                                    gamePath = SL.gamePath
+                                )
+                                    .parse(consoleText)
+                                consoleText = ""
+                            }
+                                .onFailure { Logger.warn(it) }
+                            true
+                        } else false
+                    }
+            )
+        }
+    }
+}
+
+@Composable
+private fun AppState.filterTextField(
     modifier: Modifier = Modifier,
     onValueChange: (String) -> Unit
 ) {
     var value by remember { mutableStateOf("") }
-    OutlinedTextField(
-        modifier = modifier.padding(end = 16.dp),
+    SmolOutlinedTextField(
+        modifier = modifier,
         label = { Text(text = "Filter") },
         value = value,
         onValueChange = {

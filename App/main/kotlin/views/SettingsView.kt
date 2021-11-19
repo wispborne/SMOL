@@ -5,6 +5,7 @@ import SL
 import SmolAlertDialog
 import SmolButton
 import SmolSecondaryButton
+import SmolTextField
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -102,7 +103,7 @@ private fun AppState.gamePathSetting(gamePath: String): String {
     var isGamePathError by remember { mutableStateOf(!SL.gamePath.isValidGamePath(newGamePath)) }
 
     Row {
-        TextField(
+        SmolTextField(
             value = newGamePath,
             modifier = Modifier
                 .weight(1f)
@@ -142,7 +143,7 @@ private fun AppState.archivesPathSetting(archivesPath: String): String {
     var archivesPathMutable by remember { mutableStateOf(archivesPath) }
 
     Row {
-        TextField(
+        SmolTextField(
             value = archivesPathMutable,
             modifier = Modifier
                 .weight(1f)
@@ -182,7 +183,7 @@ private fun AppState.stagingPathSetting(stagingPath: String): String {
     var isStagingPathError = false
 
     Row {
-        TextField(
+        SmolTextField(
             value = stagingPathMutable,
             modifier = Modifier
                 .weight(1f)

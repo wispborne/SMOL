@@ -55,7 +55,7 @@ private val modGridViewDropdownWidth = 180
 @Preview
 fun AppState.ModGridView(
     modifier: Modifier = Modifier,
-    mods: SnapshotStateList<Mod>
+    mods: SnapshotStateList<Mod?>
 ) {
     var selectedRow: ModRow? by remember { mutableStateOf(null) }
     val state = rememberLazyListState()
@@ -102,6 +102,7 @@ fun AppState.ModGridView(
             Box {
                 LazyColumn(Modifier.fillMaxWidth()) {
                     mods
+                        .filterNotNull()
                         .groupBy { it.uiEnabled }
                         .toSortedMap(compareBy { !it }) // Flip to put Enabled at the top
                         .forEach { (modState, modsInGroup) ->
@@ -269,7 +270,7 @@ fun AppState.ModGridView(
                                         Row {
                                             Spacer(Modifier.width(modGridViewDropdownWidth.dp))
                                             // Dependency warning
-                                            DependencyFixerRow(mod, mods)
+                                            DependencyFixerRow(mod, mods.filterNotNull())
                                         }
                                     }
                                 }
@@ -376,7 +377,7 @@ private fun ModContextMenu(
 @Composable
 private fun DependencyFixerRow(
     mod: Mod,
-    allMods: SnapshotStateList<Mod>
+    allMods: List<Mod>
 ) {
     val dependencies =
         (mod.findFirstEnabled ?: mod.findHighestVersion)

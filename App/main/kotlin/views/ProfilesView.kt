@@ -5,6 +5,7 @@ import SL
 import SmolAlertDialog
 import SmolButton
 import SmolSecondaryButton
+import SmolTextField
 import SmolTheme
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.background
@@ -96,7 +97,7 @@ fun AppState.ProfilesView(
                                             text = modProfileName
                                         )
                                     } else {
-                                        TextField(
+                                        SmolTextField(
                                             modifier = Modifier
                                                 .weight(1f)
                                                 .padding(end = 16.dp)
@@ -231,7 +232,7 @@ fun AppState.ProfilesView(
                         shape = SmolTheme.smolFullyClippedButtonShape()
                     ) {
                         Column(Modifier.padding(16.dp).fillMaxWidth()) {
-                            TextField(
+                            SmolTextField(
                                 value = newProfileName,
                                 onValueChange = { newProfileName = it },
                                 singleLine = true,

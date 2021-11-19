@@ -36,9 +36,8 @@ dependencies {
     // CLI builder, Kotlin
     implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.3")
 
-    // Arrow
-//    implementation(project.property("arrowCore")!!)
-//    implementation(project.property("arrowOptics")!!)
+    // Fuzzy Search
+    implementation("me.xdrop:fuzzywuzzy:1.3.1")
 
     // Navigation
     val decomposeVer = "0.3.1"
