@@ -42,7 +42,6 @@ internal fun filterMods(query: String, mods: List<Mod>): List<Mod> {
                     Logger.info { "${variant.modInfo.name}'s match of '$filterStr' had a total score of ${results.values.sum()} and single highest of ${results.values.maxOrNull()}." }
                     return@map mod to results
                 }
-                .distinctBy { it.first.id }
                 .filter { it.second.any { it.value > 70 } }
                 .sortedWith(compareByDescending<Pair<Mod, Map<String, Int>>> { it.second.maxOf { it.value } }
                     .thenByDescending {
@@ -51,4 +50,5 @@ internal fun filterMods(query: String, mods: List<Mod>): List<Mod> {
                 .map { it.first }
                 .toList()
         }
+        .distinctBy { it.id }
 }

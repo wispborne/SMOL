@@ -122,23 +122,32 @@ fun AppState.homeView(
             settingsButton()
             installModsButton()
             modBrowserButton()
-            Spacer(Modifier.weight(1f))
-            consoleTextField(
-                modifier = Modifier.padding(end = 16.dp)
-                    .align(Alignment.CenterVertically)
-            )
-            filterTextField(
-                Modifier
-                    .padding(end = 16.dp)
-                    .width(250.dp)
-                    .align(Alignment.CenterVertically)
-            ) { query ->
-                shownMods.clear()
-                if (query.isBlank()) {
-                    shownMods.addAll(mods)
-                } else {
-                    shownMods.addAll(filterMods(query, mods).ifEmpty { listOf(null) })
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 16.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                filterTextField(
+                    Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 300.dp)
+                        .padding(end = 16.dp)
+                        .align(Alignment.CenterVertically)
+                ) { query ->
+                    shownMods.clear()
+                    if (query.isBlank()) {
+                        shownMods.addAll(mods)
+                    } else {
+                        shownMods.addAll(filterMods(query, mods).ifEmpty { listOf(null) })
+                    }
                 }
+                consoleTextField(
+                    modifier = Modifier
+                        .widthIn(max = 300.dp)
+                        .padding(end = 16.dp)
+                        .align(Alignment.CenterVertically)
+                )
             }
         }
     }, content = {
@@ -385,6 +394,7 @@ private fun AppState.consoleTextField(
                 onValueChange = { newStr ->
                     consoleText = newStr
                 },
+                leadingIcon = { Icon(painter = painterResource("console-line.svg"), contentDescription = null) },
                 modifier = Modifier
                     .onKeyEvent { event ->
                         return@onKeyEvent if (event.type == KeyEventType.KeyUp && (event.key.equalsAny(
@@ -426,6 +436,7 @@ private fun AppState.filterTextField(
             onValueChange(it)
         },
         singleLine = true,
-        maxLines = 1
+        maxLines = 1,
+        leadingIcon = { Icon(painter = painterResource("magnify.svg"), contentDescription = null) }
     )
 }
