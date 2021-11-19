@@ -16,6 +16,8 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -128,9 +130,21 @@ fun AppState.homeView(
                     .padding(start = 16.dp),
                 horizontalArrangement = Arrangement.End
             ) {
+                val focuser = remember { FocusRequester() }
+                DisposableEffect(focuser) {
+                    val function: (KeyEvent) -> Boolean = { keyEvent ->
+                        if (keyEvent.isCtrlPressed && keyEvent.key == Key.F) {
+                            focuser.requestFocus()
+                            true
+                        } else false
+                    }
+                    onWindowKeyEventHandlers += function
+                    onDispose { onWindowKeyEventHandlers -= function }
+                }
+
                 filterTextField(
                     Modifier
-                        .fillMaxWidth()
+                        .focusRequester(focuser)
                         .widthIn(max = 300.dp)
                         .padding(end = 16.dp)
                         .align(Alignment.CenterVertically)
@@ -142,6 +156,7 @@ fun AppState.homeView(
                         shownMods.addAll(filterMods(query, mods).ifEmpty { listOf(null) })
                     }
                 }
+
                 consoleTextField(
                     modifier = Modifier
                         .widthIn(max = 300.dp)

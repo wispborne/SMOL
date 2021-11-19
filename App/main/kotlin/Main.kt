@@ -1,5 +1,6 @@
 import androidx.compose.runtime.*
 import androidx.compose.ui.awt.ComposeWindow
+import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
@@ -81,12 +82,22 @@ fun main() = application {
             }
     }
 
+    val onKeyEventHandlers = mutableListOf<(KeyEvent) -> Boolean>()
+
     Window(
         onCloseRequest = ::exitApplication,
         state = newState,
         title = APP_NAME,
-        icon = painterResource("kotlin-icon.svg")
+        icon = painterResource("kotlin-icon.svg"),
+        onPreviewKeyEvent = { event -> onKeyEventHandlers.any { it(event) } }
     ) {
+
+        val router = rememberRouter<Screen>(
+            initialConfiguration = { Screen.Home },
+            handleBackButton = true
+        )
+
+        val appState by remember { mutableStateOf(AppState(router, window, onKeyEventHandlers)) }
 
         LaunchedEffect(newState) {
             snapshotFlow { newState.size }
@@ -122,18 +133,12 @@ fun main() = application {
                 .launchIn(this)
         }
 
-        val router = rememberRouter<Screen>(
-            initialConfiguration = { Screen.Home },
-            handleBackButton = true
-        )
-
-        val appState by remember { mutableStateOf(AppState(router, window)) }
-
         appState.appView()
     }
 }
 
 class AppState(
     val router: Router<Screen, Any>,
-    val window: ComposeWindow
+    val window: ComposeWindow,
+    val onWindowKeyEventHandlers: MutableList<(KeyEvent) -> Boolean>
 )
