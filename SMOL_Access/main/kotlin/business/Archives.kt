@@ -170,7 +170,7 @@ class Archives internal constructor(
             throw RuntimeException("${inputFile.absolutePathString()} not recognized as file or folder.")
         }
     }
-
+    
     private fun findDataFilesInArchive(inputArchiveFile: Path): DataFiles? {
         val dataFiles: DataFiles? = kotlin.runCatching {
             IOLock.read {

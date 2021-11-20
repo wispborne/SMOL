@@ -171,6 +171,10 @@ class KWatchChannel(
         if (cause != null) throw cause
     }
 
+    override fun toString(): String {
+        return "KWatchChannel(file=$file, mode=$mode, ignorePatterns=$ignorePatterns)"
+    }
+
     /**
      * Describes the mode this channels is running in
      */

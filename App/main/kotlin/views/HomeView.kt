@@ -33,10 +33,7 @@ import kotlinx.coroutines.flow.*
 import model.Mod
 import navigation.Screen
 import org.tinylog.Logger
-import util.IOLock
-import util.currentPlatform
-import util.filterMods
-import util.vmParamsManager
+import util.*
 import utilities.equalsAny
 import utilities.toFileOrNull
 import utilities.toPathOrNull
@@ -60,9 +57,7 @@ fun AppState.homeView(
     val shownMods = remember { mutableStateListOf<Mod?>(*mods.toTypedArray()) }
     rememberCoroutineScope().launch { reloadMods(mods, forceRefresh = false) }
 
-    var job = Job()
-
-    (rememberCoroutineScope() + job).launch {
+    (rememberCoroutineScope()).launch {
         watchDirsAndReloadOnChange(mods)
     }
 
@@ -149,11 +144,10 @@ fun AppState.homeView(
                         .padding(end = 16.dp)
                         .align(Alignment.CenterVertically)
                 ) { query ->
-                    shownMods.clear()
                     if (query.isBlank()) {
-                        shownMods.addAll(mods)
+                        shownMods.replaceAllUsingDifference(mods, doesOrderMatter = false)
                     } else {
-                        shownMods.addAll(filterMods(query, mods).ifEmpty { listOf(null) })
+                        shownMods.replaceAllUsingDifference(filterMods(query, mods).ifEmpty { listOf(null) }, doesOrderMatter = true)
                     }
                 }
 
@@ -263,7 +257,7 @@ private suspend fun watchDirsAndReloadOnChange(
                 // Short delay so that if a new file change comes in during this time,
                 // this is canceled in favor of the new change. This should prevent
                 // refreshing 500 times if 500 files are changed in a few millis.
-                delay(500)
+                delay(1000)
                 Logger.info { "File change: $it" }
                 reloadMods(mods, forceRefresh = false)
             } else {
@@ -283,9 +277,7 @@ private suspend fun reloadMods(mods: SnapshotStateList<Mod>, forceRefresh: Boole
             isRefreshingMods = true
             val freshMods =
                 withContext(Dispatchers.Default) { SL.access.getMods(noCache = true) }
-            // TODO replace using differ rather than clear and addAll
-            mods.clear()
-            mods.addAll(freshMods)
+            mods.replaceAllUsingDifference(freshMods, doesOrderMatter = true)
             val manifest = async { SL.archives.refreshManifest() }
             val vramCheckerAsync = async { SL.vramChecker.getVramUsage(forceRefresh = forceRefresh) }
 
@@ -442,16 +434,20 @@ private fun AppState.filterTextField(
     onValueChange: (String) -> Unit
 ) {
     var value by remember { mutableStateOf("") }
-    SmolOutlinedTextField(
+    TooltipArea(
         modifier = modifier,
-        label = { Text(text = "Filter") },
-        value = value,
-        onValueChange = {
-            value = it
-            onValueChange(it)
-        },
-        singleLine = true,
-        maxLines = 1,
-        leadingIcon = { Icon(painter = painterResource("magnify.svg"), contentDescription = null) }
-    )
+        tooltip = { SmolTooltipText(text = "Hotkey: Ctrl-F") }
+    ) {
+        SmolOutlinedTextField(
+            label = { Text(text = "Filter") },
+            value = value,
+            onValueChange = {
+                value = it
+                onValueChange(it)
+            },
+            singleLine = true,
+            maxLines = 1,
+            leadingIcon = { Icon(painter = painterResource("magnify.svg"), contentDescription = null) }
+        )
+    }
 }

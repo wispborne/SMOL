@@ -9,6 +9,7 @@ import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.res.useResource
 import business.VmParamsManager
 import config.Platform
+import dev.andrewbailey.diff.differenceOf
 import model.Mod
 import java.awt.Desktop
 import java.net.URI
@@ -84,6 +85,28 @@ fun imageResource(resourcePath: String): ImageBitmap {
     return remember(resourcePath) {
         useResource(resourcePath, ::loadImageBitmap)
     }
+}
+
+fun <T> MutableList<T>.replaceAllUsingDifference(newList: List<T>, doesOrderMatter: Boolean) {
+    differenceOf(
+        original = this,
+        updated = newList,
+        detectMoves = doesOrderMatter
+    )
+        .applyDiff(
+            remove = { this.removeAt(it) },
+            insert = { item, index -> this.add(index, item) },
+            move = { oldIndex, newIndex ->
+                this.add(
+                    element = this.removeAt(oldIndex),
+                    index = if (newIndex < oldIndex) {
+                        newIndex
+                    } else {
+                        newIndex - 1
+                    }
+                )
+            }
+        )
 }
 
 val ServiceLocator.vmParamsManager: VmParamsManager

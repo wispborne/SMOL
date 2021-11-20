@@ -39,6 +39,9 @@ dependencies {
     // Fuzzy Search
     implementation("me.xdrop:fuzzywuzzy:1.3.1")
 
+    // List diffing
+    implementation("dev.andrewbailey.difference:difference:1.0.0")
+
     // Navigation
     val decomposeVer = "0.3.1"
     api("com.arkivanov.decompose:decompose:$decomposeVer")
