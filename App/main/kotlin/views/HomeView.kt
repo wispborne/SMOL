@@ -76,7 +76,7 @@ fun AppState.homeView(
     }
 
     rememberCoroutineScope { Dispatchers.Default }.launch {
-        watchDirsAndReloadOnChange(isRefreshingMods, onRefreshingMods)
+        watchDirsAndReloadOnChange()
     }
 
 //    rememberCoroutineScope { Dispatchers.Default }.launch(Dispatchers.Default) {
@@ -224,44 +224,41 @@ fun AppState.homeView(
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
-private suspend fun watchDirsAndReloadOnChange(
-    isRefreshingMods: Boolean,
-    onRefreshingMods: (Boolean) -> Unit
-) {
-    val NSA: List<Flow<KWatchEvent?>> = listOf(
-        SL.access.getStagingPath()?.toPathOrNull()?.asWatchChannel() ?: emptyFlow(),
-        SL.access.getStagingPath()?.toPathOrNull()?.resolve(Archives.ARCHIVE_MANIFEST_FILENAME) // Watch manifest.json
-            ?.run { if (this.exists()) this.asWatchChannel() else emptyFlow() } ?: emptyFlow(),
-        SL.gamePath.getModsPath().asWatchChannel(),
-        SL.gamePath.getModsPath().resolve(ENABLED_MODS_FILENAME) // Watch enabled_mods.json
-            .run { if (this.exists()) this.asWatchChannel() else emptyFlow() },
-        SL.archives.getArchivesPath()?.toPathOrNull()?.asWatchChannel() ?: emptyFlow(),
-    )
-
-    Logger.info {
-        "Started watching folders ${
-            NSA.joinToString()
-        }"
-    }
-    NSA
-        .plus(SL.manualReloadTrigger.trigger.map { null })
-        .merge()
-        .collectLatest {
-            if (!IOLock.stateFlow.value) {
-                if (it?.kind == KWatchEvent.Kind.Initialized)
-                    return@collectLatest
-                // Short delay so that if a new file change comes in during this time,
-                // this is canceled in favor of the new change. This should prevent
-                // refreshing 500 times if 500 files are changed in a few millis.
-                delay(1000)
-                Logger.info { "File change: $it" }
-                reloadMods(
-                    checkVramUseSlow = false
-                )
-            } else {
-                Logger.info { "Skipping mod reload while IO locked." }
-            }
+private suspend fun watchDirsAndReloadOnChange() {
+    coroutineScope {
+        val NSA: List<Flow<KWatchEvent?>> = listOf(
+            SL.access.getStagingPath()?.toPathOrNull()?.asWatchChannel() ?: emptyFlow(),
+            SL.access.getStagingPath()?.toPathOrNull()
+                ?.resolve(Archives.ARCHIVE_MANIFEST_FILENAME) // Watch manifest.json
+                ?.run { if (this.exists()) this.asWatchChannel() else emptyFlow() } ?: emptyFlow(),
+            SL.gamePath.getModsPath().asWatchChannel(),
+            SL.gamePath.getModsPath().resolve(ENABLED_MODS_FILENAME) // Watch enabled_mods.json
+                .run { if (this.exists()) this.asWatchChannel() else emptyFlow() },
+            SL.archives.getArchivesPath()?.toPathOrNull()?.asWatchChannel() ?: emptyFlow(),
+        )
+        Logger.info {
+            "Started watching folders ${
+                NSA.joinToString()
+            }"
         }
+        NSA
+            .plus(SL.manualReloadTrigger.trigger.map { null })
+            .merge()
+            .collectLatest {
+                if (!IOLock.stateFlow.value) {
+                    if (it?.kind == KWatchEvent.Kind.Initialized)
+                        return@collectLatest
+                    // Short delay so that if a new file change comes in during this time,
+                    // this is canceled in favor of the new change. This should prevent
+                    // refreshing 500 times if 500 files are changed in a few millis.
+                    delay(1000)
+                    Logger.info { "File change: $it" }
+                    reloadMods(checkVramUseSlow = false)
+                } else {
+                    Logger.info { "Skipping mod reload while IO locked." }
+                }
+            }
+    }
 }
 
 private suspend fun reloadMods(
@@ -372,7 +369,7 @@ private fun AppState.ramButton(modifier: Modifier = Modifier) {
     var showVmParamsMenu by remember { mutableStateOf(false) }
     SmolButton(
         onClick = { showVmParamsMenu = true },
-        modifier = Modifier.padding(start = 16.dp)
+        modifier = modifier.padding(start = 16.dp)
     ) {
         Text(text = "RAM")
     }

@@ -38,6 +38,10 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-core:2.13.0")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.13.0")
 
+    // To calculate checksum for archive files
+    // https://mvnrepository.com/artifact/commons-codec/commons-codec
+    implementation("commons-codec:commons-codec:1.15")
+
     // Arrow
     implementation(project.property("arrowCore")!!)
     implementation(project.property("arrowOptics")!!)

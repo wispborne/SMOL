@@ -5,6 +5,7 @@ import com.google.gson.Gson
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
+import io.ktor.client.features.*
 import io.ktor.client.features.logging.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
@@ -25,6 +26,7 @@ class VersionChecker(private val gson: Gson, private val versionCheckerCache: Ve
     suspend fun lookUpVersions(mods: List<Mod>) {
         HttpClient(CIO) {
             install(Logging)
+            this.followRedirects = true
         }.use { client ->
             val results =
                 trace({ _, millis -> Logger.info { "Version checked ${mods.count()} mods in ${millis}ms" } }) {
@@ -39,7 +41,19 @@ class VersionChecker(private val gson: Gson, private val versionCheckerCache: Ve
                                     .let { JsonValue.readHjson(it) } // Parse first using HJson
                                     .let { modVariant.mod to gson.fromJson<VersionCheckerInfo>(it.toString()).modVersion!! }
                             }
-                                .onFailure { Logger.warn { "Version check failed for ${modVariant.modInfo.name}: ${it.message} (url: ${modVariant.versionCheckerInfo?.masterVersionFile})" } }
+                                .onFailure {
+                                    fun message(error: String?) =
+                                        "Version check failed for ${modVariant.modInfo.name}: $error (url: ${modVariant.versionCheckerInfo?.masterVersionFile})"
+                                    if (it is ClientRequestException) {
+                                        Logger.warn {
+                                            // API errors tend to include the entire webpage html in the error message,
+                                            // so only show the first line.
+                                            message(it.message.lines().firstOrNull())
+                                        }
+                                    } else {
+                                        Logger.warn(it) { message(it.message) }
+                                    }
+                                }
                                 .getOrNull()
                         }
                         .filterNotNull()

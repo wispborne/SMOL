@@ -1,25 +1,26 @@
 package smol_access.business
 
-import smol_access.MOD_INFO_FILE
-import smol_access.VERSION_CHECKER_FILE_PATTERN
 import com.github.salomonbrys.kotson.fromJson
 import com.google.gson.Gson
 import com.squareup.moshi.Moshi
-import smol_access.config.AppConfig
-import smol_access.config.GamePath
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import smol_access.model.ModInfo
-import smol_access.model.ModVariant
-import smol_access.model.Version
-import smol_access.model.VersionCheckerInfo
 import net.sf.sevenzipjbinding.*
 import net.sf.sevenzipjbinding.impl.OutItemFactory
 import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream
 import net.sf.sevenzipjbinding.impl.RandomAccessFileOutStream
 import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem
 import net.sf.sevenzipjbinding.util.ByteArrayStream
+import org.apache.commons.codec.digest.DigestUtils
 import org.tinylog.Logger
+import smol_access.MOD_INFO_FILE
+import smol_access.VERSION_CHECKER_FILE_PATTERN
+import smol_access.config.AppConfig
+import smol_access.config.GamePath
+import smol_access.model.ModInfo
+import smol_access.model.ModVariant
+import smol_access.model.Version
+import smol_access.model.VersionCheckerInfo
 import smol_access.util.ArchiveExtractToFolderCallback
 import smol_access.util.ArchiveExtractToMemoryCallback
 import smol_access.util.IOLock
@@ -170,7 +171,7 @@ class Archives internal constructor(
             throw RuntimeException("${inputFile.absolutePathString()} not recognized as file or folder.")
         }
     }
-    
+
     private fun findDataFilesInArchive(inputArchiveFile: Path): DataFiles? {
         val dataFiles: DataFiles? = kotlin.runCatching {
             IOLock.read {
@@ -479,18 +480,32 @@ class Archives internal constructor(
         val archives = getArchivesPath().toPathOrNull() ?: return
         val files = archives.walk().toList()
             .filter { !it.name.startsWith(ARCHIVE_MANIFEST_FILENAME) }
+        val archivesManifest = getArchivesManifest()
 
         val modInfos: List<Pair<Path, DataFiles>> = coroutineScope {
             withContext(Dispatchers.IO) {
                 files
-                    .parallelMap { archive ->
+                    .parallelMap { archivePath ->
                         // Swallow exception, it has already been logged.
                         kotlin.runCatching {
                             trace({ pair, time ->
                                 Logger.debug { "Time to get mod_info.json from ${pair?.second?.modInfo?.id}, ${pair?.second?.modInfo?.version}: ${time}ms." }
                             }) {
-                                findDataFilesInArchive(archive)
-                                    ?.let { archive to it }
+                                val hashCode = DigestUtils.sha256Hex(archivePath.pathString)
+
+                                val existingManifestItem =
+                                    archivesManifest?.manifestItems?.entries?.firstOrNull { it.value.sha256HexCodeOfArchiveFile == hashCode }
+
+                                if (existingManifestItem != null) {
+                                    Logger.debug { "Skipping search for mod_info.json in $archivePath because the file hashcode is present in the manifest alreadt." }
+                                    archivePath to DataFiles(
+                                        modInfo = existingManifestItem.value.modInfo,
+                                        versionCheckerInfo = existingManifestItem.value.versionCheckerInfo
+                                    )
+                                } else {
+                                    findDataFilesInArchive(archivePath)
+                                        ?.let { archivePath to it }
+                                }
                             }
                         }
                             .getOrNull()
@@ -505,11 +520,12 @@ class Archives internal constructor(
                     createManifestItemKey(it.second.modInfo) to ManifestItemValue(
                         archivePath = it.first.absolutePathString(),
                         modInfo = it.second.modInfo,
-                        versionCheckerInfo = it.second.versionCheckerInfo
+                        versionCheckerInfo = it.second.versionCheckerInfo,
+                        sha256HexCodeOfArchiveFile = DigestUtils.sha256Hex(it.first.absolutePathString())
                     )
                 })
         }
-        Logger.info { "Time to refresh manifest: ${System.currentTimeMillis() - startTime}ms (${modInfos.count()} items)." }
+        Logger.info { "Time to refresh archive manifest: ${System.currentTimeMillis() - startTime}ms (${modInfos.count()} items)." }
     }
 
     private fun updateManifest(mutator: (archivesManifest: ArchivesManifest) -> ArchivesManifest) {
@@ -599,6 +615,7 @@ class Archives internal constructor(
     data class ManifestItemValue(
         val archivePath: String,
         val modInfo: ModInfo,
-        val versionCheckerInfo: VersionCheckerInfo?
+        val versionCheckerInfo: VersionCheckerInfo?,
+        val sha256HexCodeOfArchiveFile: String?
     )
 }

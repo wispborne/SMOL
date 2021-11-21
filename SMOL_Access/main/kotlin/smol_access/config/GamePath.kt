@@ -55,10 +55,9 @@ class GamePath internal constructor(
             }
             .getOrNull()
 
-    fun getModsPath(
-        starsectorPath: Path = get()
+    fun getModsPath(): Path {
+        val starsectorPath: Path = get()
             ?: throw NullPointerException("Game path not found")
-    ): Path {
         val mods = starsectorPath.resolve("mods")
 
         IOLock.write {
