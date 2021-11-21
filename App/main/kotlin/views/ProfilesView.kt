@@ -1,7 +1,6 @@
 package views
 
 import AppState
-import SL
 import SmolAlertDialog
 import SmolButton
 import SmolSecondaryButton
@@ -25,9 +24,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.arkivanov.decompose.pop
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import model.UserProfile
+import kotlinx.coroutines.withContext
+import smol_access.SL
+import smol_access.model.UserProfile
 import util.ellipsizeAfter
 
 @OptIn(
@@ -200,12 +202,15 @@ fun AppState.ProfilesView(
                                             enabled = !isActiveProfile,
                                             onClick = {
                                                 if (!isActiveProfile) {
-                                                    GlobalScope.launch {
+                                                    GlobalScope.launch(Dispatchers.Default) {
                                                         SL.userManager.switchModProfile(modProfile.id)
-                                                        userProfile = SL.userManager.getUserProfile()
-                                                        modVariants =
-                                                            SL.access.getMods(noCache = false).flatMap { it.variants }
-                                                                .associateBy { it.smolId }
+                                                        withContext(Dispatchers.Main) {
+                                                            userProfile = SL.userManager.getUserProfile()
+                                                            modVariants =
+                                                                SL.access.getMods(noCache = false)
+                                                                    .flatMap { it.variants }
+                                                                    .associateBy { it.smolId }
+                                                        }
                                                     }
                                                 }
                                             }) {

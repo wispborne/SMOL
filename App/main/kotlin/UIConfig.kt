@@ -1,3 +1,4 @@
+import smol_access.UICONFIG_PATH
 import com.google.gson.Gson
 import utilities.Config
 import util.SmolWindowState

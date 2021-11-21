@@ -1,9 +1,9 @@
 package cli
 
-import business.UserManager
 import com.github.ajalt.clikt.output.TermUi
 import kotlinx.cli.*
 import kotlinx.coroutines.runBlocking
+import smol_access.business.UserManager
 
 @OptIn(ExperimentalCli::class)
 @Deprecated("Use SmolCLI")

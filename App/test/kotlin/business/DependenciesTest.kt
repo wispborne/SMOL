@@ -1,6 +1,8 @@
 package business
 
-import model.*
+import smol_access.business.DependencyState
+import smol_access.business.findDependencyStates
+import smol_access.model.*
 import org.junit.jupiter.api.Test
 import java.nio.file.Path
 import kotlin.test.assertTrue

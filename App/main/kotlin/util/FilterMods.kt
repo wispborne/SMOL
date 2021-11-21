@@ -1,7 +1,7 @@
 package util
 
 import me.xdrop.fuzzywuzzy.FuzzySearch
-import model.Mod
+import smol_access.model.Mod
 import org.tinylog.Logger
 
 internal fun filterMods(query: String, mods: List<Mod>): List<Mod> {

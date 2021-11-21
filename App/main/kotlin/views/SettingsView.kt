@@ -1,7 +1,7 @@
 package views
 
 import AppState
-import SL
+import smol_access.SL
 import SmolAlertDialog
 import SmolButton
 import SmolSecondaryButton

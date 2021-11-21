@@ -184,7 +184,7 @@ standard interface.</p>
 <h2><a name="extracting-single-file">Extracting of a single
 file</a></h2>
 
-<p>This section will show how to access the compressed data of the
+<p>This section will show how to smol_access the compressed data of the
 archive items. The following examples will calculate a simple checksum
 of each archive item.</p>
 
@@ -318,7 +318,7 @@ archives</a></h3>
 
 <p>Since RAR uses its own proprietary format for splitting archives into
 multiple volumes, there is no need to use VolumedArchiveInStream in
-order to open multi-part RAR archives. To provide access to the different
+order to open multi-part RAR archives. To provide smol_access to the different
 volumes of a RAR archive, the archive open callback class should
 additionally implement the IArchiveOpenVolumeCallback interface.
 Here is an example:

@@ -1,6 +1,6 @@
 package util
 
-import model.Mod
+import smol_access.model.Mod
 
 enum class ModState {
     Enabled,

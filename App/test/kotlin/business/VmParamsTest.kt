@@ -1,6 +1,6 @@
 package business
 
-import model.Vmparams
+import smol_access.model.Vmparams
 import org.junit.jupiter.api.Test
 import kotlin.test.assertTrue
 

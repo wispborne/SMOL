@@ -19,7 +19,8 @@ class VramChecker(
     val showSkippedFiles: Boolean,
     val showCountedFiles: Boolean,
     val graphicsLibConfig: GraphicsLibConfig,
-    val stdOut: (String) -> Unit = { println(it) }
+    val traceOut: (String) -> Unit = { println(it) },
+    val debugOut: (String) -> Unit = { println(it) }
 ) {
     companion object {
         const val VANILLA_BACKGROUND_WIDTH = 2048
@@ -72,10 +73,10 @@ class VramChecker(
 
         if (enabledModIds != null) progressText.appendAndPrint(
             line = "\nEnabled Mods:\n${enabledModIds.joinToString(separator = "\n")}",
-            stdOut = stdOut
+            traceOut = traceOut
         )
 
-        progressText.appendAndPrint("Mods folder: ${gameModsFolder.absolutePathString()}", stdOut)
+        progressText.appendAndPrint("Mods folder: ${gameModsFolder.absolutePathString()}", traceOut)
 
         val mods = gameModsFolder.listDirectoryEntries()
             .filter { it.isDirectory() }
@@ -83,7 +84,7 @@ class VramChecker(
                 getModInfo(jsonMapper = jsonMapper, modFolder = it, progressText = progressText)
             }
             .map { modInfo ->
-                progressText.appendAndPrint("\nFolder: ${modInfo.name}", stdOut)
+                progressText.appendAndPrint("\nFolder: ${modInfo.name}", traceOut)
                 val startTimeForMod = Date().time
 
                 val filesInMod =
@@ -103,7 +104,7 @@ class VramChecker(
                 val timeFinishedGettingGraphicsLibData = Date().time
                 if (showPerformance) progressText.appendAndPrint(
                     "Finished getting graphicslib data for ${modInfo.name} in ${(timeFinishedGettingGraphicsLibData - startTimeForMod)} ms",
-                    stdOut
+                    traceOut
                 )
 
                 val modImages = filesInMod
@@ -116,7 +117,7 @@ class VramChecker(
                             if (showSkippedFiles)
                                 progressText.appendAndPrint(
                                     "Skipped non-image ${file.relativePath} (${e.message})",
-                                    stdOut
+                                    traceOut
                                 )
                             return@parallelMap null
                         }
@@ -138,7 +139,7 @@ class VramChecker(
                 val timeFinishedGettingFileData = Date().time
                 if (showPerformance) progressText.appendAndPrint(
                     "Finished getting file data for ${modInfo.formattedName} in ${(timeFinishedGettingFileData - timeFinishedGettingGraphicsLibData)} ms",
-                    stdOut
+                    traceOut
                 )
 
                 val imagesToSumUp = modImages.toMutableList()
@@ -148,10 +149,10 @@ class VramChecker(
                     .also {
                         if (it.any() && showSkippedFiles) progressText.appendAndPrint(
                             "Skipping unused files",
-                            stdOut
+                            traceOut
                         )
                     }
-                    .onEach { progressText.appendAndPrint("  ${it.file.relativePath}", stdOut) }
+                    .onEach { progressText.appendAndPrint("  ${it.file.relativePath}", traceOut) }
                 )
 
 
@@ -166,10 +167,10 @@ class VramChecker(
                             if (it.any())
                                 progressText.appendAndPrint(
                                     "Skipping backgrounds that are not larger than vanilla and/or not the mod's largest background.",
-                                    stdOut
+                                    traceOut
                                 )
                         }
-                        .onEach { progressText.appendAndPrint("   ${it.file.relativePath}", stdOut) }
+                        .onEach { progressText.appendAndPrint("   ${it.file.relativePath}", traceOut) }
                 )
 
                 imagesToSumUp.forEach { image ->
@@ -179,7 +180,7 @@ class VramChecker(
                                 "Channels: ${image.bitsInAllChannels}, " +
                                 "Mult: ${image.multiplier}\n" +
                                 "   --> ${image.textureHeight} * ${image.textureWidth} * ${image.bitsInAllChannels.sum()} * ${image.multiplier} = ${image.bytesUsed} bytes added over vanilla",
-                        stdOut
+                        traceOut
                     )
                 }
 
@@ -199,9 +200,9 @@ class VramChecker(
 
                 if (showPerformance) progressText.appendAndPrint(
                     "Finished calculating file sizes for ${mod.info.formattedName} in ${(Date().time - timeFinishedGettingFileData)} ms",
-                    stdOut
+                    traceOut
                 )
-                progressText.appendAndPrint(mod.totalBytesForMod.bytesAsReadableMiB, stdOut)
+                progressText.appendAndPrint(mod.totalBytesForMod.bytesAsReadableMiB, traceOut)
                 mod
             }
             .sortedByDescending { it.totalBytesForMod }
@@ -220,13 +221,13 @@ class VramChecker(
 
         if (showPerformance) progressText.appendAndPrint(
             "Finished run in ${(Date().time - startTime)} ms",
-            stdOut
+            traceOut
         )
 
         val enabledModsString =
             enabledMods.joinToString(separator = "\n    ") { it.info.formattedName }.ifBlank { "(none)" }
 
-        progressText.appendAndPrint("\n", stdOut)
+        progressText.appendAndPrint("\n", traceOut)
         summaryText.appendLine()
         summaryText.appendLine("-------------")
         summaryText.appendLine("VRAM Use Estimates")
@@ -268,8 +269,8 @@ class VramChecker(
         summaryText.appendLine("** This is only an estimate of VRAM use and actual use may be higher or lower.")
         summaryText.appendLine("** Unused images in mods are counted unless they contain one of ${UNUSED_INDICATOR.joinToString { "\"$it\"" }} in the file name.")
 
-        stdOut(modTotals.toString())
-        stdOut(summaryText.toString())
+        traceOut(modTotals.toString())
+        debugOut(summaryText.toString())
         return mods
     }
 
@@ -304,7 +305,7 @@ class VramChecker(
         } catch (e: Exception) {
             progressText.appendAndPrint(
                 "Unable to find or read 'mod_info.json' in ${modFolder.absolutePathString()}. (${e.message})",
-                stdOut
+                traceOut
             )
             null
         }
@@ -327,7 +328,7 @@ class VramChecker(
             .mapNotNull { file ->
                 runCatching { csvReader.build(file.reader()) }
                     .recover {
-                        progressText.appendAndPrint("Unable to read ${file.relativePath}: ${it.message}", stdOut)
+                        progressText.appendAndPrint("Unable to read ${file.relativePath}: ${it.message}", traceOut)
                         null
                     }
                     .getOrNull()
@@ -353,7 +354,7 @@ class VramChecker(
                         val path = row[pathColumn].trim()
                         GraphicsLibInfo(mapType, path)
                     } catch (e: Exception) {
-                        progressText.appendAndPrint("$row - ${e.message}", stdOut)
+                        progressText.appendAndPrint("$row - ${e.message}", traceOut)
                         null
                     }
                 }
@@ -366,13 +367,13 @@ class VramChecker(
                 }
             }
             .also {
-                if (showGfxLibDebugOutput) it?.forEach { info -> progressText.appendAndPrint(info.toString(), stdOut) }
+                if (showGfxLibDebugOutput) it?.forEach { info -> progressText.appendAndPrint(info.toString(), traceOut) }
             }
             ?.toList()
     }
 
-    private fun StringBuilder.appendAndPrint(line: String, stdOut: (String) -> Unit) {
-        stdOut(line)
+    private fun StringBuilder.appendAndPrint(line: String, traceOut: (String) -> Unit) {
+        traceOut(line)
         this.appendLine(line)
     }
 

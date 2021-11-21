@@ -1,16 +1,16 @@
 package util
 
-import FORUM_PAGE_URL
-import ServiceLocator
+import smol_access.FORUM_PAGE_URL
+import smol_access.ServiceLocator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.res.useResource
-import business.VmParamsManager
-import config.Platform
+import smol_access.business.VmParamsManager
+import smol_access.config.Platform
 import dev.andrewbailey.diff.differenceOf
-import model.Mod
+import smol_access.model.Mod
 import java.awt.Desktop
 import java.net.URI
 import kotlin.math.ceil

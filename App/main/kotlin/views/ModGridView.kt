@@ -1,8 +1,5 @@
 package views
-
-import APP_NAME
 import AppState
-import SL
 import SmolAlertDialog
 import SmolButton
 import SmolTheme
@@ -33,13 +30,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.dp
-import business.DependencyState
-import business.findDependencyStates
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import model.Mod
-import model.ModVariant
 import org.tinylog.Logger
+import smol_access.APP_NAME
+import smol_access.SL
+import smol_access.business.DependencyState
+import smol_access.business.findDependencyStates
+import smol_access.model.Mod
+import smol_access.model.ModVariant
 import util.*
 import java.awt.Desktop
 import kotlin.io.path.exists

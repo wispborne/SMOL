@@ -81,7 +81,8 @@ suspend fun main(args: Array<String>) {
             showCountedFiles = showCountedFiles,
             graphicsLibConfig = graphicsLibConfig,
             gameModsFolder = gameModsFolder.toPath(),
-            stdOut = { println(it) }
+            traceOut = { println(it) },
+            debugOut = { println(it) }
         )
             .also { it.check() }
     }
@@ -99,7 +100,7 @@ suspend fun main(args: Array<String>) {
             outputFile.appendText(modTotals.toString())
             outputFile.appendText(summaryText.toString())
 
-            stdOut("\nFile written to ${outputFile.absolutePath}.\nSummary copied to clipboard, ready to paste.")
+            debugOut("\nFile written to ${outputFile.absolutePath}.\nSummary copied to clipboard, ready to paste.")
         }
 }
 

@@ -1,6 +1,5 @@
 package views
 
-import SL
 import SmolTheme
 import TiledImage
 import androidx.compose.foundation.*
@@ -23,7 +22,8 @@ import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
-import business.findDependencies
+import smol_access.SL
+import smol_access.business.findDependencies
 import util.imageResource
 import util.openModThread
 import java.awt.Cursor

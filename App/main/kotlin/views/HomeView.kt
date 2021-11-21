@@ -1,7 +1,6 @@
 package views
 
 import AppState
-import SL
 import SmolButton
 import SmolOutlinedTextField
 import SmolTheme
@@ -21,19 +20,24 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import business.Archives
-import business.GameEnabledMods.Companion.ENABLED_MODS_FILENAME
-import business.KWatchEvent
-import business.asWatchChannel
 import cli.SmolCLI
 import com.arkivanov.decompose.push
-import config.Platform
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import model.Mod
 import navigation.Screen
 import org.tinylog.Logger
-import util.*
+import smol_access.SL
+import smol_access.business.Archives
+import smol_access.business.GameEnabledMods.Companion.ENABLED_MODS_FILENAME
+import smol_access.business.KWatchEvent
+import smol_access.business.asWatchChannel
+import smol_access.config.Platform
+import smol_access.model.Mod
+import smol_access.util.IOLock
+import util.currentPlatform
+import util.filterMods
+import util.replaceAllUsingDifference
+import util.vmParamsManager
 import utilities.equalsAny
 import utilities.toFileOrNull
 import utilities.toPathOrNull
@@ -41,8 +45,6 @@ import java.awt.FileDialog
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.exists
 
-
-private var isRefreshingMods = false
 
 @OptIn(
     ExperimentalCoroutinesApi::class, androidx.compose.material.ExperimentalMaterialApi::class,
@@ -53,15 +55,34 @@ private var isRefreshingMods = false
 fun AppState.homeView(
     modifier: Modifier = Modifier
 ) {
-    val mods = remember { mutableStateListOf<Mod>() }
-    val shownMods = remember { mutableStateListOf<Mod?>(*mods.toTypedArray()) }
-    rememberCoroutineScope().launch { reloadMods(mods, forceRefresh = false) }
-
-    (rememberCoroutineScope()).launch {
-        watchDirsAndReloadOnChange(mods)
+    var isRefreshingMods = false
+    val mods: SnapshotStateList<Mod> =
+        remember { mutableStateListOf(elements = SL.access.getMods(noCache = false).toTypedArray()) }
+    val shownMods = remember { mutableStateListOf<Mod?>(elements = mods.toTypedArray()) }
+    val onRefreshingMods = { refreshing: Boolean -> isRefreshingMods = refreshing }
+    rememberCoroutineScope { Dispatchers.Default }.launch {
+        reloadMods(
+            forceRefresh = false,
+            isRefreshingMods = isRefreshingMods,
+            onRefreshingMods = onRefreshingMods
+        )
     }
 
-//    rememberCoroutineScope().launch(Dispatchers.Default) {
+    rememberCoroutineScope { Dispatchers.Default }.launch {
+        SL.access.onModsReloaded.collectLatest { freshMods ->
+            if (freshMods != null) {
+                withContext(Dispatchers.Main) {
+                    mods.replaceAllUsingDifference(freshMods, doesOrderMatter = true)
+                }
+            }
+        }
+    }
+
+    rememberCoroutineScope { Dispatchers.Default }.launch {
+        watchDirsAndReloadOnChange(isRefreshingMods, onRefreshingMods)
+    }
+
+//    rememberCoroutineScope { Dispatchers.Default }.launch(Dispatchers.Default) {
 //        Logger.debug { "Starting to watch IOLock." }
 //        IOLock.stateFlow
 //            .collect { isLocked ->
@@ -79,21 +100,23 @@ fun AppState.homeView(
 //    }
 
 //    var showConfirmMigrateDialog: Boolean by remember { mutableStateOf(false) }
-    val composableScope = rememberCoroutineScope()
-    Scaffold(topBar = {
-        TopAppBar(
-            modifier = Modifier.height(72.dp)
-        ) {
-            var showVmParamsMenu by remember { mutableStateOf(false) }
-            launchButton()
-            SmolButton(
-                onClick = { showVmParamsMenu = true },
-                modifier = Modifier.padding(start = 16.dp),
-                shape = SmolTheme.smolFullyClippedButtonShape()
+    val composableScope = rememberCoroutineScope { Dispatchers.Default }
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            TopAppBar(
+                modifier = Modifier.height(72.dp)
             ) {
-                Text(text = "RAM")
-            }
-            vmParamsContextMenu(showVmParamsMenu) { showVmParamsMenu = it }
+                var showVmParamsMenu by remember { mutableStateOf(false) }
+                launchButton()
+                SmolButton(
+                    onClick = { showVmParamsMenu = true },
+                    modifier = Modifier.padding(start = 16.dp),
+                    shape = SmolTheme.smolFullyClippedButtonShape()
+                ) {
+                    Text(text = "RAM")
+                }
+                vmParamsContextMenu(showVmParamsMenu) { showVmParamsMenu = it }
 
 //            SmolButton(
 //                onClick = {
@@ -104,90 +127,93 @@ fun AppState.homeView(
 //                Text("Migrate")
 //            }
 
-            SmolButton(
-                onClick = {
-                    composableScope.launch {
-                        reloadMods(mods, forceRefresh = true)
-                    }
-                },
-                modifier = Modifier.padding(start = 16.dp)
-            ) {
-                Text("Refresh")
-            }
-
-            profilesButton()
-            settingsButton()
-            installModsButton()
-            modBrowserButton()
-            Row(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 16.dp),
-                horizontalArrangement = Arrangement.End
-            ) {
-                val focuser = remember { FocusRequester() }
-                DisposableEffect(focuser) {
-                    val function: (KeyEvent) -> Boolean = { keyEvent ->
-                        if (keyEvent.isCtrlPressed && keyEvent.key == Key.F) {
-                            focuser.requestFocus()
-                            true
-                        } else false
-                    }
-                    onWindowKeyEventHandlers += function
-                    onDispose { onWindowKeyEventHandlers -= function }
-                }
-
-                filterTextField(
-                    Modifier
-                        .focusRequester(focuser)
-                        .widthIn(max = 300.dp)
-                        .padding(end = 16.dp)
-                        .align(Alignment.CenterVertically)
-                ) { query ->
-                    if (query.isBlank()) {
-                        shownMods.replaceAllUsingDifference(mods, doesOrderMatter = false)
-                    } else {
-                        shownMods.replaceAllUsingDifference(filterMods(query, mods).ifEmpty { listOf(null) }, doesOrderMatter = true)
-                    }
-                }
-
-                consoleTextField(
-                    modifier = Modifier
-                        .widthIn(max = 300.dp)
-                        .padding(end = 16.dp)
-                        .align(Alignment.CenterVertically)
-                )
-            }
-        }
-    }, content = {
-        Box {
-            if (SL.gamePath.isValidGamePath(SL.appConfig.gamePath ?: "")) {
-                ModGridView(
-                    modifier = Modifier.fillMaxWidth().fillMaxHeight().padding(bottom = 40.dp),
-                    mods = (if (shownMods.isEmpty()) mods else shownMods) as SnapshotStateList<Mod?>
-                )
-            } else {
-                Column(
-                    Modifier.fillMaxWidth().fillMaxHeight(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                SmolButton(
+                    onClick = {
+                        composableScope.launch {
+                            reloadMods(forceRefresh = true, isRefreshingMods, onRefreshingMods)
+                        }
+                    },
+                    modifier = Modifier.padding(start = 16.dp)
                 ) {
-                    Text(text = "I can't find any mods! Did you set your game path yet?")
-                    OutlinedButton(
-                        onClick = { router.push(Screen.Settings) },
-                        modifier = Modifier.padding(top = 8.dp)
-                    ) {
-                        Text("Settings")
+                    Text("Refresh")
+                }
+
+                profilesButton()
+                settingsButton()
+                installModsButton()
+                modBrowserButton()
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 16.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    val focuser = remember { FocusRequester() }
+                    DisposableEffect(focuser) {
+                        val function: (KeyEvent) -> Boolean = { keyEvent ->
+                            if (keyEvent.isCtrlPressed && keyEvent.key == Key.F) {
+                                focuser.requestFocus()
+                                true
+                            } else false
+                        }
+                        onWindowKeyEventHandlers += function
+                        onDispose { onWindowKeyEventHandlers -= function }
                     }
+
+                    filterTextField(
+                        Modifier
+                            .focusRequester(focuser)
+                            .widthIn(max = 300.dp)
+                            .padding(end = 16.dp)
+                            .align(Alignment.CenterVertically)
+                    ) { query ->
+                        if (query.isBlank()) {
+                            shownMods.replaceAllUsingDifference(mods, doesOrderMatter = false)
+                        } else {
+                            shownMods.replaceAllUsingDifference(
+                                filterMods(query, mods).ifEmpty { listOf(null) },
+                                doesOrderMatter = true
+                            )
+                        }
+                    }
+
+                    consoleTextField(
+                        modifier = Modifier
+                            .widthIn(max = 300.dp)
+                            .padding(end = 16.dp)
+                            .align(Alignment.CenterVertically)
+                    )
                 }
             }
+        }, content = {
+            Box {
+                if (SL.gamePath.isValidGamePath(SL.appConfig.gamePath ?: "")) {
+                    ModGridView(
+                        modifier = Modifier.fillMaxWidth().fillMaxHeight().padding(bottom = 40.dp),
+                        mods = (if (shownMods.isEmpty()) mods else shownMods) as SnapshotStateList<Mod?>
+                    )
+                } else {
+                    Column(
+                        Modifier.fillMaxWidth().fillMaxHeight(),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(text = "I can't find any mods! Did you set your game path yet?")
+                        OutlinedButton(
+                            onClick = { router.push(Screen.Settings) },
+                            modifier = Modifier.padding(top = 8.dp)
+                        ) {
+                            Text("Settings")
+                        }
+                    }
+                }
 
 //            if (showConfirmMigrateDialog) {
 //                SmolAlertDialog(
 //                    title = { Text("Warning") },
 //                    text = {
 //                        Text(
-//                            "Are you sure you want to migrate the Starsector mods folder to be managed by $APP_NAME?" +
+//                            "Are you sure you want to migrate the Starsector mods folder to be managed by $SMOL_Access.APP_NAME?" +
 //                                    "\nThis will not affect the mods. It will save their current state to the Archives folder so they may be reinstalled cleanly in the future."
 //                        )
 //                    },
@@ -207,8 +233,8 @@ fun AppState.homeView(
 //                    }
 //                )
 //            }
-        }
-    },
+            }
+        },
         bottomBar = {
             BottomAppBar(
                 modifier = Modifier.fillMaxWidth()
@@ -229,7 +255,8 @@ fun AppState.homeView(
 
 @OptIn(ExperimentalCoroutinesApi::class)
 private suspend fun watchDirsAndReloadOnChange(
-    mods: SnapshotStateList<Mod>
+    isRefreshingMods: Boolean,
+    onRefreshingMods: (Boolean) -> Unit
 ) {
     val NSA: List<Flow<KWatchEvent?>> = listOf(
         SL.access.getStagingPath()?.toPathOrNull()?.asWatchChannel() ?: emptyFlow(),
@@ -241,7 +268,6 @@ private suspend fun watchDirsAndReloadOnChange(
         SL.archives.getArchivesPath()?.toPathOrNull()?.asWatchChannel() ?: emptyFlow(),
     )
 
-    reloadMods(mods, forceRefresh = false)
     Logger.info {
         "Started watching folders ${
             NSA.joinToString()
@@ -259,14 +285,21 @@ private suspend fun watchDirsAndReloadOnChange(
                 // refreshing 500 times if 500 files are changed in a few millis.
                 delay(1000)
                 Logger.info { "File change: $it" }
-                reloadMods(mods, forceRefresh = false)
+                reloadMods(
+                    forceRefresh = false, isRefreshingMods = isRefreshingMods,
+                    onRefreshingMods = onRefreshingMods
+                )
             } else {
                 Logger.info { "Skipping mod reload while IO locked." }
             }
         }
 }
 
-private suspend fun reloadMods(mods: SnapshotStateList<Mod>, forceRefresh: Boolean) {
+private suspend fun reloadMods(
+    forceRefresh: Boolean,
+    isRefreshingMods: Boolean,
+    onRefreshingMods: (Boolean) -> Unit
+) {
     if (isRefreshingMods) {
         Logger.info { "Skipping reload of mods as they are currently refreshing already." }
         return
@@ -274,10 +307,8 @@ private suspend fun reloadMods(mods: SnapshotStateList<Mod>, forceRefresh: Boole
     try {
         coroutineScope {
             Logger.info { "Reloading mods." }
-            isRefreshingMods = true
-            val freshMods =
-                withContext(Dispatchers.Default) { SL.access.getMods(noCache = true) }
-            mods.replaceAllUsingDifference(freshMods, doesOrderMatter = true)
+            onRefreshingMods(true)
+            SL.access.getMods(noCache = true)
             val manifest = async { SL.archives.refreshManifest() }
             val vramCheckerAsync = async { SL.vramChecker.getVramUsage(forceRefresh = forceRefresh) }
 
@@ -287,7 +318,7 @@ private suspend fun reloadMods(mods: SnapshotStateList<Mod>, forceRefresh: Boole
     } catch (e: Exception) {
         Logger.debug(e)
     } finally {
-        isRefreshingMods = false
+        onRefreshingMods(false)
     }
 }
 
@@ -413,7 +444,7 @@ private fun AppState.consoleTextField(
                                 SmolCLI(
                                     userManager = SL.userManager,
                                     vmParamsManager = SL.vmParamsManager,
-                                    modLoader = SL.modLoader,
+                                    access = SL.access,
                                     gamePath = SL.gamePath
                                 )
                                     .parse(consoleText)

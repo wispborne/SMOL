@@ -1,7 +1,6 @@
 package views
 
 import AppState
-import SL
 import SmolButton
 import SmolTheme
 import androidx.compose.desktop.ui.tooling.preview.Preview
@@ -30,6 +29,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.pop
 import org.tinylog.kotlin.Logger
+import smol_access.SL
 import util.openAsUriInBrowser
 import java.awt.Cursor
 

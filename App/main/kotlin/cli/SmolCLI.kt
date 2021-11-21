@@ -2,9 +2,6 @@ package cli
 
 import GraphicsLibConfig
 import VramChecker
-import business.ModLoader
-import business.UserManager
-import business.VmParamsManager
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.output.TermUi
@@ -14,15 +11,17 @@ import com.github.ajalt.clikt.parameters.arguments.help
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import com.github.ajalt.clikt.parameters.types.int
-import config.GamePath
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import smol_access.*
+import smol_access.business.UserManager
+import smol_access.business.VmParamsManager
+import smol_access.config.GamePath
 
 class SmolCLI(
     private val userManager: UserManager,
     private val vmParamsManager: VmParamsManager,
-    private val modLoader: ModLoader,
+    private val access: Access,
     private val gamePath: GamePath,
 ) {
     val chainOfCommand = Smol()
@@ -119,7 +118,7 @@ class SmolCLI(
         override fun run() {
             GlobalScope.launch {
                 VramChecker(
-                    enabledModIds = modLoader.getMods(noCache = false).map { it.id },
+                    enabledModIds = access.getMods(noCache = false).map { it.id },
                     gameModsFolder = gamePath.getModsPath(),
                     showGfxLibDebugOutput = false,
                     showPerformance = false,
@@ -130,7 +129,8 @@ class SmolCLI(
                         areGfxLibMaterialMapsEnabled = areGfxLibMaterialMapsEnabled == 1,
                         areGfxLibSurfaceMapsEnabled = areGfxLibSurfaceMapsEnabled == 1
                     ),
-                    stdOut = { echo(it) }
+                    traceOut = { echo(it) },
+                    debugOut = { echo(it) }
                 )
                     .check()
             }

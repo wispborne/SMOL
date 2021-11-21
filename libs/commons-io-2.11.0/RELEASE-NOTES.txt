@@ -312,7 +312,7 @@ o IO-610:  Remove throws IOException in method isSymlink() #80. Thanks to Sebast
 o IO-628:  Migration to JUnit Jupiter #97. Thanks to Allon Mureinik. 
 o IO-630:  Deprecate org.apache.commons.io.output.NullOutputStream.NullOutputStream() in favor of org.apache.commons.io.output.NullOutputStream.NULL_OUTPUT_STREAM. Thanks to Gary Gregory. 
 o IO-629:  FileUtils#forceDelete should use Files#delete rather than File#delete so exception messages includes reason for failure. Thanks to Ian Springer, Ian Springer, Gary Gregory. 
-o IO-634:  Make getCause synchronized and use a Deque instead of a Stack #64. Thanks to Václav Haisman, Bruno P. Kinoshita, Gary Gregory. 
+o IO-634:  Make getCause synchronized and use a Deque instead of a Stack #64. Thanks to Vï¿½clav Haisman, Bruno P. Kinoshita, Gary Gregory. 
 o            Update tests from Apache Commons Lang 3.9 to 3.10. Thanks to Gary Gregory. 
 o            Update tests org.junit-pioneer:junit-pioneer 0.3.0 -> 0.6.0. Thanks to Gary Gregory. 
 o            Update tests org.junit.jupiter:junit-jupiter 5.5.2 -> 5.6.2. Thanks to Gary Gregory. 
@@ -494,7 +494,7 @@ o IO-471:  Support for additional encodings in ReversedLinesFileReader Thanks to
 o IO-425:  Setter method for threshold on ThresholdingOutputStream Thanks to Craig Swank. 
 o IO-406:  Introduce new class AppendableOutputStream Thanks to Niall Pemberton. 
 o IO-459:  Add WindowsLineEndingInputStream and UnixLineEndingInputStream. Thanks to Kristian Rosenvold. 
-o IO-457:  Add a BoundedReader, a wrapper that can be used to constrain access
+o IO-457:  Add a BoundedReader, a wrapper that can be used to constrain smol_access
         to an underlying stream when used with mark/reset -
         to avoid overflowing the mark limit of the underlying buffer. Thanks to Kristian Rosenvold. 
 o IO-426:  Add API IOUtils.closeQuietly(Closeable...) 
@@ -528,14 +528,14 @@ o IO-446:  adds an endOfFileReached method to the TailerListener Thanks to Jeffr
 o IO-484:  FilenameUtils should handle embedded null bytes Thanks to Philippe Arteau. 
 o IO-481:  Changed/Corrected algorithm for waitFor 
 o IO-428:  BOMInputStream.skip returns wrong count if stream contains no BOM Thanks to Stefan Gmeiner. 
-o IO-488:  FileUtils.waitFor(...) swallows thread interrupted status Thanks to Björn Buchner. 
+o IO-488:  FileUtils.waitFor(...) swallows thread interrupted status Thanks to Bjï¿½rn Buchner. 
 o IO-452:  Support for symlinks with missing target. Added support for JDK7 symlink features when present Thanks to David Standish. 
 o IO-453:  Regression in FileUtils.readFileToString from 2.0.1 Thanks to Steven Christou. 
 o IO-451:  ant test fails - resources missing from test classpath Thanks to David Standish. 
 o IO-435:  Document that FileUtils.deleteDirectory, directoryContains and cleanDirectory
          may throw an IllegalArgumentException in case the passed directory does not
          exist or is not a directory. Thanks to Dominik Stadler. 
-o IO-424:  Javadoc fixes, mostly to appease 1.8.0 Thanks to Ville Skyttä. 
+o IO-424:  Javadoc fixes, mostly to appease 1.8.0 Thanks to Ville Skyttï¿½. 
 o IO-389:  FileUtils.sizeOfDirectory can throw IllegalArgumentException Thanks to Austin Doupnik. 
 o IO-390:  FileUtils.sizeOfDirectoryAsBigInteger can overflow.
          Ensure that recursive calls all use BigInteger 
@@ -675,7 +675,7 @@ o Add IOUTils.toBufferedReader(Reader)  Issue: IO-313. Thanks to ggregory.
 o Allow applications to provide buffer (or size) for copyLarge methods.  Issue: IO-308. Thanks to Manoj Mokashi. 
 o New copyLarge() method in IOUtils that takes additional offset, length arguments  Issue: IO-305. Thanks to Manoj Mokashi. 
 o Use terabyte (TB), petabyte (PB) and exabyte (EB) in FileUtils.byteCountToDisplaySize(long size)  Issue: IO-287. Thanks to Ron Kuris, Gary Gregory. 
-o FileUtils.listFiles() doesn't return directories  Issue: IO-173. Thanks to Marcos Vinícius da Silva. 
+o FileUtils.listFiles() doesn't return directories  Issue: IO-173. Thanks to Marcos Vinï¿½cius da Silva. 
 o CharSequenceInputStream to efficiently stream content of a CharSequence  Issue: IO-297. Thanks to Oleg Kalnichevski. 
 o The second constructor of Tailer class does not pass 'delay' to the third one  Issue: IO-304. Thanks to liangly. 
 o TeeOutputStream does not call branch.close() when main.close() throws an exception  Issue: IO-303. Thanks to fabian.barney. 
@@ -1091,7 +1091,7 @@ Bug fixes from 1.2
 
 - FileUtils.touch [IO-100]
   - The touch method previously gave no indication when the file could not
-    be touched successfully (such as due to access restrictions) - it now
+    be touched successfully (such as due to smol_access restrictions) - it now
     throws an IOException if the last modified date cannot be changed
 
 - FileCleaner
@@ -1271,7 +1271,7 @@ Enhancements from 1.1
   Performance improved by adding length and file location checking
 
 - FileUtils.iterateFiles
-  Two new method to provide direct access to iterators over files
+  Two new method to provide direct smol_access to iterators over files
 
 - FileUtils.lineIterator
   IOUtils.lineIterator

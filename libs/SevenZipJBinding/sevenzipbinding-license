@@ -231,8 +231,8 @@ it with the complete corresponding machine-readable source code, which
 must be distributed under the terms of Sections 1 and 2 above on a
 medium customarily used for software interchange.
 
-  If distribution of object code is made by offering access to copy
-from a designated place, then offering equivalent access to copy the
+  If distribution of object code is made by offering smol_access to copy
+from a designated place, then offering equivalent smol_access to copy the
 source code from the same place satisfies the requirement to
 distribute the source code, even though third parties are not
 compelled to copy the source along with the object code.
@@ -308,8 +308,8 @@ of these things:
     specified in Subsection 6a, above, for a charge no more
     than the cost of performing this distribution.
 
-    d) If distribution of the work is made by offering access to copy
-    from a designated place, offer equivalent access to copy the above
+    d) If distribution of the work is made by offering smol_access to copy
+    from a designated place, offer equivalent smol_access to copy the above
     specified materials from the same place.
 
     e) Verify that the user has already received a copy of these

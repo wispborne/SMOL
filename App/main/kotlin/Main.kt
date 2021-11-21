@@ -13,6 +13,8 @@ import navigation.rememberRouter
 import net.sf.sevenzipjbinding.SevenZip
 import org.tinylog.Logger
 import org.tinylog.configuration.Configuration
+import smol_access.APP_NAME
+import smol_access.SL
 import util.SmolPair
 import util.SmolWindowState
 import util.currentPlatform
@@ -27,7 +29,7 @@ fun main() = application {
     // Logger
     kotlin.runCatching {
         val format = "{date} {class}.{method}:{line} {level}: {message}"
-        val level = if (safeMode) "trace" else "info"
+        val level = if (safeMode) "trace" else "debug"
         Configuration.replace(
             mapOf(
                 "writer1" to "console",

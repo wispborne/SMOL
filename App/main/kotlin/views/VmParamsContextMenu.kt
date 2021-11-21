@@ -1,6 +1,6 @@
 package views
 
-import SL
+import smol_access.SL
 import SmolButton
 import SmolSecondaryButton
 import SmolTextField
