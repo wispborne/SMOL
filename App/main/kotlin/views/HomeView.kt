@@ -6,6 +6,7 @@ import SmolOutlinedTextField
 import SmolTheme
 import SmolTooltipText
 import androidx.compose.desktop.ui.tooling.preview.Preview
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.TooltipArea
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -57,19 +58,15 @@ fun AppState.homeView(
 ) {
     var isRefreshingMods = false
     val mods: SnapshotStateList<Mod> =
-        remember { mutableStateListOf(elements = SL.access.getMods(noCache = false).toTypedArray()) }
+        remember { mutableStateListOf(elements = SL.access.mods.value?.toTypedArray() ?: emptyArray()) }
     val shownMods = remember { mutableStateListOf<Mod?>(elements = mods.toTypedArray()) }
     val onRefreshingMods = { refreshing: Boolean -> isRefreshingMods = refreshing }
     rememberCoroutineScope { Dispatchers.Default }.launch {
-        reloadMods(
-            forceRefresh = false,
-            isRefreshingMods = isRefreshingMods,
-            onRefreshingMods = onRefreshingMods
-        )
+        reloadMods(checkVramUseSlow = false)
     }
 
     rememberCoroutineScope { Dispatchers.Default }.launch {
-        SL.access.onModsReloaded.collectLatest { freshMods ->
+        SL.access.mods.collectLatest { freshMods ->
             if (freshMods != null) {
                 withContext(Dispatchers.Main) {
                     mods.replaceAllUsingDifference(freshMods, doesOrderMatter = true)
@@ -111,7 +108,7 @@ fun AppState.homeView(
                 ramButton()
 
                 installModsButton(Modifier.padding(start = 16.dp))
-                refreshButton(composableScope, isRefreshingMods, onRefreshingMods)
+                refreshButton(composableScope)
                 profilesButton()
                 settingsButton()
                 modBrowserButton()
@@ -259,8 +256,7 @@ private suspend fun watchDirsAndReloadOnChange(
                 delay(1000)
                 Logger.info { "File change: $it" }
                 reloadMods(
-                    forceRefresh = false, isRefreshingMods = isRefreshingMods,
-                    onRefreshingMods = onRefreshingMods
+                    checkVramUseSlow = false
                 )
             } else {
                 Logger.info { "Skipping mod reload while IO locked." }
@@ -269,29 +265,24 @@ private suspend fun watchDirsAndReloadOnChange(
 }
 
 private suspend fun reloadMods(
-    forceRefresh: Boolean,
-    isRefreshingMods: Boolean,
-    onRefreshingMods: (Boolean) -> Unit
+    checkVramUseSlow: Boolean
 ) {
-    if (isRefreshingMods) {
+    if (SL.access.areModsLoading.value) {
         Logger.info { "Skipping reload of mods as they are currently refreshing already." }
         return
     }
     try {
         coroutineScope {
             Logger.info { "Reloading mods." }
-            onRefreshingMods(true)
-            SL.access.getMods(noCache = true)
+            SL.access.reload()
             val manifest = async { SL.archives.refreshManifest() }
-            val vramCheckerAsync = async { SL.vramChecker.getVramUsage(forceRefresh = forceRefresh) }
+            val vramCheckerAsync = async { SL.vramChecker.getVramUsage(forceRefresh = checkVramUseSlow) }
 
             manifest.await()
             vramCheckerAsync.await()
         }
     } catch (e: Exception) {
         Logger.debug(e)
-    } finally {
-        onRefreshingMods(false)
     }
 }
 
@@ -315,11 +306,10 @@ private fun AppState.modBrowserButton() {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun AppState.refreshButton(
-    composableScope: CoroutineScope,
-    isRefreshingMods: Boolean,
-    onRefreshingMods: (Boolean) -> Unit
+    composableScope: CoroutineScope
 ) {
     TooltipArea(
         tooltip = { SmolTooltipText(text = "Refresh modlist & VRAM impact") }
@@ -327,7 +317,7 @@ private fun AppState.refreshButton(
         SmolButton(
             onClick = {
                 composableScope.launch {
-                    reloadMods(forceRefresh = true, isRefreshingMods, onRefreshingMods)
+                    reloadMods(checkVramUseSlow = true)
                 }
             },
             modifier = Modifier.padding(start = 16.dp)

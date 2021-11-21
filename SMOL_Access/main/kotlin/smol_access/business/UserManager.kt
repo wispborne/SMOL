@@ -21,7 +21,7 @@ class UserManager internal constructor(
 
     init {
         GlobalScope.launch {
-            modLoader.onModsReloaded.collect { newMods ->
+            modLoader.mods.collect { newMods ->
                 newMods ?: return@collect
                 if (isModProfileSwitching) return@collect
 
@@ -111,7 +111,7 @@ class UserManager internal constructor(
 
             val variantsToDisable = diff.removed
             val variantsToEnable = diff.added
-            val allKnownVariants = modLoader.getMods(noCache = false).flatMap { it.variants }
+            val allKnownVariants = modLoader.mods.value?.flatMap { it.variants } ?: emptyList()
 
             variantsToDisable
                 .mapNotNull { varToDisable ->

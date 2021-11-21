@@ -13,7 +13,6 @@ import java.nio.file.FileVisitOption
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.*
-import kotlin.io.path.Path
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
 import kotlin.io.path.isSameFileAs
@@ -144,7 +143,10 @@ data class DiffResult<T>(
     val added: List<T>
 )
 
-fun <T> trace(onFinished: (T, Long) -> Unit, func: () -> T): T {
+/**
+ * Time how long it takes to run [func].
+ */
+inline fun <T> trace(onFinished: (T, Long) -> Unit, func: () -> T): T {
     var result: T
     val millis = measureTimeMillis { result = func() }
     onFinished(result, millis)

@@ -2,12 +2,12 @@ package smol_access.business
 
 import GraphicsLibConfig
 import VramChecker
+import org.tinylog.kotlin.Logger
 import smol_access.config.GamePath
 import smol_access.config.VramCheckerCache
 import smol_access.model.ModVariant
 import smol_access.model.SmolId
 import smol_access.model.Version
-import org.tinylog.kotlin.Logger
 
 class VramCheckerManager(
     private val modLoader: ModLoader,
@@ -28,7 +28,7 @@ class VramCheckerManager(
 
         Logger.debug { "Refreshing VRAM use. forceRefresh: $forceRefresh, cached: ${cached?.size ?: 0} entries" }
         val results = VramChecker(
-            enabledModIds = modLoader.getMods(noCache = false).map { it.id },
+            enabledModIds = modLoader.mods.value?.map { it.id },
             gameModsFolder = gamePath.getModsPath(),
             showGfxLibDebugOutput = false,
             showPerformance = false,

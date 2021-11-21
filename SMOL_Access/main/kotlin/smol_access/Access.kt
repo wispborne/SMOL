@@ -1,14 +1,14 @@
 package smol_access
 
-import smol_access.business.Staging
-import smol_access.config.AppConfig
-import smol_access.config.Platform
 import kotlinx.coroutines.flow.StateFlow
-import smol_access.model.Mod
-import smol_access.model.ModVariant
 import org.tinylog.Logger
 import smol_access.business.Archives
 import smol_access.business.ModLoader
+import smol_access.business.Staging
+import smol_access.config.AppConfig
+import smol_access.config.Platform
+import smol_access.model.Mod
+import smol_access.model.ModVariant
 import smol_access.util.IOLock
 import utilities.mkdirsIfNotExist
 import utilities.toFileOrNull
@@ -76,14 +76,14 @@ class Access internal constructor(
         }
     }
 
-    val onModsReloaded: StateFlow<List<Mod>?>
-        get() = modLoader.onModsReloaded
+    val mods: StateFlow<List<Mod>?>
+        get() = modLoader.mods
+    val areModsLoading = modLoader.isLoading
 
     /**
      * Reads all mods from /mods, staging, and archive folders.
-     * @param noCache When true, will never return cached information.
      */
-    fun getMods(noCache: Boolean): List<Mod> = modLoader.getMods(noCache = noCache)
+    suspend fun reload() = modLoader.reload()
 
     suspend fun installFromUnknownSource(
         inputFile: Path,

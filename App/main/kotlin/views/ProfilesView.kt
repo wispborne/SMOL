@@ -58,7 +58,7 @@ fun AppState.ProfilesView(
     }) {
         Box(modifier.padding(16.dp)) {
             var modVariants by remember {
-                mutableStateOf(SL.access.getMods(noCache = false).flatMap { it.variants }.associateBy { it.smolId })
+                mutableStateOf(SL.access.mods.value?.flatMap { it.variants }?.associateBy { it.smolId } ?: emptyMap())
             }
 
             LazyVerticalGrid(
@@ -207,7 +207,7 @@ fun AppState.ProfilesView(
                                                         withContext(Dispatchers.Main) {
                                                             userProfile = SL.userManager.getUserProfile()
                                                             modVariants =
-                                                                SL.access.getMods(noCache = false)
+                                                                (SL.access.mods.value ?: emptyList())
                                                                     .flatMap { it.variants }
                                                                     .associateBy { it.smolId }
                                                         }

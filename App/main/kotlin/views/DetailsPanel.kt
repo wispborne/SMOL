@@ -38,7 +38,7 @@ fun BoxScope.detailsPanel(
     selectedRow: ModRow?
 ) {
     val row = selectedRow ?: return
-    val allMods = SL.access.getMods(noCache = false)
+    val allMods = SL.access.mods.value ?: emptyList()
 
     Box(
         modifier.width(400.dp)

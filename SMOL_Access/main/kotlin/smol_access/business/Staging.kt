@@ -163,7 +163,7 @@ internal class Staging(
         if (mod.stagingInfo == null || !mod.stagingInfo!!.folder.exists()) {
             stageInternal(mod)
             // Then reload, to get the new staging path.
-            mod = modLoader.getMods(noCache = true)
+            mod = (modLoader.reload() ?: emptyList())
                 .asSequence()
                 .flatMap { it.variants }
                 .firstOrNull { modV -> modV.smolId == modToEnable.smolId }
