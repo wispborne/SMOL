@@ -321,19 +321,23 @@ private fun AppState.refreshButton(
     isRefreshingMods: Boolean,
     onRefreshingMods: (Boolean) -> Unit
 ) {
-    SmolButton(
-        onClick = {
-            composableScope.launch {
-                reloadMods(forceRefresh = true, isRefreshingMods, onRefreshingMods)
-            }
-        },
-        modifier = Modifier.padding(start = 16.dp)
+    TooltipArea(
+        tooltip = { SmolTooltipText(text = "Refresh modlist & VRAM impact") }
     ) {
-        Icon(
-            painter = painterResource("refresh.svg"),
-            contentDescription = "Refresh",
-            tint = SmolTheme.dimmedIconColor()
-        )
+        SmolButton(
+            onClick = {
+                composableScope.launch {
+                    reloadMods(forceRefresh = true, isRefreshingMods, onRefreshingMods)
+                }
+            },
+            modifier = Modifier.padding(start = 16.dp)
+        ) {
+            Icon(
+                painter = painterResource("refresh.svg"),
+                contentDescription = "Refresh",
+                tint = SmolTheme.dimmedIconColor()
+            )
+        }
     }
 }
 
