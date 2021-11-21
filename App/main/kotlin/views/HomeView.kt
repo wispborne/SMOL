@@ -107,40 +107,13 @@ fun AppState.homeView(
             TopAppBar(
                 modifier = Modifier.height(72.dp)
             ) {
-                var showVmParamsMenu by remember { mutableStateOf(false) }
                 launchButton()
-                SmolButton(
-                    onClick = { showVmParamsMenu = true },
-                    modifier = Modifier.padding(start = 16.dp),
-                    shape = SmolTheme.smolFullyClippedButtonShape()
-                ) {
-                    Text(text = "RAM")
-                }
-                vmParamsContextMenu(showVmParamsMenu) { showVmParamsMenu = it }
+                ramButton()
 
-//            SmolButton(
-//                onClick = {
-//                    showConfirmMigrateDialog = true
-//                },
-//                modifier = Modifier.padding(start = 16.dp)
-//            ) {
-//                Text("Migrate")
-//            }
-
-                SmolButton(
-                    onClick = {
-                        composableScope.launch {
-                            reloadMods(forceRefresh = true, isRefreshingMods, onRefreshingMods)
-                        }
-                    },
-                    modifier = Modifier.padding(start = 16.dp)
-                ) {
-                    Text("Refresh")
-                }
-
+                installModsButton(Modifier.padding(start = 16.dp))
+                refreshButton(composableScope, isRefreshingMods, onRefreshingMods)
                 profilesButton()
                 settingsButton()
-                installModsButton()
                 modBrowserButton()
                 Row(
                     modifier = Modifier
@@ -343,6 +316,28 @@ private fun AppState.modBrowserButton() {
 }
 
 @Composable
+private fun AppState.refreshButton(
+    composableScope: CoroutineScope,
+    isRefreshingMods: Boolean,
+    onRefreshingMods: (Boolean) -> Unit
+) {
+    SmolButton(
+        onClick = {
+            composableScope.launch {
+                reloadMods(forceRefresh = true, isRefreshingMods, onRefreshingMods)
+            }
+        },
+        modifier = Modifier.padding(start = 16.dp)
+    ) {
+        Icon(
+            painter = painterResource("refresh.svg"),
+            contentDescription = "Refresh",
+            tint = SmolTheme.dimmedIconColor()
+        )
+    }
+}
+
+@Composable
 private fun AppState.profilesButton() {
     SmolButton(
         onClick = { router.push(Screen.Profiles) },
@@ -379,7 +374,19 @@ private fun AppState.launchButton() {
 }
 
 @Composable
-private fun AppState.installModsButton() {
+private fun AppState.ramButton(modifier: Modifier = Modifier) {
+    var showVmParamsMenu by remember { mutableStateOf(false) }
+    SmolButton(
+        onClick = { showVmParamsMenu = true },
+        modifier = Modifier.padding(start = 16.dp)
+    ) {
+        Text(text = "RAM")
+    }
+    vmParamsContextMenu(showVmParamsMenu) { showVmParamsMenu = it }
+}
+
+@Composable
+private fun AppState.installModsButton(modifier: Modifier = Modifier) {
     TooltipArea(
         tooltip = { SmolTooltipText(text = "Install mod(s)") }
     ) {
@@ -404,8 +411,7 @@ private fun AppState.installModsButton() {
                         }
                 }
             },
-            modifier = Modifier.padding(start = 16.dp),
-            shape = SmolTheme.smolFullyClippedButtonShape()
+            modifier = modifier.padding(start = 16.dp)
         ) {
             Icon(
                 painter = painterResource("plus.svg"),
