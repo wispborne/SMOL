@@ -57,7 +57,6 @@ fun AppState.ModGridView(
     mods: SnapshotStateList<Mod?>
 ) {
     var selectedRow: ModRow? by remember { mutableStateOf(null) }
-    val state = rememberLazyListState()
     var modInDebugDialog: Mod? by remember { mutableStateOf(null) }
     val largestVramUsage = SL.vramChecker.cached?.values?.maxOf { it.bytesForMod }
 
@@ -99,6 +98,8 @@ fun AppState.ModGridView(
                 }
             }
             Box {
+                val state = rememberLazyListState()
+
                 LazyColumn(Modifier.fillMaxWidth()) {
                     mods
                         .filterNotNull()
@@ -277,12 +278,13 @@ fun AppState.ModGridView(
                         }
                 }
 
-                VerticalScrollbar(
-                    modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
-                    adapter = rememberScrollbarAdapter(
-                        scrollState = state
-                    )
-                )
+                // Bugged in Compose: java.lang.IllegalArgumentException: Index should be non-negative (-1)
+//                VerticalScrollbar(
+//                    modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+//                    adapter = rememberScrollbarAdapter(
+//                        scrollState = state
+//                    )
+//                )
             }
         }
 
