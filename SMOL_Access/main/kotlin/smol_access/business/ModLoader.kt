@@ -4,11 +4,11 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import org.tinylog.Logger
 import smol_access.config.AppConfig
 import smol_access.config.GamePath
 import smol_access.model.Mod
 import smol_access.model.ModVariant
+import timber.ktx.Timber
 import utilities.asList
 import utilities.toPathOrNull
 import utilities.trace
@@ -35,21 +35,21 @@ class ModLoader internal constructor(
     @OptIn(ExperimentalStdlibApi::class)
     suspend fun reload(): List<Mod>? {
         if (isLoading.value) {
-            Logger.info { "Mod reload requested, but declined; already reloading." }
+            Timber.i { "Mod reload requested, but declined; already reloading." }
             return mods.value
         }
 
-        Logger.info { "Refreshing mod info files." }
+        Timber.i { "Refreshing mod info files." }
 
         return try {
             isReloadingMutable.emit(true)
-            trace({ _, time -> Logger.info { "Time to load and merge all mod info files: ${time}ms" } }) {
+            trace({ _, time -> Timber.i { "Time to load and merge all mod info files: ${time}ms" } }) {
                 val enabledModIds = gameEnabledMods.getEnabledMods().enabledMods
 
                 // Get items in archives
                 val archivedMods = archives.getArchivesManifest()?.manifestItems?.values
                     ?.map { archivedItem ->
-                        Logger.trace { "Archive: ${archivedItem.modInfo.name}" }
+                        Timber.v { "Archive: ${archivedItem.modInfo.name}" }
 
                         val modVariant = ModVariant(
                             modInfo = archivedItem.modInfo,
@@ -64,7 +64,7 @@ class ModLoader internal constructor(
                             variants = listOf(modVariant)
                         )
                     }
-                    ?.onEach { Logger.trace { "Found archived mod $it" } }
+                    ?.onEach { Timber.v { "Found archived mod $it" } }
                     ?: emptyList()
 
                 // Get items in staging
@@ -91,7 +91,7 @@ class ModLoader internal constructor(
                             )
                         }
                         .toList()
-                        .onEach { Logger.trace { "Found staged/installed mod $it" } }
+                        .onEach { Timber.v { "Found staged/installed mod $it" } }
 
                 // Get items in /mods folder
                 val modsFolder = gamePath.getModsPath()
@@ -116,7 +116,7 @@ class ModLoader internal constructor(
                             )
                         }
                         .toList()
-                        .onEach { Logger.trace { "Found /mods mod $it" } }
+                        .onEach { Timber.v { "Found /mods mod $it" } }
 
                 // Merge all items together, replacing nulls with data.
                 val result = (archivedMods + stagedMods + modsFolderMods)
@@ -150,12 +150,12 @@ class ModLoader internal constructor(
                     .onEach { mod -> mod.variants.forEach { it.mod = mod } }
                     .toList()
                     .onEach {
-                        Logger.debug { "Loaded mod: $it" }
+                        Timber.d { "Loaded mod: $it" }
 
                         val variantsInModsFolder = it.variants.filter { variant -> variant.modsFolderInfo != null }
 
                         if (variantsInModsFolder.size > 1) {
-                            Logger.warn {
+                            Timber.w {
                                 "${it.id} has multiple variants in /mods: ${
                                     variantsInModsFolder.joinToString {
                                         it.modsFolderInfo!!.folder.absolutePathString()

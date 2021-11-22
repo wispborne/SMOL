@@ -1,7 +1,6 @@
 package smol_access
 
 import kotlinx.coroutines.flow.StateFlow
-import org.tinylog.Logger
 import smol_access.business.Archives
 import smol_access.business.ModLoader
 import smol_access.business.Staging
@@ -10,6 +9,7 @@ import smol_access.config.Platform
 import smol_access.model.Mod
 import smol_access.model.ModVariant
 import smol_access.util.IOLock
+import timber.ktx.Timber
 import utilities.mkdirsIfNotExist
 import utilities.toFileOrNull
 import utilities.toPathOrNull
@@ -40,15 +40,15 @@ class Access internal constructor(
         }
 
         SL.archives.getArchivesManifest()
-            .also { Logger.debug { "Archives folder manifest: ${it?.manifestItems?.keys?.joinToString()}" } }
+            .also { Timber.d { "Archives folder manifest: ${it?.manifestItems?.keys?.joinToString()}" } }
 
         if (uiConfig.stagingPath.toFileOrNull()?.exists() != true) {
             uiConfig.stagingPath = STAGING_FOLDER_DEFAULT.absolutePath
         }
 
-        Logger.debug { "Game: ${uiConfig.gamePath}" }
-        Logger.debug { "Archives: ${uiConfig.archivesPath}" }
-        Logger.debug { "Staging: ${uiConfig.stagingPath}" }
+        Timber.d { "Game: ${uiConfig.gamePath}" }
+        Timber.d { "Archives: ${uiConfig.archivesPath}" }
+        Timber.d { "Staging: ${uiConfig.stagingPath}" }
     }
 
     /**
@@ -71,7 +71,7 @@ class Access internal constructor(
 
                 config.stagingPath = newPath
             }
-                .onFailure { Logger.error(it) }
+                .onFailure { Timber.e(it) }
                 .getOrThrow()
         }
     }
@@ -99,7 +99,7 @@ class Access internal constructor(
         try {
             if (modVariant?.mod != null && mod != modVariant.mod) {
                 val err = "Variant and mod were different! ${mod.id}, ${modVariant.smolId}"
-                Logger.info { err }
+                Timber.i { err }
                 return Result.failure(RuntimeException(err))
             }
 
@@ -107,7 +107,7 @@ class Access internal constructor(
                 // Check if this is the only active variant.
                 // If there are somehow more than one active, the rest of the method will clean that up.
                 if (mod.variants.count { mod.isEnabled(it) } <= 1) {
-                    Logger.info { "Variant is already active, nothing to do! $modVariant" }
+                    Timber.i { "Variant is already active, nothing to do! $modVariant" }
                     return Result.success(Unit)
                 }
             }
@@ -115,7 +115,7 @@ class Access internal constructor(
             val activeVariants = mod.variants.filter { mod.isEnabled(it) }
 
             if (modVariant == null && activeVariants.none()) {
-                Logger.info { "No variants active, nothing to do! $mod" }
+                Timber.i { "No variants active, nothing to do! $mod" }
                 return Result.success(Unit)
             }
 

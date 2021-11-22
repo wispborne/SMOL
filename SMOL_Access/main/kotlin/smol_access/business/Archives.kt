@@ -12,7 +12,6 @@ import net.sf.sevenzipjbinding.impl.RandomAccessFileOutStream
 import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem
 import net.sf.sevenzipjbinding.util.ByteArrayStream
 import org.apache.commons.codec.digest.DigestUtils
-import org.tinylog.Logger
 import smol_access.MOD_INFO_FILE
 import smol_access.VERSION_CHECKER_FILE_PATTERN
 import smol_access.config.AppConfig
@@ -24,6 +23,7 @@ import smol_access.model.VersionCheckerInfo
 import smol_access.util.ArchiveExtractToFolderCallback
 import smol_access.util.ArchiveExtractToMemoryCallback
 import smol_access.util.IOLock
+import timber.ktx.Timber
 import utilities.*
 import java.io.File
 import java.io.FileWriter
@@ -55,7 +55,7 @@ class Archives internal constructor(
 //            moshi.adapter<ArchivesManifest>().fromJson(File(config.archivesPath!!, ARCHIVES_FILENAME).readText())
             gson.fromJson<ArchivesManifest>(File(config.archivesPath!!, ARCHIVE_MANIFEST_FILENAME).readText())
         }
-            .onFailure { Logger.warn(it) }
+            .onFailure { Timber.w(it) }
             .recover {
                 IOLock.write {
                     // Make a backup of the file before we overwrite it with a blank one.
@@ -65,7 +65,7 @@ class Archives internal constructor(
                             val backupManifestFile = file.parentFile.resolve(file.name + ".bak")
                             if (!backupManifestFile.exists()) file.copyTo(backupManifestFile, overwrite = false)
                         }
-                            .onFailure { Logger.error(it) }
+                            .onFailure { Timber.e(it) }
                     }
                 }
 
@@ -95,11 +95,11 @@ class Archives internal constructor(
                         target = destinationFolder.resolve(modFolder.name).toFile(),
                         overwrite = true,
                         onError = { _, ioException ->
-                            Logger.error(ioException)
+                            Timber.e(ioException)
                             throw ioException
                         }
                     )
-                }.onFailure { Logger.warn(it); throw it }
+                }.onFailure { Timber.w(it); throw it }
             }
         }
 
@@ -113,7 +113,7 @@ class Archives internal constructor(
                     return
                 } else {
                     RuntimeException("Input was $MOD_INFO_FILE but there was no parent folder?!")
-                        .also { Logger.warn(it) }
+                        .also { Timber.w(it) }
                         .also { throw it }
                 }
             } else {
@@ -132,7 +132,7 @@ class Archives internal constructor(
                             )
                         }
                             .onFailure {
-                                Logger.warn(it)
+                                Timber.w(it)
                                 throw it
                             }
 //                        addToManifest(modInfo = modInfo, archivePath = archivePath)
@@ -160,7 +160,7 @@ class Archives internal constructor(
                     return
                 } else {
                     val ex = RuntimeException("Archive did not have a valid $MOD_INFO_FILE inside!")
-                    Logger.warn(ex)
+                    Timber.w(ex)
                     throw ex
                 }
             }
@@ -186,7 +186,7 @@ class Archives internal constructor(
 
                         val dataFiles =
                             trace({ _, time ->
-                                Logger.debug {
+                                Timber.d {
                                     "Time to extract mod_info.json ${
                                         if (versionCheckerFile != null) "& vercheck file " else ""
                                     }from ${inputArchiveFile.absolutePathString()}: ${time}ms."
@@ -226,7 +226,7 @@ class Archives internal constructor(
             }
         }
             .onFailure {
-                Logger.warn(it) { "Unable to read ${inputArchiveFile.absolutePathString()}" }
+                Timber.w(it) { "Unable to read ${inputArchiveFile.absolutePathString()}" }
                 throw it
             }
             .getOrElse { null }
@@ -271,7 +271,7 @@ class Archives internal constructor(
             }
         }
             .onFailure {
-                Logger.error(it)
+                Timber.e(it)
                 throw it
             }
     }
@@ -354,7 +354,7 @@ class Archives internal constructor(
 
                     if (mods.none()) {
                         val runtimeException = RuntimeException("No mods found in ${modFolder.absolutePathString()}.")
-                        Logger.warn(runtimeException)
+                        Timber.w(runtimeException)
                         throw runtimeException
                     }
 
@@ -364,7 +364,7 @@ class Archives internal constructor(
                             val modInfo = dataFiles.modInfo
                             val key = createManifestItemKey(modInfo)
                             val doesArchiveAlreadyExist = doesArchiveExistForKey(manifest, key)
-                            Logger.debug { "[${modInfo.id}, ${modInfo.version}] archive already exists? $doesArchiveAlreadyExist" }
+                            Timber.d { "[${modInfo.id}, ${modInfo.version}] archive already exists? $doesArchiveAlreadyExist" }
                             !doesArchiveAlreadyExist
                         }
                         .forEach { (modFolder, dataFiles) ->
@@ -383,7 +383,7 @@ class Archives internal constructor(
                                 SevenZip.openOutArchive7z().use { archive7z ->
                                     fun cancelProcess() {
                                         if (!wasCanceled) {
-                                            Logger.warn { "Canceled archive process." }
+                                            Timber.w { "Canceled archive process." }
                                             wasCanceled = true
                                             archive7z.close()
 
@@ -420,7 +420,7 @@ class Archives internal constructor(
                                                 val progressMessage =
                                                     "[$percentComplete%] Moving '${modInfo.id} v${modInfo.version}' to archives. File: $currentFilepath"
                                                 trySend(progressMessage)
-                                                Logger.debug { progressMessage }
+                                                Timber.d { progressMessage }
                                             }
 
                                             override fun setOperationResult(wasSuccessful: Boolean) {}
@@ -464,7 +464,7 @@ class Archives internal constructor(
                     close()
                 }
             }
-                .onFailure { Logger.warn(it); throw it }
+                .onFailure { Timber.w(it); throw it }
             refreshManifest()
         }
             .onEach { archiveMovementStatusFlow.value = it }
@@ -489,7 +489,7 @@ class Archives internal constructor(
                         // Swallow exception, it has already been logged.
                         kotlin.runCatching {
                             trace({ pair, time ->
-                                Logger.debug { "Time to get mod_info.json from ${pair?.second?.modInfo?.id}, ${pair?.second?.modInfo?.version}: ${time}ms." }
+                                Timber.d { "Time to get mod_info.json from ${pair?.second?.modInfo?.id}, ${pair?.second?.modInfo?.version}: ${time}ms." }
                             }) {
                                 val hashCode = DigestUtils.sha256Hex(archivePath.pathString)
 
@@ -497,7 +497,7 @@ class Archives internal constructor(
                                     archivesManifest?.manifestItems?.entries?.firstOrNull { it.value.sha256HexCodeOfArchiveFile == hashCode }
 
                                 if (existingManifestItem != null) {
-                                    Logger.debug { "Skipping search for mod_info.json in $archivePath because the file hashcode is present in the manifest alreadt." }
+                                    Timber.d { "Skipping search for mod_info.json in $archivePath because the file hashcode is present in the manifest alreadt." }
                                     archivePath to DataFiles(
                                         modInfo = existingManifestItem.value.modInfo,
                                         versionCheckerInfo = existingManifestItem.value.versionCheckerInfo
@@ -525,7 +525,7 @@ class Archives internal constructor(
                     )
                 })
         }
-        Logger.info { "Time to refresh archive manifest: ${System.currentTimeMillis() - startTime}ms (${modInfos.count()} items)." }
+        Timber.i { "Time to refresh archive manifest: ${System.currentTimeMillis() - startTime}ms (${modInfos.count()} items)." }
     }
 
     private fun updateManifest(mutator: (archivesManifest: ArchivesManifest) -> ArchivesManifest) {
@@ -534,7 +534,7 @@ class Archives internal constructor(
             mutator(originalManifest)
                 .run {
                     if (originalManifest == this) {
-                        Logger.info { "No manifest change, not updating file." }
+                        Timber.i { "No manifest change, not updating file." }
                         return@run
                     }
 
@@ -543,7 +543,7 @@ class Archives internal constructor(
                         FileWriter(file.toFile()).use { writer ->
                             gson.toJson(this, writer)
                         }
-                        Logger.info {
+                        Timber.i {
                             "Updated manifest at ${file.absolutePathString()} from ${originalManifest.manifestItems.count()} " +
                                     "to ${this.manifestItems.count()} items."
                         }
@@ -583,7 +583,7 @@ class Archives internal constructor(
                 config.archivesPath = newPath
             }
         }
-            .onFailure { Logger.error(it) }
+            .onFailure { Timber.e(it) }
             .getOrThrow()
     }
 

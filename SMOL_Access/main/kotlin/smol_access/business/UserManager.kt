@@ -3,10 +3,10 @@ package smol_access.business
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import org.tinylog.kotlin.Logger
 import smol_access.Access
 import smol_access.config.AppConfig
 import smol_access.model.UserProfile
+import timber.ktx.Timber
 import utilities.diff
 
 class UserManager internal constructor(
@@ -65,7 +65,7 @@ class UserManager internal constructor(
     fun updateUserProfile(mutator: (oldProfile: UserProfile) -> UserProfile): UserProfile {
         val newProfile = mutator(getUserProfile())
         appConfig.userProfile = newProfile
-        Logger.debug { "Updated active profile ${newProfile.username} to $newProfile" }
+        Timber.d { "Updated active profile ${newProfile.username} to $newProfile" }
         return newProfile
     }
 
@@ -83,7 +83,7 @@ class UserManager internal constructor(
                 enabledModVariants = emptyList()
             )
             userProfile.copy(modProfiles = userProfile.modProfiles + newModProfile)
-                .also { Logger.debug { "Created mod profile $newModProfile" } }
+                .also { Timber.d { "Created mod profile $newModProfile" } }
         }
     }
 
@@ -95,7 +95,7 @@ class UserManager internal constructor(
                 throw RuntimeException("Profile $modProfileId not found.")
             } else {
                 return@updateUserProfile oldProfile.copy(modProfiles = oldProfile.modProfiles.filterNot { it.id == modProfileId })
-                    .also { Logger.debug { "Removed mod profile $profileToRemove" } }
+                    .also { Timber.d { "Removed mod profile $profileToRemove" } }
             }
         }
     }
@@ -119,7 +119,7 @@ class UserManager internal constructor(
                         .also {
                             if (it == null) {
                                 // Just log as debug, not an issue if we can't disable something that doesn't exist anyway.
-                                Logger.debug { "Cannot disable variant $varToDisable, as it cannot be found." }
+                                Timber.d { "Cannot disable variant $varToDisable, as it cannot be found." }
                             }
                         }
                 }
@@ -132,7 +132,7 @@ class UserManager internal constructor(
                     allKnownVariants.firstOrNull { knownVar -> knownVar.smolId == varToEnable.smolVariantId }
                         .also {
                             if (it == null) {
-                                Logger.error { "Cannot enable variant $varToEnable, as it cannot be found." }
+                                Timber.e { "Cannot enable variant $varToEnable, as it cannot be found." }
                             }
                         }
                 }
@@ -141,7 +141,7 @@ class UserManager internal constructor(
                 }
 
             updateUserProfile { it.copy(activeModProfileId = newModProfileId) }
-            Logger.debug { "Changed mod profile to $newModProfile" }
+            Timber.d { "Changed mod profile to $newModProfile" }
         } finally {
             isModProfileSwitching = false
         }

@@ -3,8 +3,8 @@ package smol_access.business
 import smol_access.config.GamePath
 import smol_access.config.Platform
 import smol_access.model.Vmparams
-import org.tinylog.Logger
 import smol_access.util.IOLock
+import timber.ktx.Timber
 import kotlin.io.path.*
 
 class VmParamsManager(
@@ -41,7 +41,7 @@ class VmParamsManager(
             path ?: return@write
 
             if (backupPath == null) {
-                Logger.error { "Backup path was null!" }
+                Timber.e { "Backup path was null!" }
                 return@write
             }
 
@@ -51,7 +51,7 @@ class VmParamsManager(
             }
 
             if (backupPath.notExists()) {
-                Logger.error { "No backup file ($backupPath), aborting write of $path!" }
+                Timber.e { "No backup file ($backupPath), aborting write of $path!" }
                 return@read
             }
 

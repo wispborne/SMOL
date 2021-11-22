@@ -1,16 +1,16 @@
 package smol_access.business
 
-import smol_access.MOD_INFO_FILE
-import smol_access.VERSION_CHECKER_CSV_PATH
 import com.google.gson.Gson
 import com.squareup.moshi.Moshi
-import smol_access.model.ModInfo
-import smol_access.model.VersionCheckerInfo
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import org.hjson.JsonValue
-import org.tinylog.Logger
+import smol_access.MOD_INFO_FILE
+import smol_access.VERSION_CHECKER_CSV_PATH
+import smol_access.model.ModInfo
+import smol_access.model.VersionCheckerInfo
 import smol_access.util.IOLock
+import timber.ktx.Timber
 import utilities.walk
 import java.nio.file.FileVisitOption
 import java.nio.file.Path
@@ -32,7 +32,7 @@ class ModInfoLoader(
                 .mapNotNull { modFolder ->
                     var modInfo: ModInfo? = null
 
-                    Logger.debug {
+                    Timber.d {
                         "Looking for mod_info.json and ${
                             if (desiredFiles.isEmpty())
                                 "nothing else"
@@ -42,7 +42,7 @@ class ModInfoLoader(
                     modFolder.walk(maxDepth = 1, FileVisitOption.FOLLOW_LINKS)
                         .filter { it != folderWithMods }
                         .forEach { file ->
-                            Logger.trace { "  File: ${file.name}" }
+                            Timber.v { "  File: ${file.name}" }
 
                             if (modInfo == null && file.name.equals(MOD_INFO_FILE)) {
                                 modInfo = deserializeModInfoFile(file.readText())
@@ -77,7 +77,7 @@ class ModInfoLoader(
                                         }
                                     }
                                 }
-                                    .onFailure { Logger.warn(it) }
+                                    .onFailure { Timber.w(it) }
                                     .getOrNull()
                             }
                         }
@@ -92,12 +92,12 @@ class ModInfoLoader(
         try {
             val json = JsonValue.readHjson(modInfoJson)
             val jsonStr = json.toString()
-                .also { Logger.trace { it } }
+                .also { Timber.v { it } }
 
             return gson.fromJson(jsonStr, ModInfo::class.java)
 //            return moshi.adapter<ModInfo>().fromJson(jsonStr)!!
         } catch (ex: Exception) {
-            Logger.warn(ex) { "Error reading mod_info.json: $modInfoJson" }
+            Timber.w(ex) { "Error reading mod_info.json: $modInfoJson" }
             throw ex
         }
     }
@@ -107,11 +107,11 @@ class ModInfoLoader(
         try {
             val json = JsonValue.readHjson(vcJson)
             val jsonStr = json.toString()
-                .also { Logger.trace { it } }
+                .also { Timber.v { it } }
 
             return gson.fromJson(jsonStr, VersionCheckerInfo::class.java)
         } catch (ex: Exception) {
-            Logger.warn(ex) { "Error reading version checker file: $vcJson" }
+            Timber.w(ex) { "Error reading version checker file: $vcJson" }
             throw ex
         }
     }

@@ -13,7 +13,10 @@ repositories {
 dependencies {
     implementation(kotlin("stdlib"))
     implementation(project(":Utilities"))
-    implementation(fileTree("libs") { include("**/*.jar") })
+    implementation(fileTree("libs") {
+        include("**/*.jar")
+        exclude("TinyLog")
+    })
 
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.5.21")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2-native-mt")

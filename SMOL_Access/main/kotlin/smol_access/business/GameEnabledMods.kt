@@ -3,11 +3,11 @@ package smol_access.business
 import com.github.salomonbrys.kotson.fromJson
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
+import org.hjson.JsonObject
 import smol_access.config.GamePath
 import smol_access.model.ModInfo
-import org.hjson.JsonObject
-import org.tinylog.kotlin.Logger
 import smol_access.util.IOLock
+import timber.ktx.Timber
 import java.nio.file.Path
 import kotlin.io.path.copyTo
 import kotlin.io.path.exists
@@ -38,7 +38,7 @@ class GameEnabledMods(
                 }
             }
         }
-            .onFailure { Logger.warn(it) }
+            .onFailure { Timber.w(it) }
             .getOrThrow()
 
     fun areModsEnabled(modInfos: List<ModInfo>) =
@@ -60,7 +60,7 @@ class GameEnabledMods(
                     .toList()
             )
         }
-        Logger.info { "Enabled mod for game: $modId" }
+        Timber.i { "Enabled mod for game: $modId" }
     }
 
     fun disable(modId: String) {
@@ -69,13 +69,13 @@ class GameEnabledMods(
                 .apply {
                     // If nothing to remove, bail. No reason to write file again.
                     if (!remove(modId)) {
-                        Logger.debug { "Mod was already disabled. $modId" }
+                        Timber.d { "Mod was already disabled. $modId" }
                         return@updateEnabledModsFile null
                     }
                 }
             )
         }
-        Logger.info { "Disabled mod for game: $modId" }
+        Timber.i { "Disabled mod for game: $modId" }
     }
 
     private fun updateEnabledModsFile(mutator: (EnabledMods) -> EnabledMods?) {
@@ -91,7 +91,7 @@ class GameEnabledMods(
                 }
             }
         }
-            .onFailure { Logger.error(it) }
+            .onFailure { Timber.e(it) }
             .getOrThrow()
     }
 

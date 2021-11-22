@@ -15,6 +15,8 @@ import org.tinylog.Logger
 import org.tinylog.configuration.Configuration
 import smol_access.APP_NAME
 import smol_access.SL
+import timber.LogLevel
+import timber.Timber
 import util.SmolPair
 import util.SmolWindowState
 import util.currentPlatform
@@ -47,8 +49,23 @@ fun main() = application {
         )
 
         Thread.setDefaultUncaughtExceptionHandler { _, ex ->
-            Logger.error(ex)
+            Timber.e(ex)
         }
+
+        Timber.plant(object : Timber.Tree() {
+            override fun log(priority: LogLevel, tag: String?, message: String, t: Throwable?) {
+                val messageMaker = { "${if (tag != null) "$tag/ " else ""}$message" }
+                when (priority) {
+                    LogLevel.VERBOSE -> Logger.trace(t, messageMaker)
+                    LogLevel.DEBUG -> Logger.debug(t, messageMaker)
+                    LogLevel.INFO -> Logger.info(t, messageMaker)
+                    LogLevel.WARN -> Logger.warn(t, messageMaker)
+                    LogLevel.ERROR -> Logger.error(t, messageMaker)
+                    LogLevel.ASSERT -> Logger.error(t, messageMaker)
+                }
+            }
+
+        })
     }
         .onFailure { println(it) }
 

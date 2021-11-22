@@ -10,11 +10,11 @@ import io.ktor.client.features.logging.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import org.hjson.JsonValue
-import org.tinylog.kotlin.Logger
 import smol_access.config.VersionCheckerCache
 import smol_access.model.Mod
 import smol_access.model.ModId
 import smol_access.model.VersionCheckerInfo
+import timber.ktx.Timber
 import utilities.parallelMap
 import utilities.trace
 
@@ -29,7 +29,7 @@ class VersionChecker(private val gson: Gson, private val versionCheckerCache: Ve
             this.followRedirects = true
         }.use { client ->
             val results =
-                trace({ _, millis -> Logger.info { "Version checked ${mods.count()} mods in ${millis}ms" } }) {
+                trace({ _, millis -> Timber.i { "Version checked ${mods.count()} mods in ${millis}ms" } }) {
                     mods
                         .distinctBy { it.id }
                         .mapNotNull { it.findHighestVersion }
@@ -45,20 +45,20 @@ class VersionChecker(private val gson: Gson, private val versionCheckerCache: Ve
                                     fun message(error: String?) =
                                         "Version check failed for ${modVariant.modInfo.name}: $error (url: ${modVariant.versionCheckerInfo?.masterVersionFile})"
                                     if (it is ClientRequestException) {
-                                        Logger.warn {
+                                        Timber.w {
                                             // API errors tend to include the entire webpage html in the error message,
                                             // so only show the first line.
                                             message(it.message.lines().firstOrNull())
                                         }
                                     } else {
-                                        Logger.warn(it) { message(it.message) }
+                                        Timber.w(it) { message(it.message) }
                                     }
                                 }
                                 .getOrNull()
                         }
                         .filterNotNull()
                         .onEach {
-                            Logger.debug {
+                            Timber.d {
                                 "Version checked ${it.first.findHighestVersion?.modInfo?.name}: " +
                                         "existing: ${it.first.findHighestVersion?.versionCheckerInfo?.modVersion}" +
                                         ", online: ${it.second}" +

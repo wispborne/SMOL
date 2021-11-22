@@ -8,7 +8,7 @@ package smol_access.business
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import org.tinylog.Logger
+import timber.ktx.Timber
 import java.nio.file.*
 import java.nio.file.StandardWatchEventKinds.*
 import java.nio.file.attribute.BasicFileAttributes
@@ -80,7 +80,7 @@ class KWatchChannel(
             Files.walkFileTree(path, object : SimpleFileVisitor<Path>() {
                 override fun preVisitDirectory(subPath: Path, attrs: BasicFileAttributes): FileVisitResult {
                     return if (ignorePatterns.any { ignorePattern -> subPath.toString().matches(ignorePattern) }) {
-                        Logger.info { "Ignored change to file ${subPath.fileName} as it matched one of ${ignorePatterns.joinToString { it.pattern }}" }
+                        Timber.i { "Ignored change to file ${subPath.fileName} as it matched one of ${ignorePatterns.joinToString { it.pattern }}" }
                         FileVisitResult.CONTINUE
                     } else {
                         registeredKeys += subPath.register(watchService, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE)

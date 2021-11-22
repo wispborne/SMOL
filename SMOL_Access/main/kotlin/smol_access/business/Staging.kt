@@ -4,9 +4,13 @@ import smol_access.config.AppConfig
 import smol_access.config.GamePath
 import smol_access.model.Mod
 import smol_access.model.ModVariant
-import org.tinylog.Logger
 import smol_access.util.IOLock
 import smol_access.util.ManualReloadTrigger
+import timber.Timber
+import timber.ktx.d
+import timber.ktx.i
+import timber.ktx.v
+import timber.ktx.w
 import utilities.deleteRecursively
 import utilities.toPathOrNull
 import utilities.walk
@@ -35,14 +39,14 @@ internal class Staging(
      * - Removes it from `enabled_mods.json`.
      */
     suspend fun disableInternal(modVariant: ModVariant): Result<Unit> {
-        Logger.info { "Disabling variant ${modVariant.smolId}" }
+        Timber.i { "Disabling variant ${modVariant.smolId}" }
         // If it's not staged, stage it (to the staging folder) (but it'll stay disabled)
         if (modVariant.stagingInfo == null) {
             val stageResult = stageInternal(modVariant)
 
             // If it isn't staged, stop here. Since it's not archived or staged, removing it will delete it entirely.
             if (stageResult.isFailure) {
-                Logger.warn(stageResult.exceptionOrNull()) { "Couldn't disable ${modVariant.smolId}, unable to stage." }
+                Timber.w(stageResult.exceptionOrNull()) { "Couldn't disable ${modVariant.smolId}, unable to stage." }
                 return stageResult
             }
         }
@@ -54,23 +58,23 @@ internal class Staging(
                 return result
             }
 
-            Logger.debug { "Disabling ${modVariant.smolId}: removed from /mods." }
+            Timber.d { "Disabling ${modVariant.smolId}: removed from /mods." }
         }
 
         if (modVariant.mod.isEnabledInGame) {
-            Logger.debug { "Disabling ${modVariant.smolId}: variant was enabled, disabling." }
+            Timber.d { "Disabling ${modVariant.smolId}: variant was enabled, disabling." }
             gameEnabledMods.disable(modVariant.modInfo.id)
         } else {
-            Logger.debug { "Disabling ${modVariant.smolId}: variant was not enabled." }
+            Timber.d { "Disabling ${modVariant.smolId}: variant was not enabled." }
         }
 
-        Logger.debug { "Disabling ${modVariant.smolId}: success." }
+        Timber.d { "Disabling ${modVariant.smolId}: success." }
         return Result.success((Unit))
     }
 
     suspend fun stageInternal(modVariant: ModVariant): Result<Unit> {
         if (modVariant.stagingInfo != null) {
-            Logger.debug { "Mod already staged! $modVariant" }
+            Timber.d { "Mod already staged! $modVariant" }
             return Result.success(Unit)
         }
 
@@ -92,7 +96,7 @@ internal class Staging(
                     if (linkFoldersResult.isFailure) {
                         return failLogging(linkFoldersResult.exceptionOrNull()?.message ?: "")
                     } else {
-                        Logger.debug { "Mod staged from the /mods folder: $modVariant" }
+                        Timber.d { "Mod staged from the /mods folder: $modVariant" }
                     }
                 } else {
                     return failLogging(it.message ?: "")
@@ -104,7 +108,7 @@ internal class Staging(
 
     suspend fun enableInternal(modVariant: ModVariant): Result<Unit> {
         if (modVariant.mod.isEnabled(modVariant)) {
-            Logger.info { "Already enabled!: $modVariant" }
+            Timber.i { "Already enabled!: $modVariant" }
             return Result.success(Unit)
         }
 
@@ -115,7 +119,7 @@ internal class Staging(
                 return result
             }
 
-            Logger.info { "Enabled mod for SMOL: $modVariant" }
+            Timber.i { "Enabled mod for SMOL: $modVariant" }
         }
 
         if (!modVariant.mod.isEnabledInGame) {
@@ -128,12 +132,12 @@ internal class Staging(
     suspend fun unstageInternal(mod: Mod): Result<Unit> {
         mod.variants.forEach { modVariant ->
             if (modVariant.stagingInfo == null || !modVariant.stagingInfo.folder.exists()) {
-                Logger.debug { "Mod not staged! $modVariant" }
+                Timber.d { "Mod not staged! $modVariant" }
                 return@forEach
             }
 
             if (modVariant.archiveInfo == null) {
-                Logger.warn { "Cannot unstage mod not archived or else it'll be gone forever!: $modVariant" }
+                Timber.w { "Cannot unstage mod not archived or else it'll be gone forever!: $modVariant" }
                 return@forEach
             }
 
@@ -144,12 +148,12 @@ internal class Staging(
                 kotlin.runCatching {
                     modVariant.stagingInfo.folder.deleteRecursively()
                 }
-                    .onFailure { Logger.error(it) }
+                    .onFailure { Timber.e(it) }
                     .getOrThrow()
             }
         }
 
-        Logger.debug { "Mod unstaged: $mod" }
+        Timber.d { "Mod unstaged: $mod" }
         return Result.success(Unit)
     }
 
@@ -208,7 +212,7 @@ internal class Staging(
 
                 if (!sourceFile.exists()) {
                     failedFiles.add(sourceFile)
-                    Logger.warn { "Couldn't create ${linkMethod.name}, as source didn't exist. ${sourceFile.absolutePathString()}" }
+                    Timber.w { "Couldn't create ${linkMethod.name}, as source didn't exist. ${sourceFile.absolutePathString()}" }
                 }
 
 
@@ -223,34 +227,34 @@ internal class Staging(
                             when {
                                 sourceFile.isDirectory() -> destFile.createDirectories()
                                 sourceFile.isRegularFile() -> destFile.createLinkPointingTo(sourceFile)
-                                else -> Logger.warn { "Not sure what kind of file this is: $sourceFile" }
+                                else -> Timber.w { "Not sure what kind of file this is: $sourceFile" }
                             }
                         LinkMethod.Symlink -> destFile.createSymbolicLinkPointingTo(sourceFile)
                     }
                 }
                     .onFailure { ex ->
                         failedFiles.add(sourceFile)
-                        Logger.warn(ex) {
+                        Timber.w(ex) {
                             "Error creating ${linkMethod.name}.\n" +
                                     "      Source: ${sourceFile.absolutePathString()}\n" +
                                     "      Dest: ${destFile.absolutePathString()}"
                         }
                         if (linkMethod == LinkMethod.HardLink && ex is AccessDeniedException) {
-                            Logger.warn { "Remember that hard links cannot cross disk partitions." }
+                            Timber.w { "Remember that hard links cannot cross disk partitions." }
                         }
                     }
                     .onSuccess {
                         succeededFiles.add(sourceFile)
-                        Logger.trace { "Created ${linkMethod.name} at ${destFile.absolutePathString()}" }
+                        Timber.v { "Created ${linkMethod.name} at ${destFile.absolutePathString()}" }
                     }
                     .getOrThrow()
             }
 
             if (failedFiles.any()) {
-                Logger.warn { "Failed to create links/folders for ${failedFiles.count()} files in ${destFolder.absolutePathString()}." }
+                Timber.w { "Failed to create links/folders for ${failedFiles.count()} files in ${destFolder.absolutePathString()}." }
             }
 
-            Logger.info { "Created links/folders for ${succeededFiles.count()} files in ${destFolder.absolutePathString()}." }
+            Timber.i { "Created links/folders for ${succeededFiles.count()} files in ${destFolder.absolutePathString()}." }
         }
 
         return Result.success(Unit)
@@ -261,14 +265,14 @@ internal class Staging(
      */
     private fun removeFromModsFolder(modVariant: ModVariant): Result<Unit> {
         if (modVariant.modsFolderInfo == null) {
-            Logger.warn { "Not found in /mods folder: ${modVariant.smolId}." }
+            Timber.w { "Not found in /mods folder: ${modVariant.smolId}." }
             return Result.success(Unit)
         }
 
         val modsFolderInfo = modVariant.modsFolderInfo
 
         if (!modsFolderInfo.folder.exists()) {
-            Logger.warn { "Nothing to remove. Folder doesn't exist in /mods. $modVariant" }
+            Timber.w { "Nothing to remove. Folder doesn't exist in /mods. $modVariant" }
             return Result.success(Unit)
         }
 
@@ -277,11 +281,11 @@ internal class Staging(
                 modsFolderInfo.folder.deleteRecursively()
             }
                 .recover {
-                    Logger.warn(it) { "Error deleting ${modsFolderInfo.folder.absolutePathString()}. Marking for deletion on exit." }
+                    Timber.w(it) { "Error deleting ${modsFolderInfo.folder.absolutePathString()}. Marking for deletion on exit." }
                     modsFolderInfo.folder.toFile().deleteOnExit()
                 }
                 .onFailure {
-                    Logger.error(it)
+                    Timber.e(it)
                     return Result.failure(it)
                 }
                 .getOrThrow()
@@ -292,7 +296,7 @@ internal class Staging(
 
     @Suppress("NOTHING_TO_INLINE")
     private inline fun failLogging(error: String): Result<Unit> {
-        Logger.warn { error }
+        Timber.w { error }
         return Result.failure(RuntimeException(error))
     }
 }

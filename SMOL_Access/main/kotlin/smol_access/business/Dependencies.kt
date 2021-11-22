@@ -3,7 +3,7 @@ package smol_access.business
 import smol_access.model.Dependency
 import smol_access.model.Mod
 import smol_access.model.ModVariant
-import org.tinylog.Logger
+import timber.ktx.Timber
 
 
 fun ModVariant.findDependencies(mods: List<Mod>): List<Pair<Dependency, Mod?>> =
@@ -46,7 +46,7 @@ fun ModVariant.findDependencyStates(mods: List<Mod>): List<DependencyState> =
                         val validButDisabledDependency = variantsMeetingVersionReq
                             .maxByOrNull { it.modInfo.version }
                         if (validButDisabledDependency == null) {
-                            Logger.warn { "Unexpected scenario finding dependency for mod ${mod.id} with dependency: $dependency." }
+                            Timber.w { "Unexpected scenario finding dependency for mod ${mod.id} with dependency: $dependency." }
                             smol_access.business.DependencyState.Missing(dependency, foundDependencyMod)
                         } else {
                             smol_access.business.DependencyState.Disabled(dependency, validButDisabledDependency)
@@ -57,9 +57,9 @@ fun ModVariant.findDependencyStates(mods: List<Mod>): List<DependencyState> =
         }
         .onEach {
             when (it) {
-                is DependencyState.Disabled -> Logger.debug { "Dependency disabled: $it" }
-                is DependencyState.Enabled -> Logger.trace { "Dependency enabled: $it" }
-                is DependencyState.Missing -> Logger.debug { "Dependency missing: $it" }
+                is DependencyState.Disabled -> Timber.d { "Dependency disabled: $it" }
+                is DependencyState.Enabled -> Timber.v { "Dependency enabled: $it" }
+                is DependencyState.Missing -> Timber.d { "Dependency missing: $it" }
             }
         }
 

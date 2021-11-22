@@ -2,12 +2,12 @@ package smol_access.business
 
 import GraphicsLibConfig
 import VramChecker
-import org.tinylog.kotlin.Logger
 import smol_access.config.GamePath
 import smol_access.config.VramCheckerCache
 import smol_access.model.ModVariant
 import smol_access.model.SmolId
 import smol_access.model.Version
+import timber.ktx.Timber
 
 class VramCheckerManager(
     private val modLoader: ModLoader,
@@ -22,11 +22,11 @@ class VramCheckerManager(
 
     suspend fun getVramUsage(forceRefresh: Boolean): Map<SmolId, VramCheckerCache.Result> {
         if (!forceRefresh && cached != null) {
-            Logger.debug { "Not refreshing VRAM use. forceRefresh: $forceRefresh, cached: ${cached?.size ?: 0} entries" }
+            Timber.d { "Not refreshing VRAM use. forceRefresh: $forceRefresh, cached: ${cached?.size ?: 0} entries" }
             return cached!!
         }
 
-        Logger.debug { "Refreshing VRAM use. forceRefresh: $forceRefresh, cached: ${cached?.size ?: 0} entries" }
+        Timber.d { "Refreshing VRAM use. forceRefresh: $forceRefresh, cached: ${cached?.size ?: 0} entries" }
         val results = VramChecker(
             enabledModIds = modLoader.mods.value?.map { it.id },
             gameModsFolder = gamePath.getModsPath(),
@@ -40,8 +40,8 @@ class VramCheckerManager(
                 areGfxLibMaterialMapsEnabled = true,
                 areGfxLibSurfaceMapsEnabled = true
             ),
-            traceOut = { Logger.trace(it) },
-            debugOut = { Logger.debug(it) },
+            traceOut = { Timber.v { it } },
+            debugOut = { Timber.d { it } },
         )
             .check()
 

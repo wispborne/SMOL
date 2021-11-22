@@ -13,7 +13,10 @@ repositories {
 dependencies {
     implementation(kotlin("stdlib"))
     implementation(project(":Utilities"))
-    implementation(fileTree("libs") { include("**/*.jar") })
+    implementation(fileTree("libs") {
+        include("**/*.jar")
+        exclude("TinyLog")
+    })
 
 // https://mvnrepository.com/artifact/org.jsoup/jsoup
     implementation("org.jsoup:jsoup:1.14.3")
