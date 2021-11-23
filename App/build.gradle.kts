@@ -23,6 +23,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2-native-mt")
 
     implementation(fileTree("../libs") { include("**/*.jar") })
+//    implementation(fileTree("../CEF") { include("**/*.jar") })
     implementation(project(":SMOL_Access"))
     implementation(project(":VRAM_Checker"))
     implementation(project(":Utilities"))
@@ -77,7 +78,7 @@ tasks.test {
 
 compose.desktop {
     application {
-        mainClass = "MainKt"
+        mainClass = "smol_app.MainKt"
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Exe, TargetFormat.Deb)
             outputBaseDir.set(project.projectDir.resolve("dist"))

@@ -2,7 +2,7 @@
   <configuration default="false" name="SMOL [run]" type="GradleRunConfiguration" factoryName="Gradle">
     <ExternalSystemSettings>
       <option name="executionName" />
-      <option name="externalProjectPath" value="$PROJECT_DIR$" />
+      <option name="externalProjectPath" value="$PROJECT_DIR$/App" />
       <option name="externalSystemIdString" value="GRADLE" />
       <option name="scriptParameters" value="run" />
       <option name="taskDescriptions">
