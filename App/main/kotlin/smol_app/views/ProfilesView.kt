@@ -1,11 +1,10 @@
-package views
+package smol_app.views
 
-import AppState
-import SmolAlertDialog
-import SmolButton
-import SmolSecondaryButton
-import SmolTextField
-import SmolTheme
+import smol_app.AppState
+import smol_app.SmolAlertDialog
+import smol_app.SmolButton
+import smol_app.SmolSecondaryButton
+import smol_app.SmolTextField
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -30,7 +29,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import smol_access.SL
 import smol_access.model.UserProfile
-import util.ellipsizeAfter
+import smol_app.util.ellipsizeAfter
 
 @OptIn(
     ExperimentalMaterialApi::class,
@@ -80,11 +79,11 @@ fun AppState.ProfilesView(
                                 // Highlight active profile
                                 if (isActiveProfile) this.border(
                                     width = 4.dp,
-                                    color = SmolTheme.highlight(),
-                                    shape = SmolTheme.smolFullyClippedButtonShape()
+                                    color = smol_app.SmolTheme.highlight(),
+                                    shape = smol_app.SmolTheme.smolFullyClippedButtonShape()
                                 ) else this
                             },
-                        shape = SmolTheme.smolFullyClippedButtonShape()
+                        shape = smol_app.SmolTheme.smolFullyClippedButtonShape()
                     ) {
                         SelectionContainer {
                             Column(modifier = Modifier.padding(16.dp)) {
@@ -122,14 +121,14 @@ fun AppState.ProfilesView(
                                     Text(
                                         modifier = Modifier.align(Alignment.CenterVertically),
                                         text = "${modProfile.enabledModVariants.count()} mods",
-                                        fontFamily = SmolTheme.fireCodeFont,
+                                        fontFamily = smol_app.SmolTheme.fireCodeFont,
                                         fontSize = 12.sp,
                                     )
                                 }
                                 Box {
                                     Text(
                                         modifier = Modifier.fillMaxWidth().padding(top = 16.dp).align(Alignment.Center),
-                                        fontFamily = SmolTheme.fireCodeFont,
+                                        fontFamily = smol_app.SmolTheme.fireCodeFont,
                                         fontWeight = FontWeight.Light,
                                         fontSize = 14.sp,
                                         text = modProfile.enabledModVariants.joinToString(separator = "\n") {
@@ -138,7 +137,7 @@ fun AppState.ProfilesView(
                                         })
                                     Text(
                                         modifier = Modifier.padding(top = 16.dp).align(Alignment.CenterEnd),
-                                        fontFamily = SmolTheme.fireCodeFont,
+                                        fontFamily = smol_app.SmolTheme.fireCodeFont,
                                         fontWeight = FontWeight.Light,
                                         fontSize = 14.sp,
                                         text = modProfile.enabledModVariants.joinToString(separator = "\n") {
@@ -155,14 +154,14 @@ fun AppState.ProfilesView(
                                             modifier = Modifier
                                                 .padding(start = 8.dp)
                                                 .background(
-                                                    shape = SmolTheme.smolNormalButtonShape(),
+                                                    shape = smol_app.SmolTheme.smolNormalButtonShape(),
                                                     color = MaterialTheme.colors.primary
                                                 )
                                                 .run {
                                                     if (isEditMode) this.border(
                                                         width = 2.dp,
-                                                        color = SmolTheme.highlight(),
-                                                        shape = SmolTheme.smolNormalButtonShape()
+                                                        color = smol_app.SmolTheme.highlight(),
+                                                        shape = smol_app.SmolTheme.smolNormalButtonShape()
                                                     ) else this
                                                 }
                                                 .height(ButtonDefaults.MinHeight)
@@ -173,18 +172,18 @@ fun AppState.ProfilesView(
                                             Icon(
                                                 painter = painterResource("pencil-outline.svg"),
                                                 contentDescription = null,
-                                                tint = SmolTheme.dimmedIconColor()
+                                                tint = smol_app.SmolTheme.dimmedIconColor()
                                             )
                                         }
                                         IconButton(
                                             modifier = Modifier
                                                 .padding(start = 8.dp)
                                                 .background(
-                                                    shape = SmolTheme.smolNormalButtonShape(),
+                                                    shape = smol_app.SmolTheme.smolNormalButtonShape(),
                                                     color = MaterialTheme.colors.primary
                                                 )
-                                                .height(SmolTheme.iconHeightWidth())
-                                                .width(SmolTheme.iconHeightWidth()),
+                                                .height(smol_app.SmolTheme.iconHeightWidth())
+                                                .width(smol_app.SmolTheme.iconHeightWidth()),
                                             onClick = {
                                                 modProfileIdShowingDeleteConfirmation = modProfile.id
                                             }
@@ -192,7 +191,7 @@ fun AppState.ProfilesView(
                                             Icon(
                                                 painter = painterResource("trash-can-outline.svg"),
                                                 contentDescription = null,
-                                                tint = SmolTheme.dimmedIconColor()
+                                                tint = smol_app.SmolTheme.dimmedIconColor()
                                             )
                                         }
 
@@ -234,7 +233,7 @@ fun AppState.ProfilesView(
                 this.item {
                     var newProfileName by remember { mutableStateOf("") }
                     Card(
-                        shape = SmolTheme.smolFullyClippedButtonShape()
+                        shape = smol_app.SmolTheme.smolFullyClippedButtonShape()
                     ) {
                         Column(Modifier.padding(16.dp).fillMaxWidth()) {
                             SmolTextField(
@@ -258,8 +257,8 @@ fun AppState.ProfilesView(
                                 }) {
                                 Icon(
                                     modifier = Modifier
-                                        .height(SmolTheme.textIconHeightWidth())
-                                        .width(SmolTheme.textIconHeightWidth()),
+                                        .height(smol_app.SmolTheme.textIconHeightWidth())
+                                        .width(smol_app.SmolTheme.textIconHeightWidth()),
                                     painter = painterResource("plus.svg"),
                                     contentDescription = null
                                 )

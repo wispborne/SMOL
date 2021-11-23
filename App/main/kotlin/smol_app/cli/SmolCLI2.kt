@@ -1,4 +1,4 @@
-package cli
+package smol_app.cli
 
 import com.github.ajalt.clikt.output.TermUi
 import kotlinx.cli.*

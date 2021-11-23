@@ -1,11 +1,11 @@
-package views
+package smol_app.views
 
-import AppState
+import smol_app.AppState
 import smol_access.SL
-import SmolAlertDialog
-import SmolButton
-import SmolSecondaryButton
-import SmolTextField
+import smol_app.SmolAlertDialog
+import smol_app.SmolButton
+import smol_app.SmolSecondaryButton
+import smol_app.SmolTextField
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn

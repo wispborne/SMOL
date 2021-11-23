@@ -1,4 +1,4 @@
-package util
+package smol_app.util
 
 import me.xdrop.fuzzywuzzy.FuzzySearch
 import smol_access.model.Mod

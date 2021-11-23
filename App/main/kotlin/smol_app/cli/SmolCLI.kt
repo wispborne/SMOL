@@ -1,4 +1,4 @@
-package cli
+package smol_app.cli
 
 import GraphicsLibConfig
 import VramChecker

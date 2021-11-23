@@ -1,10 +1,9 @@
-package views
+package smol_app.views
 
-import AppState
-import SmolButton
-import SmolOutlinedTextField
-import SmolTheme
-import SmolTooltipText
+import smol_app.AppState
+import smol_app.SmolButton
+import smol_app.SmolOutlinedTextField
+import smol_app.SmolTooltipText
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.TooltipArea
@@ -21,11 +20,11 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import cli.SmolCLI
+import smol_app.cli.SmolCLI
 import com.arkivanov.decompose.push
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import navigation.Screen
+import smol_app.navigation.Screen
 import org.tinylog.Logger
 import smol_access.SL
 import smol_access.business.Archives
@@ -35,10 +34,9 @@ import smol_access.business.asWatchChannel
 import smol_access.config.Platform
 import smol_access.model.Mod
 import smol_access.util.IOLock
-import util.currentPlatform
-import util.filterMods
-import util.replaceAllUsingDifference
-import util.vmParamsManager
+import smol_app.util.filterMods
+import smol_app.util.replaceAllUsingDifference
+import smol_app.util.vmParamsManager
 import utilities.equalsAny
 import utilities.toFileOrNull
 import utilities.toPathOrNull
@@ -179,7 +177,7 @@ fun AppState.homeView(
                 }
 
 //            if (showConfirmMigrateDialog) {
-//                SmolAlertDialog(
+//                smol_app.SmolAlertDialog(
 //                    title = { Text("Warning") },
 //                    text = {
 //                        Text(
@@ -189,7 +187,7 @@ fun AppState.homeView(
 //                    },
 //                    onDismissRequest = { showConfirmMigrateDialog = false },
 //                    confirmButton = {
-//                        SmolButton(onClick = {
+//                        smol_app.SmolButton(onClick = {
 //                            composableScope.launch {
 //                                SL.archives.compressModsInFolder(SL.gamePath.getModsPath())
 //                            }
@@ -197,7 +195,7 @@ fun AppState.homeView(
 //                        }) { Text("Migrate...") }
 //                    },
 //                    dismissButton = {
-//                        SmolSecondaryButton(onClick = { showConfirmMigrateDialog = false }) {
+//                        smol_app.SmolSecondaryButton(onClick = { showConfirmMigrateDialog = false }) {
 //                            Text("Cancel")
 //                        }
 //                    }
@@ -322,7 +320,7 @@ private fun AppState.refreshButton(
             Icon(
                 painter = painterResource("refresh.svg"),
                 contentDescription = "Refresh",
-                tint = SmolTheme.dimmedIconColor()
+                tint = smol_app.SmolTheme.dimmedIconColor()
             )
         }
     }
@@ -343,7 +341,7 @@ private fun AppState.launchButton() {
     SmolButton(
         onClick = {
             val gameLauncher = SL.appConfig.gamePath.toPathOrNull()?.resolve("starsector.exe")
-            val commands = when (currentPlatform) {
+            val commands = when (smol_app.util.currentPlatform) {
                 Platform.Windows -> arrayOf("cmd.exe", "/C")
                 else -> arrayOf("open")
             }
@@ -357,8 +355,8 @@ private fun AppState.launchButton() {
         },
         modifier = Modifier
             .padding(start = 16.dp)
-            .border(4.dp, SmolTheme.highlight(), shape = SmolTheme.smolFullyClippedButtonShape()),
-        shape = SmolTheme.smolFullyClippedButtonShape()
+            .border(4.dp, smol_app.SmolTheme.highlight(), shape = smol_app.SmolTheme.smolFullyClippedButtonShape()),
+        shape = smol_app.SmolTheme.smolFullyClippedButtonShape()
     ) {
         Text(text = "Launch")
     }
@@ -407,7 +405,7 @@ private fun AppState.installModsButton(modifier: Modifier = Modifier) {
             Icon(
                 painter = painterResource("plus.svg"),
                 contentDescription = null,
-                tint = SmolTheme.dimmedIconColor()
+                tint = smol_app.SmolTheme.dimmedIconColor()
             )
         }
     }

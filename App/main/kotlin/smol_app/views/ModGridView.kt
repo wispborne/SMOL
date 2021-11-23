@@ -1,10 +1,10 @@
-package views
-import AppState
-import SmolAlertDialog
-import SmolButton
-import SmolTheme
-import SmolTooltipText
-import TiledImage
+package smol_app.views
+import smol_app.AppState
+import smol_app.SmolAlertDialog
+import smol_app.SmolButton
+import smol_app.SmolTheme
+import smol_app.SmolTooltipText
+import smol_app.TiledImage
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -39,7 +39,7 @@ import smol_access.business.DependencyState
 import smol_access.business.findDependencyStates
 import smol_access.model.Mod
 import smol_access.model.ModVariant
-import util.*
+import smol_app.util.*
 import java.awt.Desktop
 import kotlin.io.path.exists
 
@@ -175,7 +175,7 @@ fun AppState.ModGridView(
                                             Text(
                                                 text = (mod.findFirstEnabled ?: mod.findHighestVersion)?.modInfo?.author
                                                     ?: "",
-                                                color = SmolTheme.dimmedTextColor(),
+                                                color = smol_app.SmolTheme.dimmedTextColor(),
                                                 modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis
@@ -205,7 +205,7 @@ fun AppState.ModGridView(
                                                     text = mod.variants
                                                         .joinToString() { it.modInfo.version.toString() },
                                                     modifier = Modifier.align(Alignment.CenterVertically),
-                                                    color = SmolTheme.dimmedTextColor()
+                                                    color = smol_app.SmolTheme.dimmedTextColor()
                                                 )
                                             }
 
@@ -237,7 +237,7 @@ fun AppState.ModGridView(
                                                                 Modifier
                                                                     .background(
                                                                         color = MaterialTheme.colors.primary,
-                                                                        shape = SmolTheme.smolNormalButtonShape()
+                                                                        shape = smol_app.SmolTheme.smolNormalButtonShape()
                                                                     )
                                                                     .weight(widthWeight)
                                                                     .height(8.dp)
@@ -253,7 +253,7 @@ fun AppState.ModGridView(
                                                             ?: "Unavailable",
                                                         modifier = Modifier.fillMaxSize()
                                                             .align(Alignment.CenterVertically),
-                                                        color = SmolTheme.dimmedTextColor()
+                                                        color = smol_app.SmolTheme.dimmedTextColor()
                                                     )
                                                 }
                                             }

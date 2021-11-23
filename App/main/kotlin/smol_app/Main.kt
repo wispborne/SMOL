@@ -1,3 +1,5 @@
+package smol_app
+
 import androidx.compose.runtime.*
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.input.key.KeyEvent
@@ -5,11 +7,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
+import appView
 import com.arkivanov.decompose.Router
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import navigation.Screen
-import navigation.rememberRouter
+import smol_app.navigation.Screen
+import smol_app.navigation.rememberRouter
 import net.sf.sevenzipjbinding.SevenZip
 import org.tinylog.Logger
 import org.tinylog.configuration.Configuration
@@ -17,9 +20,9 @@ import smol_access.APP_NAME
 import smol_access.SL
 import timber.LogLevel
 import timber.Timber
-import util.SmolPair
-import util.SmolWindowState
-import util.currentPlatform
+import smol_app.util.SmolPair
+import smol_app.util.SmolWindowState
+import smol_app.util.currentPlatform
 import utilities.makeFinite
 
 var safeMode = false

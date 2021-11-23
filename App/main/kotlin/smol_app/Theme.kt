@@ -1,3 +1,5 @@
+package smol_app
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -55,7 +57,7 @@ object SmolTheme {
 
     val cornerClipping = 8.dp
     fun smolNormalButtonShape() = CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp)
-    fun smolFullyClippedButtonShape() = CutCornerShape(size = SmolTheme.cornerClipping)
+    fun smolFullyClippedButtonShape() = CutCornerShape(size = cornerClipping)
 
     @Composable
     fun highlight() = MaterialTheme.colors.onSurface.copy(alpha = .70f)

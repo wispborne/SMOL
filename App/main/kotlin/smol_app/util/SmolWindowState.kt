@@ -1,4 +1,4 @@
-package util
+package smol_app.util
 
 data class SmolWindowState(
     val placement: String,

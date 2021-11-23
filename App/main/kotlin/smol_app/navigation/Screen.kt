@@ -1,4 +1,4 @@
-package navigation
+package smol_app.navigation
 
 import com.arkivanov.essenty.parcelable.Parcelable
 

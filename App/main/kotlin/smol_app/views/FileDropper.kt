@@ -1,9 +1,9 @@
-package views
+package smol_app.views
 
-import AppState
+import smol_app.AppState
 import smol_access.SL
-import SmolAlertDialog
-import SmolButton
+import smol_app.SmolAlertDialog
+import smol_app.SmolButton
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CutCornerShape

@@ -1,8 +1,7 @@
-package views
+package smol_app.views
 
-import AppState
-import SmolButton
-import SmolTheme
+import smol_app.AppState
+import smol_app.SmolButton
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
@@ -30,7 +29,7 @@ import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.pop
 import org.tinylog.kotlin.Logger
 import smol_access.SL
-import util.openAsUriInBrowser
+import smol_app.util.openAsUriInBrowser
 import java.awt.Cursor
 
 @OptIn(
@@ -78,7 +77,7 @@ fun AppState.ModBrowserView(
                     ) { mod ->
                         Card(
                             modifier = Modifier.wrapContentHeight(),
-                            shape = SmolTheme.smolFullyClippedButtonShape()
+                            shape = smol_app.SmolTheme.smolFullyClippedButtonShape()
                         ) {
                             SelectionContainer {
                                 Column(modifier = Modifier.padding(16.dp)) {

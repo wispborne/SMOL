@@ -1,4 +1,4 @@
-package util
+package smol_app.util
 
 import smol_access.FORUM_PAGE_URL
 import smol_access.ServiceLocator
