@@ -33,6 +33,7 @@ import smol_app.AppState
 import smol_app.SmolButton
 import smol_app.SmolTheme
 import smol_app.SmolTooltipText
+import smol_app.browser.ForumWebpageModifier
 import smol_app.browser.javaFXPanel
 import smol_app.util.openAsUriInBrowser
 import timber.ktx.Timber
@@ -159,7 +160,11 @@ fun AppState.ModBrowserView(
 
                         linkLoader = {
                             Platform.runLater {
-                                this.engine.loadContent(getData(it))
+                                this.engine.loadContent(
+                                    ForumWebpageModifier.filterToFirstPost(
+                                        forumHtml = getData(it) ?: ""
+                                    )
+                                )
                             }
                         }
                     }

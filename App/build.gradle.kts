@@ -28,8 +28,8 @@ dependencies {
     implementation(project(":VRAM_Checker"))
     implementation(project(":Utilities"))
 
-    // JavaFX for WebView
-//    implementation("org.openjfx:javafx:16")
+    // Modifying mod pages
+    implementation("org.jsoup:jsoup:1.14.3")
 
     // Gson
     implementation("com.github.salomonbrys.kotson:kotson:2.5.0")

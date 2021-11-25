@@ -15,3 +15,14 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.5.21")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2-native-mt")
 }
+
+buildscript {
+    dependencies {
+        classpath("com.guardsquare:proguard-gradle:7.1.0")
+    }
+}
+
+tasks.withType<proguard.gradle.ProGuardTask>().configureEach {
+    configuration("../proguard.pro")
+    dontoptimize()
+}

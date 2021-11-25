@@ -1,10 +1,8 @@
 package smol_app.browser
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,8 +22,10 @@ import java.awt.BorderLayout
 import java.awt.Container
 import javax.swing.JPanel
 import javafx.scene.paint.Color as JFXColor
-import javafx.scene.text.Text as JFXText
 
+/**
+ * In case we want to test the browser as a standalone app.
+ */
 fun main() = application {
     Window(
         onCloseRequest = ::exitApplication,
@@ -33,27 +33,10 @@ fun main() = application {
     ) {
         // JavaFX components
         val jfxpanel = remember { JFXPanel() }
-        val jfxtext = remember { JFXText() }
 
         // The current container (depending on how you are using the CFD,
         // this could be ComposeWindow or ComposePanel)
-        val container = window // ComposeWindow
-
-        val counter = remember { mutableStateOf(0) }
-        val inc: () -> Unit = {
-            counter.value++
-            // update JavaFX text component
-            Platform.runLater {
-                jfxtext.text = "Welcome JavaFX! ${counter.value}"
-            }
-        }
-
-        Box(
-            modifier = Modifier.fillMaxWidth().height(60.dp).padding(top = 20.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("Counter: ${counter.value}")
-        }
+        val container = window
 
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -66,8 +49,6 @@ fun main() = application {
                 Box(
                     modifier = Modifier.height(200.dp).fillMaxWidth()
                 ) {
-//                Button("1. Compose Button: increment", inc)
-//                Spacer(modifier = Modifier.height(20.dp))
                     javaFXPanel(
                         modifier = Modifier.fillMaxWidth().fillMaxHeight(),
                         root = container,
@@ -87,16 +68,6 @@ fun main() = application {
         }
     }
 }
-
-//@Composable
-//fun Button(text: String = "", action: (() -> Unit)? = null) {
-//    Button(
-//        modifier = Modifier.size(270.dp, 40.dp),
-//        onClick = { action?.invoke() }
-//    ) {
-//        Text(text)
-//    }
-//}
 
 @Composable
 fun javaFXPanel(
