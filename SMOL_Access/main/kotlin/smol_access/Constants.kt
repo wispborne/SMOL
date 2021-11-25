@@ -6,6 +6,7 @@ import kotlin.io.path.Path
 
 const val APP_NAME = "SMOL"
 const val APP_NAME_LONG = "Starsector Mod Organizer and Launcher"
+const val APP_NAME_FILEIO = "SMOL"
 
 const val MOD_INFO_FILE = "mod_info.json"
 const val VERSION_CHECKER_CSV_PATH = "data/config/version/version_files.csv"

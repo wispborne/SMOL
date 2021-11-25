@@ -21,6 +21,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.pop
+import io.ktor.http.*
 import javafx.application.Platform
 import javafx.embed.swing.JFXPanel
 import javafx.scene.Group
@@ -28,6 +29,7 @@ import javafx.scene.Scene
 import javafx.scene.paint.Color
 import javafx.scene.web.WebView
 import org.tinylog.kotlin.Logger
+import smol_access.APP_NAME_FILEIO
 import smol_access.SL
 import smol_app.AppState
 import smol_app.SmolButton
@@ -42,6 +44,11 @@ import java.io.InputStream
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
+import java.nio.file.Path
+import kotlin.io.path.createDirectories
+import kotlin.io.path.createFile
+import kotlin.io.path.deleteIfExists
+import kotlin.io.path.outputStream
 
 
 @OptIn(
@@ -144,32 +151,74 @@ fun AppState.ModBrowserView(
                     .fillMaxWidth()
                     .sizeIn(minWidth = 200.dp),
                 root = window,
-                panel = jfxpanel,
-                onCreate = {
-                    val root = Group()
-                    val scene = Scene(
-                        root,
-                        Color.rgb(background.red.toInt(), background.green.toInt(), background.blue.toInt())
-                    )
-                    WebView().apply {
-                        jfxpanel.scene = scene
-                        this.engine.isJavaScriptEnabled = true
-                        root.children.add(this)
-                        prefWidth = jfxpanel.width.toDouble()
-                        prefHeight = jfxpanel.height.toDouble()
+                panel = jfxpanel
+            ) {
+                val root = Group()
+                val scene = Scene(
+                    root,
+                    Color.rgb(background.red.toInt(), background.green.toInt(), background.blue.toInt())
+                )
+                WebView().apply {
+                    jfxpanel.scene = scene
 
-                        linkLoader = {
-                            Platform.runLater {
-                                this.engine.loadContent(
-                                    ForumWebpageModifier.filterToFirstPost(
-                                        forumHtml = getData(it) ?: ""
+                    this.engine.apply {
+                        isJavaScriptEnabled = true
+                        locationProperty().addListener { _, oldLoc, newLoc ->
+                            // check to see if newLoc is downloadable.
+                            val extensions = listOf(".zip", ".7z")
+
+                            kotlin.runCatching {
+                                val conn = URL(newLoc).openConnection()
+                                val headers = conn.headerFields
+                                Timber.v { "Url $newLoc has headers ${headers.entries.joinToString(separator = "\n")}" }
+
+                                val contentDispStr = conn.getHeaderField("Content-Disposition")
+
+                                if (contentDispStr != null &&
+                                    contentDispStr.startsWith("attachment", ignoreCase = true)
+                                ) {
+                                    Timber.d { "Downloadable file clicked: $newLoc" }
+
+                                    conn.connect()
+                                    val contentDisposition = ContentDisposition.parse(contentDispStr)
+
+                                    val filename = contentDisposition.parameter("filename")
+                                    val file = Path.of(
+                                        System.getProperty("java.io.tmpdir"),
+                                        APP_NAME_FILEIO,
+                                        filename
                                     )
-                                )
+
+                                    file.deleteIfExists()
+                                    file.parent.createDirectories()
+                                    file.createFile()
+
+                                    file.outputStream().use { outs ->
+                                        conn.getInputStream().transferTo(outs)
+                                        Timber.i { "Downloaded $filename to $file." }
+                                    }
+                                }
                             }
+                                .onFailure { Timber.w(it) }
                         }
                     }
+
+                    prefWidth = jfxpanel.width.toDouble()
+                    prefHeight = jfxpanel.height.toDouble()
+
+                    linkLoader = {
+                        Platform.runLater {
+                            this.engine.loadContent(
+                                ForumWebpageModifier.filterToFirstPost(
+                                    forumHtml = getData(it) ?: ""
+                                )
+                            )
+                        }
+                    }
+
+                    root.children.add(this)
                 }
-            )
+            }
         }
     }
 }
