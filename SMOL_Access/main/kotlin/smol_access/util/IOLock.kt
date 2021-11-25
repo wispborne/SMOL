@@ -3,7 +3,7 @@ package smol_access.util
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import org.tinylog.kotlin.Logger
+import timber.ktx.Timber
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReentrantReadWriteLock
@@ -38,10 +38,10 @@ class ObservableReentrantReadWriteLock(val lock: ReentrantReadWriteLock) {
      */
     inline fun <T> write(action: () -> T): T {
         return lock.write {
-            Logger.trace { "Locked" }
+            Timber.v { "Locked" }
             flow.tryEmit(true)
             val ret = action()
-            Logger.trace { "Unlocked" }
+            Timber.v { "Unlocked" }
             flow.tryEmit(false)
             ret
         }
@@ -55,13 +55,13 @@ class ObservableLock(private val lock: Lock) : Lock by lock {
 
     override fun lock() {
         lock.lock()
-        Logger.trace { "Locked" }
+        Timber.v { "Locked" }
         flow.tryEmit(true)
     }
 
     override fun lockInterruptibly() {
         lock.lockInterruptibly()
-        Logger.trace { "Locked" }
+        Timber.v { "Locked" }
         flow.tryEmit(true)
     }
 
@@ -69,7 +69,7 @@ class ObservableLock(private val lock: Lock) : Lock by lock {
         val tryLock = lock.tryLock()
 
         if (tryLock) {
-            Logger.trace { "Locked" }
+            Timber.v { "Locked" }
             flow.tryEmit(true)
         }
 
@@ -80,7 +80,7 @@ class ObservableLock(private val lock: Lock) : Lock by lock {
         val tryLock = lock.tryLock(time, unit)
 
         if (tryLock) {
-            Logger.trace { "Locked" }
+            Timber.v { "Locked" }
             flow.tryEmit(true)
         }
 
@@ -89,7 +89,7 @@ class ObservableLock(private val lock: Lock) : Lock by lock {
 
     override fun unlock() {
         lock.unlock()
-        Logger.trace { "Unlocked" }
+        Timber.v { "Unlocked" }
         flow.tryEmit(false)
     }
 }

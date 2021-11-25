@@ -2,8 +2,8 @@ package smol_access.config
 
 import com.sun.jna.platform.win32.Advapi32Util
 import com.sun.jna.platform.win32.WinReg
-import org.tinylog.Logger
 import smol_access.util.IOLock
+import timber.ktx.Timber
 import utilities.toPathOrNull
 import java.io.File
 import java.nio.file.Path
@@ -50,7 +50,7 @@ class GamePath internal constructor(
         }
             .mapCatching { File(it) }
             .onFailure {
-                Logger.debug { it.message ?: "" }
+                Timber.d { it.message ?: "" }
                 it.printStackTrace()
             }
             .getOrNull()

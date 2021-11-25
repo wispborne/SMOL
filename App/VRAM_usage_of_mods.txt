@@ -1,0 +1,30 @@
+Mods folder: F:\Code\Starsector\SMOL
+Finished run in 9 ms
+
+
+
+-------------
+VRAM Use Estimates
+
+Configuration
+  Enabled Mods
+    (none)
+  GraphicsLib
+    Normal Maps Enabled: false
+    Material Maps Enabled: false
+    Surface Maps Enabled: false
+    Edit 'config.properties' to choose your GraphicsLib settings.
+  System
+    GPU Model: NVIDIA GeForce RTX 3080 Laptop GPU
+    Vendor: NVIDIA (0x10de)
+    Driver version: DriverVersion=30.0.14.7212
+    Detected VRAM: 4095.000 MiB
+
+Enabled + Disabled Mods w/o Vanilla   0.000 MiB
+Enabled + Disabled Mods w/ Vanilla    413.500 MiB
+
+Enabled Mods w/o Vanilla              0.000 MiB
+Enabled Mods w/ Vanilla               413.500 MiB
+
+** This is only an estimate of VRAM use and actual use may be higher or lower.
+** Unused images in mods are counted unless they contain one of "CURRENTLY_UNUSED", "DO_NOT_USE" in the file name.

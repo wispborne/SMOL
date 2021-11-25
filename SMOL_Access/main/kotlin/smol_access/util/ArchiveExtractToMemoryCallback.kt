@@ -1,7 +1,7 @@
 package smol_access.util
 
 import net.sf.sevenzipjbinding.*
-import org.tinylog.Logger
+import timber.ktx.Timber
 import java.util.*
 
 
@@ -46,7 +46,7 @@ class ArchiveExtractToMemoryCallback(
 
     override fun setCompleted(complete: Long) {
         if (complete == total) {
-            Logger.trace { "Total extraction time: ${System.currentTimeMillis() - startTime}ms." }
+            Timber.v { "Total extraction time: ${System.currentTimeMillis() - startTime}ms." }
             onComplete(results)
         }
     }
@@ -62,7 +62,7 @@ class ArchiveExtractToMemoryCallback(
         } else {
             val filePath = inArchive.getProperty(index, PropID.PATH) as String
 
-            Logger.trace { String.format("Extracted %10sb | %s", size, filePath) }
+            Timber.v { String.format("Extracted %10sb | %s", size, filePath) }
 
             results[index] = bytes.decodeToString()
 

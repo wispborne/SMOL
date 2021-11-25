@@ -2,7 +2,7 @@ package smol_access.model
 
 import com.google.gson.annotations.SerializedName
 import com.squareup.moshi.Json
-import org.tinylog.kotlin.Logger
+import timber.ktx.Timber
 
 sealed class ModInfo(
     @Json(name = "id") val id: String,
@@ -103,7 +103,7 @@ data class Version(
             // (ex: "Starsector 0.65.2a-RC1" becomes {"0.65.2","1"})
             val localRaw = versionString
                 .replace("[^0-9.-]", "")
-                .split('-', limit = 2);
+                .split('-', limit = 2)
 
             val split = localRaw.first().split('.')
 
@@ -141,6 +141,6 @@ data class Dependency(
 
     val version: Version?
         get() = kotlin.runCatching { Version.parse(versionString!!) }
-            .onFailure { Logger.trace(it) }
+            .onFailure { Timber.v(it) }
             .getOrNull()
 }

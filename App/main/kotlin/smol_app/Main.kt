@@ -11,19 +11,20 @@ import appView
 import com.arkivanov.decompose.Router
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import smol_app.navigation.Screen
-import smol_app.navigation.rememberRouter
 import net.sf.sevenzipjbinding.SevenZip
 import org.tinylog.Logger
 import org.tinylog.configuration.Configuration
 import smol_access.APP_NAME
 import smol_access.SL
-import timber.LogLevel
-import timber.Timber
+import smol_app.navigation.Screen
+import smol_app.navigation.rememberRouter
 import smol_app.util.SmolPair
 import smol_app.util.SmolWindowState
 import smol_app.util.currentPlatform
+import timber.LogLevel
+import timber.Timber
 import utilities.makeFinite
+
 
 var safeMode = false
 

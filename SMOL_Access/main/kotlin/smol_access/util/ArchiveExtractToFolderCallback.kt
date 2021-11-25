@@ -1,7 +1,7 @@
 package smol_access.util
 
 import net.sf.sevenzipjbinding.*
-import org.tinylog.Logger
+import timber.ktx.Timber
 import java.nio.file.Path
 import java.util.*
 import kotlin.io.path.createDirectories
@@ -46,7 +46,7 @@ class ArchiveExtractToFolderCallback(
 
     override fun setCompleted(complete: Long) {
         if (complete == total) {
-            Logger.trace { "Total extraction time: ${System.currentTimeMillis() - startTime}ms." }
+            Timber.v { "Total extraction time: ${System.currentTimeMillis() - startTime}ms." }
         }
     }
 
@@ -61,7 +61,7 @@ class ArchiveExtractToFolderCallback(
         } else {
             val filePath = inArchive.getProperty(index, PropID.PATH) as String
 
-            Logger.debug {
+            Timber.d {
                 String.format("Extracted %10sb | %s", size, filePath)
             }
 

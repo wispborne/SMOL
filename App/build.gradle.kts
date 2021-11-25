@@ -23,10 +23,13 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2-native-mt")
 
     implementation(fileTree("../libs") { include("**/*.jar") })
-//    implementation(fileTree("../CEF") { include("**/*.jar") })
+    implementation(fileTree("libs") { include("**/*.jar") })
     implementation(project(":SMOL_Access"))
     implementation(project(":VRAM_Checker"))
     implementation(project(":Utilities"))
+
+    // JavaFX for WebView
+//    implementation("org.openjfx:javafx:16")
 
     // Gson
     implementation("com.github.salomonbrys.kotson:kotson:2.5.0")
@@ -60,6 +63,7 @@ kotlin.sourceSets.test {
     kotlin.setSrcDirs(listOf("test/kotlin"))
 }
 java.sourceSets.main {
+    java.setSrcDirs(listOf("main/kotlin"))
     // Doesn't work if run from the kotlin plugin, black magic
     resources.setSrcDirs(listOf(projectDir.resolve("main/resources")))
 }
@@ -86,15 +90,18 @@ compose.desktop {
             packageVersion = "1.0.0"
 
             windows {
+                println("OS: Windows")
                 console = true
                 upgradeUuid = "51169f8d-9aec-4abf-b30a-f5bc5a5f6509"
-                jvmArgs += listOf("-Djava.library.path=native/windows") // To use lwjgl in VRAM Checker
+//                jvmArgs += listOf("-Djava.library.path=native/windows") // To use lwjgl in VRAM Checker
             }
             macOS {
-                jvmArgs += listOf("-Djava.library.path=native/macosx") // To use lwjgl in VRAM Checker
+                println("OS: MacOS")
+//                jvmArgs += listOf("-Djava.library.path=native/macosx") // To use lwjgl in VRAM Checker
             }
             linux {
-                jvmArgs += listOf("-Djava.library.path=native/linux") // To use lwjgl in VRAM Checker
+                println("OS: Linux")
+//                jvmArgs += listOf("-Djava.library.path=native/linux") // To use lwjgl in VRAM Checker
             }
 
             // task suggestRuntimeModules to generate this

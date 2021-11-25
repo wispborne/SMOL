@@ -51,7 +51,7 @@ class VersionChecker(private val gson: Gson, private val versionCheckerCache: Ve
                                             message(it.message.lines().firstOrNull())
                                         }
                                     } else {
-                                        Timber.w(it) { message(it.message) }
+                                        Timber.w { message(it.message) }
                                     }
                                 }
                                 .getOrNull()
