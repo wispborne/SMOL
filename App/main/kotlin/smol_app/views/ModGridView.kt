@@ -1,10 +1,5 @@
 package smol_app.views
-import smol_app.AppState
-import smol_app.SmolAlertDialog
-import smol_app.SmolButton
-import smol_app.SmolTheme
-import smol_app.SmolTooltipText
-import smol_app.TiledImage
+
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -33,12 +28,13 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.tinylog.Logger
-import smol_access.APP_NAME
+import smol_access.Constants
 import smol_access.SL
 import smol_access.business.DependencyState
 import smol_access.business.findDependencyStates
 import smol_access.model.Mod
 import smol_access.model.ModVariant
+import smol_app.*
 import smol_app.util.*
 import java.awt.Desktop
 import kotlin.io.path.exists
@@ -591,7 +587,7 @@ private fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
                                 text = when (action) {
                                     is DropdownAction.ChangeToVariant -> action.variant.modInfo.version.toString()
                                     is DropdownAction.Disable -> "Disable"
-                                    is DropdownAction.MigrateMod -> "Migrate to $APP_NAME"
+                                    is DropdownAction.MigrateMod -> "Migrate to ${Constants.APP_NAME}"
                                     is DropdownAction.ResetToArchive -> "Reset to default"
                                 },
                                 fontWeight = FontWeight.Bold

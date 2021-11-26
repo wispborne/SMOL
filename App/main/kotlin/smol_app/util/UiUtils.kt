@@ -1,15 +1,15 @@
 package smol_app.util
 
-import smol_access.FORUM_PAGE_URL
-import smol_access.ServiceLocator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.res.useResource
+import dev.andrewbailey.diff.differenceOf
+import smol_access.Constants
+import smol_access.ServiceLocator
 import smol_access.business.VmParamsManager
 import smol_access.config.Platform
-import dev.andrewbailey.diff.differenceOf
 import smol_access.model.Mod
 import java.awt.Desktop
 import java.net.URI
@@ -21,7 +21,7 @@ fun Mod.getModThreadId(): ModThreadId? =
         ?: findHighestVersion?.versionCheckerInfo?.modThreadId
 
 fun ModThreadId.openModThread() {
-    (FORUM_PAGE_URL + this).openAsUriInBrowser()
+    (Constants.FORUM_PAGE_URL + this).openAsUriInBrowser()
 }
 
 fun String.openAsUriInBrowser() {

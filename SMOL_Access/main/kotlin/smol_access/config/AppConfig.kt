@@ -1,7 +1,7 @@
 package smol_access.config
 
-import smol_access.APPCONFIG_PATH
 import com.google.gson.Gson
+import smol_access.Constants
 import smol_access.model.UserProfile
 import utilities.Config
 
@@ -9,7 +9,7 @@ class AppConfig(gson: Gson) :
     Config(
         gson, JsonFilePrefStorage(
             gson = gson,
-            file = APPCONFIG_PATH
+            file = Constants.APPCONFIG_PATH
         )
     ) {
     var gamePath: String? by pref(prefKey = "gamePath", defaultValue = null)

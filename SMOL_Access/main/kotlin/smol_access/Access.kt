@@ -17,6 +17,7 @@ import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
+import kotlin.io.path.absolutePathString
 
 class Access internal constructor(
     private val staging: Staging,
@@ -36,14 +37,14 @@ class Access internal constructor(
         }
 
         if (uiConfig.archivesPath.toFileOrNull()?.exists() != true) {
-            uiConfig.archivesPath = ARCHIVES_FOLDER_DEFAULT.absolutePath
+            uiConfig.archivesPath = Constants.ARCHIVES_FOLDER_DEFAULT.absolutePathString()
         }
 
         SL.archives.getArchivesManifest()
             .also { Timber.d { "Archives folder manifest: ${it?.manifestItems?.keys?.joinToString()}" } }
 
         if (uiConfig.stagingPath.toFileOrNull()?.exists() != true) {
-            uiConfig.stagingPath = STAGING_FOLDER_DEFAULT.absolutePath
+            uiConfig.stagingPath = Constants.STAGING_FOLDER_DEFAULT.absolutePathString()
         }
 
         Timber.d { "Game: ${uiConfig.gamePath}" }

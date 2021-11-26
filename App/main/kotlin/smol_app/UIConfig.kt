@@ -1,14 +1,14 @@
 package smol_app
 
-import smol_access.UICONFIG_PATH
 import com.google.gson.Gson
-import utilities.Config
+import smol_access.Constants
 import smol_app.util.SmolWindowState
+import utilities.Config
 
 class UIConfig(gson: Gson) : Config(
     gson, JsonFilePrefStorage(
         gson = gson,
-        file = UICONFIG_PATH
+        file = Constants.UICONFIG_PATH
     )
 ) {
     var windowState: SmolWindowState? by pref(prefKey = "windowState", defaultValue = null)

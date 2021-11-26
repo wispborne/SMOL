@@ -12,8 +12,7 @@ import net.sf.sevenzipjbinding.impl.RandomAccessFileOutStream
 import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem
 import net.sf.sevenzipjbinding.util.ByteArrayStream
 import org.apache.commons.codec.digest.DigestUtils
-import smol_access.MOD_INFO_FILE
-import smol_access.VERSION_CHECKER_FILE_PATTERN
+import smol_access.Constants
 import smol_access.config.AppConfig
 import smol_access.config.GamePath
 import smol_access.model.ModInfo
@@ -104,7 +103,7 @@ class Archives internal constructor(
         }
 
         if (inputFile.isRegularFile()) {
-            if (inputFile.name == MOD_INFO_FILE) {
+            if (inputFile.name == Constants.MOD_INFO_FILE) {
                 // Input file is mod_info.json, parent folder is mod folder
                 val modFolder = inputFile.parent
 
@@ -112,7 +111,7 @@ class Archives internal constructor(
                     copyOrCompressDir(modFolder)
                     return
                 } else {
-                    RuntimeException("Input was $MOD_INFO_FILE but there was no parent folder?!")
+                    RuntimeException("Input was ${Constants.MOD_INFO_FILE} but there was no parent folder?!")
                         .also { Timber.w(it) }
                         .also { throw it }
                 }
@@ -159,7 +158,7 @@ class Archives internal constructor(
                     }
                     return
                 } else {
-                    val ex = RuntimeException("Archive did not have a valid $MOD_INFO_FILE inside!")
+                    val ex = RuntimeException("Archive did not have a valid ${Constants.MOD_INFO_FILE} inside!")
                     Timber.w(ex)
                     throw ex
                 }
@@ -180,9 +179,9 @@ class Archives internal constructor(
                         val items = inArchive.simpleInterface.archiveItems
                             .filter { !it.isFolder }
                         val modInfoFile = items
-                            .firstOrNull { it.path.contains(MOD_INFO_FILE) }
+                            .firstOrNull { it.path.contains(Constants.MOD_INFO_FILE) }
                         val versionCheckerFile = items
-                            .firstOrNull { it.path.contains(VERSION_CHECKER_FILE_PATTERN) }
+                            .firstOrNull { it.path.contains(Constants.VERSION_CHECKER_FILE_PATTERN) }
 
                         val dataFiles =
                             trace({ _, time ->
@@ -248,8 +247,9 @@ class Archives internal constructor(
             if (!folderContainingSingleMod.isDirectory())
                 throw RuntimeException("folderContainingSingleMod must be a folder! It's in the name!")
 
-            val modInfoFile = folderContainingSingleMod.walk(maxDepth = 2).firstOrNull { it.name == MOD_INFO_FILE }
-                ?: throw RuntimeException("Expected a $MOD_INFO_FILE in ${folderContainingSingleMod.absolutePathString()}")
+            val modInfoFile =
+                folderContainingSingleMod.walk(maxDepth = 2).firstOrNull { it.name == Constants.MOD_INFO_FILE }
+                    ?: throw RuntimeException("Expected a ${Constants.MOD_INFO_FILE} in ${folderContainingSingleMod.absolutePathString()}")
 
 //            val modInfo = modInfoLoader.readModInfoFile(modInfoFile.readText())
 
@@ -337,11 +337,13 @@ class Archives internal constructor(
 
                     if (!inputModFolder.exists()) throw RuntimeException("Mod folder doesn't exist:  ${inputModFolder.absolutePathString()}.")
 
-                    if (inputModFolder.isRegularFile() && inputModFolder.name != MOD_INFO_FILE) throw RuntimeException("Not a mod folder: ${inputModFolder.absolutePathString()}.")
+                    if (inputModFolder.isRegularFile() && inputModFolder.name != Constants.MOD_INFO_FILE) throw RuntimeException(
+                        "Not a mod folder: ${inputModFolder.absolutePathString()}."
+                    )
 
                     // If they dropped mod_info.json, use the parent folder
                     val modFolder =
-                        if (inputModFolder.isRegularFile() && inputModFolder.name == MOD_INFO_FILE) inputModFolder.parent
+                        if (inputModFolder.isRegularFile() && inputModFolder.name == Constants.MOD_INFO_FILE) inputModFolder.parent
                             ?: inputModFolder
                         else inputModFolder
 

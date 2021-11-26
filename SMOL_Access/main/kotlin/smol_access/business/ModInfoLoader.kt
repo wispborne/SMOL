@@ -5,8 +5,7 @@ import com.squareup.moshi.Moshi
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import org.hjson.JsonValue
-import smol_access.MOD_INFO_FILE
-import smol_access.VERSION_CHECKER_CSV_PATH
+import smol_access.Constants
 import smol_access.model.ModInfo
 import smol_access.model.VersionCheckerInfo
 import smol_access.util.IOLock
@@ -44,7 +43,7 @@ class ModInfoLoader(
                         .forEach { file ->
                             Timber.v { "  File: ${file.name}" }
 
-                            if (modInfo == null && file.name.equals(MOD_INFO_FILE)) {
+                            if (modInfo == null && file.name.equals(Constants.MOD_INFO_FILE)) {
                                 modInfo = deserializeModInfoFile(file.readText())
                             }
                         }
@@ -55,7 +54,7 @@ class ModInfoLoader(
                         var versionCheckerInfo: VersionCheckerInfo? = null
 
                         if (desiredFiles.contains(DataFile.VERSION_CHECKER)) {
-                            val verCheckerCsv = modFolder.resolve(VERSION_CHECKER_CSV_PATH)
+                            val verCheckerCsv = modFolder.resolve(Constants.VERSION_CHECKER_CSV_PATH)
 
                             if (verCheckerCsv.exists()) {
                                 kotlin.runCatching {

@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.onEach
 import net.sf.sevenzipjbinding.SevenZip
 import org.tinylog.Logger
 import org.tinylog.configuration.Configuration
-import smol_access.APP_NAME
+import smol_access.Constants
 import smol_access.SL
 import smol_app.navigation.Screen
 import smol_app.navigation.rememberRouter
@@ -111,7 +111,7 @@ fun main() = application {
     Window(
         onCloseRequest = ::exitApplication,
         state = newState,
-        title = APP_NAME,
+        title = Constants.APP_NAME,
         icon = painterResource("kotlin-icon.svg"),
         onPreviewKeyEvent = { event -> onKeyEventHandlers.any { it(event) } }
     ) {
