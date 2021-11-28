@@ -38,14 +38,12 @@ import org.tinylog.kotlin.Logger
 import smol_access.Constants
 import smol_access.SL
 import smol_access.business.DownloadItem
-import smol_app.AppState
-import smol_app.SmolButton
-import smol_app.SmolTheme
-import smol_app.SmolTooltipText
+import smol_app.*
 import smol_app.browser.ForumWebpageModifier
 import smol_app.browser.javaFXPanel
 import smol_app.util.bytesAsReadableMiB
 import smol_app.util.openAsUriInBrowser
+import smol_app.util.openInDesktop
 import timber.ktx.Timber
 import java.awt.Cursor
 import java.io.InputStream
@@ -53,6 +51,7 @@ import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URI
 import java.net.URL
+import kotlin.io.path.absolutePathString
 import kotlin.io.path.name
 
 
@@ -70,6 +69,7 @@ fun AppState.ModBrowserView(
     val moddingSubforumMods by remember { mutableStateOf(SL.modRepo.getModdingSubforumItems()) }
     var linkLoader: ((String) -> Unit)? by remember { mutableStateOf(null) }
     val scope = rememberCoroutineScope { Dispatchers.Default }
+    var alertDialogMessage: String? by remember { mutableStateOf(null) }
 
     Scaffold(topBar = {
         TopAppBar {
@@ -138,6 +138,12 @@ fun AppState.ModBrowserView(
                                     SL.downloadManager.download(url = newLoc)
                                 }
                             }
+                            loadWorker.exceptionProperty().addListener { _, _, throwable ->
+                                Timber.i(throwable)
+                            }
+                            setOnError {
+                                Timber.d { it.message }
+                            }
                         }
 
                         prefWidth = jfxpanel.width.toDouble()
@@ -167,6 +173,13 @@ fun AppState.ModBrowserView(
                     }
                 }
             }
+        }
+
+        if (alertDialogMessage != null) {
+            SmolAlertDialog(
+                onDismissRequest = { alertDialogMessage = null },
+                text = { Text(text = alertDialogMessage ?: "") }
+            )
         }
     }
 }
@@ -234,9 +247,10 @@ private fun getData(address: String): String? =
         .onFailure { Timber.w(it) }
         .getOrNull()
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun downloadBar(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     var downloads by remember { mutableStateOf<List<DownloadItem>>(listOf()) }
 
@@ -250,52 +264,76 @@ fun downloadBar(
 
     LazyRow(modifier) {
         items(downloads) { download ->
-            Card(
-                modifier = Modifier.padding(start = 16.dp),
-                backgroundColor = MaterialTheme.colors.background
-            ) {
-                var progressPercent by remember { mutableStateOf(0f) }
-                var progress by remember { mutableStateOf(0L) }
+            var progressPercent: Float? by remember { mutableStateOf(null) }
+            var progress by remember { mutableStateOf(0L) }
+            val status = download.status.value
+            val total = download.total
 
-                val total = download.total
-                rememberCoroutineScope { Dispatchers.Default }.launch {
-                    download.progress.collect { newProgress ->
-                        withContext(Dispatchers.Main) {
-                            progress = newProgress
-                            progressPercent = if (total != null)
-                                (newProgress.toFloat() / total.toFloat())
-                            else 0f
+            TooltipArea(
+                tooltip = {
+                    SmolTooltipText(text = buildString {
+                        appendLine(download.path.absolutePathString())
+                        if (status is DownloadItem.Status.Failed) appendLine(status.error.message)
+                    })
+                }
+            ) {
+                Card(
+                    modifier = Modifier.padding(start = 16.dp),
+                    backgroundColor = MaterialTheme.colors.background
+                ) {
+
+                    rememberCoroutineScope { Dispatchers.Default }.launch {
+                        download.progress.collect { newProgress ->
+                            withContext(Dispatchers.Main) {
+                                progress = newProgress
+                                progressPercent = if (total != null)
+                                    (newProgress.toFloat() / total.toFloat())
+                                else 0f
+                            }
                         }
                     }
-                }
-                Row(modifier = Modifier.padding(start = 8.dp, end = 8.dp)) {
-                    Column(modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 4.dp, end = 8.dp)) {
-                        val status = download.status.value
-                        val progressMiB = progress.bytesAsReadableMiB
-                        val totalMiB = total?.bytesAsReadableMiB
-                        Text(
-                            modifier = Modifier,
-                            text = download.path.name,
-                            fontSize = 12.sp
-                        )
-                        Text(
-                            modifier = Modifier.padding(top = 4.dp),
-                            text = when (status) {
-                                is DownloadItem.Status.NotStarted -> "Starting"
-                                is DownloadItem.Status.Downloading -> {
-                                    "$progressMiB${if (totalMiB != null) " / $totalMiB" else ""}}"
+                    Row(modifier = Modifier.padding(start = 8.dp, end = 8.dp)) {
+                        Column(
+                            modifier = Modifier
+                                .padding(start = 4.dp, top = 4.dp, bottom = 4.dp, end = 8.dp)
+                                .mouseClickable {
+                                    kotlin.runCatching { download.path.parent.openInDesktop() }
+                                        .onFailure { Timber.e(it) }
                                 }
-                                is DownloadItem.Status.Completed -> "Completed $progressMiB"
-                                is DownloadItem.Status.Failed -> "Failed: ${status.error}"
-                            },
-                            fontSize = 12.sp
-                        )
+                        ) {
+                            val progressMiB = progress.bytesAsReadableMiB
+                            val totalMiB = total?.bytesAsReadableMiB
+                            Text(
+                                modifier = Modifier,
+                                text = download.path.name,
+                                fontSize = 12.sp
+                            )
+                            Text(
+                                modifier = Modifier.padding(top = 4.dp),
+                                text = when (status) {
+                                    is DownloadItem.Status.NotStarted -> "Starting"
+                                    is DownloadItem.Status.Downloading -> {
+                                        "$progressMiB${if (totalMiB != null) " / $totalMiB" else ""}}"
+                                    }
+                                    is DownloadItem.Status.Completed -> "Completed $progressMiB"
+                                    is DownloadItem.Status.Failed -> "Failed: ${status.error}"
+                                },
+                                fontSize = 12.sp
+                            )
+                        }
+                        if (progressPercent != null || status == DownloadItem.Status.Completed) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp).align(Alignment.CenterVertically),
+                                progress = progressPercent ?: 1f,
+                                color = MaterialTheme.colors.onSurface
+                            )
+                        } else {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp).align(Alignment.CenterVertically),
+                                color = MaterialTheme.colors.onSurface
+                            )
+                        }
                     }
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp).align(Alignment.CenterVertically),
-                        progress = progressPercent,
-                        color = MaterialTheme.colors.onSurface
-                    )
                 }
             }
         }

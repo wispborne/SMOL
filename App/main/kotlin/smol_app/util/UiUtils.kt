@@ -13,6 +13,7 @@ import smol_access.config.Platform
 import smol_access.model.Mod
 import java.awt.Desktop
 import java.net.URI
+import java.nio.file.Path
 import kotlin.math.ceil
 
 
@@ -27,6 +28,8 @@ fun ModThreadId.openModThread() {
 fun String.openAsUriInBrowser() {
     Desktop.getDesktop().browse(URI(this))
 }
+
+fun Path.openInDesktop() = Desktop.getDesktop().open(this.toFile())
 
 typealias ModThreadId = String
 

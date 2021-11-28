@@ -135,7 +135,7 @@ fun SmolSecondaryButton(
 @ExperimentalMaterialApi
 fun SmolAlertDialog(
     onDismissRequest: () -> Unit,
-    confirmButton: @Composable () -> Unit,
+    confirmButton: @Composable () -> Unit = { SmolButton(onClick = { onDismissRequest() }) { Text("Ok") } },
     underlayModifier: Modifier = Modifier
         .fillMaxWidth()
         .fillMaxHeight()
