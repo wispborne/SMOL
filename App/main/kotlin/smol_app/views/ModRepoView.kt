@@ -6,6 +6,7 @@ import androidx.compose.foundation.TooltipArea
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.GridCells
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.mouseClickable
@@ -20,6 +21,7 @@ import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.arkivanov.decompose.pop
 import javafx.application.Platform
 import javafx.embed.swing.JFXPanel
@@ -28,18 +30,21 @@ import javafx.scene.Scene
 import javafx.scene.paint.Color
 import javafx.scene.web.WebView
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import mod_repo.ScrapedMod
 import org.tinylog.kotlin.Logger
 import smol_access.Constants
 import smol_access.SL
+import smol_access.business.DownloadItem
 import smol_app.AppState
 import smol_app.SmolButton
 import smol_app.SmolTheme
 import smol_app.SmolTooltipText
-import smol_app.browser.DownloadManager
 import smol_app.browser.ForumWebpageModifier
 import smol_app.browser.javaFXPanel
+import smol_app.util.bytesAsReadableMiB
 import smol_app.util.openAsUriInBrowser
 import timber.ktx.Timber
 import java.awt.Cursor
@@ -48,6 +53,7 @@ import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URI
 import java.net.URL
+import kotlin.io.path.name
 
 
 @OptIn(
@@ -63,8 +69,6 @@ fun AppState.ModBrowserView(
     val indexMods by remember { mutableStateOf(SL.modRepo.getModIndexItems()) }
     val moddingSubforumMods by remember { mutableStateOf(SL.modRepo.getModdingSubforumItems()) }
     var linkLoader: ((String) -> Unit)? by remember { mutableStateOf(null) }
-    var downloadProgress: Long? by remember { mutableStateOf(null) }
-    var downloadTotal: Long? by remember { mutableStateOf(null) }
     val scope = rememberCoroutineScope { Dispatchers.Default }
 
     Scaffold(topBar = {
@@ -77,17 +81,12 @@ fun AppState.ModBrowserView(
                 text = "Mod Browser",
                 fontWeight = FontWeight.Bold
             )
+            Spacer(Modifier.weight(1f))
+            downloadBar(modifier = Modifier.padding(top = 4.dp, bottom = 4.dp))
+            Spacer(modifier = Modifier.width(16.dp))
         }
     }) {
         Column(modifier) {
-            LinearProgressIndicator(
-                modifier = Modifier.fillMaxWidth().height(8.dp),
-                progress = if (downloadProgress != null && downloadTotal != null) {
-                    downloadProgress!!.toFloat() / downloadTotal!!.toFloat()
-                } else 0f,
-                color = MaterialTheme.colors.onSurface
-            )
-
             Row(modifier = Modifier.padding(16.dp)) {
                 LazyVerticalGrid(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -136,10 +135,7 @@ fun AppState.ModBrowserView(
                             locationProperty().addListener { _, oldLoc, newLoc ->
                                 // check to see if newLoc is downloadable.
                                 scope.launch {
-                                    DownloadManager.handleDownload(newLoc) { progress, total ->
-                                        downloadProgress = progress
-                                        downloadTotal = total
-                                    }
+                                    SL.downloadManager.download(url = newLoc)
                                 }
                             }
                         }
@@ -237,3 +233,71 @@ private fun getData(address: String): String? =
     }
         .onFailure { Timber.w(it) }
         .getOrNull()
+
+@Composable
+fun downloadBar(
+    modifier: Modifier = Modifier
+) {
+    var downloads by remember { mutableStateOf<List<DownloadItem>>(listOf()) }
+
+    rememberCoroutineScope { Dispatchers.Default }.launch {
+        SL.downloadManager.downloads.collect {
+            withContext(Dispatchers.Main) {
+                downloads = it
+            }
+        }
+    }
+
+    LazyRow(modifier) {
+        items(downloads) { download ->
+            Card(
+                modifier = Modifier.padding(start = 16.dp),
+                backgroundColor = MaterialTheme.colors.background
+            ) {
+                var progressPercent by remember { mutableStateOf(0f) }
+                var progress by remember { mutableStateOf(0L) }
+
+                val total = download.total
+                rememberCoroutineScope { Dispatchers.Default }.launch {
+                    download.progress.collect { newProgress ->
+                        withContext(Dispatchers.Main) {
+                            progress = newProgress
+                            progressPercent = if (total != null)
+                                (newProgress.toFloat() / total.toFloat())
+                            else 0f
+                        }
+                    }
+                }
+                Row(modifier = Modifier.padding(start = 8.dp, end = 8.dp)) {
+                    Column(modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 4.dp, end = 8.dp)) {
+                        val status = download.status.value
+                        val progressMiB = progress.bytesAsReadableMiB
+                        val totalMiB = total?.bytesAsReadableMiB
+                        Text(
+                            modifier = Modifier,
+                            text = download.path.name,
+                            fontSize = 12.sp
+                        )
+                        Text(
+                            modifier = Modifier.padding(top = 4.dp),
+                            text = when (status) {
+                                is DownloadItem.Status.NotStarted -> "Starting"
+                                is DownloadItem.Status.Downloading -> {
+                                    "$progressMiB${if (totalMiB != null) " / $totalMiB" else ""}}"
+                                }
+                                is DownloadItem.Status.Completed -> "Completed $progressMiB"
+                                is DownloadItem.Status.Failed -> "Failed: ${status.error}"
+                            },
+                            fontSize = 12.sp
+                        )
+                    }
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp).align(Alignment.CenterVertically),
+                        progress = progressPercent,
+                        color = MaterialTheme.colors.onSurface
+                    )
+                }
+            }
+        }
+    }
+}

@@ -1,12 +1,5 @@
 package smol_access
 
-import smol_access.business.*
-import smol_access.config.AppConfig
-import smol_access.config.GamePath
-import smol_access.config.VersionCheckerCache
-import smol_access.config.VramCheckerCache
-import smol_access.model.ModInfo
-import smol_access.util.ManualReloadTrigger
 import com.github.salomonbrys.kotson.*
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -17,6 +10,13 @@ import com.squareup.moshi.ToJson
 import com.squareup.moshi.adapter
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import org.hjson.JsonValue
+import smol_access.business.*
+import smol_access.config.AppConfig
+import smol_access.config.GamePath
+import smol_access.config.VersionCheckerCache
+import smol_access.config.VramCheckerCache
+import smol_access.model.ModInfo
+import smol_access.util.ManualReloadTrigger
 
 var SL = ServiceLocator()
 private val basicMoshi = Moshi.Builder()
@@ -31,6 +31,7 @@ class ServiceLocator internal constructor(
         .addLast(KotlinJsonAdapterFactory())
         .build(),
     val gson: Gson = buildGson(),
+    val downloadManager: DownloadManager = DownloadManager(),
     internal val versionCheckerCache: VersionCheckerCache = VersionCheckerCache(gson = gson),
     val versionChecker: VersionChecker = VersionChecker(gson = gson, versionCheckerCache = versionCheckerCache),
     val appConfig: AppConfig = AppConfig(gson = gson),

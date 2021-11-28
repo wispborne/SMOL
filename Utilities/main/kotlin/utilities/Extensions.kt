@@ -8,6 +8,8 @@ import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
 import java.io.File
 import java.io.IOException
+import java.io.InputStream
+import java.io.OutputStream
 import java.lang.reflect.Modifier
 import java.nio.file.FileVisitOption
 import java.nio.file.Files
@@ -157,4 +159,24 @@ fun copyToClipboard(string: String) {
     val stringSelection = StringSelection(string)
     val clipboard = Toolkit.getDefaultToolkit().systemClipboard
     clipboard.setContents(stringSelection, null)
+}
+
+/**
+ * From [java.io.InputStream], but with a delegate for progress.
+ */
+@Throws(IOException::class)
+fun InputStream.transferTo(out: OutputStream, onProgressUpdated: (progress: Long) -> Unit): Long {
+    val defaultBufferSize = 8192
+
+    var transferred: Long = 0
+    val buffer = ByteArray(defaultBufferSize)
+    var read: Int
+
+    while (this.read(buffer, 0, defaultBufferSize).also { read = it } >= 0) {
+        out.write(buffer, 0, read)
+        transferred += read.toLong()
+        onProgressUpdated(transferred)
+    }
+
+    return transferred
 }
