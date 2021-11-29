@@ -4,8 +4,11 @@ import androidx.compose.material.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.TextStyle
 import com.arkivanov.decompose.extensions.compose.jetbrains.Children
-import smol_app.navigation.Screen
+import smol_access.SL
 import smol_app.AppState
+import smol_app.SmolTheme
+import smol_app.navigation.Screen
+import smol_app.util.themeManager
 import smol_app.views.*
 
 @OptIn(ExperimentalStdlibApi::class)
@@ -13,9 +16,9 @@ import smol_app.views.*
 @Preview
 fun AppState.appView() {
     MaterialTheme(
-        colors = smol_app.SmolTheme.Kemet,
+        colors = SL.themeManager.getActiveTheme(),
         typography = Typography(
-            button = TextStyle(fontFamily = smol_app.SmolTheme.orbitronSpaceFont)
+            button = TextStyle(fontFamily = SmolTheme.orbitronSpaceFont)
         )
     ) {
         Children(router.state) { screen ->

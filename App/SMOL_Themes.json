@@ -1,0 +1,13 @@
+{
+  "themes": {
+    "kemet": {
+      "isDark": true,
+      "primary": "7650E0",
+      "primaryVariant": "9B46D5",
+      "secondary": "AA11A9",
+      "secondaryVariant": "701A8C",
+      "surface": "1E4781",
+      "background": "1B2452"
+    }
+  }
+}

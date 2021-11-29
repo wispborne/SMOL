@@ -8,7 +8,7 @@ import utilities.Config
 class UIConfig(gson: Gson) : Config(
     gson, JsonFilePrefStorage(
         gson = gson,
-        file = Constants.UICONFIG_PATH
+        file = Constants.UI_CONFIG_PATH
     )
 ) {
     var windowState: SmolWindowState? by pref(prefKey = "windowState", defaultValue = null)

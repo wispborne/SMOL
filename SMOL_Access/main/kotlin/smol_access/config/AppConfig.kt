@@ -9,7 +9,7 @@ class AppConfig(gson: Gson) :
     Config(
         gson, JsonFilePrefStorage(
             gson = gson,
-            file = Constants.APPCONFIG_PATH
+            file = Constants.APP_CONFIG_PATH
         )
     ) {
     var gamePath: String? by pref(prefKey = "gamePath", defaultValue = null)

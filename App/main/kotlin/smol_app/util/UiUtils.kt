@@ -7,10 +7,12 @@ import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.res.useResource
 import dev.andrewbailey.diff.differenceOf
 import smol_access.Constants
+import smol_access.SL
 import smol_access.ServiceLocator
 import smol_access.business.VmParamsManager
 import smol_access.config.Platform
 import smol_access.model.Mod
+import smol_app.themes.ThemeManager
 import java.awt.Desktop
 import java.net.URI
 import java.nio.file.Path
@@ -114,3 +116,6 @@ fun <T> MutableList<T>.replaceAllUsingDifference(newList: List<T>, doesOrderMatt
 
 val ServiceLocator.vmParamsManager: VmParamsManager
     get() = VmParamsManager(gamePath, currentPlatform)
+
+val ServiceLocator.themeManager: ThemeManager
+    get() = ThemeManager(SL.userManager, SL.themeConfig)

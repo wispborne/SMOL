@@ -30,31 +30,31 @@ import androidx.compose.ui.unit.dp
 
 object SmolTheme {
 
-    private val primary = Color(java.awt.Color.decode("#184957").rgb)
-    private val primaryVariant = Color(java.awt.Color.decode("#00212e").rgb)
-    private val secondary = Color(java.awt.Color.decode("#FCCF00").rgb)
-    private val background = Color(java.awt.Color.decode("#091A1F").rgb)
-    private val onBackground = Color(java.awt.Color.decode("#2d304e").rgb)
+    private val primary = Color(0xFF184957)
+    private val primaryVariant = Color(0xFF00212e)
+    private val secondary = Color(0xFFFCCF00)
+    private val background = Color(0xFF091A1F)
+    private val onBackground = Color(0xFF2d304e)
 
-    val DarkColors = darkColors(
+    val DefaultTheme = darkColors(
         primary = primary,
         primaryVariant = primaryVariant,
-        surface = Color(java.awt.Color.decode("#0A1D22").rgb),
+        surface = Color(0xFF0A1D22),
         secondary = secondary,
         background = background,
-        onPrimary = Color(java.awt.Color.decode("#A8DBFC").rgb)
+        onPrimary = Color(0xFFA8DBFC)
     )
 
-    val Kemet = darkColors(
-//        primary = Color(java.awt.Color.decode("#AA11A9").rgb),
-//        primaryVariant = Color(java.awt.Color.decode("#701A8C").rgb),
-        primary = Color(java.awt.Color.decode("#7650E0").rgb),
-        primaryVariant = Color(java.awt.Color.decode("#9B46D5").rgb),
-        secondary = Color(java.awt.Color.decode("#AA11A9").rgb),
-        secondaryVariant = Color(java.awt.Color.decode("#701A8C").rgb),
-        surface = Color(java.awt.Color.decode("#1E4781").rgb),
-        background = Color(java.awt.Color.decode("#1B2452").rgb),
-    )
+//    val Kemet = darkColors(
+////        primary = Color)0xFFAA11A9),
+////        primaryVariant = Color)0xFF701A8C),
+//        primary = Color(0xFF7650E0),
+//        primaryVariant = Color(0xFF9B46D5),
+//        secondary = Color(0xFFAA11A9),
+//        secondaryVariant = Color(0xFF701A8C),
+//        surface = Color(0xFF1E4781),
+//        background = Color(0xFF1B2452),
+//    )
 
     val orbitronSpaceFont = FontFamily(
         Font("Font-Orbitron/Orbitron-VariableFont_wght.ttf")

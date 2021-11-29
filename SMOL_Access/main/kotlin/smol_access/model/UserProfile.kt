@@ -5,7 +5,8 @@ data class UserProfile(
     val username: String,
     val activeModProfileId: Int,
     val modProfiles: List<ModProfile>,
-    val profileVersion: Int
+    val profileVersion: Int,
+    val theme: String?
 ) {
     val activeModProfile: ModProfile
         get() = modProfiles.firstOrNull { it.id == activeModProfileId } ?: modProfiles.first()

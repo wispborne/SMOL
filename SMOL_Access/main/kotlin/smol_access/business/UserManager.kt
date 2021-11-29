@@ -57,7 +57,8 @@ class UserManager internal constructor(
                 username = "default",
                 activeModProfileId = defaultModProfile.id,
                 modProfiles = listOf(defaultModProfile),
-                profileVersion = 0
+                profileVersion = 0,
+                theme = "kemet"
             )
         }
     }
