@@ -45,6 +45,17 @@ object SmolTheme {
         onPrimary = Color(java.awt.Color.decode("#A8DBFC").rgb)
     )
 
+    val Kemet = darkColors(
+//        primary = Color(java.awt.Color.decode("#AA11A9").rgb),
+//        primaryVariant = Color(java.awt.Color.decode("#701A8C").rgb),
+        primary = Color(java.awt.Color.decode("#7650E0").rgb),
+        primaryVariant = Color(java.awt.Color.decode("#9B46D5").rgb),
+        secondary = Color(java.awt.Color.decode("#AA11A9").rgb),
+        secondaryVariant = Color(java.awt.Color.decode("#701A8C").rgb),
+        surface = Color(java.awt.Color.decode("#1E4781").rgb),
+        background = Color(java.awt.Color.decode("#1B2452").rgb),
+    )
+
     val orbitronSpaceFont = FontFamily(
         Font("Font-Orbitron/Orbitron-VariableFont_wght.ttf")
     )

@@ -13,7 +13,7 @@ import smol_app.views.*
 @Preview
 fun AppState.appView() {
     MaterialTheme(
-        colors = smol_app.SmolTheme.DarkColors,
+        colors = smol_app.SmolTheme.Kemet,
         typography = Typography(
             button = TextStyle(fontFamily = smol_app.SmolTheme.orbitronSpaceFont)
         )
