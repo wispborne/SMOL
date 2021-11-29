@@ -1,9 +1,5 @@
 package smol_app.views
 
-import smol_app.AppState
-import smol_app.SmolButton
-import smol_app.SmolOutlinedTextField
-import smol_app.SmolTooltipText
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.TooltipArea
@@ -20,11 +16,9 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import smol_app.cli.SmolCLI
 import com.arkivanov.decompose.push
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import smol_app.navigation.Screen
 import org.tinylog.Logger
 import smol_access.SL
 import smol_access.business.Archives
@@ -34,6 +28,13 @@ import smol_access.business.asWatchChannel
 import smol_access.config.Platform
 import smol_access.model.Mod
 import smol_access.util.IOLock
+import smol_app.AppState
+import smol_app.cli.SmolCLI
+import smol_app.navigation.Screen
+import smol_app.themes.SmolButton
+import smol_app.themes.SmolOutlinedTextField
+import smol_app.themes.SmolTheme
+import smol_app.themes.SmolTooltipText
 import smol_app.util.filterMods
 import smol_app.util.replaceAllUsingDifference
 import smol_app.util.vmParamsManager
@@ -320,7 +321,7 @@ private fun AppState.refreshButton(
             Icon(
                 painter = painterResource("refresh.svg"),
                 contentDescription = "Refresh",
-                tint = smol_app.SmolTheme.dimmedIconColor()
+                tint = SmolTheme.dimmedIconColor()
             )
         }
     }
@@ -355,8 +356,8 @@ private fun AppState.launchButton() {
         },
         modifier = Modifier
             .padding(start = 16.dp)
-            .border(4.dp, smol_app.SmolTheme.highlight(), shape = smol_app.SmolTheme.smolFullyClippedButtonShape()),
-        shape = smol_app.SmolTheme.smolFullyClippedButtonShape()
+            .border(4.dp, SmolTheme.highlight(), shape = SmolTheme.smolFullyClippedButtonShape()),
+        shape = SmolTheme.smolFullyClippedButtonShape()
     ) {
         Text(text = "Launch")
     }
@@ -405,7 +406,7 @@ private fun AppState.installModsButton(modifier: Modifier = Modifier) {
             Icon(
                 painter = painterResource("plus.svg"),
                 contentDescription = null,
-                tint = smol_app.SmolTheme.dimmedIconColor()
+                tint = SmolTheme.dimmedIconColor()
             )
         }
     }

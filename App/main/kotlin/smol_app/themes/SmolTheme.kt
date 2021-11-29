@@ -1,4 +1,4 @@
-package smol_app
+package smol_app.themes
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -27,34 +27,10 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import smol_access.themes.Theme
+import smol_app.util.hexToColor
 
 object SmolTheme {
-
-    private val primary = Color(0xFF184957)
-    private val primaryVariant = Color(0xFF00212e)
-    private val secondary = Color(0xFFFCCF00)
-    private val background = Color(0xFF091A1F)
-    private val onBackground = Color(0xFF2d304e)
-
-    val DefaultTheme = darkColors(
-        primary = primary,
-        primaryVariant = primaryVariant,
-        surface = Color(0xFF0A1D22),
-        secondary = secondary,
-        background = background,
-        onPrimary = Color(0xFFA8DBFC)
-    )
-
-//    val Kemet = darkColors(
-////        primary = Color)0xFFAA11A9),
-////        primaryVariant = Color)0xFF701A8C),
-//        primary = Color(0xFF7650E0),
-//        primaryVariant = Color(0xFF9B46D5),
-//        secondary = Color(0xFFAA11A9),
-//        secondaryVariant = Color(0xFF701A8C),
-//        surface = Color(0xFF1E4781),
-//        background = Color(0xFF1B2452),
-//    )
 
     val orbitronSpaceFont = FontFamily(
         Font("Font-Orbitron/Orbitron-VariableFont_wght.ttf")
@@ -81,6 +57,24 @@ object SmolTheme {
 
     fun iconHeightWidth() = ButtonDefaults.MinHeight
     fun textIconHeightWidth() = ButtonDefaults.IconSize
+
+    fun Theme.toColors(): Colors {
+        val theme = this
+        var builder = if (theme.isDark) darkColors() else lightColors()
+        theme.primary?.hexToColor()?.run { builder = builder.copy(primary = this) }
+        theme.primaryVariant?.hexToColor()?.run { builder = builder.copy(primaryVariant = this) }
+        theme.secondary?.hexToColor()?.run { builder = builder.copy(secondary = this) }
+        theme.secondaryVariant?.hexToColor()?.run { builder = builder.copy(secondaryVariant = this) }
+        theme.background?.hexToColor()?.run { builder = builder.copy(background = this) }
+        theme.surface?.hexToColor()?.run { builder = builder.copy(surface = this) }
+        theme.error?.hexToColor()?.run { builder = builder.copy(error = this) }
+        theme.onPrimary?.hexToColor()?.run { builder = builder.copy(onPrimary = this) }
+        theme.onSecondary?.hexToColor()?.run { builder = builder.copy(onSecondary = this) }
+        theme.onBackground?.hexToColor()?.run { builder = builder.copy(onBackground = this) }
+        theme.onSurface?.hexToColor()?.run { builder = builder.copy(onSurface = this) }
+        theme.onError?.hexToColor()?.run { builder = builder.copy(onError = this) }
+        return builder
+    }
 }
 
 @Composable

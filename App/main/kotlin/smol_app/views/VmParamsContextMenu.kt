@@ -1,10 +1,5 @@
 package smol_app.views
 
-import smol_access.SL
-import smol_app.SmolButton
-import smol_app.SmolSecondaryButton
-import smol_app.SmolTextField
-import smol_app.SmolTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.GridCells
 import androidx.compose.foundation.lazy.LazyVerticalGrid
@@ -21,6 +16,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.tinylog.kotlin.Logger
 import oshi.SystemInfo
+import smol_access.SL
+import smol_app.themes.SmolButton
+import smol_app.themes.SmolSecondaryButton
+import smol_app.themes.SmolTextField
+import smol_app.themes.SmolTheme
 import smol_app.util.vmParamsManager
 import kotlin.math.floor
 import kotlin.math.roundToInt

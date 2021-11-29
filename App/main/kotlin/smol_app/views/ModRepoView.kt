@@ -39,9 +39,13 @@ import org.tinylog.kotlin.Logger
 import smol_access.Constants
 import smol_access.SL
 import smol_access.business.DownloadItem
-import smol_app.*
+import smol_app.AppState
 import smol_app.browser.ForumWebpageModifier
 import smol_app.browser.javaFXPanel
+import smol_app.themes.SmolAlertDialog
+import smol_app.themes.SmolButton
+import smol_app.themes.SmolTheme
+import smol_app.themes.SmolTooltipText
 import smol_app.util.bytesAsReadableMiB
 import smol_app.util.openAsUriInBrowser
 import smol_app.util.openInDesktop

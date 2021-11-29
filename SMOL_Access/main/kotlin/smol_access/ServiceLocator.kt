@@ -17,6 +17,7 @@ import smol_access.config.VersionCheckerCache
 import smol_access.config.VramCheckerCache
 import smol_access.model.ModInfo
 import smol_access.themes.ThemeConfig
+import smol_access.themes.ThemeManager
 import smol_access.util.ManualReloadTrigger
 
 var SL = ServiceLocator()
@@ -32,7 +33,7 @@ class ServiceLocator internal constructor(
         .addLast(KotlinJsonAdapterFactory())
         .build(),
     val gson: Gson = buildGson(),
-    val themeConfig: ThemeConfig = ThemeConfig(gson = gson),
+    internal val themeConfig: ThemeConfig = ThemeConfig(gson = gson),
     val downloadManager: DownloadManager = DownloadManager(),
     internal val versionCheckerCache: VersionCheckerCache = VersionCheckerCache(gson = gson),
     val versionChecker: VersionChecker = VersionChecker(gson = gson, versionCheckerCache = versionCheckerCache),
@@ -72,6 +73,7 @@ class ServiceLocator internal constructor(
     val userManager: UserManager = UserManager(
         appConfig = appConfig, access = access, modLoader = modLoader
     ),
+    val themeManager: ThemeManager = ThemeManager(userManager = userManager, themeConfig = themeConfig),
     val modRepo: ModRepo = ModRepo()
 )
 

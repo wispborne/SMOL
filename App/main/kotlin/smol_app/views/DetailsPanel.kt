@@ -1,7 +1,5 @@
 package smol_app.views
 
-import smol_app.SmolTheme
-import smol_app.TiledImage
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.selection.DisableSelection
@@ -24,6 +22,8 @@ import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import smol_access.SL
 import smol_access.business.findDependencies
+import smol_app.themes.SmolTheme
+import smol_app.themes.TiledImage
 import smol_app.util.imageResource
 import smol_app.util.openModThread
 import java.awt.Cursor

@@ -1,11 +1,5 @@
 package smol_app.views
 
-import smol_app.AppState
-import smol_access.SL
-import smol_app.SmolAlertDialog
-import smol_app.SmolButton
-import smol_app.SmolSecondaryButton
-import smol_app.SmolTextField
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,6 +10,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.pop
+import smol_access.SL
+import smol_app.AppState
+import smol_app.themes.SmolAlertDialog
+import smol_app.themes.SmolButton
+import smol_app.themes.SmolSecondaryButton
+import smol_app.themes.SmolTextField
+import smol_app.util.hexToColor
 import utilities.rootCause
 import java.io.File
 import javax.swing.JFileChooser
@@ -41,6 +42,7 @@ fun AppState.settingsView(
                 var gamePath by remember { mutableStateOf(SL.appConfig.gamePath ?: "") }
                 var archivesPath by remember { mutableStateOf(SL.appConfig.archivesPath ?: "") }
                 var stagingPath by remember { mutableStateOf(SL.appConfig.stagingPath ?: "") }
+                var themeName by remember { mutableStateOf(SL.themeManager.activeTheme.value.first ?: "") }
                 var alertDialogMessage: String? by remember { mutableStateOf(null) }
 
                 fun save(): Boolean {
@@ -74,6 +76,7 @@ fun AppState.settingsView(
                             gamePath = gamePathSetting(gamePath)
                             archivesPath = archivesPathSetting(archivesPath)
                             stagingPath = stagingPathSetting(stagingPath)
+                            themeName = themeDropdown(Modifier.padding(start = 16.dp, top = 16.dp))
                         }
                     }
                 }
@@ -214,6 +217,33 @@ private fun AppState.stagingPathSetting(stagingPath: String): String {
     }
 
     return stagingPathMutable
+}
+
+@Composable
+private fun AppState.themeDropdown(modifier: Modifier = Modifier): String {
+    var themeName by remember { mutableStateOf(SL.themeManager.activeTheme.value.first) }
+
+    val themes = SL.themeManager.getThemes()
+    Row(modifier) {
+        Text(modifier = Modifier.align(Alignment.CenterVertically), text = "Theme")
+        SmolDropdown.DropdownWithButton(
+            modifier = Modifier.padding(start = 16.dp).align(Alignment.CenterVertically),
+            items = themes
+                .map {
+                    SmolDropdown.DropdownMenuItem(
+                        text = it.key,
+                        backgroundColor = it.value.surface?.hexToColor() ?: MaterialTheme.colors.background,
+                        onClick = {
+                            themeName = it.key
+                            SL.themeManager.setActiveTheme(it.key)
+                        }
+                    )
+                },
+            initiallySelectedIndex = themes.keys.indexOf(themeName).coerceAtLeast(0)
+        )
+    }
+
+    return themeName
 }
 
 private fun pickFolder(initialPath: String, window: ComposeWindow): String? {
