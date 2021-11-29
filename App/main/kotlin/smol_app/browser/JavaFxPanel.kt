@@ -105,6 +105,8 @@ fun javaFXPanel(
             add(panel)
         }
         root.add(container)
+
+        Platform.setImplicitExit(false);
         Platform.runLater {
             onCreate.invoke()
         }

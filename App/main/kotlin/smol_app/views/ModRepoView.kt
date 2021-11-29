@@ -29,6 +29,7 @@ import javafx.scene.Group
 import javafx.scene.Scene
 import javafx.scene.paint.Color
 import javafx.scene.web.WebView
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
@@ -54,6 +55,9 @@ import java.net.URL
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.name
 
+object WebViewHolder {
+    var webView: WebView? = null
+}
 
 @OptIn(
     ExperimentalMaterialApi::class,
@@ -127,61 +131,70 @@ fun AppState.ModBrowserView(
                         root,
                         Color.rgb(background.red.toInt(), background.green.toInt(), background.blue.toInt())
                     )
-                    WebView().apply {
-                        jfxpanel.scene = scene
-
-                        this.engine.apply {
-                            isJavaScriptEnabled = true
-                            locationProperty().addListener { _, oldLoc, newLoc ->
-                                // check to see if newLoc is downloadable.
-                                scope.launch {
-                                    SL.downloadManager.download(url = newLoc)
-                                }
-                            }
-                            loadWorker.exceptionProperty().addListener { _, _, throwable ->
-                                Timber.i(throwable)
-                            }
-                            setOnError {
-                                Timber.d { it.message }
-                            }
-                        }
-
-                        prefWidth = jfxpanel.width.toDouble()
-                        prefHeight = jfxpanel.height.toDouble()
-
-                        linkLoader = { url ->
-                            Platform.runLater {
-                                this.engine.loadContent(
-                                    (getData(url) ?: "")
-                                        .let { html ->
-                                            if (URI.create(url).host.equals(
-                                                    Constants.FORUM_HOSTNAME,
-                                                    ignoreCase = true
-                                                )
-                                            ) {
-                                                ForumWebpageModifier.filterToFirstPost(html)
-                                            } else {
-                                                html
-                                            }
-                                        }
-                                )
-                            }
-                        }
-
-                        linkLoader?.invoke(Constants.FORUM_MOD_INDEX_URL)
-                        root.children.add(this)
+                    if (WebViewHolder.webView == null) {
+                        createWebView(scope, linkLoader) { linkLoader = it }
                     }
+                    WebViewHolder.webView!!.prefWidth = jfxpanel.width.toDouble()
+                    WebViewHolder.webView!!.prefHeight = jfxpanel.height.toDouble()
+                    jfxpanel.scene = scene
+                    root.children.add(WebViewHolder.webView)
                 }
             }
         }
-
-        if (alertDialogMessage != null) {
-            SmolAlertDialog(
-                onDismissRequest = { alertDialogMessage = null },
-                text = { Text(text = alertDialogMessage ?: "") }
-            )
-        }
     }
+
+    if (alertDialogMessage != null) {
+        SmolAlertDialog(
+            onDismissRequest = { alertDialogMessage = null },
+            text = { Text(text = alertDialogMessage ?: "") }
+        )
+    }
+}
+
+fun createWebView(
+    scope: CoroutineScope,
+    linkLoader: ((String) -> Unit)?,
+    setLinkLoader: (((String) -> Unit)) -> Unit
+) {
+    WebViewHolder.webView =
+        WebView().apply {
+            this.engine.apply {
+                isJavaScriptEnabled = true
+                locationProperty().addListener { _, oldLoc, newLoc ->
+                    // check to see if newLoc is downloadable.
+                    scope.launch {
+                        SL.downloadManager.downloadAndInstall(url = newLoc)
+                    }
+                }
+                loadWorker.exceptionProperty().addListener { _, _, throwable ->
+                    Timber.i(throwable)
+                }
+                setOnError {
+                    Timber.d { it.message }
+                }
+            }
+
+            setLinkLoader { url ->
+                Platform.runLater {
+                    this.engine.loadContent(
+                        (getData(url) ?: "")
+                            .let { html ->
+                                if (URI.create(url).host.equals(
+                                        Constants.FORUM_HOSTNAME,
+                                        ignoreCase = true
+                                    )
+                                ) {
+                                    ForumWebpageModifier.filterToFirstPost(html)
+                                } else {
+                                    html
+                                }
+                            }
+                    )
+                }
+            }
+
+            linkLoader?.invoke(Constants.FORUM_MOD_INDEX_URL)
+        }
 }
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)

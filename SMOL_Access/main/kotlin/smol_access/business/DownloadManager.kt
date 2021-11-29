@@ -5,6 +5,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import smol_access.Constants
+import smol_access.SL
 import smol_access.util.IOLock
 import timber.ktx.Timber
 import utilities.transferTo
@@ -31,7 +32,7 @@ class DownloadManager {
             .getOrDefault(false)
     }
 
-    suspend fun download(url: String?) {
+    suspend fun downloadAndInstall(url: String?) {
         runCatching {
             if (!isDownloadable(url)) {
                 Timber.d { "Link not downloadable (no file): $url." }
@@ -86,6 +87,12 @@ class DownloadManager {
                             if (downloadSize != null) download.progress.emit(downloadSize)
                             download.status.emit(DownloadItem.Status.Completed)
                             Timber.i { "Downloaded $filename to $file." }
+
+                            // Try to install the mod
+                            SL.access.installFromUnknownSource(
+                                inputFile = download.path,
+                                shouldCompressModFolder = true
+                            )
                         }
                             .onFailure { download.status.emit(DownloadItem.Status.Failed(it)) }
                             .getOrThrow()
