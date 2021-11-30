@@ -15,6 +15,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.push
 import kotlinx.coroutines.*
@@ -34,6 +35,7 @@ import smol_app.navigation.Screen
 import smol_app.themes.SmolButton
 import smol_app.themes.SmolOutlinedTextField
 import smol_app.themes.SmolTheme
+import smol_app.themes.SmolTheme.lighten
 import smol_app.themes.SmolTooltipText
 import smol_app.util.filterMods
 import smol_app.util.replaceAllUsingDifference
@@ -354,12 +356,14 @@ private fun AppState.launchButton() {
                     SL.appConfig.gamePath.toFileOrNull()
                 )
         },
+        colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.primary.lighten()),
         modifier = Modifier
             .padding(start = 16.dp)
-            .border(4.dp, SmolTheme.highlight(), shape = SmolTheme.smolFullyClippedButtonShape()),
-        shape = SmolTheme.smolFullyClippedButtonShape()
+            .border(6.dp, MaterialTheme.colors.primary, shape = SmolTheme.smolFullyClippedButtonShape()),
+        shape = SmolTheme.smolFullyClippedButtonShape(),
+        elevation = ButtonDefaults.elevation(defaultElevation = 4.dp, hoveredElevation = 8.dp, pressedElevation = 16.dp)
     ) {
-        Text(text = "Launch")
+        Text(text = "Launch", fontWeight = FontWeight.SemiBold)
     }
 }
 

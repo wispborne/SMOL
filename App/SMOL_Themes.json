@@ -1,5 +1,14 @@
 {
   "themes": {
+    "Default": {
+      "isDark": true,
+      "primary": "#184957",
+      "primaryVariant": "#00212e",
+      "secondary": "#FCCF00",
+      "surface": "#0A1D22",
+      "background": "#091A1F",
+      "onPrimary": "#A8DBFC"
+    },
     "Kemet": {
       "isDark": true,
       "primary": "#7650E0",
@@ -8,6 +17,15 @@
       "secondaryVariant": "#701A8C",
       "surface": "#1E4781",
       "background": "#1B2452"
+    },
+    "Aurica": {
+      "isDark": false,
+      "primary": "#FFC900",
+      "primaryVariant": "#FFD539",
+      "secondary": "#FFDE00",
+      "secondaryVariant": "#FFE739",
+      "surface": "#F0F0F0",
+      "background": "#FFFFFF"
     }
   }
 }

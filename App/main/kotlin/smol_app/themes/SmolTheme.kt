@@ -52,7 +52,20 @@ object SmolTheme {
     fun smolFullyClippedButtonShape() = CutCornerShape(size = cornerClipping)
 
     @Composable
-    fun highlight() = MaterialTheme.colors.onSurface.copy(alpha = .70f)
+    fun Color.lighten() = this.alter(amount = 20)
+    fun Color.darken() = this.alter(amount = -20)
+
+    fun Color.alter(amount: Int): Color {
+        val r = ((this.red * 255) + amount).coerceIn(0f, 255f).toInt().toString(radix = 16)
+        val g = ((this.green * 255) + amount).coerceIn(0f, 255f).toInt().toString(radix = 16)
+        val b = ((this.blue * 255) + amount).coerceIn(0f, 255f).toInt().toString(radix = 16)
+
+        val rr = (if (r.length < 2) "0" else "") + r
+        val gg = (if (g.length < 2) "0" else "") + g
+        val bb = (if (b.length < 2) "0" else "") + b
+
+        return "$rr$gg$bb".hexToColor() ?: this
+    }
 
     @Composable
     fun dimmedIconColor() = LocalContentColor.current.copy(alpha = .65f)

@@ -26,6 +26,7 @@ import smol_access.SL
 import smol_access.model.UserProfile
 import smol_app.AppState
 import smol_app.themes.*
+import smol_app.themes.SmolTheme.lighten
 import smol_app.util.ellipsizeAfter
 
 @OptIn(
@@ -76,7 +77,7 @@ fun AppState.ProfilesView(
                                 // Highlight active profile
                                 if (isActiveProfile) this.border(
                                     width = 4.dp,
-                                    color = SmolTheme.highlight(),
+                                    color = MaterialTheme.colors.onSurface.lighten(),
                                     shape = SmolTheme.smolFullyClippedButtonShape()
                                 ) else this
                             },
@@ -157,7 +158,7 @@ fun AppState.ProfilesView(
                                                 .run {
                                                     if (isEditMode) this.border(
                                                         width = 2.dp,
-                                                        color = SmolTheme.highlight(),
+                                                        color = MaterialTheme.colors.onSurface.lighten(),
                                                         shape = SmolTheme.smolNormalButtonShape()
                                                     ) else this
                                                 }

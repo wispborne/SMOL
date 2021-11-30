@@ -34,12 +34,16 @@ class ThemeManager(
     }
 
     fun getThemes(): Map<String, Theme> =
-        mapOf(defaultTheme) +
-                kotlin.runCatching {
-                    themeConfig.themes
-                }
-                    .onFailure { Timber.w(it) }
-                    .getOrElse { emptyMap() }
+        kotlin.runCatching {
+            themeConfig.themes
+        }
+            .onFailure { Timber.w(it) }
+            .getOrElse { emptyMap() }
+            .run {
+                // Add default theme if it isn't present
+                if (!this.containsKey(defaultTheme.first)) mapOf(defaultTheme) + this
+                else this
+            }
 
     private fun getActiveTheme(): Pair<String, Theme> {
         val activeThemeName = userManager.getUserProfile().theme

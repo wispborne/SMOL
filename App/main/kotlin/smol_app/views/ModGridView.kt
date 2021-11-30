@@ -190,9 +190,10 @@ fun AppState.ModGridView(
                                                     }
                                                         .align(Alignment.CenterVertically)) {
                                                         Image(
-                                                            painter = painterResource("news64.png"),
+                                                            painter = painterResource("new-box.svg"),
                                                             contentDescription = null,
-                                                            modifier = Modifier.width(26.dp).height(26.dp)
+                                                            colorFilter = ColorFilter.tint(SmolTheme.dimmedIconColor()),
+                                                            modifier = Modifier.width(28.dp).height(28.dp)
                                                                 .padding(end = 8.dp)
                                                                 .align(Alignment.CenterVertically)
                                                         )
@@ -647,13 +648,13 @@ object SmolDropdown {
                     .align(Alignment.CenterStart),
                 shape = SmolTheme.smolFullyClippedButtonShape(),
                 colors = ButtonDefaults.buttonColors(
-                    backgroundColor = backgroundColor,
-                    contentColor = selectedItem.contentColor ?: contentColorFor(backgroundColor)
+                    backgroundColor = backgroundColor
                 )
             ) {
                 Text(
                     text = selectedItem.text,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = selectedItem.contentColor ?: contentColorFor(backgroundColor)
                 )
                 dropdownArrow(
                     Modifier
@@ -681,7 +682,10 @@ object SmolDropdown {
                             Text(
                                 text = item.text,
                                 modifier = Modifier.weight(1f),
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                color = item.contentColor ?: contentColorFor(
+                                    item.backgroundColor ?: MaterialTheme.colors.surface
+                                )
                             )
                         }
                     }

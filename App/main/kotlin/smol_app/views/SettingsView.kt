@@ -16,7 +16,7 @@ import smol_access.Constants
 import smol_access.SL
 import smol_app.AppState
 import smol_app.themes.*
-import smol_app.util.hexToColor
+import smol_app.themes.SmolTheme.toColors
 import smol_app.util.openInDesktop
 import utilities.rootCause
 import java.io.File
@@ -43,7 +43,6 @@ fun AppState.settingsView(
                 var gamePath by remember { mutableStateOf(SL.appConfig.gamePath ?: "") }
                 var archivesPath by remember { mutableStateOf(SL.appConfig.archivesPath ?: "") }
                 var stagingPath by remember { mutableStateOf(SL.appConfig.stagingPath ?: "") }
-                var themeName by remember { mutableStateOf(SL.themeManager.activeTheme.value.first ?: "") }
                 var alertDialogMessage: String? by remember { mutableStateOf(null) }
 
                 fun save(): Boolean {
@@ -77,7 +76,7 @@ fun AppState.settingsView(
                             gamePath = gamePathSetting(gamePath)
                             archivesPath = archivesPathSetting(archivesPath)
                             stagingPath = stagingPathSetting(stagingPath)
-                            themeName = themeDropdown(Modifier.padding(start = 16.dp, top = 16.dp))
+                            themeDropdown(Modifier.padding(start = 16.dp, top = 16.dp))
                         }
                     }
                 }
@@ -235,8 +234,8 @@ private fun AppState.themeDropdown(modifier: Modifier = Modifier): String {
                 .map {
                     SmolDropdown.DropdownMenuItem(
                         text = it.key,
-                        backgroundColor = it.value.surface?.hexToColor(),
-                        contentColor = it.value.onSurface?.hexToColor(),
+                        backgroundColor = it.value.toColors().surface,
+                        contentColor = it.value.toColors().onSurface,
                         onClick = {
                             themeName = it.key
                             SL.themeManager.setActiveTheme(it.key)
