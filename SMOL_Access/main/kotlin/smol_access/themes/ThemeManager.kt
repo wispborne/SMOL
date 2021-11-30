@@ -9,7 +9,7 @@ class ThemeManager(
     private val userManager: UserManager,
     private val themeConfig: ThemeConfig
 ) {
-    private val defaultTheme = "default" to Theme(
+    private val defaultTheme = "Default" to Theme(
         isDark = true,
         primary = 0xFF184957,
         primaryVariant = 0xFF00212e,
@@ -22,15 +22,6 @@ class ThemeManager(
 
     private val activeThemeInner = MutableStateFlow(getActiveTheme())
     val activeTheme = activeThemeInner.asStateFlow()
-
-    private fun getActiveTheme(): Pair<String, Theme> {
-        val activeThemeName = userManager.getUserProfile().theme
-        return activeThemeName?.let { themeName ->
-            kotlin.runCatching { activeThemeName to getThemes()[themeName]!! }
-                .onFailure { Timber.w(it) }
-                .getOrNull()
-        } ?: defaultTheme
-    }
 
     fun setActiveTheme(themeName: String) {
         val theme = getThemes()[themeName]
@@ -49,4 +40,13 @@ class ThemeManager(
                 }
                     .onFailure { Timber.w(it) }
                     .getOrElse { emptyMap() }
+
+    private fun getActiveTheme(): Pair<String, Theme> {
+        val activeThemeName = userManager.getUserProfile().theme
+        return activeThemeName?.let { themeName ->
+            kotlin.runCatching { activeThemeName to getThemes()[themeName]!! }
+                .onFailure { Timber.w(it) }
+                .getOrNull()
+        } ?: defaultTheme
+    }
 }

@@ -8,25 +8,21 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.isPrimaryPressed
-import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import smol_access.SL
 import smol_access.business.findDependencies
+import smol_app.themes.SmolLinkText
 import smol_app.themes.SmolTheme
 import smol_app.themes.TiledImage
 import smol_app.util.imageResource
 import smol_app.util.openModThread
-import java.awt.Cursor
 
 @OptIn(
     ExperimentalUnitApi::class,
@@ -93,17 +89,14 @@ fun BoxScope.detailsPanel(
                 val versionCheckerInfo = row.mod.findHighestVersion?.versionCheckerInfo
                 if (versionCheckerInfo?.modThreadId != null) {
                     DisableSelection {
-                        Text(
+                        SmolLinkText(
                             text = "Forum Thread",
                             modifier = Modifier.padding(top = 16.dp)
-                                .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)))
                                 .mouseClickable {
                                     if (this.buttons.isPrimaryPressed) {
                                         versionCheckerInfo.modThreadId!!.openModThread()
                                     }
-                                },
-                            color = Color.Cyan,
-                            textDecoration = TextDecoration.Underline
+                                }
                         )
                     }
                 }

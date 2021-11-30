@@ -625,7 +625,8 @@ fun debugDialog(
 object SmolDropdown {
     data class DropdownMenuItem(
         val text: String,
-        val backgroundColor: Color,
+        val backgroundColor: Color?,
+        val contentColor: Color?,
         val onClick: () -> Unit
     )
 
@@ -639,13 +640,15 @@ object SmolDropdown {
         var selectedIndex by remember { mutableStateOf(initiallySelectedIndex) }
         Box(modifier) {
             val selectedItem = items[selectedIndex]
+            val backgroundColor = selectedItem.backgroundColor ?: MaterialTheme.colors.primary
             SmolButton(
                 onClick = { expanded = true },
                 modifier = Modifier.wrapContentWidth()
                     .align(Alignment.CenterStart),
                 shape = SmolTheme.smolFullyClippedButtonShape(),
                 colors = ButtonDefaults.buttonColors(
-                    backgroundColor = selectedItem.backgroundColor
+                    backgroundColor = backgroundColor,
+                    contentColor = selectedItem.contentColor ?: contentColorFor(backgroundColor)
                 )
             ) {
                 Text(
@@ -668,7 +671,7 @@ object SmolDropdown {
             ) {
                 items.forEachIndexed { index, item ->
                     DropdownMenuItem(
-                        modifier = Modifier.background(color = item.backgroundColor),
+                        modifier = Modifier.let { if (item.backgroundColor != null) it.background(item.backgroundColor) else it },
                         onClick = {
                             selectedIndex = index
                             expanded = false

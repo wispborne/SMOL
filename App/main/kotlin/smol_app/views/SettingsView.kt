@@ -1,8 +1,10 @@
 package smol_app.views
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.mouseClickable
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -10,20 +12,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.pop
+import smol_access.Constants
 import smol_access.SL
 import smol_app.AppState
-import smol_app.themes.SmolAlertDialog
-import smol_app.themes.SmolButton
-import smol_app.themes.SmolSecondaryButton
-import smol_app.themes.SmolTextField
+import smol_app.themes.*
 import smol_app.util.hexToColor
+import smol_app.util.openInDesktop
 import utilities.rootCause
 import java.io.File
 import javax.swing.JFileChooser
 
 @OptIn(
     ExperimentalMaterialApi::class,
-    androidx.compose.foundation.ExperimentalFoundationApi::class
+    ExperimentalFoundationApi::class
 )
 @Composable
 @Preview
@@ -219,11 +220,13 @@ private fun AppState.stagingPathSetting(stagingPath: String): String {
     return stagingPathMutable
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun AppState.themeDropdown(modifier: Modifier = Modifier): String {
     var themeName by remember { mutableStateOf(SL.themeManager.activeTheme.value.first) }
-
     val themes = SL.themeManager.getThemes()
+    val recomposeScope = currentRecomposeScope
+
     Row(modifier) {
         Text(modifier = Modifier.align(Alignment.CenterVertically), text = "Theme")
         SmolDropdown.DropdownWithButton(
@@ -232,7 +235,8 @@ private fun AppState.themeDropdown(modifier: Modifier = Modifier): String {
                 .map {
                     SmolDropdown.DropdownMenuItem(
                         text = it.key,
-                        backgroundColor = it.value.surface?.hexToColor() ?: MaterialTheme.colors.background,
+                        backgroundColor = it.value.surface?.hexToColor(),
+                        contentColor = it.value.onSurface?.hexToColor(),
                         onClick = {
                             themeName = it.key
                             SL.themeManager.setActiveTheme(it.key)
@@ -240,6 +244,19 @@ private fun AppState.themeDropdown(modifier: Modifier = Modifier): String {
                     )
                 },
             initiallySelectedIndex = themes.keys.indexOf(themeName).coerceAtLeast(0)
+        )
+        SmolLinkText(
+            modifier = Modifier
+                .padding(start = 16.dp)
+                .align(Alignment.CenterVertically)
+                .mouseClickable { Constants.THEME_CONFIG_PATH.openInDesktop() }, text = "Edit"
+        )
+        SmolLinkText(
+            modifier = Modifier
+                .padding(start = 16.dp)
+                .align(Alignment.CenterVertically)
+                .mouseClickable { recomposeScope.invalidate() },
+            text = "Refresh"
         )
     }
 
