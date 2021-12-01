@@ -24,6 +24,7 @@ import smol_app.util.currentPlatform
 import timber.LogLevel
 import timber.Timber
 import utilities.makeFinite
+import java.awt.Color
 
 
 var safeMode = false
@@ -75,7 +76,6 @@ fun main() = application {
 
     var newState = rememberWindowState()
 
-
     kotlin.runCatching {
         access.checkAndSetDefaultPaths(currentPlatform)
     }
@@ -115,7 +115,6 @@ fun main() = application {
         icon = painterResource("kotlin-icon.svg"),
         onPreviewKeyEvent = { event -> onKeyEventHandlers.any { it(event) } }
     ) {
-
         val router = rememberRouter<Screen>(
             initialConfiguration = { Screen.Home },
             handleBackButton = true

@@ -32,11 +32,12 @@ import smol_access.util.IOLock
 import smol_app.AppState
 import smol_app.cli.SmolCLI
 import smol_app.navigation.Screen
-import smol_app.themes.SmolButton
-import smol_app.themes.SmolOutlinedTextField
+import smol_app.components.SmolButton
+import smol_app.components.SmolOutlinedTextField
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.lighten
-import smol_app.themes.SmolTooltipText
+import smol_app.components.SmolTooltipText
+import smol_app.util.currentPlatform
 import smol_app.util.filterMods
 import smol_app.util.replaceAllUsingDifference
 import smol_app.util.vmParamsManager
@@ -49,8 +50,8 @@ import kotlin.io.path.exists
 
 
 @OptIn(
-    ExperimentalCoroutinesApi::class, androidx.compose.material.ExperimentalMaterialApi::class,
-    androidx.compose.ui.ExperimentalComposeUiApi::class
+    ExperimentalCoroutinesApi::class, ExperimentalMaterialApi::class,
+    ExperimentalComposeUiApi::class
 )
 @Composable
 @Preview
@@ -79,23 +80,6 @@ fun AppState.homeView(
     rememberCoroutineScope { Dispatchers.Default }.launch {
         watchDirsAndReloadOnChange()
     }
-
-//    rememberCoroutineScope { Dispatchers.Default }.launch(Dispatchers.Default) {
-//        Logger.debug { "Starting to watch IOLock." }
-//        IOLock.stateFlow
-//            .collect { isLocked ->
-//                if (isLocked) {
-//                    Logger.debug { "Canceling watch of folders." }
-//                    job.cancel()
-//                } else {
-//                    job.cancel()
-//                    job = Job()
-//                    (this + job).launch {
-//                        watchDirsAndReloadOnChange(mods)
-//                    }
-//                }
-//            }
-//    }
 
 //    var showConfirmMigrateDialog: Boolean by remember { mutableStateOf(false) }
     val composableScope = rememberCoroutineScope { Dispatchers.Default }
@@ -344,7 +328,7 @@ private fun AppState.launchButton() {
     SmolButton(
         onClick = {
             val gameLauncher = SL.appConfig.gamePath.toPathOrNull()?.resolve("starsector.exe")
-            val commands = when (smol_app.util.currentPlatform) {
+            val commands = when (currentPlatform) {
                 Platform.Windows -> arrayOf("cmd.exe", "/C")
                 else -> arrayOf("open")
             }

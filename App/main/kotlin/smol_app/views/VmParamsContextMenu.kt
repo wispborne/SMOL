@@ -17,9 +17,9 @@ import androidx.compose.ui.unit.sp
 import org.tinylog.kotlin.Logger
 import oshi.SystemInfo
 import smol_access.SL
-import smol_app.themes.SmolButton
-import smol_app.themes.SmolSecondaryButton
-import smol_app.themes.SmolTextField
+import smol_app.components.SmolButton
+import smol_app.components.SmolSecondaryButton
+import smol_app.components.SmolTextField
 import smol_app.themes.SmolTheme
 import smol_app.util.vmParamsManager
 import kotlin.math.floor

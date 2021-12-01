@@ -18,9 +18,9 @@ import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import smol_access.SL
 import smol_access.business.findDependencies
-import smol_app.themes.SmolLinkText
+import smol_app.components.SmolLinkText
 import smol_app.themes.SmolTheme
-import smol_app.themes.TiledImage
+import smol_app.components.TiledImage
 import smol_app.util.imageResource
 import smol_app.util.openModThread
 

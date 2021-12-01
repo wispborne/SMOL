@@ -15,7 +15,7 @@ import com.arkivanov.decompose.pop
 import smol_access.Constants
 import smol_access.SL
 import smol_app.AppState
-import smol_app.themes.*
+import smol_app.components.*
 import smol_app.themes.SmolTheme.toColors
 import smol_app.util.openInDesktop
 import utilities.rootCause
@@ -228,11 +228,11 @@ private fun AppState.themeDropdown(modifier: Modifier = Modifier): String {
 
     Row(modifier) {
         Text(modifier = Modifier.align(Alignment.CenterVertically), text = "Theme")
-        SmolDropdown.DropdownWithButton(
+        SmolDropdownWithButton(
             modifier = Modifier.padding(start = 16.dp).align(Alignment.CenterVertically),
             items = themes
                 .map {
-                    SmolDropdown.DropdownMenuItem(
+                    SmolDropdownMenuItem(
                         text = it.key,
                         backgroundColor = it.value.toColors().surface,
                         contentColor = it.value.toColors().onSurface,
