@@ -117,11 +117,17 @@ fun <T> MutableList<T>.replaceAllUsingDifference(newList: List<T>, doesOrderMatt
 }
 
 fun String.hexToColor(): Color? =
-    this
-        .removePrefix("#")
+    this.removePrefix("#")
         .padStart(length = 8, padChar = 'F')
         .toLongOrNull(radix = 16)
         ?.let { Color(it) }
+
+fun String.abbreviate(): String =
+    this.map { if (!it.isLetter()) ' ' else it }
+        .joinToString(separator = "")
+        .split(" ")
+        .filter { it.isNotBlank() }
+        .joinToString(separator = "") { it.firstOrNull()?.toString() ?: "" }
 
 // TODO These should be injected via an actual DI framework or something
 val ServiceLocator.vmParamsManager: VmParamsManager

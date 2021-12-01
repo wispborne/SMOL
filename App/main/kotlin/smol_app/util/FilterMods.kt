@@ -22,6 +22,13 @@ internal fun filterMods(query: String, mods: List<Mod>): List<Mod> {
                         Logger.info { "  ${variant.modInfo.name} has a score of $this for '$filterStr' in text \"${name}\"." }
                     }
 
+                    val modAbbreviation = variant.modInfo.name.abbreviate()
+
+                    if (modAbbreviation.length > 1) {
+                        FuzzySearch.partialRatio(filterStr, modAbbreviation) { it.lowercase() }
+                            .run { filterAndAdd(modAbbreviation) }
+                    }
+
                     FuzzySearch.partialRatio(filterStr, variant.modInfo.name) { it.lowercase() }
                         .run { filterAndAdd(variant.modInfo.name) }
                     FuzzySearch.partialRatio(filterStr, variant.modInfo.id) { it.lowercase() }
@@ -66,6 +73,13 @@ internal fun filterModPosts(query: String, mods: List<ScrapedMod>): List<Scraped
                     fun Int.filterAndAdd(name: String) {
                         results += name to this
                         Logger.info { "  ${mod.name} has a score of $this for '$filterStr' in text \"${name}\"." }
+                    }
+
+                    val modAbbreviation = mod.name.abbreviate()
+
+                    if (modAbbreviation.length > 1) {
+                        FuzzySearch.partialRatio(filterStr, modAbbreviation) { it.lowercase() }
+                            .run { filterAndAdd(modAbbreviation) }
                     }
 
                     FuzzySearch.partialRatio(filterStr, mod.name) { it.lowercase() }
