@@ -118,7 +118,8 @@ class SmolCLI(
         override fun run() {
             GlobalScope.launch {
                 VramChecker(
-                    enabledModIds = access.reload()?.map { it.id },
+                    enabledModIds = access.reload()?.filter { it.hasEnabledVariant }?.map { it.id },
+                    modIdsToCheck = null,
                     gameModsFolder = gamePath.getModsPath(),
                     showGfxLibDebugOutput = false,
                     showPerformance = false,

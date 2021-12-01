@@ -13,6 +13,7 @@ import kotlin.io.path.*
 
 class VramChecker(
     val enabledModIds: List<String>?,
+    val modIdsToCheck: List<String>?,
     val gameModsFolder: Path,
     val showGfxLibDebugOutput: Boolean,
     val showPerformance: Boolean,
@@ -83,6 +84,7 @@ class VramChecker(
             .mapNotNull {
                 getModInfo(jsonMapper = jsonMapper, modFolder = it, progressText = progressText)
             }
+            .filter { if (modIdsToCheck != null) it.id in modIdsToCheck else true }
             .map { modInfo ->
                 progressText.appendAndPrint("\nFolder: ${modInfo.name}", traceOut)
                 val startTimeForMod = Date().time
@@ -367,7 +369,12 @@ class VramChecker(
                 }
             }
             .also {
-                if (showGfxLibDebugOutput) it?.forEach { info -> progressText.appendAndPrint(info.toString(), traceOut) }
+                if (showGfxLibDebugOutput) it?.forEach { info ->
+                    progressText.appendAndPrint(
+                        info.toString(),
+                        traceOut
+                    )
+                }
             }
             ?.toList()
     }

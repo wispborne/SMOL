@@ -64,7 +64,7 @@ fun AppState.homeView(
     val shownMods = remember { mutableStateListOf<Mod?>(elements = mods.toTypedArray()) }
     val onRefreshingMods = { refreshing: Boolean -> isRefreshingMods = refreshing }
     rememberCoroutineScope { Dispatchers.Default }.launch {
-        reloadMods(checkVramUseSlow = false)
+        reloadMods()
     }
 
     rememberCoroutineScope { Dispatchers.Default }.launch {
@@ -238,7 +238,7 @@ private suspend fun watchDirsAndReloadOnChange() {
                     // refreshing 500 times if 500 files are changed in a few millis.
                     delay(1000)
                     Logger.info { "File change: $it" }
-                    reloadMods(checkVramUseSlow = false)
+                    reloadMods()
                 } else {
                     Logger.info { "Skipping mod reload while IO locked." }
                 }
@@ -246,9 +246,7 @@ private suspend fun watchDirsAndReloadOnChange() {
     }
 }
 
-private suspend fun reloadMods(
-    checkVramUseSlow: Boolean
-) {
+private suspend fun reloadMods() {
     if (SL.access.areModsLoading.value) {
         Logger.info { "Skipping reload of mods as they are currently refreshing already." }
         return
@@ -258,7 +256,7 @@ private suspend fun reloadMods(
             Logger.info { "Reloading mods." }
             SL.access.reload()
             val manifest = async { SL.archives.refreshManifest() }
-            val vramCheckerAsync = async { SL.vramChecker.getVramUsage(forceRefresh = checkVramUseSlow) }
+            val vramCheckerAsync = async { SL.vramChecker.vramUsage.value ?: SL.vramChecker.refreshVramUsage() }
 
             manifest.await()
             vramCheckerAsync.await()
@@ -299,7 +297,7 @@ private fun AppState.refreshButton(
         SmolButton(
             onClick = {
                 composableScope.launch {
-                    reloadMods(checkVramUseSlow = true)
+                    reloadMods()
                 }
             },
             modifier = Modifier.padding(start = 16.dp)

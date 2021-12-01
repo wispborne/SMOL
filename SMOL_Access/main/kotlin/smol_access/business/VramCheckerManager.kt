@@ -2,8 +2,11 @@ package smol_access.business
 
 import GraphicsLibConfig
 import VramChecker
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import smol_access.config.GamePath
 import smol_access.config.VramCheckerCache
+import smol_access.model.Mod
 import smol_access.model.ModVariant
 import smol_access.model.SmolId
 import smol_access.model.Version
@@ -14,21 +17,20 @@ class VramCheckerManager(
     private val gamePath: GamePath,
     private val vramCheckerCache: VramCheckerCache
 ) {
-    var cached: Map<SmolId, VramCheckerCache.Result>? = vramCheckerCache.bytesPerVariant
-        private set(value) {
-            field = value
-            vramCheckerCache.bytesPerVariant = value
-        }
+    private val _vramUsage = MutableStateFlow(vramCheckerCache.bytesPerVariant)
+    val vramUsage = _vramUsage.asStateFlow()
 
-    suspend fun getVramUsage(forceRefresh: Boolean): Map<SmolId, VramCheckerCache.Result> {
-        if (!forceRefresh && cached != null) {
-            Timber.d { "Not refreshing VRAM use. forceRefresh: $forceRefresh, cached: ${cached?.size ?: 0} entries" }
-            return cached!!
-        }
+    /**
+     * Warning: this is very slow.
+     */
+    suspend fun refreshVramUsage(mods: List<Mod>? = null): Map<SmolId, VramCheckerCache.Result> {
+        val modIdsToUpdate = mods?.map { it.id } ?: modLoader.mods.value?.map { it.id } ?: emptyList()
 
-        Timber.d { "Refreshing VRAM use. forceRefresh: $forceRefresh, cached: ${cached?.size ?: 0} entries" }
+        Timber.d { "Refreshing VRAM use of ${modIdsToUpdate.count()} mods." }
+
         val results = VramChecker(
-            enabledModIds = modLoader.mods.value?.map { it.id },
+            enabledModIds = modLoader.mods.value?.filter { it.hasEnabledVariant }?.map { it.id },
+            modIdsToCheck = modIdsToUpdate,
             gameModsFolder = gamePath.getModsPath(),
             showGfxLibDebugOutput = false,
             showPerformance = false,
@@ -45,7 +47,7 @@ class VramCheckerManager(
         )
             .check()
 
-        val mergedResult = cached?.toMutableMap() ?: mutableMapOf()
+        val mergedResult = _vramUsage.value?.toMutableMap() ?: mutableMapOf()
 
         results
             .associateBy(keySelector = {
@@ -62,8 +64,9 @@ class VramCheckerManager(
                 mergedResult[smolId] = result
             }
 
-        cached = mergedResult
+        _vramUsage.emit(mergedResult)
+        vramCheckerCache.bytesPerVariant = mergedResult
 
-        return cached!!
+        return mergedResult
     }
 }

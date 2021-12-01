@@ -17,15 +17,19 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.input.pointer.isSecondaryPressed
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.tinylog.Logger
 import smol_access.Constants
 import smol_access.SL
@@ -35,8 +39,9 @@ import smol_access.model.Mod
 import smol_access.model.ModVariant
 import smol_app.AppState
 import smol_app.components.*
-import smol_app.themes.*
+import smol_app.themes.SmolTheme
 import smol_app.util.*
+import java.awt.Cursor
 import java.awt.Desktop
 import kotlin.io.path.exists
 
@@ -55,7 +60,7 @@ fun AppState.ModGridView(
 ) {
     var selectedRow: ModRow? by remember { mutableStateOf(null) }
     var modInDebugDialog: Mod? by remember { mutableStateOf(null) }
-    val largestVramUsage = SL.vramChecker.cached?.values?.maxOf { it.bytesForMod }
+    val largestVramUsage = SL.vramChecker.vramUsage.value?.values?.maxOf { it.bytesForMod }
 
     Box(modifier) {
         TiledImage(
@@ -182,11 +187,16 @@ fun AppState.ModGridView(
                                             // Mod version (active or highest)
                                             Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {
                                                 if (highestLocalVersion != null && onlineVersion != null && onlineVersion > highestLocalVersion) {
+                                                    val modThreadId =
+                                                        mod.findHighestVersion?.versionCheckerInfo?.modThreadId
                                                     TooltipArea(tooltip = {
-                                                        SmolTooltipText(text = "Newer version available: $onlineVersion")
+                                                        SmolTooltipText(
+                                                            text = "Newer version available: $onlineVersion" +
+                                                                    "\n\nClick to open ${modThreadId?.getModThreadUrl()}."
+                                                        )
                                                     }, modifier = Modifier.mouseClickable {
                                                         if (this.buttons.isPrimaryPressed) {
-                                                            mod.findHighestVersion?.versionCheckerInfo?.modThreadId?.openModThread()
+                                                            modThreadId?.openModThread()
                                                         }
                                                     }
                                                         .align(Alignment.CenterVertically)) {
@@ -197,6 +207,13 @@ fun AppState.ModGridView(
                                                             modifier = Modifier.width(28.dp).height(28.dp)
                                                                 .padding(end = 8.dp)
                                                                 .align(Alignment.CenterVertically)
+                                                                .pointerHoverIcon(
+                                                                    PointerIcon(
+                                                                        Cursor.getPredefinedCursor(
+                                                                            Cursor.HAND_CURSOR
+                                                                        )
+                                                                    )
+                                                                )
                                                         )
                                                     }
                                                 }
@@ -211,7 +228,7 @@ fun AppState.ModGridView(
                                             // VRAM
                                             Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {
                                                 val vramResult =
-                                                    SL.vramChecker.cached?.get(mod.findHighestVersion?.smolId)
+                                                    SL.vramChecker.vramUsage.value?.get(mod.findHighestVersion?.smolId)
                                                 TooltipArea(tooltip = {
                                                     if (vramResult != null) {
                                                         val impactText =
@@ -306,6 +323,7 @@ private fun ModContextMenu(
     modInDebugDialog: Mod?,
     onModInDebugDialogChanged: (Mod?) -> Unit
 ) {
+    val coroutineScope = rememberCoroutineScope()
     CursorDropdownMenu(
         expanded = showContextMenu,
         onDismissRequest = { onShowContextMenuChange(false) }) {
@@ -363,6 +381,17 @@ private fun ModContextMenu(
                     modifier = Modifier.align(Alignment.CenterVertically)
                 )
             }
+        }
+
+        DropdownMenuItem(onClick = {
+            coroutineScope.launch {
+                withContext(Dispatchers.Default) {
+                    SL.vramChecker.refreshVramUsage(mods = listOf(mod))
+                }
+            }
+            onShowContextMenuChange(false)
+        }) {
+            Text("Check VRAM")
         }
 
         DropdownMenuItem(onClick = {

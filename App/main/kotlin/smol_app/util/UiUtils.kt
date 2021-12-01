@@ -26,6 +26,8 @@ fun ModThreadId.openModThread() {
     (Constants.FORUM_PAGE_URL + this).openAsUriInBrowser()
 }
 
+fun ModThreadId.getModThreadUrl(): String = Constants.FORUM_PAGE_URL + this
+
 fun String.openAsUriInBrowser() {
     Desktop.getDesktop().browse(URI(this))
 }

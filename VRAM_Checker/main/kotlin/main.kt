@@ -75,6 +75,7 @@ suspend fun main(args: Array<String>) {
     runCatching {
         VramChecker(
             enabledModIds = enabledModIds,
+            modIdsToCheck = null,
             showGfxLibDebugOutput = showGfxLibDebugOutput,
             showPerformance = showPerformance,
             showSkippedFiles = showSkippedFiles,
