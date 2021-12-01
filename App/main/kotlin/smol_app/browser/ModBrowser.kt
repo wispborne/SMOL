@@ -1,4 +1,4 @@
-package smol_app.views
+package smol_app.browser
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -15,10 +15,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,15 +42,9 @@ import smol_access.Constants
 import smol_access.SL
 import smol_access.business.DownloadItem
 import smol_app.AppState
-import smol_app.browser.ForumWebpageModifier
-import smol_app.browser.javaFXPanel
-import smol_app.components.SmolAlertDialog
-import smol_app.components.SmolButton
+import smol_app.components.*
 import smol_app.themes.SmolTheme
-import smol_app.components.SmolTooltipText
-import smol_app.util.bytesAsReadableMiB
-import smol_app.util.openAsUriInBrowser
-import smol_app.util.openInDesktop
+import smol_app.util.*
 import timber.ktx.Timber
 import java.awt.Cursor
 import java.io.InputStream
@@ -72,9 +68,14 @@ object WebViewHolder {
 fun AppState.ModBrowserView(
     modifier: Modifier = Modifier
 ) {
+    val indexMods = remember { mutableStateListOf(elements = SL.modRepo.getModIndexItems().toTypedArray()) }
+    val moddingSubforumMods =
+        remember { mutableStateListOf(elements = SL.modRepo.getModdingSubforumItems().toTypedArray()) }
+    val shownIndexMods = remember { mutableStateListOf<ScrapedMod?>(elements = indexMods.toTypedArray()) }
+    val shownModdingSubforumMods =
+        remember { mutableStateListOf<ScrapedMod?>(elements = moddingSubforumMods.toTypedArray()) }
+
     val jfxpanel: JFXPanel = remember { JFXPanel() }
-    val indexMods by remember { mutableStateOf(SL.modRepo.getModIndexItems()) }
-    val moddingSubforumMods by remember { mutableStateOf(SL.modRepo.getModdingSubforumItems()) }
     var linkLoader: ((String) -> Unit)? by remember { mutableStateOf(null) }
     val scope = rememberCoroutineScope { Dispatchers.Default }
     var alertDialogMessage: String? by remember { mutableStateOf(null) }
@@ -96,29 +97,65 @@ fun AppState.ModBrowserView(
     }) {
         Column(modifier) {
             Row(modifier = Modifier.padding(16.dp)) {
-                LazyVerticalGrid(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    cells = GridCells.Adaptive(200.dp),
-                    modifier = Modifier.widthIn(min = 200.dp, max = 600.dp)
-                ) {
-                    for ((name, mods) in listOf("Index" to indexMods, "Modding Forum" to moddingSubforumMods)) {
-                        this.item {
-                            Box(modifier = Modifier.fillMaxHeight().fillMaxWidth().align(Alignment.CenterVertically)) {
-                                Text(
-                                    modifier = Modifier.align(Alignment.Center),
-                                    text = name,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
+                Column {
+                    smolSearchField(
+                        modifier = Modifier
+                            .focusRequester(searchFocusRequester())
+                            .widthIn(max = 320.dp)
+                            .align(Alignment.CenterHorizontally)
+                            .padding(bottom = 16.dp),
+                        tooltipText = "Hotkey: Ctrl-F",
+                        label = "Filter"
+                    ) { query ->
+                        if (query.isBlank()) {
+                            shownIndexMods.replaceAllUsingDifference(indexMods, doesOrderMatter = false)
+                            shownModdingSubforumMods.replaceAllUsingDifference(
+                                moddingSubforumMods,
+                                doesOrderMatter = false
+                            )
+                        } else {
+                            shownIndexMods.replaceAllUsingDifference(
+                                filterModPosts(query, indexMods).ifEmpty { listOf(null) },
+                                doesOrderMatter = true
+                            )
+                            shownModdingSubforumMods.replaceAllUsingDifference(
+                                filterModPosts(query, moddingSubforumMods).ifEmpty { listOf(null) },
+                                doesOrderMatter = true
+                            )
                         }
-                        this.items(
-                            items = mods
-                                .sortedWith(
-                                    compareByDescending { it.name })
-                        ) { mod -> modItem(mod, linkLoader) }
+                    }
+
+                    LazyVerticalGrid(
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        cells = GridCells.Adaptive(200.dp),
+                        modifier = Modifier.widthIn(min = 200.dp, max = 600.dp)
+                    ) {
+                        for ((name, mods) in listOf(
+                            "Index" to shownIndexMods,
+                            "Modding Forum" to shownModdingSubforumMods
+                        )) {
+                            this.item {
+                                Box(
+                                    modifier = Modifier.fillMaxHeight().fillMaxWidth()
+                                ) {
+                                    Text(
+                                        modifier = Modifier.align(Alignment.Center),
+                                        text = name,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                            this.items(
+                                items = mods
+                                    .filterNotNull()
+                                    .sortedWith(
+                                        compareByDescending { it.name })
+                            ) { mod -> modItem(mod, linkLoader) }
+                        }
                     }
                 }
+
                 val background = MaterialTheme.colors.background
 
                 javaFXPanel(
@@ -213,14 +250,23 @@ private fun modItem(mod: ScrapedMod, linkLoader: ((String) -> Unit)?) {
         shape = SmolTheme.smolFullyClippedButtonShape()
     ) {
         Row(modifier = Modifier.padding(16.dp)) {
-            Text(
-                modifier = Modifier
+            Column(
+                modifier = Modifier.align(Alignment.CenterVertically)
                     .weight(1f)
                     .padding(end = 16.dp)
-                    .align(Alignment.CenterVertically),
-                fontWeight = FontWeight.Bold,
-                text = mod.name
-            )
+            ) {
+                Text(
+                    modifier = Modifier,
+                    fontWeight = FontWeight.Bold,
+                    text = mod.name
+                )
+                Text(
+                    modifier = Modifier.padding(top = 8.dp),
+                    fontSize = 11.sp,
+                    fontStyle = FontStyle.Italic,
+                    text = mod.authors
+                )
+            }
             if (mod.forumPostLink?.toString()?.isBlank() == false) {
                 val descText = "Open Forum Thread"
                 TooltipArea(tooltip = { SmolTooltipText(text = descText) }) {

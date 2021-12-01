@@ -85,11 +85,3 @@ internal fun scrapeModdingForumLinks(): List<ScrapedMod> {
                 .filter { !it.name.contains("MOVED", ignoreCase = true) }
         }
 }
-
-data class ScrapedMod(
-    val name: String,
-    val gameVersionReq: String,
-    val authors: String,
-    val forumPostLink: URI?,
-    val category: String?
-)

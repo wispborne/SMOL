@@ -11,7 +11,6 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.res.painterResource
@@ -31,12 +30,10 @@ import smol_access.model.Mod
 import smol_access.util.IOLock
 import smol_app.AppState
 import smol_app.cli.SmolCLI
+import smol_app.components.*
 import smol_app.navigation.Screen
-import smol_app.components.SmolButton
-import smol_app.components.SmolOutlinedTextField
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.lighten
-import smol_app.components.SmolTooltipText
 import smol_app.util.currentPlatform
 import smol_app.util.filterMods
 import smol_app.util.replaceAllUsingDifference
@@ -103,24 +100,14 @@ fun AppState.homeView(
                         .padding(start = 16.dp),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    val focuser = remember { FocusRequester() }
-                    DisposableEffect(focuser) {
-                        val function: (KeyEvent) -> Boolean = { keyEvent ->
-                            if (keyEvent.isCtrlPressed && keyEvent.key == Key.F) {
-                                focuser.requestFocus()
-                                true
-                            } else false
-                        }
-                        onWindowKeyEventHandlers += function
-                        onDispose { onWindowKeyEventHandlers -= function }
-                    }
-
-                    filterTextField(
-                        Modifier
-                            .focusRequester(focuser)
+                    smolSearchField(
+                        modifier = Modifier
+                            .focusRequester(searchFocusRequester())
                             .widthIn(max = 300.dp)
                             .padding(end = 16.dp)
-                            .align(Alignment.CenterVertically)
+                            .align(Alignment.CenterVertically),
+                        tooltipText = "Hotkey: Ctrl-F",
+                        label = "Filter"
                     ) { query ->
                         if (query.isBlank()) {
                             shownMods.replaceAllUsingDifference(mods, doesOrderMatter = false)
@@ -438,29 +425,5 @@ private fun AppState.consoleTextField(
                     }
             )
         }
-    }
-}
-
-@Composable
-private fun AppState.filterTextField(
-    modifier: Modifier = Modifier,
-    onValueChange: (String) -> Unit
-) {
-    var value by remember { mutableStateOf("") }
-    TooltipArea(
-        modifier = modifier,
-        tooltip = { SmolTooltipText(text = "Hotkey: Ctrl-F") }
-    ) {
-        SmolOutlinedTextField(
-            label = { Text(text = "Filter") },
-            value = value,
-            onValueChange = {
-                value = it
-                onValueChange(it)
-            },
-            singleLine = true,
-            maxLines = 1,
-            leadingIcon = { Icon(painter = painterResource("magnify.svg"), contentDescription = null) }
-        )
     }
 }

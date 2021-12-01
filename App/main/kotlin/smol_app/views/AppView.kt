@@ -7,10 +7,14 @@ import androidx.compose.ui.text.TextStyle
 import com.arkivanov.decompose.extensions.compose.jetbrains.Children
 import smol_access.SL
 import smol_app.AppState
+import smol_app.browser.ModBrowserView
 import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.toColors
-import smol_app.views.*
+import smol_app.views.FileDropper
+import smol_app.views.ProfilesView
+import smol_app.views.homeView
+import smol_app.views.settingsView
 
 @OptIn(ExperimentalStdlibApi::class)
 @Composable

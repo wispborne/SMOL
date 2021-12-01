@@ -1,5 +1,6 @@
 package smol_app.util
 
+import androidx.compose.foundation.gestures.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
@@ -121,7 +122,6 @@ fun String.hexToColor(): Color? =
         .padStart(length = 8, padChar = 'F')
         .toLongOrNull(radix = 16)
         ?.let { Color(it) }
-
 
 // TODO These should be injected via an actual DI framework or something
 val ServiceLocator.vmParamsManager: VmParamsManager
