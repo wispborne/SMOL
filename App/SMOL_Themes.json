@@ -7,7 +7,8 @@
       "secondary": "#FCCF00",
       "surface": "#0A1D22",
       "background": "#091A1F",
-      "onPrimary": "#A8DBFC"
+      "onPrimary": "#A8DBFC",
+      "hyperlink":  "#00FFFF"
     },
     "Kemet": {
       "isDark": true,
@@ -25,7 +26,8 @@
       "secondary": "#FFDE00",
       "secondaryVariant": "#FFE739",
       "surface": "#F0F0F0",
-      "background": "#FFFFFF"
+      "background": "#FFFFFF",
+      "hyperlink":  "#00B5B5"
     }
   }
 }

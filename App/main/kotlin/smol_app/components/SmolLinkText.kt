@@ -2,7 +2,9 @@ package smol_app.components
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.material.LocalTextStyle
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
+import androidx.compose.material.primarySurface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -18,6 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
+import smol_app.themes.SmolTheme.hyperlink
 import java.awt.Cursor
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
@@ -43,7 +46,7 @@ fun SmolLinkText(
     Text(
         text = text,
         modifier = modifier.pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR))),
-        color = if (color != Color.Unspecified) color else Color.Cyan,
+        color = if (color != Color.Unspecified) color else MaterialTheme.colors.hyperlink,
         fontSize = fontSize,
         fontStyle = fontStyle,
         fontWeight = fontWeight,

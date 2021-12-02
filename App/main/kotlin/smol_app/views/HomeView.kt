@@ -33,6 +33,8 @@ import smol_app.cli.SmolCLI
 import smol_app.components.*
 import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
+import smol_app.themes.SmolTheme.darken
+import smol_app.themes.SmolTheme.highlight
 import smol_app.themes.SmolTheme.lighten
 import smol_app.util.currentPlatform
 import smol_app.util.filterMods
@@ -330,10 +332,10 @@ private fun AppState.launchButton() {
                     SL.appConfig.gamePath.toFileOrNull()
                 )
         },
-        colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.primary.lighten()),
+        colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.primary),
         modifier = Modifier
             .padding(start = 16.dp)
-            .border(6.dp, MaterialTheme.colors.primary, shape = SmolTheme.smolFullyClippedButtonShape()),
+            .border(6.dp, MaterialTheme.colors.primary.highlight(), shape = SmolTheme.smolFullyClippedButtonShape()),
         shape = SmolTheme.smolFullyClippedButtonShape(),
         elevation = ButtonDefaults.elevation(defaultElevation = 4.dp, hoveredElevation = 8.dp, pressedElevation = 16.dp)
     ) {

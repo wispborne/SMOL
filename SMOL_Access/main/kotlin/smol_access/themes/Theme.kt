@@ -47,6 +47,7 @@ data class Theme(
     val onBackground: String? = null,
     val onSurface: String? = null,
     val onError: String? = null,
+    val hyperlink: String? = null,
 ) {
     constructor(
         isDark: Boolean,
@@ -62,6 +63,7 @@ data class Theme(
         onBackground: Long? = null,
         onSurface: Long? = null,
         onError: Long? = null,
+        hyperlink: Long? = null,
     ) : this(
         isDark = isDark,
         primary = primary?.toString(radix = 16),
@@ -76,5 +78,6 @@ data class Theme(
         onBackground = onBackground?.toString(radix = 16),
         onSurface = onSurface?.toString(radix = 16),
         onError = onError?.toString(radix = 16),
+        hyperlink = hyperlink?.toString(radix = 16),
     )
 }

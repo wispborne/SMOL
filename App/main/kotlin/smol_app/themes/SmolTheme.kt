@@ -7,6 +7,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.platform.Font
 import androidx.compose.ui.unit.dp
+import smol_access.SL
 import smol_access.themes.Theme
 import smol_app.util.hexToColor
 
@@ -43,6 +44,9 @@ object SmolTheme {
     @Composable
     fun dimmedTextColor() = LocalContentColor.current.copy(alpha = .65f)
 
+    @Composable
+    fun Color.highlight(): Color = if (MaterialTheme.colors.isLight) this.darken() else this.lighten()
+
     fun iconHeightWidth() = ButtonDefaults.MinHeight
     fun textIconHeightWidth() = ButtonDefaults.IconSize
 
@@ -63,4 +67,7 @@ object SmolTheme {
         theme.onError?.hexToColor()?.run { builder = builder.copy(onError = this) }
         return builder
     }
+
+    val Colors.hyperlink: Color
+        get() = SL.themeManager.activeTheme.value.second.hyperlink?.hexToColor() ?: this.secondary
 }

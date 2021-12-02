@@ -9,6 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -88,15 +89,14 @@ fun SmolDropdownWithButton(
 fun SmolDropdownArrow(modifier: Modifier, expanded: Boolean) {
     Image(
         modifier = modifier
-            .width(18.dp)
+            .width(16.dp)
+            .offset(x = 4.dp)
             .run {
-                if (expanded)
-                    this.rotate(180f)
-                        .padding(end = 8.dp)
-                else
-                    this.padding(start = 8.dp)
+                if (expanded) this.rotate(180f)
+                else this
             },
-        painter = painterResource("arrow_down.png"),
+        painter = painterResource("menu-down.svg"),
+        colorFilter = ColorFilter.tint(SmolTheme.dimmedIconColor()),
         contentDescription = null
     )
 }

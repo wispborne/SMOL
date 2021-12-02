@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import smol_access.business.UserManager
 import timber.ktx.Timber
+import java.awt.Color
 
 class ThemeManager(
     private val userManager: UserManager,
@@ -17,6 +18,7 @@ class ThemeManager(
         secondary = 0xFFFCCF00,
         background = 0xFF091A1F,
         onPrimary = 0xFFA8DBFC,
+        hyperlink = 0xFF00FFFF,
 //        onBackground = 0xFF2d304e
     )
 
