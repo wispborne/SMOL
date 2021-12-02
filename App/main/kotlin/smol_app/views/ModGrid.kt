@@ -202,7 +202,7 @@ fun AppState.ModGridView(
                                                         Image(
                                                             painter = painterResource("new-box.svg"),
                                                             contentDescription = null,
-                                                            colorFilter = ColorFilter.tint(SmolTheme.dimmedIconColor()),
+                                                            colorFilter = ColorFilter.tint(color = MaterialTheme.colors.primary),
                                                             modifier = Modifier.width(28.dp).height(28.dp)
                                                                 .padding(end = 8.dp)
                                                                 .align(Alignment.CenterVertically)

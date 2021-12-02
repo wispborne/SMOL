@@ -10,6 +10,17 @@
       "onPrimary": "#A8DBFC",
       "hyperlink": "#00FFFF"
     },
+    "One Dark": {
+      "isDark": true,
+      "onPrimary": "#dadbe0",
+      "primary": "#4D78CC",
+      "primaryVariant": "#4257A0",
+      "secondary": "#98C379",
+      "secondaryVariant": "#434957",
+      "surface": "#21242B",
+      "background": "#282C34",
+      "hyperlink": "#C26C6A"
+    },
     "Kemet - Twilight": {
       "isDark": true,
       "onPrimary": "#E3E4E9",

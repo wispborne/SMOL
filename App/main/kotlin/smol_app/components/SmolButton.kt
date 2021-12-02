@@ -1,5 +1,6 @@
 package smol_app.components
 
+import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.PaddingValues
@@ -12,6 +13,7 @@ import androidx.compose.ui.graphics.Shape
 import smol_app.themes.SmolTheme
 
 @Composable
+@Preview
 @OptIn(ExperimentalMaterialApi::class)
 fun SmolButton(
     onClick: () -> Unit,
