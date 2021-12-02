@@ -119,7 +119,13 @@ fun main() = application {
             handleBackButton = true
         )
 
-        val appState by remember { mutableStateOf(AppState(router, window, onKeyEventHandlers)) }
+        val appState by remember {
+            mutableStateOf(AppState().apply {
+                this.router = router
+                this.window = this@Window.window
+                this.onWindowKeyEventHandlers = onKeyEventHandlers
+            })
+        }
 
         LaunchedEffect(newState) {
             snapshotFlow { newState.size }
@@ -159,8 +165,8 @@ fun main() = application {
     }
 }
 
-class AppState(
-    val router: Router<Screen, Any>,
-    val window: ComposeWindow,
-    val onWindowKeyEventHandlers: MutableList<(KeyEvent) -> Boolean>
-)
+class AppState {
+    lateinit var router: Router<Screen, Any>
+    lateinit var window: ComposeWindow
+    lateinit var onWindowKeyEventHandlers: MutableList<(KeyEvent) -> Boolean>
+}

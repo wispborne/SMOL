@@ -50,6 +50,16 @@
       "surface": "#F0F0F0",
       "background": "#FFFFFF",
       "hyperlink": "#00B5B5"
+    },
+    "Nia": {
+      "isDark": true,
+      "primary": "#BE00FF",
+      "primaryVariant": "#9900CD",
+      "secondary": "#CE3867",
+      "secondaryVariant": "#A22C51",
+      "surface": "#21242B",
+      "background": "#282C34",
+      "hyperlink": "#D6D281"
     }
   }
 }
