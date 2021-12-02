@@ -204,7 +204,7 @@ fun AppState.ProfilesView(
                                             onClick = {
                                                 if (!isActiveProfile) {
                                                     GlobalScope.launch(Dispatchers.Default) {
-                                                        SL.userManager.switchModProfile(modProfile.id)
+                                                        SL.userModProfileManager.switchModProfile(modProfile.id)
                                                         withContext(Dispatchers.Main) {
                                                             userProfile = SL.userManager.getUserProfile()
                                                             modVariants =

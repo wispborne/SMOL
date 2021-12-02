@@ -11,36 +11,7 @@ import utilities.diff
 
 class UserManager internal constructor(
     private val appConfig: AppConfig,
-    private val access: Access,
-    private val modLoader: ModLoader
 ) {
-    /**
-     * Prevent profiles updating while we're switching mod profiles.
-     */
-    var isModProfileSwitching = false
-
-    init {
-        GlobalScope.launch {
-            modLoader.mods.collect { newMods ->
-                newMods ?: return@collect
-                if (isModProfileSwitching) return@collect
-
-                updateUserProfile { oldProfile ->
-                    oldProfile.copy(
-                        modProfiles = oldProfile.modProfiles
-                            .map { profile ->
-                                if (profile.id == oldProfile.activeModProfileId) {
-                                    profile.copy(enabledModVariants = newMods
-                                        .flatMap { it.enabledVariants }
-                                        .map { UserProfile.ModProfile.EnabledModVariant(it.mod.id, it.smolId) })
-                                } else
-                                    profile
-                            }
-                    )
-                }
-            }
-        }
-    }
 
     fun getUserProfile(): UserProfile {
         return appConfig.userProfile ?: kotlin.run {
@@ -56,6 +27,7 @@ class UserManager internal constructor(
                 id = 0,
                 username = "default",
                 activeModProfileId = defaultModProfile.id,
+                versionCheckerIntervalMillis = VersionChecker.DEFAULT_CHECK_INTERVAL_MILLIS,
                 modProfiles = listOf(defaultModProfile),
                 profileVersion = 0,
                 theme = "kemet"
@@ -98,53 +70,6 @@ class UserManager internal constructor(
                 return@updateUserProfile oldProfile.copy(modProfiles = oldProfile.modProfiles.filterNot { it.id == modProfileId })
                     .also { Timber.d { "Removed mod profile $profileToRemove" } }
             }
-        }
-    }
-
-    suspend fun switchModProfile(newModProfileId: Int) {
-        try {
-            isModProfileSwitching = true
-            val newModProfile = getUserProfile().modProfiles.firstOrNull { it.id == newModProfileId }
-                ?: throw NullPointerException("Unable to find mod profile $newModProfileId.")
-
-            val diff =
-                getUserProfile().activeModProfile.enabledModVariants.diff(newModProfile.enabledModVariants) { it }
-
-            val variantsToDisable = diff.removed
-            val variantsToEnable = diff.added
-            val allKnownVariants = modLoader.mods.value?.flatMap { it.variants } ?: emptyList()
-
-            variantsToDisable
-                .mapNotNull { varToDisable ->
-                    allKnownVariants.firstOrNull { knownVar -> knownVar.smolId == varToDisable.smolVariantId }
-                        .also {
-                            if (it == null) {
-                                // Just log as debug, not an issue if we can't disable something that doesn't exist anyway.
-                                Timber.d { "Cannot disable variant $varToDisable, as it cannot be found." }
-                            }
-                        }
-                }
-                .forEach { variant ->
-                    access.disable(variant)
-                }
-
-            variantsToEnable
-                .mapNotNull { varToEnable ->
-                    allKnownVariants.firstOrNull { knownVar -> knownVar.smolId == varToEnable.smolVariantId }
-                        .also {
-                            if (it == null) {
-                                Timber.e { "Cannot enable variant $varToEnable, as it cannot be found." }
-                            }
-                        }
-                }
-                .forEach { variant ->
-                    access.enable(variant)
-                }
-
-            updateUserProfile { it.copy(activeModProfileId = newModProfileId) }
-            Timber.d { "Changed mod profile to $newModProfile" }
-        } finally {
-            isModProfileSwitching = false
         }
     }
 }

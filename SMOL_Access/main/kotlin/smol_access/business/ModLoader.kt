@@ -167,7 +167,7 @@ class ModLoader internal constructor(
 
                 onModsReloadedEmitter.tryEmit(result)
                 GlobalScope.launch {
-                    versionChecker.lookUpVersions(result)
+                    versionChecker.lookUpVersions(result, forceLookup = false)
                 }
                 result
             }

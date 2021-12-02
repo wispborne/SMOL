@@ -17,13 +17,30 @@ import smol_access.model.VersionCheckerInfo
 import timber.ktx.Timber
 import utilities.parallelMap
 import utilities.trace
+import java.time.Instant
 
-class VersionChecker(private val gson: Gson, private val versionCheckerCache: VersionCheckerCache) {
+class VersionChecker(
+    private val gson: Gson,
+    private val versionCheckerCache: VersionCheckerCache,
+    private val userManager: UserManager
+) {
+    companion object {
+        const val DEFAULT_CHECK_INTERVAL_MILLIS: Long = 1000 * 60 * 5 // 5 mins
+    }
+
     fun getOnlineVersion(modId: ModId) =
         versionCheckerCache.onlineVersions[modId]
 
     @Suppress("ConvertCallChainIntoSequence")
-    suspend fun lookUpVersions(mods: List<Mod>) {
+    suspend fun lookUpVersions(mods: List<Mod>, forceLookup: Boolean) {
+        val msSinceLastCheck = Instant.now().toEpochMilli() - versionCheckerCache.lastCheckTimestamp
+        val checkIntervalMs = userManager.getUserProfile().versionCheckerIntervalMillis ?: DEFAULT_CHECK_INTERVAL_MILLIS
+
+        if (!forceLookup && msSinceLastCheck < checkIntervalMs) {
+            Timber.i { "Skipping version check, it has only been ${msSinceLastCheck / 1000}s of ${checkIntervalMs / 1000}s." }
+            return
+        }
+
         HttpClient(CIO) {
             install(Logging)
             this.followRedirects = true
@@ -68,6 +85,7 @@ class VersionChecker(private val gson: Gson, private val versionCheckerCache: Ve
                 }
 
             versionCheckerCache.onlineVersions = results.associate { it.first.id to it.second }
+            versionCheckerCache.lastCheckTimestamp = Instant.now().toEpochMilli()
         }
     }
 }

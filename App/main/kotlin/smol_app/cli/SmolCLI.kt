@@ -13,13 +13,15 @@ import com.github.ajalt.clikt.parameters.options.required
 import com.github.ajalt.clikt.parameters.types.int
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import smol_access.*
+import smol_access.Access
 import smol_access.business.UserManager
+import smol_access.business.UserModProfileManager
 import smol_access.business.VmParamsManager
 import smol_access.config.GamePath
 
 class SmolCLI(
     private val userManager: UserManager,
+    private val userModProfileManager: UserModProfileManager,
     private val vmParamsManager: VmParamsManager,
     private val access: Access,
     private val gamePath: GamePath,
@@ -82,7 +84,7 @@ class SmolCLI(
 
         override fun run() {
             GlobalScope.launch {
-                userManager.switchModProfile(profileId)
+                userModProfileManager.switchModProfile(profileId)
                 val profile = userManager.getUserProfile().modProfiles.single { it.id == profileId }
                 echo("Changed mod profile to $profile.")
             }

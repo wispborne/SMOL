@@ -74,7 +74,7 @@ fun AppState.homeView(
         }
     }
 
-    rememberCoroutineScope { Dispatchers.Default }.launch {
+    rememberCoroutineScope().launch {
         watchDirsAndReloadOnChange()
     }
 
@@ -197,7 +197,7 @@ fun AppState.homeView(
 
 @OptIn(ExperimentalCoroutinesApi::class)
 private suspend fun watchDirsAndReloadOnChange() {
-    coroutineScope {
+    withContext(Dispatchers.IO) {
         val NSA: List<Flow<KWatchEvent?>> = listOf(
             SL.access.getStagingPath()?.toPathOrNull()?.asWatchChannel() ?: emptyFlow(),
             SL.access.getStagingPath()?.toPathOrNull()
@@ -216,6 +216,7 @@ private suspend fun watchDirsAndReloadOnChange() {
         NSA
             .plus(SL.manualReloadTrigger.trigger.map { null })
             .merge()
+            .distinctUntilChanged()
             .collectLatest {
                 if (!IOLock.stateFlow.value) {
                     if (it?.kind == KWatchEvent.Kind.Initialized)
@@ -224,7 +225,7 @@ private suspend fun watchDirsAndReloadOnChange() {
                     // this is canceled in favor of the new change. This should prevent
                     // refreshing 500 times if 500 files are changed in a few millis.
                     delay(1000)
-                    Logger.info { "File change: $it" }
+                    Logger.info { "Trying to reload to due to file change: $it" }
                     reloadMods()
                 } else {
                     Logger.info { "Skipping mod reload while IO locked." }
@@ -243,7 +244,11 @@ private suspend fun reloadMods() {
             Logger.info { "Reloading mods." }
             SL.access.reload()
             val manifest = async { SL.archives.refreshManifest() }
-            val vramCheckerAsync = async { SL.vramChecker.vramUsage.value ?: SL.vramChecker.refreshVramUsage() }
+            val vramCheckerAsync = async {
+                SL.vramChecker.vramUsage.value ?: SL.vramChecker.refreshVramUsage(
+                    mods = SL.access.mods.value ?: emptyList()
+                )
+            }
 
             manifest.await()
             vramCheckerAsync.await()
@@ -412,6 +417,7 @@ private fun AppState.consoleTextField(
                             kotlin.runCatching {
                                 SmolCLI(
                                     userManager = SL.userManager,
+                                    userModProfileManager = SL.userModProfileManager,
                                     vmParamsManager = SL.vmParamsManager,
                                     access = SL.access,
                                     gamePath = SL.gamePath

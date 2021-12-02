@@ -36,10 +36,21 @@ class ServiceLocator internal constructor(
     internal val themeConfig: ThemeConfig = ThemeConfig(gson = gson),
     val downloadManager: DownloadManager = DownloadManager(),
     internal val versionCheckerCache: VersionCheckerCache = VersionCheckerCache(gson = gson),
-    val versionChecker: VersionChecker = VersionChecker(gson = gson, versionCheckerCache = versionCheckerCache),
     val appConfig: AppConfig = AppConfig(gson = gson),
+    val userManager: UserManager = UserManager(
+        appConfig = appConfig
+    ),
+    val versionChecker: VersionChecker = VersionChecker(
+        gson = gson,
+        versionCheckerCache = versionCheckerCache,
+        userManager = userManager
+    ),
     internal val modInfoLoader: ModInfoLoader = ModInfoLoader(moshi = moshi, gson = gson),
     val gamePath: GamePath = GamePath(appConfig = appConfig),
+    val vramChecker: VramCheckerManager = VramCheckerManager(
+        gamePath = gamePath,
+        vramCheckerCache = VramCheckerCache(gson = gson)
+    ),
     internal val gameEnabledMods: GameEnabledMods = GameEnabledMods(gson, gamePath),
     val archives: Archives = Archives(
         config = appConfig,
@@ -56,11 +67,6 @@ class ServiceLocator internal constructor(
         gameEnabledMods = gameEnabledMods,
         versionChecker = versionChecker
     ),
-    val vramChecker: VramCheckerManager = VramCheckerManager(
-        modLoader = modLoader,
-        gamePath = gamePath,
-        vramCheckerCache = VramCheckerCache(gson = gson)
-    ),
     internal val staging: Staging = Staging(
         config = appConfig,
         gamePath = gamePath,
@@ -70,8 +76,8 @@ class ServiceLocator internal constructor(
         manualReloadTrigger = manualReloadTrigger
     ),
     val access: Access = Access(staging = staging, config = appConfig, modLoader = modLoader, archives = archives),
-    val userManager: UserManager = UserManager(
-        appConfig = appConfig, access = access, modLoader = modLoader
+    val userModProfileManager: UserModProfileManager = UserModProfileManager(
+        userManager = userManager, access = access, modLoader = modLoader
     ),
     val themeManager: ThemeManager = ThemeManager(userManager = userManager, themeConfig = themeConfig),
     val modRepo: ModRepo = ModRepo()

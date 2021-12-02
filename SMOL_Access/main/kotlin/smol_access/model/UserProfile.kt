@@ -4,6 +4,7 @@ data class UserProfile(
     val id: Int,
     val username: String,
     val activeModProfileId: Int,
+    val versionCheckerIntervalMillis: Long?,
     val modProfiles: List<ModProfile>,
     val profileVersion: Int,
     val theme: String?

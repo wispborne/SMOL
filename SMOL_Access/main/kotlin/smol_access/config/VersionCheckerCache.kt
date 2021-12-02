@@ -8,4 +8,5 @@ import utilities.Config
 
 class VersionCheckerCache(gson: Gson) : Config(gson, JsonFilePrefStorage(gson, Constants.VERCHECK_CACHE_PATH)) {
     var onlineVersions: Map<ModId, VersionCheckerInfo.Version> by pref(defaultValue = emptyMap())
+    var lastCheckTimestamp: Long by pref(defaultValue = 0L)
 }

@@ -4,11 +4,13 @@ import com.github.ajalt.clikt.output.TermUi
 import kotlinx.cli.*
 import kotlinx.coroutines.runBlocking
 import smol_access.business.UserManager
+import smol_access.business.UserModProfileManager
 
 @OptIn(ExperimentalCli::class)
 @Deprecated("Use SmolCLI")
 class SmolCLI2(
-    private val userManager: UserManager
+    private val userManager: UserManager,
+    private val userModProfileManager: UserModProfileManager
 ) {
     fun parse(args: List<String>) {
         kotlin.runCatching {
@@ -61,7 +63,7 @@ class SmolCLI2(
         val profileId by option(ArgType.Int).required()
 
         override fun execute() {
-            runBlocking { userManager.switchModProfile(profileId) }
+            runBlocking { userModProfileManager.switchModProfile(profileId) }
             val profile = userManager.getUserProfile().modProfiles.single { it.id == profileId }
             TermUi.echo("Changed mod profile to $profile.")
         }

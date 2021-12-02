@@ -13,7 +13,6 @@ import smol_access.model.Version
 import timber.ktx.Timber
 
 class VramCheckerManager(
-    private val modLoader: ModLoader,
     private val gamePath: GamePath,
     private val vramCheckerCache: VramCheckerCache
 ) {
@@ -23,13 +22,13 @@ class VramCheckerManager(
     /**
      * Warning: this is very slow.
      */
-    suspend fun refreshVramUsage(mods: List<Mod>? = null): Map<SmolId, VramCheckerCache.Result> {
-        val modIdsToUpdate = mods?.map { it.id } ?: modLoader.mods.value?.map { it.id } ?: emptyList()
+    suspend fun refreshVramUsage(mods: List<Mod>): Map<SmolId, VramCheckerCache.Result> {
+        val modIdsToUpdate = mods.map { it.id }
 
         Timber.d { "Refreshing VRAM use of ${modIdsToUpdate.count()} mods." }
 
         val results = VramChecker(
-            enabledModIds = modLoader.mods.value?.filter { it.hasEnabledVariant }?.map { it.id },
+            enabledModIds = mods.filter { it.hasEnabledVariant }.map { it.id },
             modIdsToCheck = modIdsToUpdate,
             gameModsFolder = gamePath.getModsPath(),
             showGfxLibDebugOutput = false,
