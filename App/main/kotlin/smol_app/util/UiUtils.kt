@@ -1,6 +1,5 @@
 package smol_app.util
 
-import androidx.compose.foundation.gestures.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
@@ -40,12 +39,8 @@ typealias ModThreadId = String
 /**
  * Return a string with a maximum length of `length` characters.
  * If there are more than `length` characters, then string ends with an ellipsis ("...").
- *
- * @param text
- * @param length
- * @return
  */
-fun String.ellipsizeAfter(length: Int): String? {
+fun String.ellipsizeAfter(length: Int): String {
     // The letters [iIl1] are slim enough to only count as half a character.
     var lengthMod = length
     lengthMod += ceil(this.replace("[^iIl]".toRegex(), "").length / 2.0).toInt()
@@ -65,7 +60,7 @@ val Long.bytesAsReadableMiB: String
  */
 val currentPlatform: Platform
     get() {
-        val os = System.getProperty("os.name").toLowerCase()
+        val os = System.getProperty("os.name").lowercase()
 
         return if (os.contains("mac") || os.contains("darwin")) {
             if ("aarch64" == System.getProperty("os.arch"))

@@ -96,7 +96,7 @@ fun AppState.ModBrowserView(
         }
     }) {
         Column(modifier) {
-            Row(modifier = Modifier.padding(16.dp)) {
+            Row(modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp, top = 8.dp)) {
                 Column {
                     smolSearchField(
                         modifier = Modifier
@@ -131,28 +131,11 @@ fun AppState.ModBrowserView(
                         cells = GridCells.Adaptive(200.dp),
                         modifier = Modifier.widthIn(min = 200.dp, max = 600.dp)
                     ) {
-                        for ((name, mods) in listOf(
-                            "Index" to shownIndexMods,
-                            "Modding Forum" to shownModdingSubforumMods
-                        )) {
-                            this.item {
-                                Box(
-                                    modifier = Modifier.fillMaxHeight().fillMaxWidth()
-                                ) {
-                                    Text(
-                                        modifier = Modifier.align(Alignment.Center),
-                                        text = name,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
-                            this.items(
-                                items = mods
-                                    .filterNotNull()
-                                    .sortedWith(
-                                        compareByDescending { it.name })
-                            ) { mod -> modItem(mod, linkLoader) }
-                        }
+                        this.items(
+                            items = (shownIndexMods + shownModdingSubforumMods)
+                                .filterNotNull()
+                                .sortedWith(compareByDescending { it.name })
+                        ) { mod -> modItem(mod, linkLoader) }
                     }
                 }
 
@@ -249,7 +232,7 @@ private fun modItem(mod: ScrapedMod, linkLoader: ((String) -> Unit)?) {
             },
         shape = SmolTheme.smolFullyClippedButtonShape()
     ) {
-        Row(modifier = Modifier.padding(16.dp)) {
+        Row(modifier = Modifier.padding(12.dp)) {
             Column(
                 modifier = Modifier.align(Alignment.CenterVertically)
                     .weight(1f)
@@ -258,6 +241,7 @@ private fun modItem(mod: ScrapedMod, linkLoader: ((String) -> Unit)?) {
                 Text(
                     modifier = Modifier,
                     fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
                     text = mod.name
                 )
                 Text(
@@ -267,27 +251,36 @@ private fun modItem(mod: ScrapedMod, linkLoader: ((String) -> Unit)?) {
                     text = mod.authors
                 )
             }
-            if (mod.forumPostLink?.toString()?.isBlank() == false) {
-                val descText = "Open Forum Thread"
-                TooltipArea(tooltip = { SmolTooltipText(text = descText) }) {
-                    Icon(
-                        painter = painterResource("open-in-new.svg"),
-                        contentDescription = descText,
-                        modifier = Modifier.padding(top = 8.dp)
-                            .align(Alignment.CenterVertically)
-                            .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)))
-                            .mouseClickable {
-                                if (this.buttons.isPrimaryPressed) {
-                                    kotlin.runCatching {
-                                        mod.forumPostLink?.toString()?.openAsUriInBrowser()
-                                    }
-                                        .onFailure { Logger.warn(it) }
-                                }
-                            },
-                        tint = SmolTheme.dimmedIconColor()
-                    )
-                }
-            }
+            browserIcon(modifier = Modifier.align(Alignment.Top), mod = mod)
+        }
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
+@Composable
+private fun browserIcon(modifier: Modifier = Modifier, mod: ScrapedMod) {
+    if (mod.forumPostLink?.toString()?.isBlank() == false) {
+        val descText = "Open in a browser"
+        TooltipArea(
+            modifier = modifier,
+            tooltip = { SmolTooltipText(text = descText) }) {
+            Icon(
+                painter = painterResource("web.svg"),
+                contentDescription = descText,
+                modifier = Modifier
+                    .width(16.dp)
+                    .height(16.dp)
+                    .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)))
+                    .mouseClickable {
+                        if (this.buttons.isPrimaryPressed) {
+                            runCatching {
+                                mod.forumPostLink?.toString()?.openAsUriInBrowser()
+                            }
+                                .onFailure { Logger.warn(it) }
+                        }
+                    },
+                tint = SmolTheme.dimmedIconColor()
+            )
         }
     }
 }

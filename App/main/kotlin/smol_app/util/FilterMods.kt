@@ -86,6 +86,8 @@ internal fun filterModPosts(query: String, mods: List<ScrapedMod>): List<Scraped
                         .run { filterAndAdd(mod.name) }
                     FuzzySearch.partialRatio(filterStr, mod.authors) { it.lowercase() }
                         .run { filterAndAdd(mod.authors) }
+                    FuzzySearch.partialRatio(filterStr, mod.source.name) { it.lowercase() }
+                        .run { filterAndAdd(mod.source.name) }
                     if (mod.category != null) {
                         FuzzySearch.partialRatio(filterStr, mod.category) { it.lowercase() }
                             .run { filterAndAdd(mod.category!!) }

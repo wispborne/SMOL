@@ -7,5 +7,11 @@ data class ScrapedMod(
     val gameVersionReq: String,
     val authors: String,
     val forumPostLink: URI?,
+    val source: ModSource,
     val category: String?
 )
+
+enum class ModSource {
+    Index,
+    ModdingSubforum
+}
