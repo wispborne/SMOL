@@ -8,16 +8,27 @@
       "surface": "#0A1D22",
       "background": "#091A1F",
       "onPrimary": "#A8DBFC",
-      "hyperlink":  "#00FFFF"
+      "hyperlink": "#00FFFF"
     },
-    "Kemet": {
+    "Kemet - Twilight": {
       "isDark": true,
-      "primary": "#7650E0",
-      "primaryVariant": "#9B46D5",
+      "onPrimary": "#E3E4E9",
+      "primary": "#7F477C",
+      "primaryVariant": "#5C4883",
       "secondary": "#AA11A9",
       "secondaryVariant": "#701A8C",
-      "surface": "#1E4781",
+      "surface": "#2D1952",
       "background": "#1B2452"
+    },
+    "Kemet - Frog": {
+      "isDark": true,
+      "primary": "#66C954",
+      "primaryVariant": "#45B034",
+      "secondary": "#BEE45F",
+      "secondaryVariant": "#9EC83B",
+      "surface": "#3F978E",
+      "background": "#136E64",
+      "hyperlink": "#F50607"
     },
     "Aurica": {
       "isDark": false,
@@ -27,7 +38,7 @@
       "secondaryVariant": "#FFE739",
       "surface": "#F0F0F0",
       "background": "#FFFFFF",
-      "hyperlink":  "#00B5B5"
+      "hyperlink": "#00B5B5"
     }
   }
 }
