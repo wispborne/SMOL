@@ -13,7 +13,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import net.sf.sevenzipjbinding.SevenZip
 import org.tinylog.Logger
-import org.tinylog.configuration.Configuration
 import smol_access.Constants
 import smol_access.SL
 import smol_app.navigation.Screen
@@ -21,8 +20,6 @@ import smol_app.navigation.rememberRouter
 import smol_app.util.SmolPair
 import smol_app.util.SmolWindowState
 import smol_app.util.currentPlatform
-import timber.LogLevel
-import timber.Timber
 import utilities.makeFinite
 
 
@@ -34,42 +31,7 @@ fun main() = application {
 
     // Logger
     kotlin.runCatching {
-        val format = "{date} {class}.{method}:{line} {level}: {message}"
-        val level = if (safeMode) "trace" else "info"
-        Configuration.replace(
-            mapOf(
-                "writer1" to "console",
-                "writer1.level" to level,
-                "writer1.format" to format,
-
-                "writer2" to "rolling file",
-                "writer2.level" to level,
-                "writer2.format" to format,
-                "writer2.file" to "SMOL_log.{count}.log",
-                "writer2.buffered" to "true",
-                "writer2.backups" to "2",
-                "writer2.policies" to "size: 10mb",
-            )
-        )
-
-        Thread.setDefaultUncaughtExceptionHandler { _, ex ->
-            Timber.e(ex)
-        }
-
-        Timber.plant(object : Timber.Tree() {
-            override fun log(priority: LogLevel, tag: String?, message: String, t: Throwable?) {
-                val messageMaker = { "${if (tag != null) "$tag/ " else ""}$message" }
-                when (priority) {
-                    LogLevel.VERBOSE -> Logger.trace(t, messageMaker)
-                    LogLevel.DEBUG -> Logger.debug(t, messageMaker)
-                    LogLevel.INFO -> Logger.info(t, messageMaker)
-                    LogLevel.WARN -> Logger.warn(t, messageMaker)
-                    LogLevel.ERROR -> Logger.error(t, messageMaker)
-                    LogLevel.ASSERT -> Logger.error(t, messageMaker)
-                }
-            }
-
-        })
+        Logging.setup()
     }
         .onFailure { println(it) }
 

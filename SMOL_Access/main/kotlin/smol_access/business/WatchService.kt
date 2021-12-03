@@ -28,7 +28,7 @@ import kotlin.io.path.isRegularFile
 fun Path.asWatchChannel(
     mode: KWatchChannel.Mode? = null,
     tag: Any? = null,
-    scope: CoroutineScope = GlobalScope,
+    scope: CoroutineScope,
     ignorePatterns: List<Regex> = listOf(Regex(".*\\.bak"))
 ) = KWatchChannel(
     file = this,
@@ -95,7 +95,7 @@ class KWatchChannel(
 
     init {
         // commence emitting events from channel
-        scope.launch(Dispatchers.Default) {
+        scope.launch {
 
             // sending channel initalization event
             flow.emit(

@@ -1,5 +1,6 @@
 package smol_access.business
 
+import smol_access.Constants
 import smol_access.config.AppConfig
 import smol_access.config.GamePath
 import smol_access.model.Mod
@@ -13,6 +14,7 @@ import timber.ktx.v
 import timber.ktx.w
 import utilities.deleteRecursively
 import utilities.toPathOrNull
+import utilities.trace
 import utilities.walk
 import java.nio.file.AccessDeniedException
 import java.nio.file.Path
@@ -196,102 +198,114 @@ internal class Staging(
      * Creates (hard)links for all files in the source folder to the destination folder.
      */
     private fun linkFolders(sourceFolder: Path, destFolder: Path): Result<Unit> {
-        IOLock.write {
-            if (!destFolder.exists()) destFolder.createDirectories()
+        trace(onFinished = { _, time ->
+            timber.ktx.Timber.tag(Constants.TAG_TRACE).i {
+                "Took ${time}ms to soft/hardlink folder ${sourceFolder.absolutePathString()} to ${destFolder.absolutePathString()}."
+            }
+        }) {
+            IOLock.write {
+                if (!destFolder.exists()) destFolder.createDirectories()
 
-            destFolder.deleteRecursively()
-            destFolder.createDirectories()
-            val failedFiles = mutableListOf<Path>()
-            val succeededFiles = mutableListOf<Path>()
+                destFolder.deleteRecursively()
+                destFolder.createDirectories()
+                val failedFiles = mutableListOf<Path>()
+                val succeededFiles = mutableListOf<Path>()
 
-            sourceFolder.walk().forEach { sourceFile ->
-                //        listOf(sourceFolder).forEach { sourceFile ->
-                //            if (sourceFile.path == sourceFolder.path) return@forEach
-                val sourceRelativePath = sourceFile.relativeTo(sourceFolder)
-                val destFile = Path(destFolder.absolutePathString(), sourceRelativePath.toString())
+                sourceFolder.walk().forEach { sourceFile ->
+                    //        listOf(sourceFolder).forEach { sourceFile ->
+                    //            if (sourceFile.path == sourceFolder.path) return@forEach
+                    val sourceRelativePath = sourceFile.relativeTo(sourceFolder)
+                    val destFile = Path(destFolder.absolutePathString(), sourceRelativePath.toString())
 
-                if (!sourceFile.exists()) {
-                    failedFiles.add(sourceFile)
-                    Timber.w { "Couldn't create ${linkMethod.name}, as source didn't exist. ${sourceFile.absolutePathString()}" }
-                }
-
-
-                when {
-                    sourceFile.isDirectory() -> destFile.deleteRecursively()
-                    sourceFile.isRegularFile() -> destFile.deleteIfExists()
-                }
-
-                kotlin.runCatching {
-                    when (linkMethod) {
-                        LinkMethod.HardLink ->
-                            when {
-                                sourceFile.isDirectory() -> destFile.createDirectories()
-                                sourceFile.isRegularFile() -> destFile.createLinkPointingTo(sourceFile)
-                                else -> Timber.w { "Not sure what kind of file this is: $sourceFile" }
-                            }
-                        LinkMethod.Symlink -> destFile.createSymbolicLinkPointingTo(sourceFile)
-                    }
-                }
-                    .onFailure { ex ->
+                    if (!sourceFile.exists()) {
                         failedFiles.add(sourceFile)
-                        Timber.w(ex) {
-                            "Error creating ${linkMethod.name}.\n" +
-                                    "      Source: ${sourceFile.absolutePathString()}\n" +
-                                    "      Dest: ${destFile.absolutePathString()}"
-                        }
-                        if (linkMethod == LinkMethod.HardLink && ex is AccessDeniedException) {
-                            Timber.w { "Remember that hard links cannot cross disk partitions." }
+                        Timber.w { "Couldn't create ${linkMethod.name}, as source didn't exist. ${sourceFile.absolutePathString()}" }
+                    }
+
+
+                    when {
+                        sourceFile.isDirectory() -> destFile.deleteRecursively()
+                        sourceFile.isRegularFile() -> destFile.deleteIfExists()
+                    }
+
+                    kotlin.runCatching {
+                        when (linkMethod) {
+                            LinkMethod.HardLink ->
+                                when {
+                                    sourceFile.isDirectory() -> destFile.createDirectories()
+                                    sourceFile.isRegularFile() -> destFile.createLinkPointingTo(sourceFile)
+                                    else -> Timber.w { "Not sure what kind of file this is: $sourceFile" }
+                                }
+                            LinkMethod.Symlink -> destFile.createSymbolicLinkPointingTo(sourceFile)
                         }
                     }
-                    .onSuccess {
-                        succeededFiles.add(sourceFile)
-                        Timber.v { "Created ${linkMethod.name} at ${destFile.absolutePathString()}" }
-                    }
-                    .getOrThrow()
+                        .onFailure { ex ->
+                            failedFiles.add(sourceFile)
+                            Timber.w(ex) {
+                                "Error creating ${linkMethod.name}.\n" +
+                                        "      Source: ${sourceFile.absolutePathString()}\n" +
+                                        "      Dest: ${destFile.absolutePathString()}"
+                            }
+                            if (linkMethod == LinkMethod.HardLink && ex is AccessDeniedException) {
+                                Timber.w { "Remember that hard links cannot cross disk partitions." }
+                            }
+                        }
+                        .onSuccess {
+                            succeededFiles.add(sourceFile)
+                            Timber.v { "Created ${linkMethod.name} at ${destFile.absolutePathString()}" }
+                        }
+                        .getOrThrow()
+                }
+
+                if (failedFiles.any()) {
+                    Timber.w { "Failed to create links/folders for ${failedFiles.count()} files in ${destFolder.absolutePathString()}." }
+                }
+
+                Timber.i { "Created links/folders for ${succeededFiles.count()} files in ${destFolder.absolutePathString()}." }
             }
 
-            if (failedFiles.any()) {
-                Timber.w { "Failed to create links/folders for ${failedFiles.count()} files in ${destFolder.absolutePathString()}." }
-            }
-
-            Timber.i { "Created links/folders for ${succeededFiles.count()} files in ${destFolder.absolutePathString()}." }
+            return Result.success(Unit)
         }
-
-        return Result.success(Unit)
     }
 
     /**
      * Removes the mod folder/files from the game /mods folder.
      */
     private fun removeFromModsFolder(modVariant: ModVariant): Result<Unit> {
-        if (modVariant.modsFolderInfo == null) {
-            Timber.w { "Not found in /mods folder: ${modVariant.smolId}." }
-            return Result.success(Unit)
-        }
-
-        val modsFolderInfo = modVariant.modsFolderInfo
-
-        if (!modsFolderInfo.folder.exists()) {
-            Timber.w { "Nothing to remove. Folder doesn't exist in /mods. $modVariant" }
-            return Result.success(Unit)
-        }
-
-        IOLock.write {
-            kotlin.runCatching {
-                modsFolderInfo.folder.deleteRecursively()
+        trace(onFinished = { _, time ->
+            timber.ktx.Timber.tag(Constants.TAG_TRACE).i {
+                "Took ${time}ms to remove variant ${modVariant.smolId} from mods folder."
             }
-                .recover {
-                    Timber.w(it) { "Error deleting ${modsFolderInfo.folder.absolutePathString()}. Marking for deletion on exit." }
-                    modsFolderInfo.folder.toFile().deleteOnExit()
-                }
-                .onFailure {
-                    Timber.e(it)
-                    return Result.failure(it)
-                }
-                .getOrThrow()
-        }
+        }) {
+            if (modVariant.modsFolderInfo == null) {
+                Timber.w { "Not found in /mods folder: ${modVariant.smolId}." }
+                return Result.success(Unit)
+            }
 
-        return Result.success(Unit)
+            val modsFolderInfo = modVariant.modsFolderInfo
+
+            if (!modsFolderInfo.folder.exists()) {
+                Timber.w { "Nothing to remove. Folder doesn't exist in /mods. $modVariant" }
+                return Result.success(Unit)
+            }
+
+            IOLock.write {
+                kotlin.runCatching {
+                    modsFolderInfo.folder.deleteRecursively()
+                }
+                    .recover {
+                        Timber.w(it) { "Error deleting ${modsFolderInfo.folder.absolutePathString()}. Marking for deletion on exit." }
+                        modsFolderInfo.folder.toFile().deleteOnExit()
+                    }
+                    .onFailure {
+                        Timber.e(it)
+                        return Result.failure(it)
+                    }
+                    .getOrThrow()
+            }
+
+            return Result.success(Unit)
+        }
     }
 
     @Suppress("NOTHING_TO_INLINE")

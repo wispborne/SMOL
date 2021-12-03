@@ -23,4 +23,6 @@ object Constants {
     val THEME_CONFIG_PATH: Path = Path.of("SMOL_Themes.json")
     val VERCHECK_CACHE_PATH: Path = APP_FOLDER_DEFAULT.resolve("SMOL_VerCheckCache.json")
     val VRAM_CHECKER_RESULTS_PATH: Path = APP_FOLDER_DEFAULT.resolve("SMOL_VRAMCheckResults.json")
+
+    const val TAG_TRACE = "trace"
 }

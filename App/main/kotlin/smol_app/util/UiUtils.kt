@@ -117,7 +117,7 @@ fun String.hexToColor(): Color? =
         .toLongOrNull(radix = 16)
         ?.let { Color(it) }
 
-fun String.abbreviate(): String =
+fun String.acronym(): String =
     this.map { if (!it.isLetter()) ' ' else it }
         .joinToString(separator = "")
         .split(" ")

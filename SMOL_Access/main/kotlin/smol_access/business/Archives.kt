@@ -23,6 +23,7 @@ import smol_access.util.ArchiveExtractToFolderCallback
 import smol_access.util.ArchiveExtractToMemoryCallback
 import smol_access.util.IOLock
 import timber.ktx.Timber
+import timber.ktx.d
 import utilities.*
 import java.io.File
 import java.io.FileWriter
@@ -135,7 +136,7 @@ class Archives internal constructor(
                                 throw it
                             }
 //                        addToManifest(modInfo = modInfo, archivePath = archivePath)
-                        refreshManifest()
+                        refreshArchivesManifest()
                     } else {
                         // Extract archive to subfolder in destination folder (in case there was no root folder, then we'll fix after).
                         IOLock.write {
@@ -185,7 +186,7 @@ class Archives internal constructor(
 
                         val dataFiles =
                             trace({ _, time ->
-                                Timber.d {
+                                Timber.tag(Constants.TAG_TRACE).d {
                                     "Time to extract mod_info.json ${
                                         if (versionCheckerFile != null) "& vercheck file " else ""
                                     }from ${inputArchiveFile.absolutePathString()}: ${time}ms."
@@ -467,7 +468,7 @@ class Archives internal constructor(
                 }
             }
                 .onFailure { Timber.w(it); throw it }
-            refreshManifest()
+            refreshArchivesManifest()
         }
             .onEach { archiveMovementStatusFlow.value = it }
             .onCompletion { archiveMovementStatusFlow.value = it?.message ?: "Finished adding mods to archive." }
@@ -477,7 +478,7 @@ class Archives internal constructor(
     /**
      * Idempotently reads all modinfos from all archives in /archives and rebuilds the manifest.
      */
-    suspend fun refreshManifest() {
+    suspend fun refreshArchivesManifest() {
         val startTime = System.currentTimeMillis()
         val archives = getArchivesPath().toPathOrNull() ?: return
         val files = archives.walk().toList()
@@ -491,7 +492,7 @@ class Archives internal constructor(
                         // Swallow exception, it has already been logged.
                         kotlin.runCatching {
                             trace({ pair, time ->
-                                Timber.d { "Time to get mod_info.json from ${pair?.second?.modInfo?.id}, ${pair?.second?.modInfo?.version}: ${time}ms." }
+                                Timber.tag(Constants.TAG_TRACE).d { "Time to get mod_info.json from ${pair?.second?.modInfo?.id}, ${pair?.second?.modInfo?.version}: ${time}ms." }
                             }) {
                                 val hashCode = DigestUtils.sha256Hex(archivePath.pathString)
 

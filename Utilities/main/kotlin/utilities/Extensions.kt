@@ -148,7 +148,7 @@ data class DiffResult<T>(
 /**
  * Time how long it takes to run [func].
  */
-inline fun <T> trace(onFinished: (T, Long) -> Unit, func: () -> T): T {
+inline fun <T> trace(onFinished: (result: T, millis: Long) -> Unit, func: () -> T): T {
     var result: T
     val millis = measureTimeMillis { result = func() }
     onFinished(result, millis)

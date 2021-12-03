@@ -34,8 +34,6 @@ import smol_app.components.*
 import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.darken
-import smol_app.themes.SmolTheme.highlight
-import smol_app.themes.SmolTheme.lighten
 import smol_app.util.currentPlatform
 import smol_app.util.filterMods
 import smol_app.util.replaceAllUsingDifference
@@ -58,25 +56,27 @@ fun AppState.homeView(
     modifier: Modifier = Modifier
 ) {
     var isRefreshingMods = false
-    val mods: SnapshotStateList<Mod> =
-        remember { mutableStateListOf(elements = SL.access.mods.value?.toTypedArray() ?: emptyArray()) }
-    val shownMods = remember { mutableStateListOf<Mod?>(elements = mods.toTypedArray()) }
+    val mods: SnapshotStateList<Mod> = remember { mutableStateListOf() }
+    val shownMods: SnapshotStateList<Mod?> = mods.toMutableStateList()
     val onRefreshingMods = { refreshing: Boolean -> isRefreshingMods = refreshing }
-    rememberCoroutineScope { Dispatchers.Default }.launch {
+    val scope = rememberCoroutineScope()
+    scope.launch {
         reloadMods()
     }
 
-    rememberCoroutineScope { Dispatchers.Default }.launch {
-        SL.access.mods.collectLatest { freshMods ->
-            if (freshMods != null) {
-                withContext(Dispatchers.Main) {
-                    mods.replaceAllUsingDifference(freshMods, doesOrderMatter = true)
+    scope.launch {
+        withContext(Dispatchers.Default) {
+            SL.access.mods.collectLatest { freshMods ->
+                if (freshMods != null) {
+                    withContext(Dispatchers.Main) {
+                        mods.replaceAllUsingDifference(freshMods, doesOrderMatter = true)
+                    }
                 }
             }
         }
     }
 
-    rememberCoroutineScope().launch {
+    scope.launch {
         watchDirsAndReloadOnChange()
     }
 
@@ -151,32 +151,6 @@ fun AppState.homeView(
                         }
                     }
                 }
-
-//            if (showConfirmMigrateDialog) {
-//                smol_app.SmolAlertDialog(
-//                    title = { Text("Warning") },
-//                    text = {
-//                        Text(
-//                            "Are you sure you want to migrate the Starsector mods folder to be managed by $SMOL_Access.APP_NAME?" +
-//                                    "\nThis will not affect the mods. It will save their current state to the Archives folder so they may be reinstalled cleanly in the future."
-//                        )
-//                    },
-//                    onDismissRequest = { showConfirmMigrateDialog = false },
-//                    confirmButton = {
-//                        smol_app.SmolButton(onClick = {
-//                            composableScope.launch {
-//                                SL.archives.compressModsInFolder(SL.gamePath.getModsPath())
-//                            }
-//                            showConfirmMigrateDialog = false
-//                        }) { Text("Migrate...") }
-//                    },
-//                    dismissButton = {
-//                        smol_app.SmolSecondaryButton(onClick = { showConfirmMigrateDialog = false }) {
-//                            Text("Cancel")
-//                        }
-//                    }
-//                )
-//            }
             }
         },
         bottomBar = {
@@ -186,7 +160,7 @@ fun AppState.homeView(
                 Column(Modifier.weight(1f)) {
                     Row {
                         var status by remember { mutableStateOf("") }
-                        rememberCoroutineScope().launch {
+                        scope.launch {
                             SL.archives.archiveMovementStatusFlow.collectLatest { status = it }
                         }
                         Text(text = status, modifier = Modifier.align(Alignment.CenterVertically).padding(8.dp))
@@ -198,27 +172,26 @@ fun AppState.homeView(
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
-private suspend fun watchDirsAndReloadOnChange() {
-    withContext(Dispatchers.IO) {
-        val NSA: List<Flow<KWatchEvent?>> = listOf(
-            SL.access.getStagingPath()?.toPathOrNull()?.asWatchChannel() ?: emptyFlow(),
-            SL.access.getStagingPath()?.toPathOrNull()
-                ?.resolve(Archives.ARCHIVE_MANIFEST_FILENAME) // Watch manifest.json
-                ?.run { if (this.exists()) this.asWatchChannel() else emptyFlow() } ?: emptyFlow(),
-            SL.gamePath.getModsPath().asWatchChannel(),
-            SL.gamePath.getModsPath().resolve(ENABLED_MODS_FILENAME) // Watch enabled_mods.json
-                .run { if (this.exists()) this.asWatchChannel() else emptyFlow() },
-            SL.archives.getArchivesPath()?.toPathOrNull()?.asWatchChannel() ?: emptyFlow(),
-        )
-        Logger.info {
-            "Started watching folders ${
-                NSA.joinToString()
-            }"
-        }
+private suspend fun watchDirsAndReloadOnChange(scope: CoroutineScope = GlobalScope) {
+    val NSA: List<Flow<KWatchEvent?>> = listOf(
+        SL.access.getStagingPath()?.toPathOrNull()?.asWatchChannel(scope = scope) ?: emptyFlow(),
+        SL.access.getStagingPath()?.toPathOrNull()
+            ?.resolve(Archives.ARCHIVE_MANIFEST_FILENAME) // Watch manifest.json
+            ?.run { if (this.exists()) this.asWatchChannel(scope = scope) else emptyFlow() } ?: emptyFlow(),
+        SL.gamePath.getModsPath().asWatchChannel(scope = scope),
+        SL.gamePath.getModsPath().resolve(ENABLED_MODS_FILENAME) // Watch enabled_mods.json
+            .run { if (this.exists()) this.asWatchChannel(scope = scope) else emptyFlow() },
+        SL.archives.getArchivesPath()?.toPathOrNull()?.asWatchChannel(scope = scope) ?: emptyFlow(),
+    )
+    Logger.info {
+        "Started watching folders ${
+            NSA.joinToString()
+        }"
+    }
+    withContext(Dispatchers.Default) {
         NSA
             .plus(SL.manualReloadTrigger.trigger.map { null })
             .merge()
-            .distinctUntilChanged()
             .collectLatest {
                 if (!IOLock.stateFlow.value) {
                     if (it?.kind == KWatchEvent.Kind.Initialized)
@@ -245,15 +218,22 @@ private suspend fun reloadMods() {
         coroutineScope {
             Logger.info { "Reloading mods." }
             SL.access.reload()
-            val manifest = async { SL.archives.refreshManifest() }
-            val vramCheckerAsync = async {
-                SL.vramChecker.vramUsage.value ?: SL.vramChecker.refreshVramUsage(
-                    mods = SL.access.mods.value ?: emptyList()
-                )
-            }
+            val mods = SL.access.mods.value ?: emptyList()
 
-            manifest.await()
-            vramCheckerAsync.await()
+            listOf(
+                async {
+                    SL.versionChecker.lookUpVersions(
+                        forceLookup = false,
+                        mods = mods
+                    )
+                },
+                async { SL.archives.refreshArchivesManifest() },
+                async {
+                    SL.vramChecker.vramUsage.value ?: SL.vramChecker.refreshVramUsage(
+                        mods = mods
+                    )
+                }
+            ).awaitAll()
         }
     } catch (e: Exception) {
         Logger.debug(e)
