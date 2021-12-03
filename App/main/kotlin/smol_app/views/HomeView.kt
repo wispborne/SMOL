@@ -335,7 +335,7 @@ private fun AppState.launchButton() {
         colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.primary),
         modifier = Modifier
             .padding(start = 16.dp)
-            .border(6.dp, MaterialTheme.colors.primary.highlight(), shape = SmolTheme.smolFullyClippedButtonShape()),
+            .border(8.dp, MaterialTheme.colors.primary.darken(), shape = SmolTheme.smolFullyClippedButtonShape()),
         shape = SmolTheme.smolFullyClippedButtonShape(),
         elevation = ButtonDefaults.elevation(defaultElevation = 4.dp, hoveredElevation = 8.dp, pressedElevation = 16.dp)
     ) {

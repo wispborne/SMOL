@@ -60,6 +60,16 @@
       "surface": "#21242B",
       "background": "#282C34",
       "hyperlink": "#D6D281"
+    },
+    "VIC": {
+      "isDark": true,
+      "primary": "#EE9E00",
+      "primaryVariant": "#BD7E00",
+      "secondary": "#4DEFD2",
+      "secondaryVariant": "#27E6C6",
+      "surface": "#112B29",
+      "background": "#1B1B1B",
+      "hyperlink": "#4DEFD2"
     }
   }
 }

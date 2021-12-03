@@ -107,7 +107,7 @@ fun AppState.ModGridView(
                         .groupBy { it.uiEnabled }
                         .toSortedMap(compareBy { !it }) // Flip to put Enabled at the top
                         .forEach { (modState, modsInGroup) ->
-                            stickyHeader() {
+                            stickyHeader {
                                 Card(
                                     elevation = 8.dp,
                                     modifier = Modifier
@@ -127,6 +127,7 @@ fun AppState.ModGridView(
                                                 true -> "Enabled (${modsInGroup.count()})"
                                                 false -> "Disabled (${modsInGroup.count()})"
                                             },
+                                            color = MaterialTheme.colors.onSurface,
                                             modifier = Modifier
                                                 .padding(8.dp),
                                             fontWeight = FontWeight.Bold
@@ -202,7 +203,7 @@ fun AppState.ModGridView(
                                                         Image(
                                                             painter = painterResource("new-box.svg"),
                                                             contentDescription = null,
-                                                            colorFilter = ColorFilter.tint(color = MaterialTheme.colors.primary),
+                                                            colorFilter = ColorFilter.tint(color = MaterialTheme.colors.secondary),
                                                             modifier = Modifier.width(28.dp).height(28.dp)
                                                                 .padding(end = 8.dp)
                                                                 .align(Alignment.CenterVertically)
