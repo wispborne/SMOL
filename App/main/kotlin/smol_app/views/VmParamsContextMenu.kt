@@ -18,7 +18,6 @@ import org.tinylog.kotlin.Logger
 import oshi.SystemInfo
 import smol_access.SL
 import smol_app.components.SmolButton
-import smol_app.components.SmolSecondaryButton
 import smol_app.components.SmolTextField
 import smol_app.themes.SmolTheme
 import smol_app.util.vmParamsManager
@@ -128,11 +127,14 @@ fun vmParamsContextMenu(
             trailingIcon = { Text("MB") },
             label = { Text("Custom") }
         )
-        SmolSecondaryButton(
+        SmolButton(
             modifier = Modifier.padding(top = 8.dp, bottom = 0.dp).fillMaxWidth().align(Alignment.CenterHorizontally),
+            enabled = mb.toIntOrNull() != null,
             onClick = {
-                SL.vmParamsManager.update { it?.run { withMb(mb.toIntOrNull() ?: 1500) } }
-                assignedRam = SL.vmParamsManager.read()?.xmx
+                if (mb.toIntOrNull() != null) {
+                    SL.vmParamsManager.update { it?.run { withMb(mb.toInt()) } }
+                    assignedRam = SL.vmParamsManager.read()?.xmx
+                }
             }
         ) {
             Text(text = "Apply Custom")

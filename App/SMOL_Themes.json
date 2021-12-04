@@ -1,6 +1,6 @@
 {
   "themes": {
-    "Default": {
+    "Starfarer": {
       "isDark": true,
       "primary": "#184957",
       "primaryVariant": "#00212e",
@@ -70,6 +70,16 @@
       "surface": "#112B29",
       "background": "#1B1B1B",
       "hyperlink": "#4DEFD2"
+    },
+    "Tiandong": {
+      "isDark": true,
+      "primary": "#73875F",
+      "primaryVariant": "#4F5F3E",
+      "secondary": "#886A38",
+      "secondaryVariant": "#6F511F",
+      "surface": "#0C1009",
+      "background": "#020101",
+      "hyperlink": "#C3B9A4"
     }
   }
 }

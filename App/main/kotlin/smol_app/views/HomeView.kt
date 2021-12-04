@@ -33,7 +33,7 @@ import smol_app.cli.SmolCLI
 import smol_app.components.*
 import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
-import smol_app.themes.SmolTheme.darken
+import smol_app.themes.SmolTheme.withBrightness
 import smol_app.util.currentPlatform
 import smol_app.util.filterMods
 import smol_app.util.replaceAllUsingDifference
@@ -234,17 +234,14 @@ private suspend fun reloadMods() {
                         forceLookup = false,
                         mods = mods
                     )
-                    Logger.info { "Done1." }
                 },
                 async {
                     SL.archives.refreshArchivesManifest()
-                    Logger.info { "Done2." }
                 },
                 async {
                     SL.vramChecker.vramUsage.value ?: SL.vramChecker.refreshVramUsage(
                         mods = mods
                     )
-                    Logger.info { "Done3." }
                 }
             ).awaitAll()
             Logger.info { "Finished reloading mods." }
@@ -284,11 +281,8 @@ private fun AppState.refreshButton() {
     ) {
         SmolButton(
             onClick = {
-                Timber.d { "test." }
                 refreshScope.launch(Dispatchers.Default) {
-                    Timber.d { "Clicked Refresh button." }
                     reloadMods()
-                    Timber.d { "Finished reloading mods 2." }
                 }
             },
             modifier = Modifier.padding(start = 16.dp)
@@ -332,7 +326,11 @@ private fun AppState.launchButton() {
         colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.primary),
         modifier = Modifier
             .padding(start = 16.dp)
-            .border(8.dp, MaterialTheme.colors.primary.darken(), shape = SmolTheme.smolFullyClippedButtonShape()),
+            .border(
+                8.dp,
+                MaterialTheme.colors.primary.withBrightness(-35),
+                shape = SmolTheme.smolFullyClippedButtonShape()
+            ),
         shape = SmolTheme.smolFullyClippedButtonShape(),
         elevation = ButtonDefaults.elevation(defaultElevation = 4.dp, hoveredElevation = 8.dp, pressedElevation = 16.dp)
     ) {

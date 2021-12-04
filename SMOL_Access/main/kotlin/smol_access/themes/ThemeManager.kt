@@ -10,7 +10,7 @@ class ThemeManager(
     private val userManager: UserManager,
     private val themeConfig: ThemeConfig
 ) {
-    private val defaultTheme = "Default" to Theme(
+    private val defaultTheme = "Starfarer" to Theme(
         isDark = true,
         primary = 0xFF184957,
         primaryVariant = 0xFF00212e,

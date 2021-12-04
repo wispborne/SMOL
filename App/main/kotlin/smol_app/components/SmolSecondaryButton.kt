@@ -8,11 +8,12 @@ import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ExperimentalGraphicsApi
 import androidx.compose.ui.graphics.Shape
 import smol_app.themes.SmolTheme
 
 @Composable
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterialApi::class, ExperimentalGraphicsApi::class)
 fun SmolSecondaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -22,7 +23,7 @@ fun SmolSecondaryButton(
     shape: Shape? = null,
     border: BorderStroke? = null,
     colors: ButtonColors = ButtonDefaults.buttonColors(
-        backgroundColor = MaterialTheme.colors.primary.copy(alpha = ContentAlpha.medium),
+        backgroundColor = MaterialTheme.colors.primary.copy(alpha = ContentAlpha.high),
         contentColor = MaterialTheme.colors.onPrimary.copy(alpha = ContentAlpha.high)
     ),
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding,

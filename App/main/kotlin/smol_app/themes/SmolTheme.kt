@@ -23,10 +23,10 @@ object SmolTheme {
     fun smolFullyClippedButtonShape() = CutCornerShape(size = cornerClipping)
 
     @Composable
-    fun Color.lighten() = this.alter(amount = 20)
-    fun Color.darken() = this.alter(amount = -20)
+    fun Color.lighten() = this.withBrightness(amount = 20)
+    fun Color.darken() = this.withBrightness(amount = -20)
 
-    fun Color.alter(amount: Int): Color {
+    fun Color.withBrightness(amount: Int): Color {
         val r = ((this.red * 255) + amount).coerceIn(0f, 255f).toInt().toString(radix = 16)
         val g = ((this.green * 255) + amount).coerceIn(0f, 255f).toInt().toString(radix = 16)
         val b = ((this.blue * 255) + amount).coerceIn(0f, 255f).toInt().toString(radix = 16)
