@@ -2,7 +2,6 @@ package smol_app.browser
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.TooltipArea
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.GridCells
@@ -261,7 +260,7 @@ private fun modItem(mod: ScrapedMod, linkLoader: ((String) -> Unit)?) {
 private fun browserIcon(modifier: Modifier = Modifier, mod: ScrapedMod) {
     if (mod.forumPostLink?.toString()?.isBlank() == false) {
         val descText = "Open in a browser"
-        TooltipArea(
+        SmolTooltipArea(
             modifier = modifier,
             tooltip = { SmolTooltipText(text = descText) }) {
             Icon(
@@ -325,7 +324,7 @@ fun downloadBar(
             val status = download.status.value
             val total = download.total
 
-            TooltipArea(
+            SmolTooltipArea(
                 tooltip = {
                     SmolTooltipText(text = buildString {
                         appendLine(download.path.absolutePathString())

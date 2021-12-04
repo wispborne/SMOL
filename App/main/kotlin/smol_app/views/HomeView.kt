@@ -278,7 +278,7 @@ private fun AppState.modBrowserButton() {
 private fun AppState.refreshButton() {
     val refreshScope by remember { mutableStateOf(CoroutineScope(Job())) }
 
-    TooltipArea(
+    SmolTooltipArea(
         tooltip = { SmolTooltipText(text = "Refresh modlist & VRAM impact") }
     ) {
         SmolButton(
@@ -354,7 +354,7 @@ private fun AppState.ramButton(modifier: Modifier = Modifier) {
 
 @Composable
 private fun AppState.installModsButton(modifier: Modifier = Modifier) {
-    TooltipArea(
+    SmolTooltipArea(
         tooltip = { SmolTooltipText(text = "Install mod(s)") }
     ) {
         SmolButton(

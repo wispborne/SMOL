@@ -94,6 +94,14 @@ fun BoxScope.detailsPanel(
                     fontSize = TextUnit(12f, TextUnitType.Sp),
                     fontFamily = SmolTheme.fireCodeFont
                 )
+                if (!modInfo?.gameVersion.isNullOrBlank()) {
+                    Text(
+                        "Starsector ${modInfo?.gameVersion}",
+                        modifier = Modifier.padding(top = 8.dp),
+                        fontSize = TextUnit(12f, TextUnitType.Sp),
+                        fontFamily = SmolTheme.fireCodeFont
+                    )
+                }
                 Text("Author", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
                 Text(modInfo?.author ?: "It's always Techpriest", modifier = Modifier.padding(top = 2.dp))
                 Text("Description", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))

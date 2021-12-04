@@ -38,10 +38,7 @@ import smol_access.business.findDependencyStates
 import smol_access.model.Mod
 import smol_access.model.ModVariant
 import smol_app.AppState
-import smol_app.components.SmolAlertDialog
-import smol_app.components.SmolButton
-import smol_app.components.SmolDropdownArrow
-import smol_app.components.SmolTooltipText
+import smol_app.components.*
 import smol_app.themes.SmolTheme
 import smol_app.util.*
 import java.awt.Cursor
@@ -74,12 +71,12 @@ fun AppState.ModGridView(
 
                     Text("Author", Modifier.weight(1f), fontWeight = FontWeight.Bold)
 
-                    TooltipArea(modifier = Modifier.weight(1f),
+                    SmolTooltipArea(modifier = Modifier.weight(1f),
                         tooltip = { SmolTooltipText(text = "The version(s) tracked by SMOL.") }) {
                         Text(text = "Version(s)", fontWeight = FontWeight.Bold)
                     }
 
-                    TooltipArea(modifier = Modifier.weight(1f),
+                    SmolTooltipArea(modifier = Modifier.weight(1f),
                         tooltip = {
                             SmolTooltipText(
                                 text = "An estimate of how much VRAM the mod will use." +
@@ -96,6 +93,8 @@ fun AppState.ModGridView(
                             )
                         }
                     }
+
+                    Text("Game Version", Modifier.weight(1f), fontWeight = FontWeight.Bold)
                 }
             }
             Box {
@@ -200,7 +199,7 @@ fun AppState.ModGridView(
                                                 if (highestLocalVersion != null && onlineVersion != null && onlineVersion > highestLocalVersion) {
                                                     val modThreadId =
                                                         mod.findHighestVersion?.versionCheckerInfo?.modThreadId
-                                                    TooltipArea(tooltip = {
+                                                    SmolTooltipArea(tooltip = {
                                                         SmolTooltipText(
                                                             text = "Newer version available: $onlineVersion" +
                                                                     "\n\nClick to open ${modThreadId?.getModThreadUrl()}."
@@ -240,7 +239,7 @@ fun AppState.ModGridView(
                                             Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {
                                                 val vramResult =
                                                     SL.vramChecker.vramUsage.value?.get(mod.findHighestVersion?.smolId)
-                                                TooltipArea(tooltip = {
+                                                SmolTooltipArea(tooltip = {
                                                     if (vramResult != null) {
                                                         val impactText =
                                                             vramResult.bytesForMod.bytesAsReadableMiB
@@ -283,6 +282,16 @@ fun AppState.ModGridView(
                                                         color = SmolTheme.dimmedTextColor()
                                                     )
                                                 }
+                                            }
+
+                                            // Game version (for active or highest)
+                                            Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {
+                                                Text(
+                                                    text = (mod.findFirstEnabled
+                                                        ?: mod.findHighestVersion)?.modInfo?.gameVersion ?: "",
+                                                    modifier = Modifier.align(Alignment.CenterVertically),
+                                                    color = SmolTheme.dimmedTextColor()
+                                                )
                                             }
 
                                             // Context menu
@@ -548,7 +557,7 @@ private fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
             ) {
                 // Text of the dropdown menu, current state of the mod
                 if (mod.enabledVariants.size > 1) {
-                    TooltipArea(tooltip = {
+                    SmolTooltipArea(tooltip = {
                         SmolTooltipText(
                             text = "Warning: ${mod.enabledVariants.size} versions of " +
                                     "${mod.findHighestVersion!!.modInfo.name} in the mods folder." +

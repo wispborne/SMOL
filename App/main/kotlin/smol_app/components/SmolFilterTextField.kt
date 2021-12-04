@@ -1,6 +1,5 @@
 package smol_app.components
 
-import androidx.compose.foundation.TooltipArea
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
@@ -24,7 +23,7 @@ fun smolSearchField(
     onValueChange: (String) -> Unit
 ) {
     var value by remember { mutableStateOf("") }
-    TooltipArea(
+    SmolTooltipArea(
         modifier = modifier.run { if (focusRequester != null) this.focusRequester(focusRequester) else this },
         tooltip = { SmolTooltipText(text = tooltipText) }
     ) {
