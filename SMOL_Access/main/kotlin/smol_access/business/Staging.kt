@@ -167,6 +167,7 @@ internal class Staging(
 
         // If it's not staged, stage it first (from the archive).
         if (mod.stagingInfo == null || !mod.stagingInfo!!.folder.exists()) {
+            Timber.d { "Variant '${modToEnable.smolId}' was not staged, stage it first (from the archive)." }
             stageInternal(mod)
             // Then reload, to get the new staging path.
             mod = (modLoader.reload() ?: emptyList())

@@ -76,7 +76,7 @@ fun AppState.ModGridView(
 
                     TooltipArea(modifier = Modifier.weight(1f),
                         tooltip = { SmolTooltipText(text = "The version(s) tracked by SMOL.") }) {
-                        Text(text = "Version", fontWeight = FontWeight.Bold)
+                        Text(text = "Version(s)", fontWeight = FontWeight.Bold)
                     }
 
                     TooltipArea(modifier = Modifier.weight(1f),
@@ -591,7 +591,11 @@ private fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
                                 expanded = false
                                 Logger.debug { "Selected $action." }
 
-                                coroutineScope.launch {
+                                // Don't use composition scope, we don't want
+                                // it to cancel an operation due to a UI recomposition.
+                                // A two-step operation will trigger a mod refresh and therefore recomposition and cancel
+                                // the second part of the operation!
+                                GlobalScope.launch {
                                     kotlin.runCatching {
                                         // Change mod state
                                         when (action) {

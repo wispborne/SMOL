@@ -48,8 +48,8 @@ class ModLoader internal constructor(
 
         return try {
             isReloadingMutable.emit(true)
-            trace({ _, time ->
-                Timber.tag(Constants.TAG_TRACE).i { "Time to load and merge all mod info files: ${time}ms" }
+            trace({ mods, time ->
+                Timber.tag(Constants.TAG_TRACE).i { "Time to load and merge all ${mods.count()} mod info files: ${time}ms" }
             }) {
                 withContext(Dispatchers.IO) {
                     val enabledModIds = gameEnabledMods.getEnabledMods().enabledMods

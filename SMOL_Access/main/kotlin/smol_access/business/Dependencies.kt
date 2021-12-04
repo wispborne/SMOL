@@ -15,7 +15,7 @@ fun ModVariant.findDependencyStates(mods: List<Mod>): List<DependencyState> =
         .map { (dependency, foundDependencyMod) ->
             // Mod not found or has no variants, it's missing.
             if (foundDependencyMod == null || foundDependencyMod.variants.isEmpty())
-                return@map smol_access.business.DependencyState.Missing(
+                return@map DependencyState.Missing(
                     dependency = dependency,
                     outdatedModIfFound = null
                 )
@@ -23,10 +23,10 @@ fun ModVariant.findDependencyStates(mods: List<Mod>): List<DependencyState> =
             return@map if (dependency.version == null) {
                 if (foundDependencyMod.hasEnabledVariant) {
                     // No specific version needed, one is enabled, all good.
-                    smol_access.business.DependencyState.Enabled(dependency, foundDependencyMod.findFirstEnabled!!)
+                    DependencyState.Enabled(dependency, foundDependencyMod.findFirstEnabled!!)
                 } else {
                     // No specific version needed, none are enabled but one exists, return highest version available.
-                    smol_access.business.DependencyState.Disabled(dependency, foundDependencyMod.findHighestVersion!!)
+                    DependencyState.Disabled(dependency, foundDependencyMod.findHighestVersion!!)
                 }
             } else {
                 val variantsMeetingVersionReq =
@@ -34,22 +34,22 @@ fun ModVariant.findDependencyStates(mods: List<Mod>): List<DependencyState> =
 
                 if (variantsMeetingVersionReq.isEmpty()) {
                     // No variants found will work.
-                    smol_access.business.DependencyState.Missing(dependency, foundDependencyMod)
+                    DependencyState.Missing(dependency, foundDependencyMod)
                 } else {
                     val alreadyEnabledAndValidDependency = variantsMeetingVersionReq
                         .filter { foundDependencyMod.isEnabled(it) }
                         .maxByOrNull { it.modInfo.version }
 
                     if (alreadyEnabledAndValidDependency != null) {
-                        smol_access.business.DependencyState.Enabled(dependency, alreadyEnabledAndValidDependency)
+                        DependencyState.Enabled(dependency, alreadyEnabledAndValidDependency)
                     } else {
                         val validButDisabledDependency = variantsMeetingVersionReq
                             .maxByOrNull { it.modInfo.version }
                         if (validButDisabledDependency == null) {
                             Timber.w { "Unexpected scenario finding dependency for mod ${mod.id} with dependency: $dependency." }
-                            smol_access.business.DependencyState.Missing(dependency, foundDependencyMod)
+                            DependencyState.Missing(dependency, foundDependencyMod)
                         } else {
-                            smol_access.business.DependencyState.Disabled(dependency, validButDisabledDependency)
+                            DependencyState.Disabled(dependency, validButDisabledDependency)
                         }
                     }
                 }

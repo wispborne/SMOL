@@ -21,7 +21,12 @@ class ObservableReentrantReadWriteLock(val lock: ReentrantReadWriteLock) {
      * Executes the given [action] under the read lock of this lock.
      * @return the return value of the action.
      */
-    inline fun <T> read(action: () -> T): T = lock.read { action() }
+    inline fun <T> read(action: () -> T): T = lock.read {
+        Timber.v { "Read locked" }
+        val ret = action()
+        Timber.v { "Read unlocked" }
+        ret
+    }
 
     /**
      * Executes the given [action] under the write lock of this lock.
@@ -38,10 +43,10 @@ class ObservableReentrantReadWriteLock(val lock: ReentrantReadWriteLock) {
      */
     inline fun <T> write(action: () -> T): T {
         return lock.write {
-            Timber.v { "Locked" }
+            Timber.d { "Write locked" }
             flow.tryEmit(true)
             val ret = action()
-            Timber.v { "Unlocked" }
+            Timber.d { "Write unlocked" }
             flow.tryEmit(false)
             ret
         }

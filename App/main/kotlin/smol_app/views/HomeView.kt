@@ -42,6 +42,7 @@ import timber.ktx.Timber
 import utilities.equalsAny
 import utilities.toFileOrNull
 import utilities.toPathOrNull
+import utilities.trace
 import java.awt.FileDialog
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.exists
@@ -224,27 +225,28 @@ private suspend fun reloadMods() {
     }
     try {
         coroutineScope {
-            Logger.info { "Reloading mods." }
-            SL.access.reload()
-            val mods = SL.access.mods.value ?: emptyList()
+            trace(onFinished = { _, millis -> Timber.i { "Finished reloading in ${millis}ms." } }) {
+                Timber.d { "Reloading mods." }
+                SL.access.reload()
+                val mods = SL.access.mods.value ?: emptyList()
 
-            listOf(
-                async {
-                    SL.versionChecker.lookUpVersions(
-                        forceLookup = false,
-                        mods = mods
-                    )
-                },
-                async {
-                    SL.archives.refreshArchivesManifest()
-                },
-                async {
-                    SL.vramChecker.vramUsage.value ?: SL.vramChecker.refreshVramUsage(
-                        mods = mods
-                    )
-                }
-            ).awaitAll()
-            Logger.info { "Finished reloading mods." }
+                listOf(
+                    async {
+                        SL.versionChecker.lookUpVersions(
+                            forceLookup = false,
+                            mods = mods
+                        )
+                    },
+                    async {
+                        SL.archives.refreshArchivesManifest()
+                    },
+                    async {
+                        SL.vramChecker.vramUsage.value ?: SL.vramChecker.refreshVramUsage(
+                            mods = mods
+                        )
+                    }
+                ).awaitAll()
+            }
         }
     } catch (e: Exception) {
         Logger.debug(e)
