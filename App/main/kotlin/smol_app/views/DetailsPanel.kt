@@ -1,13 +1,21 @@
 package smol_app.views
 
+import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material.Card
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -18,18 +26,117 @@ import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import smol_access.SL
 import smol_access.business.findDependencies
+import smol_access.model.Mod
 import smol_app.components.SmolLinkText
-import smol_app.themes.SmolTheme
 import smol_app.components.TiledImage
+import smol_app.themes.SmolTheme
+import smol_app.themes.SmolTheme.withBrightness
 import smol_app.util.imageResource
 import smol_app.util.openModThread
 
+
+@Composable
+@Preview
+fun detailsPanelPreview() {
+    Box {
+        detailsPanel(selectedRow = ModRow(Mod.mock), mods = listOf(Mod.mock))
+    }
+}
+
 @OptIn(
     ExperimentalUnitApi::class,
-    androidx.compose.ui.ExperimentalComposeUiApi::class, androidx.compose.foundation.ExperimentalFoundationApi::class
+    androidx.compose.ui.ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class
 )
 @Composable
 fun BoxScope.detailsPanel(
+    modifier: Modifier = Modifier,
+    selectedRow: ModRow?,
+    mods: List<Mod>
+) {
+    val row = selectedRow ?: return
+    val borderColor = MaterialTheme.colors.surface.withBrightness(-5)
+
+    Card(
+        modifier.width(400.dp)
+            .background(MaterialTheme.colors.surface)
+            .align(Alignment.CenterEnd)
+            .clickable(enabled = false) { }
+            .fillMaxHeight()
+            .shadow(2.dp)
+            .drawWithContent {
+                drawContent()
+                val y = size.height
+                drawLine(
+                    color = borderColor,
+                    cap = StrokeCap.Square,
+                    start = Offset.Zero,
+                    end = Offset(x = 0f, y = y)
+                )
+            },
+        shape = RectangleShape
+    ) {
+        val state = rememberScrollState()
+        SelectionContainer {
+            Column(
+                Modifier.padding(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 24.dp).verticalScroll(state)
+            ) {
+                val modVariant = row.mod.findFirstEnabled ?: row.mod.findHighestVersion
+                val modInfo = modVariant?.modInfo
+                Text(
+                    modInfo?.name ?: "VNSector",
+                    fontWeight = FontWeight.ExtraBold,
+                    fontFamily = SmolTheme.orbitronSpaceFont,
+                    fontSize = TextUnit(18f, TextUnitType.Sp)
+                )
+                Text(
+                    "${modInfo?.id ?: "vnsector"} ${modInfo?.version?.toString() ?: "no version"}",
+                    modifier = Modifier.padding(top = 4.dp),
+                    fontSize = TextUnit(12f, TextUnitType.Sp),
+                    fontFamily = SmolTheme.fireCodeFont
+                )
+                Text("Author", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
+                Text(modInfo?.author ?: "It's always Techpriest", modifier = Modifier.padding(top = 2.dp))
+                Text("Description", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
+                Text(modInfo?.description ?: "", modifier = Modifier.padding(top = 2.dp))
+                val dependencies = modVariant?.findDependencies(mods = mods) ?: emptyList()
+                if (dependencies.isNotEmpty()) {
+                    Text("Dependencies", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
+                    Text(
+                        dependencies
+                            .joinToString {
+                                val depName: String =
+                                    it.second?.findHighestVersion?.modInfo?.name ?: it.second?.id ?: it.first.id
+                                depName + if (it.first.versionString != null) " v${it.first.versionString}" else ""
+                            },
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                }
+
+                val versionCheckerInfo = row.mod.findHighestVersion?.versionCheckerInfo
+                if (versionCheckerInfo?.modThreadId != null) {
+                    DisableSelection {
+                        SmolLinkText(
+                            text = "Forum Thread",
+                            modifier = Modifier.padding(top = 16.dp)
+                                .mouseClickable {
+                                    if (this.buttons.isPrimaryPressed) {
+                                        versionCheckerInfo.modThreadId!!.openModThread()
+                                    }
+                                }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(
+    ExperimentalUnitApi::class,
+    androidx.compose.ui.ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class
+)
+@Composable
+fun BoxScope.detailsPanelGameStyled(
     modifier: Modifier = Modifier,
     selectedRow: ModRow?
 ) {

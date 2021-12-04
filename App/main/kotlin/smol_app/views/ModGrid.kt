@@ -38,7 +38,10 @@ import smol_access.business.findDependencyStates
 import smol_access.model.Mod
 import smol_access.model.ModVariant
 import smol_app.AppState
-import smol_app.components.*
+import smol_app.components.SmolAlertDialog
+import smol_app.components.SmolButton
+import smol_app.components.SmolDropdownArrow
+import smol_app.components.SmolTooltipText
 import smol_app.themes.SmolTheme
 import smol_app.util.*
 import java.awt.Cursor
@@ -60,14 +63,11 @@ fun AppState.ModGridView(
     var selectedRow: ModRow? by remember { mutableStateOf(null) }
     var modInDebugDialog: Mod? by remember { mutableStateOf(null) }
     val largestVramUsage = SL.vramChecker.vramUsage.value?.values?.maxOf { it.bytesForMod }
+    val contentPadding = 16.dp
 
-    Box(modifier) {
-        TiledImage(
-            modifier = Modifier.background(Color.Gray.copy(alpha = .1f)),
-            imageBitmap = imageResource("panel00_center.png")
-        )
-        Column(Modifier.padding(16.dp)) {
-            ListItem() {
+    Box(modifier.padding(top = contentPadding, bottom = contentPadding)) {
+        Column(Modifier) {
+            ListItem(modifier = Modifier.padding(start = contentPadding, end = contentPadding)) {
                 Row {
                     Spacer(Modifier.width(modGridViewDropdownWidth.dp))
                     Text("Name", Modifier.weight(1f), fontWeight = FontWeight.Bold)
@@ -112,7 +112,12 @@ fun AppState.ModGridView(
                                     elevation = 8.dp,
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(top = 8.dp, bottom = 8.dp)
+                                        .padding(
+                                            top = 8.dp,
+                                            bottom = 8.dp,
+                                            start = contentPadding,
+                                            end = contentPadding
+                                        )
                                 ) {
                                     Row {
                                         Icon(
@@ -144,18 +149,24 @@ fun AppState.ModGridView(
                                     mod.findHighestVersion?.versionCheckerInfo?.modVersion
                                 val onlineVersion = SL.versionChecker.getOnlineVersion(modId = mod.id)
 
-                                ListItem(Modifier
-                                    .fillMaxWidth()
-                                    .mouseClickable {
-                                        if (this.buttons.isPrimaryPressed) {
-                                            selectedRow =
-                                                (if (selectedRow === modRow) null else modRow)
-                                        } else if (this.buttons.isSecondaryPressed) {
-                                            showContextMenu = !showContextMenu
+                                ListItem(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .mouseClickable {
+                                            if (this.buttons.isPrimaryPressed) {
+                                                selectedRow =
+                                                    (if (selectedRow === modRow) null else modRow)
+                                            } else if (this.buttons.isSecondaryPressed) {
+                                                showContextMenu = !showContextMenu
+                                            }
                                         }
-                                    }
+                                        .background(
+                                            color = if (selectedRow?.mod?.id == mod.id)
+                                                Color.Black.copy(alpha = .1f)
+                                            else Color.Transparent
+                                        )
                                 ) {
-                                    Column {
+                                    Column(modifier = Modifier.padding(start = contentPadding, end = contentPadding)) {
                                         Row(Modifier.fillMaxWidth()) {
                                             modStateDropdown(
                                                 modifier = Modifier
@@ -305,7 +316,11 @@ fun AppState.ModGridView(
         }
 
         if (selectedRow != null) {
-            detailsPanel(selectedRow = selectedRow)
+            detailsPanel(
+                modifier = Modifier.padding(bottom = contentPadding),
+                selectedRow = selectedRow,
+                mods = SL.access.mods.value ?: emptyList()
+            )
         }
 
         if (modInDebugDialog != null) {

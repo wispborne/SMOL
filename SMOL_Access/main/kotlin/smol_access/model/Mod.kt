@@ -37,6 +37,33 @@ data class Mod(
 
     val hasEnabledVariant: Boolean
         get() = findFirstEnabled != null
+
+    companion object {
+        val mock = Mod(
+            id = "mock",
+            isEnabledInGame = true,
+            variants = listOf(
+                ModVariant(
+                    modInfo = ModInfo.v095(
+                        _id = "mock",
+                        _name = "Mock Mod",
+                        _author = "Wisp",
+                        _utilityString = "false",
+                        _description = "An isolationist authoritarian Theocracy thrust into Persean politics by necessity, this high-tech faction utilises flexible pulse-based energy weapons and unique solar shielding.",
+                        _gameVersion = "0.95.1-RC15",
+                        _jars = listOf("jar.jar"),
+                        _modPlugin = "mod/plugin",
+                        _dependencies = listOf(Dependency(_id = "lw_lazylib", name = null, versionString = null)),
+                        versionString = Version(raw = "1.0.0")
+                    ),
+                    versionCheckerInfo = null,
+                    modsFolderInfo = null,
+                    stagingInfo = null,
+                    archiveInfo = null
+                )
+            )
+        )
+    }
 }
 
 /**

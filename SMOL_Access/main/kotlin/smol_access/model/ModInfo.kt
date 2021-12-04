@@ -92,7 +92,7 @@ data class Version(
     val major: String = "0",
     val minor: String = "0",
     val patch: String = "0",
-    val build: String?
+    val build: String? = null
 ) : Comparable<Version> {
     override fun toString() = raw ?: listOfNotNull(major, minor, patch, build).joinToString(separator = ".")
 

@@ -225,7 +225,7 @@ private suspend fun reloadMods() {
     }
     try {
         coroutineScope {
-            trace(onFinished = { _, millis -> Timber.i { "Finished reloading in ${millis}ms." } }) {
+            trace(onFinished = { _, millis -> Timber.i { "Finished reloading everything in ${millis}ms (this is not how long it took to reload just the mods)." } }) {
                 Timber.d { "Reloading mods." }
                 SL.access.reload()
                 val mods = SL.access.mods.value ?: emptyList()
