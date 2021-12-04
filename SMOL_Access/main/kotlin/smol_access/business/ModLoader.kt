@@ -178,6 +178,9 @@ class ModLoader internal constructor(
                     return@withContext result
                 }
             }
+        } catch (e: Exception) {
+            Timber.e(e)
+            return emptyList()
         } finally {
             isReloadingMutable.emit(false)
         }

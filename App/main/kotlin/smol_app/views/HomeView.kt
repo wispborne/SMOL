@@ -38,6 +38,7 @@ import smol_app.util.currentPlatform
 import smol_app.util.filterMods
 import smol_app.util.replaceAllUsingDifference
 import smol_app.util.vmParamsManager
+import timber.ktx.Timber
 import utilities.equalsAny
 import utilities.toFileOrNull
 import utilities.toPathOrNull
@@ -56,12 +57,16 @@ fun AppState.homeView(
     modifier: Modifier = Modifier
 ) {
     var isRefreshingMods = false
+    var refreshTrigger by remember { mutableStateOf(Unit) }
     val mods: SnapshotStateList<Mod> = remember { mutableStateListOf() }
     val shownMods: SnapshotStateList<Mod?> = mods.toMutableStateList()
     val onRefreshingMods = { refreshing: Boolean -> isRefreshingMods = refreshing }
     val scope = rememberCoroutineScope()
-    scope.launch {
-        reloadMods()
+    LaunchedEffect(refreshTrigger) {
+        scope.launch {
+            Timber.d { "Initial mod refresh." }
+            reloadMods()
+        }
     }
 
     scope.launch {
@@ -76,8 +81,11 @@ fun AppState.homeView(
         }
     }
 
-    scope.launch {
-        watchDirsAndReloadOnChange()
+    DisposableEffect(Unit) {
+        val handle = scope.launch {
+            watchDirsAndReloadOnChange(scope)
+        }
+        onDispose { handle.cancel() }
     }
 
 //    var showConfirmMigrateDialog: Boolean by remember { mutableStateOf(false) }
@@ -92,7 +100,7 @@ fun AppState.homeView(
                 ramButton()
 
                 installModsButton(Modifier.padding(start = 16.dp))
-                refreshButton(composableScope)
+                refreshButton()
                 profilesButton()
                 settingsButton()
                 modBrowserButton()
@@ -172,7 +180,7 @@ fun AppState.homeView(
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
-private suspend fun watchDirsAndReloadOnChange(scope: CoroutineScope = GlobalScope) {
+private suspend fun watchDirsAndReloadOnChange(scope: CoroutineScope) {
     val NSA: List<Flow<KWatchEvent?>> = listOf(
         SL.access.getStagingPath()?.toPathOrNull()?.asWatchChannel(scope = scope) ?: emptyFlow(),
         SL.access.getStagingPath()?.toPathOrNull()
@@ -183,7 +191,7 @@ private suspend fun watchDirsAndReloadOnChange(scope: CoroutineScope = GlobalSco
             .run { if (this.exists()) this.asWatchChannel(scope = scope) else emptyFlow() },
         SL.archives.getArchivesPath()?.toPathOrNull()?.asWatchChannel(scope = scope) ?: emptyFlow(),
     )
-    Logger.info {
+    Timber.i {
         "Started watching folders ${
             NSA.joinToString()
         }"
@@ -226,14 +234,20 @@ private suspend fun reloadMods() {
                         forceLookup = false,
                         mods = mods
                     )
+                    Logger.info { "Done1." }
                 },
-                async { SL.archives.refreshArchivesManifest() },
+                async {
+                    SL.archives.refreshArchivesManifest()
+                    Logger.info { "Done2." }
+                },
                 async {
                     SL.vramChecker.vramUsage.value ?: SL.vramChecker.refreshVramUsage(
                         mods = mods
                     )
+                    Logger.info { "Done3." }
                 }
             ).awaitAll()
+            Logger.info { "Finished reloading mods." }
         }
     } catch (e: Exception) {
         Logger.debug(e)
@@ -262,16 +276,19 @@ private fun AppState.modBrowserButton() {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun AppState.refreshButton(
-    composableScope: CoroutineScope
-) {
+private fun AppState.refreshButton() {
+    val refreshScope by remember { mutableStateOf(CoroutineScope(Job())) }
+
     TooltipArea(
         tooltip = { SmolTooltipText(text = "Refresh modlist & VRAM impact") }
     ) {
         SmolButton(
             onClick = {
-                composableScope.launch {
+                Timber.d { "test." }
+                refreshScope.launch(Dispatchers.Default) {
+                    Timber.d { "Clicked Refresh button." }
                     reloadMods()
+                    Timber.d { "Finished reloading mods 2." }
                 }
             },
             modifier = Modifier.padding(start = 16.dp)

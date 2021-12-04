@@ -12,6 +12,7 @@ import com.arkivanov.decompose.Router
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import net.sf.sevenzipjbinding.SevenZip
+import org.tinylog.Level
 import org.tinylog.Logger
 import smol_access.Constants
 import smol_access.SL
@@ -31,6 +32,7 @@ fun main() = application {
 
     // Logger
     kotlin.runCatching {
+        if (safeMode) Logging.logLevel = Level.TRACE
         Logging.setup()
     }
         .onFailure { println(it) }

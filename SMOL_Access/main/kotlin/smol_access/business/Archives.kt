@@ -331,7 +331,7 @@ class Archives internal constructor(
         destinationFolder: Path? = config.archivesPath?.toPathOrNull()
     ) {
         return callbackFlow<String> {
-            IOLock.write {
+            IOLock.read {
                 kotlin.runCatching {
                     if (destinationFolder == null)
                         throw RuntimeException("Not adding mods to archives folder; destination folder is null.")
@@ -375,91 +375,94 @@ class Archives internal constructor(
                             val filesToArchive =
                                 modFolder.walk().toList()
 
-                            val archiveFile = destinationFolder.resolve(
-                                createArchiveName(modInfo) + ".7z"
-                            )
-                                .apply { this.parent.createDirectories() }
+                            IOLock.write {
+                                val archiveFile = destinationFolder.resolve(
+                                    createArchiveName(modInfo) + ".7z"
+                                )
+                                    .apply { this.parent.createDirectories() }
 
-                            var wasCanceled = false
+                                var wasCanceled = false
 
-                            RandomAccessFile(archiveFile.toFile(), "rw").use { randomAccessFile ->
-                                SevenZip.openOutArchive7z().use { archive7z ->
-                                    fun cancelProcess() {
-                                        if (!wasCanceled) {
-                                            Timber.w { "Canceled archive process." }
-                                            wasCanceled = true
-                                            archive7z.close()
+                                RandomAccessFile(archiveFile.toFile(), "rw").use { randomAccessFile ->
+                                    SevenZip.openOutArchive7z().use { archive7z ->
+                                        fun cancelProcess() {
+                                            if (!wasCanceled) {
+                                                Timber.w { "Canceled archive process." }
+                                                wasCanceled = true
+                                                archive7z.close()
 
-                                            if (!archiveFile.toFile().delete()) {
-                                                archiveFile.toFile().deleteOnExit()
+                                                if (!archiveFile.toFile().delete()) {
+                                                    archiveFile.toFile().deleteOnExit()
+                                                }
                                             }
                                         }
+
+                                        archive7z.createArchive(
+                                            RandomAccessFileOutStream(randomAccessFile),
+                                            filesToArchive.size,
+                                            object : IOutCreateCallback<IOutItem7z> {
+                                                var currentTotal: Float = 0f
+                                                var currentFilepath: String = ""
+
+                                                override fun setTotal(total: Long) {
+                                                    if (!scope.isActive) {
+                                                        cancelProcess()
+                                                        return
+                                                    }
+
+                                                    currentTotal = total.toFloat()
+                                                }
+
+                                                override fun setCompleted(complete: Long) {
+                                                    if (!scope.isActive) {
+                                                        cancelProcess()
+                                                        return
+                                                    }
+
+                                                    val percentComplete =
+                                                        "%.2f".format((complete.toFloat() / currentTotal) * 100f)
+                                                    val progressMessage =
+                                                        "[$percentComplete%] Moving '${modInfo.id} v${modInfo.version}' to archives. File: $currentFilepath"
+                                                    trySend(progressMessage)
+                                                    Timber.d { progressMessage }
+                                                }
+
+                                                override fun setOperationResult(wasSuccessful: Boolean) {}
+
+                                                override fun getItemInformation(
+                                                    index: Int,
+                                                    outItemFactory: OutItemFactory<IOutItem7z>
+                                                ): IOutItem7z? {
+                                                    if (!scope.isActive) {
+                                                        cancelProcess()
+                                                        return null
+                                                    }
+
+                                                    val item = outItemFactory.createOutItem()
+                                                    val file = filesToArchive[index]
+
+                                                    if (file.isDirectory()) {
+                                                        item.propertyIsDir = true
+                                                    } else {
+                                                        item.dataSize = file.readBytes().size.toLong()
+                                                    }
+
+                                                    item.propertyPath = file.relativeTo(modFolder).pathString
+                                                    return item
+                                                }
+
+                                                override fun getStream(index: Int): ISequentialInStream? {
+                                                    if (!scope.isActive) {
+                                                        cancelProcess()
+                                                        return null
+                                                    }
+
+                                                    currentFilepath =
+                                                        filesToArchive[index].relativeTo(modFolder).pathString
+                                                    return ByteArrayStream(filesToArchive[index].readBytes(), true)
+                                                }
+                                            })
                                     }
-
-                                    archive7z.createArchive(
-                                        RandomAccessFileOutStream(randomAccessFile),
-                                        filesToArchive.size,
-                                        object : IOutCreateCallback<IOutItem7z> {
-                                            var currentTotal: Float = 0f
-                                            var currentFilepath: String = ""
-
-                                            override fun setTotal(total: Long) {
-                                                if (!scope.isActive) {
-                                                    cancelProcess()
-                                                    return
-                                                }
-
-                                                currentTotal = total.toFloat()
-                                            }
-
-                                            override fun setCompleted(complete: Long) {
-                                                if (!scope.isActive) {
-                                                    cancelProcess()
-                                                    return
-                                                }
-
-                                                val percentComplete =
-                                                    "%.2f".format((complete.toFloat() / currentTotal) * 100f)
-                                                val progressMessage =
-                                                    "[$percentComplete%] Moving '${modInfo.id} v${modInfo.version}' to archives. File: $currentFilepath"
-                                                trySend(progressMessage)
-                                                Timber.d { progressMessage }
-                                            }
-
-                                            override fun setOperationResult(wasSuccessful: Boolean) {}
-
-                                            override fun getItemInformation(
-                                                index: Int,
-                                                outItemFactory: OutItemFactory<IOutItem7z>
-                                            ): IOutItem7z? {
-                                                if (!scope.isActive) {
-                                                    cancelProcess()
-                                                    return null
-                                                }
-
-                                                val item = outItemFactory.createOutItem()
-                                                val file = filesToArchive[index]
-
-                                                if (file.isDirectory()) {
-                                                    item.propertyIsDir = true
-                                                } else {
-                                                    item.dataSize = file.readBytes().size.toLong()
-                                                }
-
-                                                item.propertyPath = file.relativeTo(modFolder).pathString
-                                                return item
-                                            }
-
-                                            override fun getStream(index: Int): ISequentialInStream? {
-                                                if (!scope.isActive) {
-                                                    cancelProcess()
-                                                    return null
-                                                }
-
-                                                currentFilepath = filesToArchive[index].relativeTo(modFolder).pathString
-                                                return ByteArrayStream(filesToArchive[index].readBytes(), true)
-                                            }
-                                        })
                                 }
                             }
                         }
@@ -492,7 +495,8 @@ class Archives internal constructor(
                         // Swallow exception, it has already been logged.
                         kotlin.runCatching {
                             trace({ pair, time ->
-                                Timber.tag(Constants.TAG_TRACE).d { "Time to get mod_info.json from ${pair?.second?.modInfo?.id}, ${pair?.second?.modInfo?.version}: ${time}ms." }
+                                Timber.tag(Constants.TAG_TRACE)
+                                    .d { "Time to get mod_info.json from ${pair?.second?.modInfo?.id}, ${pair?.second?.modInfo?.version}: ${time}ms." }
                             }) {
                                 val hashCode = DigestUtils.sha256Hex(archivePath.pathString)
 

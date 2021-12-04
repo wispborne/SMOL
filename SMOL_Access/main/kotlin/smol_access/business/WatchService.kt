@@ -95,8 +95,7 @@ class KWatchChannel(
 
     init {
         // commence emitting events from channel
-        scope.launch {
-
+        scope.launch(Dispatchers.IO) {
             // sending channel initalization event
             flow.emit(
                 KWatchEvent(
@@ -156,6 +155,9 @@ class KWatchChannel(
                     close()
                     break
                 }
+
+                // Don't eat ALL the CPU, and yield to other coroutines.
+                delay(100)
             }
 
             close()
