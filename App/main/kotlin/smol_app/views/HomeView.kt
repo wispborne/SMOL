@@ -2,7 +2,6 @@ package smol_app.views
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.TooltipArea
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
@@ -35,7 +34,7 @@ import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.withBrightness
 import smol_app.util.currentPlatform
-import smol_app.util.filterMods
+import smol_app.util.filterModGrid
 import smol_app.util.replaceAllUsingDifference
 import smol_app.util.vmParamsManager
 import timber.ktx.Timber
@@ -124,7 +123,7 @@ fun AppState.homeView(
                             shownMods.replaceAllUsingDifference(mods, doesOrderMatter = false)
                         } else {
                             shownMods.replaceAllUsingDifference(
-                                filterMods(query, mods).ifEmpty { listOf(null) },
+                                filterModGrid(query, mods).ifEmpty { listOf(null) },
                                 doesOrderMatter = true
                             )
                         }
