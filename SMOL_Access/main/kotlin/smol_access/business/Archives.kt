@@ -103,133 +103,139 @@ class Archives internal constructor(
             }
         }
 
-        if (inputFile.isRegularFile()) {
-            if (inputFile.name == Constants.MOD_INFO_FILE) {
-                // Input file is mod_info.json, parent folder is mod folder
-                val modFolder = inputFile.parent
+        trace(onFinished = { _, millis: Long -> Timber.d { "Time to install from unknown source: ${millis}ms." } }) {
+            if (inputFile.isRegularFile()) {
+                if (inputFile.name == Constants.MOD_INFO_FILE) {
+                    // Input file is mod_info.json, parent folder is mod folder
+                    val modFolder = inputFile.parent
 
-                if (modFolder.exists() && modFolder.isDirectory()) {
-                    copyOrCompressDir(modFolder)
-                    return
-                } else {
-                    RuntimeException("Input was ${Constants.MOD_INFO_FILE} but there was no parent folder?!")
-                        .also { Timber.w(it) }
-                        .also { throw it }
-                }
-            } else {
-                // Input was a file but not mod_info.json, try as an archive.
-                val dataFiles: DataFiles? = findDataFilesInArchive(inputFile)
-
-                // If mod_info.json was found in archive
-                if (dataFiles != null) {
-                    if (shouldCompressModFolder) {
-                        val archivePath = destinationFolder.resolve(inputFile.name)
-                        kotlin.runCatching {
-                            // Copy archive file
-                            inputFile.copyTo(
-                                target = archivePath,
-                                overwrite = true
-                            )
-                        }
-                            .onFailure {
-                                Timber.w(it)
-                                throw it
-                            }
-//                        addToManifest(modInfo = modInfo, archivePath = archivePath)
-                        refreshArchivesManifest()
+                    if (modFolder.exists() && modFolder.isDirectory()) {
+                        copyOrCompressDir(modFolder)
+                        return
                     } else {
-                        // Extract archive to subfolder in destination folder (in case there was no root folder, then we'll fix after).
-                        IOLock.write {
-                            val extraParentFolder = destinationFolder.resolve("tempRootFolder")
-
-                            RandomAccessFileInStream(
-                                RandomAccessFile(inputFile.toFile(), "r")
-                            ).use { fileInStream ->
-                                SevenZip.openInArchive(null, fileInStream).use { inArchive ->
-                                    inArchive.extract(
-                                        null, false,
-                                        ArchiveExtractToFolderCallback(extraParentFolder, inArchive)
-                                    )
-                                }
-                            }
-
-                            runBlocking { removedNestedFolders(extraParentFolder) }
-                            return
-                        }
+                        RuntimeException("Input was ${Constants.MOD_INFO_FILE} but there was no parent folder?!")
+                            .also { Timber.w(it) }
+                            .also { throw it }
                     }
-                    return
                 } else {
-                    val ex = RuntimeException("Archive did not have a valid ${Constants.MOD_INFO_FILE} inside!")
-                    Timber.w(ex)
-                    throw ex
+                    // Input was a file but not mod_info.json, try as an archive.
+                    val dataFiles: DataFiles? = findDataFilesInArchive(inputFile)
+
+                    // If mod_info.json was found in archive
+                    if (dataFiles != null) {
+                        if (shouldCompressModFolder) {
+                            val archivePath = destinationFolder.resolve(inputFile.name)
+                            kotlin.runCatching {
+                                // Copy archive file
+                                Timber.v { "Copying ${inputFile.absolutePathString()} to ${archivePath.absolutePathString()}." }
+                                inputFile.copyTo(
+                                    target = archivePath,
+                                    overwrite = true
+                                )
+                                Timber.v { "Done copying ${inputFile.absolutePathString()} to ${archivePath.absolutePathString()}." }
+                            }
+                                .onFailure {
+                                    Timber.w(it)
+                                    throw it
+                                }
+//                        addToManifest(modInfo = modInfo, archivePath = archivePath)
+                            refreshArchivesManifest()
+                        } else {
+                            // Extract archive to subfolder in destination folder (in case there was no root folder, then we'll fix after).
+                            IOLock.write {
+                                val extraParentFolder = destinationFolder.resolve("tempRootFolder")
+
+                                RandomAccessFileInStream(
+                                    RandomAccessFile(inputFile.toFile(), "r")
+                                ).use { fileInStream ->
+                                    SevenZip.openInArchive(null, fileInStream).use { inArchive ->
+                                        inArchive.extract(
+                                            null, false,
+                                            ArchiveExtractToFolderCallback(extraParentFolder, inArchive)
+                                        )
+                                    }
+                                }
+
+                                runBlocking { removedNestedFolders(extraParentFolder) }
+                                return
+                            }
+                        }
+                        return
+                    } else {
+                        val ex = RuntimeException("Archive did not have a valid ${Constants.MOD_INFO_FILE} inside!")
+                        Timber.w(ex)
+                        throw ex
+                    }
                 }
+            } else if (inputFile.isDirectory()) {
+                copyOrCompressDir(inputFile)
+            } else {
+                // Not file or directory?
+                throw RuntimeException("${inputFile.absolutePathString()} not recognized as file or folder.")
             }
-        } else if (inputFile.isDirectory()) {
-            copyOrCompressDir(inputFile)
-        } else {
-            // Not file or directory?
-            throw RuntimeException("${inputFile.absolutePathString()} not recognized as file or folder.")
         }
     }
 
     private fun findDataFilesInArchive(inputArchiveFile: Path): DataFiles? {
-        val dataFiles: DataFiles? = kotlin.runCatching {
-            IOLock.read {
-                RandomAccessFileInStream(RandomAccessFile(inputArchiveFile.toFile(), "r")).use { fileInStream ->
-                    SevenZip.openInArchive(null, fileInStream).use { inArchive ->
-                        val items = inArchive.simpleInterface.archiveItems
-                            .filter { !it.isFolder }
-                        val modInfoFile = items
-                            .firstOrNull { it.path.contains(Constants.MOD_INFO_FILE) }
-                        val versionCheckerFile = items
-                            .firstOrNull { it.path.contains(Constants.VERSION_CHECKER_FILE_PATTERN) }
+        val dataFiles: DataFiles? =
+            kotlin.runCatching {
+                trace({ _, time ->
+                    Timber.tag(Constants.TAG_TRACE).d {
+                        "Time to extract mod_info.json & maybe vercheck file from ${inputArchiveFile.absolutePathString()}: ${time}ms."
+                    }
+                }) {
+                    IOLock.read {
+                        Timber.v { "Opening archive ${inputArchiveFile.name}" }
+                        RandomAccessFileInStream(RandomAccessFile(inputArchiveFile.toFile(), "r")).use { fileInStream ->
+                            SevenZip.openInArchive(null, fileInStream).use { inArchive ->
+                                Timber.v { "Opened archive ${inputArchiveFile.name}" }
+                                val items = inArchive.simpleInterface.archiveItems
+                                    .filter { !it.isFolder }
+                                val modInfoFile = items
+                                    .firstOrNull { it.path.contains(Constants.MOD_INFO_FILE) }
+                                val versionCheckerFile = items
+                                    .firstOrNull { it.path.contains(Constants.VERSION_CHECKER_FILE_PATTERN) }
 
-                        val dataFiles =
-                            trace({ _, time ->
-                                Timber.tag(Constants.TAG_TRACE).d {
-                                    "Time to extract mod_info.json ${
-                                        if (versionCheckerFile != null) "& vercheck file " else ""
-                                    }from ${inputArchiveFile.absolutePathString()}: ${time}ms."
+                                val dataFiles = run {
+                                    var modInfo: ModInfo? = null
+                                    var versionCheckerInfo: VersionCheckerInfo? = null
+
+                                    val indicesToExtract = listOfNotNull(
+                                        modInfoFile?.itemIndex,
+                                        versionCheckerFile?.itemIndex
+                                    )
+                                        .toIntArray()
+
+                                    inArchive.extract(
+                                        indicesToExtract, false,
+                                        ArchiveExtractToMemoryCallback(indicesToExtract, inArchive) { results ->
+                                            modInfo = modInfoFile?.let {
+                                                results[modInfoFile.itemIndex]?.let {
+                                                    modInfoLoader.deserializeModInfoFile(modInfoJson = it)
+                                                }
+                                            }
+
+                                            versionCheckerFile?.let {
+                                                results[versionCheckerFile.itemIndex]?.let {
+                                                    versionCheckerInfo = modInfoLoader.deserializeVersionCheckerFile(it)
+                                                }
+                                            }
+                                        }
+                                    )
+                                    modInfo?.let { DataFiles(it, versionCheckerInfo) }
                                 }
-                            }) {
-                                var modInfo: ModInfo? = null
-                                var versionCheckerInfo: VersionCheckerInfo? = null
 
-                                val indicesToExtract = listOfNotNull(
-                                    modInfoFile?.itemIndex,
-                                    versionCheckerFile?.itemIndex
-                                )
-                                    .toIntArray()
-
-                                inArchive.extract(
-                                    indicesToExtract, false,
-                                    ArchiveExtractToMemoryCallback(indicesToExtract, inArchive) { results ->
-                                        modInfo = modInfoFile?.let {
-                                            results[modInfoFile.itemIndex]?.let {
-                                                modInfoLoader.deserializeModInfoFile(modInfoJson = it)
-                                            }
-                                        }
-
-                                        versionCheckerFile?.let {
-                                            results[versionCheckerFile.itemIndex]?.let {
-                                                versionCheckerInfo = modInfoLoader.deserializeVersionCheckerFile(it)
-                                            }
-                                        }
-                                    }
-                                )
-                                modInfo?.let { DataFiles(it, versionCheckerInfo) }
+                                return@runCatching dataFiles
                             }
-
-                        return@runCatching dataFiles
+                        }
                     }
                 }
             }
-        }
-            .onFailure {
-                Timber.w(it) { "Unable to read ${inputArchiveFile.absolutePathString()}" }
-                throw it
-            }
-            .getOrElse { null }
+                .onFailure {
+                    Timber.w(it) { "Unable to read ${inputArchiveFile.absolutePathString()}" }
+                    throw it
+                }
+                .getOrElse { null }
         return dataFiles
     }
 
@@ -492,6 +498,7 @@ class Archives internal constructor(
             withContext(Dispatchers.IO) {
                 files
                     .parallelMap { archivePath ->
+                        Timber.v { "Looking for mod_info.json in $archivePath." }
                         // Swallow exception, it has already been logged.
                         kotlin.runCatching {
                             trace({ pair, time ->
@@ -504,7 +511,7 @@ class Archives internal constructor(
                                     archivesManifest?.manifestItems?.entries?.firstOrNull { it.value.sha256HexCodeOfArchiveFile == hashCode }
 
                                 if (existingManifestItem != null) {
-                                    Timber.d { "Skipping search for mod_info.json in $archivePath because the file hashcode is present in the manifest alreadt." }
+                                    Timber.d { "Skipping search for mod_info.json in $archivePath because the file hashcode is present in the manifest already." }
                                     archivePath to DataFiles(
                                         modInfo = existingManifestItem.value.modInfo,
                                         versionCheckerInfo = existingManifestItem.value.versionCheckerInfo

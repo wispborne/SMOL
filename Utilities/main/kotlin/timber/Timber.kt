@@ -1,6 +1,7 @@
 package timber
 
 import org.jetbrains.annotations.NonNls
+import timber.Timber.DebugTree.Companion.fqcnIgnore
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.util.*
@@ -195,38 +196,9 @@ class Timber private constructor() {
 
     /** A [Tree] for debug builds. Automatically infers the tag from the calling class. */
     open class DebugTree : Tree() {
-        private val fqcnIgnore = listOf(
-            Timber::class.java.name,
-            Timber.Forest::class.java.name,
-            Tree::class.java.name,
-            DebugTree::class.java.name
-        )
 
         override val tag: String?
-            get() = super.tag ?: Throwable().stackTrace
-                .first { it.className !in fqcnIgnore }
-                .let(::createStackElementTag)
-
-        /**
-         * Extract the tag which should be used for the message from the `element`. By default
-         * this will use the class name without any anonymous class suffixes (e.g., `Foo$1`
-         * becomes `Foo`).
-         *
-         * Note: This will not be called if a [manual tag][.tag] was specified.
-         */
-        protected open fun createStackElementTag(element: StackTraceElement): String? {
-            var tag = element.className.substringAfterLast('.')
-            val m = ANONYMOUS_CLASS.matcher(tag)
-            if (m.find()) {
-                tag = m.replaceAll("")
-            }
-            // Tag length limit was removed in API 26.
-            return tag //if (tag.length <= MAX_TAG_LENGTH || Build.VERSION.SDK_INT >= 26) {
-//                tag
-//            } else {
-//                tag.substring(0, MAX_TAG_LENGTH)
-//            }
-        }
+            get() = super.tag ?: findClassName()
 
         /**
          * Break up `message` into maximum-length chunks (if needed) and send to either
@@ -268,11 +240,42 @@ class Timber private constructor() {
         companion object {
             private const val MAX_LOG_LENGTH = 4000
             private const val MAX_TAG_LENGTH = 23
-            private val ANONYMOUS_CLASS = Pattern.compile("(\\$\\d+)+$")
+            internal val ANONYMOUS_CLASS = Pattern.compile("(\\$\\d+)+$")
+            internal val fqcnIgnore = listOf(
+                Timber::class.java.name,
+                Timber.Forest::class.java.name,
+                Tree::class.java.name,
+                DebugTree::class.java.name
+            )
         }
     }
 
     companion object Forest : Tree() {
+        fun findClassName() = Throwable().stackTrace
+            .first { it.className !in fqcnIgnore }
+            .let(::createStackElementTag)
+
+        /**
+         * Extract the tag which should be used for the message from the `element`. By default
+         * this will use the class name without any anonymous class suffixes (e.g., `Foo$1`
+         * becomes `Foo`).
+         *
+         * Note: This will not be called if a [manual tag][.tag] was specified.
+         */
+        protected open fun createStackElementTag(element: StackTraceElement): String? {
+            var tag = element.className.substringAfterLast('.')
+            val m = DebugTree.ANONYMOUS_CLASS.matcher(tag)
+            if (m.find()) {
+                tag = m.replaceAll("")
+            }
+            // Tag length limit was removed in API 26.
+            return "$tag.${element.methodName}" //if (tag.length <= MAX_TAG_LENGTH || Build.VERSION.SDK_INT >= 26) {
+//                tag
+//            } else {
+//                tag.substring(0, MAX_TAG_LENGTH)
+//            }
+        }
+
         /** Log a verbose message with optional format args. */
         @JvmStatic
         override fun v(@NonNls message: String?, vararg args: Any?) {

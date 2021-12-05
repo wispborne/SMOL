@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import timber.ktx.Timber
+import timber.ktx.d
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReentrantReadWriteLock
@@ -14,6 +15,7 @@ val IOLock = ObservableReentrantReadWriteLock(ReentrantReadWriteLock())
 
 class ObservableReentrantReadWriteLock(val lock: ReentrantReadWriteLock) {
     val flow = MutableStateFlow(false)
+    val tag = "lock"
 
     val stateFlow: StateFlow<Boolean> = flow.asStateFlow()
 
@@ -22,10 +24,12 @@ class ObservableReentrantReadWriteLock(val lock: ReentrantReadWriteLock) {
      * @return the return value of the action.
      */
     inline fun <T> read(action: () -> T): T = lock.read {
-        Timber.v { "Read locked" }
-        val ret = action()
-        Timber.v { "Read unlocked" }
-        ret
+        Timber.tag(tag).d { "Read locked from ${timber.Timber.findClassName()}" }
+        return@read try {
+            action()
+        } finally {
+            Timber.tag(tag).d { "Read unlocked from ${timber.Timber.findClassName()}" }
+        }
     }
 
     /**
@@ -43,12 +47,14 @@ class ObservableReentrantReadWriteLock(val lock: ReentrantReadWriteLock) {
      */
     inline fun <T> write(action: () -> T): T {
         return lock.write {
-            Timber.d { "Write locked" }
+            Timber.tag(tag).d { "Write locked from ${timber.Timber.findClassName()}" }
             flow.tryEmit(true)
-            val ret = action()
-            Timber.d { "Write unlocked" }
-            flow.tryEmit(false)
-            ret
+            return@write try {
+                action()
+            } finally {
+                Timber.tag(tag).d { "Write unlocked from ${timber.Timber.findClassName()}" }
+                flow.tryEmit(false)
+            }
         }
     }
 }

@@ -8,30 +8,30 @@ import timber.Timber
 import kotlin.properties.Delegates
 
 object Logging {
-    var logLevel by Delegates.observable(Level.DEBUG) { _, _, _ ->
+    var logLevel by Delegates.observable(LogLevel.DEBUG) { _, _, _ ->
         setup()
     }
-    private val timberLevel
+    private val tinyLogLevel
         get() = when (logLevel) {
-            Level.TRACE -> LogLevel.VERBOSE
-            Level.DEBUG -> LogLevel.DEBUG
-            Level.INFO -> LogLevel.INFO
-            Level.WARN -> LogLevel.WARN
-            Level.ERROR -> LogLevel.ERROR
-            Level.OFF -> LogLevel.ERROR
+            LogLevel.VERBOSE -> Level.TRACE
+            LogLevel.DEBUG -> Level.DEBUG
+            LogLevel.INFO -> Level.INFO
+            LogLevel.WARN -> Level.WARN
+            LogLevel.ERROR -> Level.ERROR
+            LogLevel.ASSERT -> Level.ERROR
         }
 
     fun setup() {
         val format = "{date:MM-dd HH:mm:ss.SSS} {class}.{method}:{line} {level}: {message}"
-        val tinyLogLevel = logLevel.name.lowercase()
+        val tinyLogLevelLower = tinyLogLevel.name.lowercase()
         Configuration.replace(
             mapOf(
                 "writer1" to "console",
-                "writer1.level" to tinyLogLevel,
+                "writer1.level" to tinyLogLevelLower,
                 "writer1.format" to format,
 
                 "writer2" to "rolling file",
-                "writer2.level" to tinyLogLevel,
+                "writer2.level" to tinyLogLevelLower,
                 "writer2.format" to format,
                 "writer2.file" to "SMOL_log.{count}.log",
                 "writer2.buffered" to "true",
@@ -49,27 +49,9 @@ object Logging {
 //        Timber.plant(tinyLoggerTree())
     }
 
-    private fun TimberTree() = object : Timber.Tree() {
-        override fun log(priority: LogLevel, tag: String?, message: String, t: Throwable?) {
-            if (priority < timberLevel) {
-                return
-            }
-
-            val messageMaker = { "${if (tag != null) "{$tag} " else ""}$message" }
-            when (priority) {
-                LogLevel.VERBOSE -> Logger.trace(t, messageMaker)
-                LogLevel.DEBUG -> Logger.debug(t, messageMaker)
-                LogLevel.INFO -> Logger.info(t, messageMaker)
-                LogLevel.WARN -> Logger.warn(t, messageMaker)
-                LogLevel.ERROR -> Logger.error(t, messageMaker)
-                LogLevel.ASSERT -> Logger.error(t, messageMaker)
-            }
-        }
-    }
-
     private fun tinyLoggerTree() = object : Timber.Tree() {
         override fun log(priority: LogLevel, tag: String?, message: String, t: Throwable?) {
-            if (priority < timberLevel) {
+            if (priority < logLevel) {
                 return
             }
 

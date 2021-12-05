@@ -32,6 +32,9 @@ class DownloadManager {
             .getOrDefault(false)
     }
 
+    /**
+     * Safe, doesn't throw exception.
+     */
     suspend fun downloadAndInstall(url: String?) {
         runCatching {
             if (!isDownloadable(url)) {
@@ -87,17 +90,17 @@ class DownloadManager {
                             if (downloadSize != null) download.progress.emit(downloadSize)
                             download.status.emit(DownloadItem.Status.Completed)
                             Timber.i { "Downloaded $filename to $file." }
-
-                            // Try to install the mod
-                            SL.access.installFromUnknownSource(
-                                inputFile = download.path,
-                                shouldCompressModFolder = true
-                            )
                         }
                             .onFailure { download.status.emit(DownloadItem.Status.Failed(it)) }
                             .getOrThrow()
                     }
                 }
+
+                // Try to install the mod
+                SL.access.installFromUnknownSource(
+                    inputFile = download.path,
+                    shouldCompressModFolder = true
+                )
             }
         }
             .onFailure { Timber.w(it) }

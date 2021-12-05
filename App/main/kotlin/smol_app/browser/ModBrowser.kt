@@ -30,11 +30,8 @@ import javafx.scene.Group
 import javafx.scene.Scene
 import javafx.scene.paint.Color
 import javafx.scene.web.WebView
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import mod_repo.ScrapedMod
 import org.tinylog.kotlin.Logger
 import smol_access.Constants
@@ -185,8 +182,9 @@ fun createWebView(
                 isJavaScriptEnabled = true
                 locationProperty().addListener { _, oldLoc, newLoc ->
                     // check to see if newLoc is downloadable.
-                    scope.launch {
-                        SL.downloadManager.downloadAndInstall(url = newLoc)
+                    // Use GlobalScope, we don't want this to be canceled
+                    GlobalScope.launch {
+                            SL.downloadManager.downloadAndInstall(url = newLoc)
                     }
                 }
                 loadWorker.exceptionProperty().addListener { _, _, throwable ->

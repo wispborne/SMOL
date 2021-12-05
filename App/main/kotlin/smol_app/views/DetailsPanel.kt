@@ -16,6 +16,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -54,7 +55,7 @@ fun BoxScope.detailsPanel(
     mods: List<Mod>
 ) {
     val row = selectedRow ?: return
-    val borderColor = MaterialTheme.colors.surface.withBrightness(-5)
+    val borderColor = MaterialTheme.colors.surface.withBrightness(-15)
 
     Card(
         modifier.width(400.dp)
@@ -62,15 +63,32 @@ fun BoxScope.detailsPanel(
             .align(Alignment.CenterEnd)
             .clickable(enabled = false) { }
             .fillMaxHeight()
-            .shadow(2.dp)
+            .shadow(4.dp)
             .drawWithContent {
                 drawContent()
                 val y = size.height
+                val x = size.width
+                val strokeWidth = 2f
                 drawLine(
+                    strokeWidth = strokeWidth,
                     color = borderColor,
                     cap = StrokeCap.Square,
                     start = Offset.Zero,
                     end = Offset(x = 0f, y = y)
+                )
+                drawLine(
+                    strokeWidth = strokeWidth,
+                    color = borderColor,
+                    cap = StrokeCap.Square,
+                    start = Offset.Zero,
+                    end = Offset(x = x, y = 0f)
+                )
+                drawLine(
+                    strokeWidth = strokeWidth,
+                    color = borderColor,
+                    cap = StrokeCap.Square,
+                    start = Offset(x = 0f, y = y),
+                    end = Offset(x = x, y = y)
                 )
             },
         shape = RectangleShape
@@ -78,7 +96,7 @@ fun BoxScope.detailsPanel(
         val state = rememberScrollState()
         SelectionContainer {
             Column(
-                Modifier.padding(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 24.dp).verticalScroll(state)
+                Modifier.padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 24.dp).verticalScroll(state)
             ) {
                 val modVariant = row.mod.findFirstEnabled ?: row.mod.findHighestVersion
                 val modInfo = modVariant?.modInfo
