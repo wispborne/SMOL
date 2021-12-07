@@ -38,3 +38,8 @@ In the game folder. SMOL does not put files here, but rather puts them into /sta
 Hardlinks are used to avoid having a mod folder existing in two places, which would require double the storage space. They are also much faster to create than copying files, which means mods may be enabled faster.
 
 Symlinks require administrator permission to create in Windows, which is why they were not used.
+
+## Building
+
+1. Unzip `./App/libs/jcef-v1.0.10-92.0.25.7z` to `./App/libs/jcef-v1.0.10-92.0.25`.
+2. Run `./gradlew run`.

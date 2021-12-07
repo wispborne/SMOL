@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.awt.SwingPanel
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.isPrimaryPressed
@@ -24,30 +25,27 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.arkivanov.decompose.pop
-import javafx.application.Platform
 import javafx.embed.swing.JFXPanel
-import javafx.scene.Group
-import javafx.scene.Scene
-import javafx.scene.paint.Color
 import javafx.scene.web.WebView
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import mod_repo.ScrapedMod
 import org.tinylog.kotlin.Logger
 import smol_access.Constants
 import smol_access.SL
-import smol_access.business.DownloadItem
+import smol_access.config.Platform
 import smol_app.AppState
+import smol_app.SLUI
+import smol_app.browser.chromium.BrowserPanel
+import smol_app.browser.javafx.javaFxBrowser
 import smol_app.components.*
 import smol_app.themes.SmolTheme
 import smol_app.util.*
 import timber.ktx.Timber
 import java.awt.Cursor
-import java.io.InputStream
-import java.io.InputStreamReader
-import java.net.HttpURLConnection
-import java.net.URI
-import java.net.URL
+import java.util.*
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.name
 
@@ -72,6 +70,7 @@ fun AppState.ModBrowserView(
         remember { mutableStateListOf<ScrapedMod?>(elements = moddingSubforumMods.toTypedArray()) }
 
     val jfxpanel: JFXPanel = remember { JFXPanel() }
+    var browser: BrowserPanel? by remember { mutableStateOf(null) }
     var linkLoader: ((String) -> Unit)? by remember { mutableStateOf(null) }
     val scope = rememberCoroutineScope { Dispatchers.Default }
     var alertDialogMessage: String? by remember { mutableStateOf(null) }
@@ -137,27 +136,70 @@ fun AppState.ModBrowserView(
 
                 val background = MaterialTheme.colors.background
 
-                javaFXPanel(
-                    modifier = Modifier
-                        .padding(start = 16.dp)
-                        .fillMaxHeight()
-                        .fillMaxWidth()
-                        .sizeIn(minWidth = 200.dp),
-                    root = window,
-                    panel = jfxpanel
-                ) {
-                    val root = Group()
-                    val scene = Scene(
-                        root,
-                        Color.rgb(background.red.toInt(), background.green.toInt(), background.blue.toInt())
+                val useCEF = true
+
+                if (useCEF) {
+                    SwingPanel(
+                        background = MaterialTheme.colors.background,
+                        modifier = Modifier
+                            .padding(start = 16.dp)
+                            .fillMaxHeight()
+                            .fillMaxWidth()
+                            .sizeIn(minWidth = 200.dp),
+                        factory = {
+                            BrowserPanel(
+                                startURL = Constants.FORUM_MOD_INDEX_URL,
+                                useOSR = Platform.Linux == currentPlatform,
+                                isTransparent = false,
+                                object : DownloadHander {
+                                    var download: DownloadItem? = null
+                                    override fun onStart(suggestedFileName: String?, totalBytes: Long) {
+                                        download = DownloadItem(
+                                            path = Constants.TEMP_DIR.resolve(
+                                                suggestedFileName ?: UUID.randomUUID().toString()
+                                            ),
+                                            totalBytes = totalBytes
+                                        )
+                                        SLUI.downloadManager.addDownload(download!!)
+                                    }
+
+                                    override fun onProgressUpdate(
+                                        progressBytes: Long?,
+                                        totalBytes: Long?,
+                                        speedBps: Long?,
+                                        endTime: Date
+                                    ) {
+                                        download?.apply {
+                                            if (progressBytes != null) this.progress.tryEmit(progressBytes)
+                                            if (this.status.value !is DownloadItem.Status.Downloading)
+                                                this.status.tryEmit(DownloadItem.Status.Downloading)
+                                        }
+                                    }
+
+                                    override fun onCanceled() {
+                                        download?.apply {
+                                            this.status.tryEmit(DownloadItem.Status.Failed(RuntimeException("Download canceled.")))
+                                        }
+                                    }
+
+                                    override fun onCompleted() {
+                                        download?.apply {
+                                            this.status.tryEmit(DownloadItem.Status.Completed)
+                                        }
+                                    }
+
+                                }
+                            )
+                                .also { browserPanel ->
+                                    browser = browserPanel
+                                    linkLoader = { url ->
+                                        browserPanel.loadUrl(url)
+                                    }
+                                }
+                        }
                     )
-                    if (WebViewHolder.webView == null) {
-                        createWebView(scope, linkLoader) { linkLoader = it }
-                    }
-                    WebViewHolder.webView!!.prefWidth = jfxpanel.width.toDouble()
-                    WebViewHolder.webView!!.prefHeight = jfxpanel.height.toDouble()
-                    jfxpanel.scene = scene
-                    root.children.add(WebViewHolder.webView)
+                } else {
+                    javaFxBrowser(jfxpanel, background, linkLoader)
                 }
             }
         }
@@ -169,53 +211,6 @@ fun AppState.ModBrowserView(
             text = { Text(text = alertDialogMessage ?: "") }
         )
     }
-}
-
-fun createWebView(
-    scope: CoroutineScope,
-    linkLoader: ((String) -> Unit)?,
-    setLinkLoader: (((String) -> Unit)) -> Unit
-) {
-    WebViewHolder.webView =
-        WebView().apply {
-            this.engine.apply {
-                isJavaScriptEnabled = true
-                locationProperty().addListener { _, oldLoc, newLoc ->
-                    // check to see if newLoc is downloadable.
-                    // Use GlobalScope, we don't want this to be canceled
-                    GlobalScope.launch {
-                            SL.downloadManager.downloadAndInstall(url = newLoc)
-                    }
-                }
-                loadWorker.exceptionProperty().addListener { _, _, throwable ->
-                    Timber.i(throwable)
-                }
-                setOnError {
-                    Timber.d { it.message }
-                }
-            }
-
-            setLinkLoader { url ->
-                Platform.runLater {
-                    this.engine.loadContent(
-                        (getData(url) ?: "")
-                            .let { html ->
-                                if (URI.create(url).host.equals(
-                                        Constants.FORUM_HOSTNAME,
-                                        ignoreCase = true
-                                    )
-                                ) {
-                                    ForumWebpageModifier.filterToFirstPost(html)
-                                } else {
-                                    html
-                                }
-                            }
-                    )
-                }
-            }
-
-            linkLoader?.invoke(Constants.FORUM_MOD_INDEX_URL)
-        }
 }
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
@@ -282,24 +277,6 @@ private fun browserIcon(modifier: Modifier = Modifier, mod: ScrapedMod) {
     }
 }
 
-@Throws(Exception::class)
-private fun getData(address: String): String? =
-    runCatching {
-        (URL(address).openConnection() as HttpURLConnection).let { conn ->
-            try {
-                conn.connect()
-                InputStreamReader(conn.content as InputStream)
-                InputStreamReader(
-                    conn.content as InputStream
-                ).use { it.readText() }
-            } finally {
-                conn.disconnect()
-            }
-        }
-    }
-        .onFailure { Timber.w(it) }
-        .getOrNull()
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun downloadBar(
@@ -308,7 +285,7 @@ fun downloadBar(
     var downloads by remember { mutableStateOf<List<DownloadItem>>(listOf()) }
 
     rememberCoroutineScope { Dispatchers.Default }.launch {
-        SL.downloadManager.downloads.collect {
+        SLUI.downloadManager.downloads.collect {
             withContext(Dispatchers.Main) {
                 downloads = it
             }
@@ -320,7 +297,7 @@ fun downloadBar(
             var progressPercent: Float? by remember { mutableStateOf(null) }
             var progress by remember { mutableStateOf(0L) }
             val status = download.status.value
-            val total = download.total
+            val total = download.totalBytes
 
             SmolTooltipArea(
                 tooltip = {

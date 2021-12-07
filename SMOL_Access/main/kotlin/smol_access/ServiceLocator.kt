@@ -34,7 +34,6 @@ class ServiceLocator internal constructor(
         .build(),
     val gson: Gson = buildGson(),
     internal val themeConfig: ThemeConfig = ThemeConfig(gson = gson),
-    val downloadManager: DownloadManager = DownloadManager(),
     internal val versionCheckerCache: VersionCheckerCache = VersionCheckerCache(gson = gson),
     val appConfig: AppConfig = AppConfig(gson = gson),
     val userManager: UserManager = UserManager(
