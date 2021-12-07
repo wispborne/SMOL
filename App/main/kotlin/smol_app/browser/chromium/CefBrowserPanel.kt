@@ -1,17 +1,20 @@
 package smol_app.browser.chromium
 
 //import sun.tools.jconsole.inspector.XDataViewer
+
 import com.sun.java.accessibility.util.AWTEventMonitor
 import org.cef.CefApp
 import org.cef.CefClient
 import org.cef.CefSettings
 import org.cef.browser.CefBrowser
+import org.cef.browser.CefFrame
 import org.cef.browser.CefMessageRouter
 import org.cef.callback.CefBeforeDownloadCallback
 import org.cef.callback.CefDownloadItem
 import org.cef.callback.CefDownloadItemCallback
 import org.cef.handler.CefAppHandlerAdapter
 import org.cef.handler.CefDownloadHandler
+import org.cef.handler.CefLifeSpanHandlerAdapter
 import smol_app.browser.DownloadHander
 import tests.detailed.handler.MessageRouterHandler
 import tests.detailed.handler.MessageRouterHandlerEx
@@ -21,6 +24,8 @@ import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import javax.swing.JPanel
 import javax.swing.JTextField
+import kotlin.io.path.absolutePathString
+
 
 /**
  * This is a simple example application using JCEF.
@@ -36,7 +41,7 @@ import javax.swing.JTextField
  *
  * Source: [https://github.com/viglucci/app-jcef-example/blob/14f5d7fc5c26a9492601cfedb346cf5974335fb3/src/main/java/example/simple/SimpleFrameExample.java]
  */
-class BrowserPanel
+class CefBrowserPanel
 // calling System.exit(0) appears to be causing assert errors,
 // as its firing before all of the CEF objects shutdown.
 //System.exit(0);
@@ -104,7 +109,7 @@ class BrowserPanel
     useOSR: Boolean,
     isTransparent: Boolean,
     private val downloadHandler: DownloadHander
-) : JPanel() {
+) : JPanel(), ChromiumBrowser {
 
     companion object {
         private val serialVersionUID = -5570653778104813836L
@@ -181,33 +186,14 @@ class BrowserPanel
             msgRouter.addHandler(MessageRouterHandler(), true)
             msgRouter.addHandler(MessageRouterHandlerEx(client), false)
             client!!.addMessageRouter(msgRouter)
-            client!!.addDownloadHandler(object : CefDownloadHandler {
-                override fun onBeforeDownload(
-                    p0: CefBrowser?,
-                    item: CefDownloadItem?,
-                    p2: String?,
-                    p3: CefBeforeDownloadCallback?
-                ) {
-                    item ?: return
-                    downloadHandler.onStart(suggestedFileName = item.suggestedFileName, totalBytes = item.totalBytes)
-                }
-
-                override fun onDownloadUpdated(
-                    browser: CefBrowser?,
-                    item: CefDownloadItem?,
-                    callback: CefDownloadItemCallback?
-                ) {
-                    item ?: return
-                    when {
-                        item.isComplete -> downloadHandler.onCompleted()
-                        !item.isValid || item.isCanceled -> downloadHandler.onCanceled()
-                        else -> downloadHandler.onProgressUpdate(
-                            progressBytes = item.receivedBytes,
-                            totalBytes = item.totalBytes,
-                            speedBps = item.currentSpeed,
-                            endTime = item.endTime
-                        )
-                    }
+//            client!!.addDownloadHandler(DownloadDialog(JFrame()))
+            client!!.addDownloadHandler(cefDownloadHandler())
+            client!!.addLifeSpanHandler(object : CefLifeSpanHandlerAdapter() {
+                override fun onBeforePopup(
+                    browser: CefBrowser?, frame: CefFrame?, target_url: String?, target_frame_name: String?
+                ): Boolean {
+                    target_url?.run { loadUrl(target_url) }
+                    return true
                 }
             })
         }
@@ -222,7 +208,61 @@ class BrowserPanel
         })
     }
 
-    fun loadUrl(url: String) {
+    override fun loadUrl(url: String) {
         browser?.loadURL(url)
+    }
+
+    fun cefDownloadHandler() = object : CefDownloadHandler {
+        override fun onBeforeDownload(
+            browser: CefBrowser?, downloadItem: CefDownloadItem,
+            suggestedName: String?, callback: CefBeforeDownloadCallback
+        ) {
+            downloadHandler.onStart(
+                suggestedFileName = suggestedName,
+                totalBytes = downloadItem.totalBytes
+            )
+            /**
+            public void Continue(String downloadPath, boolean showDialog);
+             * Call to continue the download.
+             * @param downloadPath Set it to the full file path for the download
+             * including the file name or leave blank to use the suggested name and
+             * the default temp directory.
+             * @param showDialog Set it to true if you do wish to show the default
+             * "Save As" dialog.
+             */
+            /**
+            public void Continue(String downloadPath, boolean showDialog);
+             * Call to continue the download.
+             * @param downloadPath Set it to the full file path for the download
+             * including the file name or leave blank to use the suggested name and
+             * the default temp directory.
+             * @param showDialog Set it to true if you do wish to show the default
+             * "Save As" dialog.
+             */
+            callback.Continue(downloadHandler.getDownloadPathFor(suggestedName).absolutePathString(), false)
+        }
+
+        /**
+         * @param callback Callback interface used to asynchronously modify download status.
+         */
+        /**
+         * @param callback Callback interface used to asynchronously modify download status.
+         */
+        override fun onDownloadUpdated(
+            browser: CefBrowser?,
+            item: CefDownloadItem,
+            callback: CefDownloadItemCallback?
+        ) {
+            when {
+                item.isComplete -> downloadHandler.onCompleted()
+                !item.isValid || item.isCanceled -> downloadHandler.onCanceled()
+                else -> downloadHandler.onProgressUpdate(
+                    progressBytes = item.receivedBytes,
+                    totalBytes = item.totalBytes,
+                    speedBps = item.currentSpeed,
+                    endTime = item.endTime
+                )
+            }
+        }
     }
 }

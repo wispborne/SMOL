@@ -38,13 +38,15 @@ import smol_access.SL
 import smol_access.config.Platform
 import smol_app.AppState
 import smol_app.SLUI
-import smol_app.browser.chromium.BrowserPanel
+import smol_app.browser.chromium.CefBrowserPanel
+import smol_app.browser.chromium.ChromiumBrowser
 import smol_app.browser.javafx.javaFxBrowser
 import smol_app.components.*
 import smol_app.themes.SmolTheme
 import smol_app.util.*
 import timber.ktx.Timber
 import java.awt.Cursor
+import java.nio.file.Path
 import java.util.*
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.name
@@ -70,7 +72,7 @@ fun AppState.ModBrowserView(
         remember { mutableStateListOf<ScrapedMod?>(elements = moddingSubforumMods.toTypedArray()) }
 
     val jfxpanel: JFXPanel = remember { JFXPanel() }
-    var browser: BrowserPanel? by remember { mutableStateOf(null) }
+    var browser: ChromiumBrowser? by remember { mutableStateOf(null) }
     var linkLoader: ((String) -> Unit)? by remember { mutableStateOf(null) }
     val scope = rememberCoroutineScope { Dispatchers.Default }
     var alertDialogMessage: String? by remember { mutableStateOf(null) }
@@ -147,17 +149,15 @@ fun AppState.ModBrowserView(
                             .fillMaxWidth()
                             .sizeIn(minWidth = 200.dp),
                         factory = {
-                            BrowserPanel(
+                            CefBrowserPanel(
                                 startURL = Constants.FORUM_MOD_INDEX_URL,
                                 useOSR = Platform.Linux == currentPlatform,
                                 isTransparent = false,
-                                object : DownloadHander {
+                                downloadHandler = object : DownloadHander {
                                     var download: DownloadItem? = null
                                     override fun onStart(suggestedFileName: String?, totalBytes: Long) {
                                         download = DownloadItem(
-                                            path = Constants.TEMP_DIR.resolve(
-                                                suggestedFileName ?: UUID.randomUUID().toString()
-                                            ),
+                                            path = getDownloadPathFor(suggestedFileName),
                                             totalBytes = totalBytes
                                         )
                                         SLUI.downloadManager.addDownload(download!!)
@@ -169,25 +169,34 @@ fun AppState.ModBrowserView(
                                         speedBps: Long?,
                                         endTime: Date
                                     ) {
-                                        download?.apply {
-                                            if (progressBytes != null) this.progress.tryEmit(progressBytes)
-                                            if (this.status.value !is DownloadItem.Status.Downloading)
-                                                this.status.tryEmit(DownloadItem.Status.Downloading)
+                                        download?.let { download ->
+                                            if (progressBytes != null) download.progress.tryEmit(progressBytes)
+                                            if (download.status.value is DownloadItem.Status.NotStarted)
+                                                scope.launch {
+                                                    download.status.emit(DownloadItem.Status.Downloading)
+                                                }
                                         }
                                     }
 
                                     override fun onCanceled() {
-                                        download?.apply {
-                                            this.status.tryEmit(DownloadItem.Status.Failed(RuntimeException("Download canceled.")))
+                                        download?.let { download ->
+                                            scope.launch {
+                                                download.status.emit(DownloadItem.Status.Failed(RuntimeException("Download canceled.")))
+                                            }
                                         }
                                     }
 
                                     override fun onCompleted() {
-                                        download?.apply {
-                                            this.status.tryEmit(DownloadItem.Status.Completed)
+                                        download?.let { download ->
+                                            scope.launch {
+                                                download.status.emit(DownloadItem.Status.Completed)
+                                            }
                                         }
                                     }
 
+                                    override fun getDownloadPathFor(filename: String?): Path =
+                                        Constants.TEMP_DIR.resolve(
+                                            filename?.ifEmpty { null } ?: UUID.randomUUID().toString())
                                 }
                             )
                                 .also { browserPanel ->
