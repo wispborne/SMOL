@@ -33,8 +33,7 @@ import kotlinx.coroutines.withContext
 import org.tinylog.Logger
 import smol_access.Constants
 import smol_access.SL
-import smol_access.business.DependencyState
-import smol_access.business.findDependencyStates
+import smol_access.business.Dependencies
 import smol_access.model.Mod
 import smol_access.model.ModVariant
 import smol_app.AppState
@@ -434,11 +433,11 @@ private fun DependencyFixerRow(
 ) {
     val dependencies =
         (mod.findFirstEnabled ?: mod.findHighestVersion)
-            ?.findDependencyStates(allMods)
-            ?.sortedWith(compareByDescending { it is DependencyState.Disabled })
+            ?.run { SL.dependencies.findDependencyStates(modVariant = this, mods = allMods) }
+            ?.sortedWith(compareByDescending { it is Dependencies.DependencyState.Disabled })
             ?: emptyList()
     dependencies
-        .filter { it is DependencyState.Missing || it is DependencyState.Disabled }
+        .filter { it is Dependencies.DependencyState.Missing || it is Dependencies.DependencyState.Disabled }
         .forEach { depState ->
             Row(Modifier.padding(start = 16.dp)) {
                 Image(
@@ -453,35 +452,39 @@ private fun DependencyFixerRow(
                 Text(
                     modifier = Modifier.align(Alignment.CenterVertically),
                     text = when (depState) {
-                        is DependencyState.Disabled -> "Disabled dependency: ${depState.variant.modInfo.name} ${depState.variant.modInfo.version}"
-                        is DependencyState.Missing -> "Missing dependency: ${depState.dependency.name?.ifBlank { null } ?: depState.dependency.id}${depState.dependency.version?.let { " $it" }}"
-                        is DependencyState.Enabled -> "you should never see this"
+                        is Dependencies.DependencyState.Disabled -> "Disabled dependency: ${depState.variant.modInfo.name} ${depState.variant.modInfo.version}"
+                        is Dependencies.DependencyState.Missing -> "Missing dependency: ${depState.dependency.name?.ifBlank { null } ?: depState.dependency.id}${depState.dependency.version?.let { " $it" }}"
+                        is Dependencies.DependencyState.Enabled -> "you should never see this"
                     }
                 )
                 SmolButton(
                     modifier = Modifier.align(Alignment.CenterVertically).padding(start = 16.dp),
                     onClick = {
                         when (depState) {
-                            is DependencyState.Disabled -> GlobalScope.launch { SL.access.enable(depState.variant) }
-                            is DependencyState.Missing -> {
+                            is Dependencies.DependencyState.Disabled -> GlobalScope.launch {
+                                SL.access.enableModVariant(
+                                    depState.variant
+                                )
+                            }
+                            is Dependencies.DependencyState.Missing -> {
                                 GlobalScope.launch {
                                     depState.outdatedModIfFound?.getModThreadId()?.openModThread()
                                         ?: "https://google.com/search?q=starsector+${depState.dependency.name ?: depState.dependency.id}+${depState.dependency.versionString}"
                                             .openAsUriInBrowser()
                                 }
                             }
-                            is DependencyState.Enabled -> TODO("you should never see this")
+                            is Dependencies.DependencyState.Enabled -> TODO("you should never see this")
                         }
                     }
                 ) {
                     Text(
                         text = when (depState) {
-                            is DependencyState.Disabled -> "Enable"
-                            is DependencyState.Missing -> "Search"
-                            is DependencyState.Enabled -> "you should never see this"
+                            is Dependencies.DependencyState.Disabled -> "Enable"
+                            is Dependencies.DependencyState.Missing -> "Search"
+                            is Dependencies.DependencyState.Enabled -> "you should never see this"
                         }
                     )
-                    if (depState is DependencyState.Missing) {
+                    if (depState is Dependencies.DependencyState.Missing) {
                         Image(
                             painter = painterResource("open-in-new.svg"),
                             colorFilter = ColorFilter.tint(SmolTheme.dimmedIconColor()),
@@ -627,7 +630,7 @@ private fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
                                                 SL.access.changeActiveVariant(mod, action.variant)
                                             }
                                             is DropdownAction.Disable -> {
-                                                SL.access.disable(firstEnabledVariant ?: return@runCatching)
+                                                SL.access.disableModVariant(firstEnabledVariant ?: return@runCatching)
                                             }
                                             is DropdownAction.MigrateMod -> {
                                                 // TODO

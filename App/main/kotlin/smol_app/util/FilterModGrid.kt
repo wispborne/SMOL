@@ -2,6 +2,8 @@ package smol_app.util
 
 import dev.sphericalkat.sublimefuzzy.Fuzzy
 import me.xdrop.fuzzywuzzy.FuzzySearch
+import smol_access.Access
+import smol_access.business.ModLoader
 import smol_access.model.Mod
 import smol_access.model.ModVariant
 import smol_app.util.Filter.searchMethod
@@ -16,7 +18,7 @@ enum class FilterType {
     FuzzyWuzzySearch
 }
 
-internal fun filterModGrid(query: String, mods: List<Mod>): List<Mod> {
+internal fun filterModGrid(query: String, mods: List<Mod>, access: Access): List<Mod> {
     val split = splitSearchQuery(query)
 
     return split
@@ -28,10 +30,12 @@ internal fun filterModGrid(query: String, mods: List<Mod>): List<Mod> {
                     if (searchMethod == FilterType.FuzzyWuzzySearch)
                         fuzzyWuzzyModSearch(
                             query = query,
-                            variant = variant
+                            variant = variant,
+                            access = access
                         ) else sublimeFuzzyModSearch(
                         query = query,
-                        variant = variant
+                        variant = variant,
+                        access = access
                     )
                 }
                 .filter { it.second.any { it.value > 70 } }
@@ -45,7 +49,7 @@ internal fun filterModGrid(query: String, mods: List<Mod>): List<Mod> {
         .distinctBy { it.id }
 }
 
-private fun sublimeFuzzyModSearch(query: String, variant: ModVariant): Pair<Mod, Map<String, Int>> {
+private fun sublimeFuzzyModSearch(query: String, variant: ModVariant, access: Access): Pair<Mod, Map<String, Int>> {
     val results = mutableMapOf<String, Int>() // match field name and value
 
     fun Pair<Boolean, Int>.filterAndAdd(name: String) {
@@ -54,6 +58,13 @@ private fun sublimeFuzzyModSearch(query: String, variant: ModVariant): Pair<Mod,
         if (this.first) {
             results += name to this.second
         }
+    }
+
+    val modAbbreviation = variant.modInfo.name.acronym()
+
+    if (modAbbreviation.length > 1) {
+        Fuzzy.fuzzyMatch(query, modAbbreviation)
+            .run { filterAndAdd(modAbbreviation) }
     }
 
     Fuzzy.fuzzyMatch(query, variant.modInfo.name)
@@ -66,10 +77,10 @@ private fun sublimeFuzzyModSearch(query: String, variant: ModVariant): Pair<Mod,
         .run { filterAndAdd(variant.modInfo.author) }
 
     Timber.d { "${variant.modInfo.name}'s match of '$query' had a total score of ${results.values.sum()} and single highest of ${results.values.maxOrNull()}." }
-    return variant.mod to results
+    return variant.mod(access) to results
 }
 
-private fun fuzzyWuzzyModSearch(query: String, variant: ModVariant): Pair<Mod, Map<String, Int>> {
+private fun fuzzyWuzzyModSearch(query: String, variant: ModVariant, access: Access): Pair<Mod, Map<String, Int>> {
     val results = mutableMapOf<String, Int>() // match field name and value
 
     fun Int.filterAndAdd(name: String) {
@@ -101,7 +112,7 @@ private fun fuzzyWuzzyModSearch(query: String, variant: ModVariant): Pair<Mod, M
     }
 
     Timber.d { "${variant.modInfo.name}'s match of '$query' had a total score of ${results.values.sum()} and single highest of ${results.values.maxOrNull()}." }
-    return variant.mod to results
+    return variant.mod(access) to results
 }
 
 fun splitSearchQuery(query: String) = query

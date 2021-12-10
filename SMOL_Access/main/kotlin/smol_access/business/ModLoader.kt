@@ -11,6 +11,7 @@ import smol_access.Constants
 import smol_access.config.AppConfig
 import smol_access.config.GamePath
 import smol_access.model.Mod
+import smol_access.model.ModId
 import smol_access.model.ModVariant
 import timber.ktx.Timber
 import timber.ktx.i
@@ -38,13 +39,13 @@ class ModLoader internal constructor(
      * Reads all mods from /mods, staging, and archive folders.
      */
     @OptIn(ExperimentalStdlibApi::class)
-    suspend fun reload(): List<Mod>? {
+    suspend fun reload(modIds: List<ModId>? = null): List<Mod>? {
         if (isLoading.value) {
             Timber.i { "Mod reload requested, but declined; already reloading." }
             return mods.value
         }
 
-        Timber.i { "Refreshing mod info files." }
+        Timber.i { "Refreshing mod info files: ${modIds ?: "all"}." }
 
         return try {
             isReloadingMutable.emit(true)
@@ -56,6 +57,7 @@ class ModLoader internal constructor(
 
                     // Get items in archives
                     val archivedMods = archives.getArchivesManifest()?.manifestItems?.values
+                        ?.filter { modIds?.contains(it.modInfo.id) ?: true } // Filter to the selected mods, if not null
                         ?.map { archivedItem ->
                             Timber.v { "Archive: ${archivedItem.modInfo.name}" }
 
@@ -80,9 +82,10 @@ class ModLoader internal constructor(
 
                     val stagedMods =
                         modInfoLoader.readModDataFilesFromFolderOfMods(
-                            stagingMods,
-                            listOf(ModInfoLoader.DataFile.VERSION_CHECKER)
+                            folderWithMods = stagingMods,
+                            desiredFiles = listOf(ModInfoLoader.DataFile.VERSION_CHECKER)
                         )
+                            .filter { modIds?.contains(it.second.modInfo.id) ?: true } // Filter to the selected mods, if not null
                             .map { (modFolder, dataFiles) ->
                                 val modInfo = dataFiles.modInfo
                                 val modVariant = ModVariant(
@@ -108,6 +111,7 @@ class ModLoader internal constructor(
                             modsFolder,
                             listOf(ModInfoLoader.DataFile.VERSION_CHECKER)
                         )
+                            .filter { modIds?.contains(it.second.modInfo.id) ?: true } // Filter to the selected mods, if not null
                             .map { (modFolder, dataFiles) ->
                                 val modInfo = dataFiles.modInfo
                                 val modVariant = ModVariant(
@@ -156,7 +160,7 @@ class ModLoader internal constructor(
                         }
                         .values
                         .filter { mod -> mod.variants.any { it.exists } }
-                        .onEach { mod -> mod.variants.forEach { it.mod = mod } }
+//                        .onEach { mod -> mod.variants.forEach { it.mod = mod } }
                         .toList()
                         .onEach {
                             Timber.d { "Loaded mod: $it" }

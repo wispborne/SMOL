@@ -98,7 +98,8 @@ class Access internal constructor(
      */
     suspend fun changeActiveVariant(mod: Mod, modVariant: ModVariant?): Result<Unit> {
         try {
-            if (modVariant?.mod != null && mod != modVariant.mod) {
+            val modVariantParent = modVariant?.mod(modLoader)
+            if (modVariantParent != null && mod != modVariantParent) {
                 val err = "Variant and mod were different! ${mod.id}, ${modVariant.smolId}"
                 Timber.i { err }
                 return Result.failure(RuntimeException(err))
@@ -125,15 +126,21 @@ class Access internal constructor(
             // There should only ever be one active but might as well be careful.
             mod.variants
                 .filter { mod.isEnabled(it) || it.modsFolderInfo != null }
-                .forEach { staging.disableInternal(it) }
+                .forEach { staging.disableModVariant(it) }
 
             return if (modVariant != null) {
                 // Enable the one we want.
                 // Slower: Reload, since we just disabled it
-//                val freshModVariant = modLoader.getMods().flatMap { it.variants }.first { it.smolId == modVariant.smolId }
+                val freshModVariant =
+                    modLoader.reload(listOf(mod.id))?.flatMap { it.variants }?.first { it.smolId == modVariant.smolId }
+                        ?: kotlin.run {
+                            val error = "After disabling, couldn't find mod variant ${modVariant.smolId}."
+                            Timber.w { error }
+                            return Result.failure(RuntimeException(error))
+                        }
                 // Faster: Assume we disabled it and change the mod to be disabled.
-                modVariant.mod = modVariant.mod.copy(isEnabledInGame = false)
-                staging.enableInternal(modVariant)
+//                modVariant.mod = modVariant.mod.copy(isEnabledInGame = false)
+                staging.enableModVariant(modVariant)
             } else {
                 Result.success(Unit)
             }
@@ -142,7 +149,7 @@ class Access internal constructor(
         }
     }
 
-    suspend fun stage(modVariant: ModVariant): Result<Unit> {
+    suspend fun stageModVariant(modVariant: ModVariant): Result<Unit> {
         try {
             return staging.stageInternal(modVariant)
         } finally {
@@ -150,25 +157,25 @@ class Access internal constructor(
         }
     }
 
-    suspend fun enable(modToEnable: ModVariant): Result<Unit> {
+    suspend fun enableModVariant(modToEnable: ModVariant): Result<Unit> {
         try {
-            return staging.enableInternal(modToEnable)
+            return staging.enableModVariant(modToEnable)
         } finally {
             staging.manualReloadTrigger.trigger.emit("Enabled mod: $modToEnable")
         }
     }
 
-    suspend fun unstage(mod: Mod): Result<Unit> {
+    suspend fun disableMod(mod: Mod): Result<Unit> {
         try {
-            return staging.unstageInternal(mod)
+            return staging.disableMod(mod)
         } finally {
             staging.manualReloadTrigger.trigger.emit("Mod unstaged: $mod")
         }
     }
 
-    suspend fun disable(modVariant: ModVariant): Result<Unit> {
+    suspend fun disableModVariant(modVariant: ModVariant): Result<Unit> {
         try {
-            return staging.disableInternal(modVariant)
+            return staging.disableModVariant(modVariant)
         } finally {
             staging.manualReloadTrigger.trigger.emit("Disabled mod: $modVariant")
         }

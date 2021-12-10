@@ -1,43 +1,52 @@
 package smol_access.business
 
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import smol_access.Access
 import smol_access.config.AppConfig
 import smol_access.model.UserProfile
 import timber.ktx.Timber
-import utilities.diff
 
 class UserManager internal constructor(
     private val appConfig: AppConfig,
 ) {
+    private val activeProfileInner = MutableStateFlow(appConfig.userProfile ?: kotlin.run {
+        val defaultModProfile = UserProfile.ModProfile(
+            id = 0,
+            name = "default",
+            description = "Default profile",
+            sortOrder = 0,
+            enabledModVariants = emptyList()
+        )
 
-    fun getUserProfile(): UserProfile {
-        return appConfig.userProfile ?: kotlin.run {
-            val defaultModProfile = UserProfile.ModProfile(
-                id = 0,
-                name = "default",
-                description = "Default profile",
-                sortOrder = 0,
-                enabledModVariants = emptyList()
-            )
+        return@run UserProfile(
+            id = 0,
+            username = "default",
+            activeModProfileId = defaultModProfile.id,
+            versionCheckerIntervalMillis = VersionChecker.DEFAULT_CHECK_INTERVAL_MILLIS,
+            modProfiles = listOf(defaultModProfile),
+            profileVersion = 0,
+            theme = "kemet"
+        )
+    })
 
-            return@run UserProfile(
-                id = 0,
-                username = "default",
-                activeModProfileId = defaultModProfile.id,
-                versionCheckerIntervalMillis = VersionChecker.DEFAULT_CHECK_INTERVAL_MILLIS,
-                modProfiles = listOf(defaultModProfile),
-                profileVersion = 0,
-                theme = "kemet"
-            )
+    val activeProfile = activeProfileInner.asStateFlow()
+
+    init {
+        // Update config whenever value changes.
+        CoroutineScope(Dispatchers.Default).launch {
+            activeProfile.collect {
+                appConfig.userProfile = it
+            }
         }
     }
 
     fun updateUserProfile(mutator: (oldProfile: UserProfile) -> UserProfile): UserProfile {
-        val newProfile = mutator(getUserProfile())
-        appConfig.userProfile = newProfile
+        val newProfile = mutator(activeProfile.value)
+        activeProfileInner.value = newProfile
         Timber.d { "Updated active profile ${newProfile.username} to $newProfile" }
         return newProfile
     }

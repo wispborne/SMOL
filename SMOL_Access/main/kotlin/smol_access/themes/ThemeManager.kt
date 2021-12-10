@@ -48,7 +48,7 @@ class ThemeManager(
             }
 
     private fun getActiveTheme(): Pair<String, Theme> {
-        val activeThemeName = userManager.getUserProfile().theme
+        val activeThemeName = userManager.activeProfile.value.theme
         return activeThemeName?.let { themeName ->
             kotlin.runCatching { activeThemeName to getThemes()[themeName]!! }
                 .onFailure { Timber.w(it) }

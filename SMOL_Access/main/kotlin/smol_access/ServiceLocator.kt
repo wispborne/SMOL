@@ -39,11 +39,6 @@ class ServiceLocator internal constructor(
     val userManager: UserManager = UserManager(
         appConfig = appConfig
     ),
-    val versionChecker: VersionChecker = VersionChecker(
-        gson = gson,
-        versionCheckerCache = versionCheckerCache,
-        userManager = userManager
-    ),
     internal val modInfoLoader: ModInfoLoader = ModInfoLoader(moshi = moshi, gson = gson),
     val gamePath: GamePath = GamePath(appConfig = appConfig),
     val vramChecker: VramCheckerManager = VramCheckerManager(
@@ -64,6 +59,13 @@ class ServiceLocator internal constructor(
         archives = archives,
         modInfoLoader = modInfoLoader,
         gameEnabledMods = gameEnabledMods
+    ),
+    val dependencies: Dependencies = Dependencies(modLoader = modLoader),
+    val versionChecker: VersionChecker = VersionChecker(
+        gson = gson,
+        versionCheckerCache = versionCheckerCache,
+        userManager = userManager,
+        modLoader = modLoader
     ),
     internal val staging: Staging = Staging(
         config = appConfig,

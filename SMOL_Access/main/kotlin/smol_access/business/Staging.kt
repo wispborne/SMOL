@@ -40,7 +40,7 @@ internal class Staging(
      * - Removes it from /mods.
      * - Removes it from `enabled_mods.json`.
      */
-    suspend fun disableInternal(modVariant: ModVariant): Result<Unit> {
+    suspend fun disableModVariant(modVariant: ModVariant): Result<Unit> {
         Timber.i { "Disabling variant ${modVariant.smolId}" }
         // If it's not staged, stage it (to the staging folder) (but it'll stay disabled)
         if (modVariant.stagingInfo == null) {
@@ -63,11 +63,11 @@ internal class Staging(
             Timber.d { "Disabling ${modVariant.smolId}: removed from /mods." }
         }
 
-        if (modVariant.mod.isEnabledInGame) {
-            Timber.d { "Disabling ${modVariant.smolId}: variant was enabled, disabling." }
+        if (modVariant.mod(modLoader).isEnabledInGame) {
+            Timber.d { "Disabling mod ${modVariant.modInfo.id} as part of disabling variant ${modVariant.smolId}." }
             gameEnabledMods.disable(modVariant.modInfo.id)
         } else {
-            Timber.d { "Disabling ${modVariant.smolId}: variant was not enabled." }
+            Timber.d { "Mod ${modVariant.modInfo.id} was already disabled and won't be disabled as part of disabling variant ${modVariant.smolId}." }
         }
 
         Timber.d { "Disabling ${modVariant.smolId}: success." }
@@ -108,8 +108,9 @@ internal class Staging(
         return Result.success(Unit)
     }
 
-    suspend fun enableInternal(modVariant: ModVariant): Result<Unit> {
-        if (modVariant.mod.isEnabled(modVariant)) {
+    suspend fun enableModVariant(modVariant: ModVariant): Result<Unit> {
+        Timber.i { "Enabling mod variant ${modVariant.smolId}." }
+        if (modVariant.mod(modLoader).isEnabled(modVariant)) {
             Timber.i { "Already enabled!: $modVariant" }
             return Result.success(Unit)
         }
@@ -124,14 +125,15 @@ internal class Staging(
             Timber.i { "Enabled mod for SMOL: $modVariant" }
         }
 
-        if (!modVariant.mod.isEnabledInGame) {
+        if (!modVariant.mod(modLoader).isEnabledInGame) {
             gameEnabledMods.enable(modVariant.modInfo.id)
         }
 
         return Result.success((Unit))
     }
 
-    suspend fun unstageInternal(mod: Mod): Result<Unit> {
+    suspend fun disableMod(mod: Mod): Result<Unit> {
+        Timber.i { "Disabling mod ${mod.id}." }
         mod.variants.forEach { modVariant ->
             if (modVariant.stagingInfo == null || !modVariant.stagingInfo.folder.exists()) {
                 Timber.d { "Mod not staged! $modVariant" }
@@ -144,7 +146,7 @@ internal class Staging(
             }
 
             // Make sure it's disabled before unstaging
-            disableInternal(modVariant)
+            disableModVariant(modVariant)
 
             IOLock.write {
                 kotlin.runCatching {
@@ -279,7 +281,7 @@ internal class Staging(
             }
         }) {
             if (modVariant.modsFolderInfo == null) {
-                Timber.w { "Not found in /mods folder: ${modVariant.smolId}." }
+                Timber.w { "Not found in /mods folder: ${modVariant.smolId} (so removing it is a success!)." }
                 return Result.success(Unit)
             }
 

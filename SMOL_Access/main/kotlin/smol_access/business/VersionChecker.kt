@@ -26,7 +26,8 @@ import java.time.Instant
 class VersionChecker(
     private val gson: Gson,
     private val versionCheckerCache: VersionCheckerCache,
-    private val userManager: UserManager
+    private val userManager: UserManager,
+    private val modLoader: ModLoader
 ) {
     companion object {
         const val DEFAULT_CHECK_INTERVAL_MILLIS: Long = 1000 * 60 * 5 // 5 mins
@@ -39,7 +40,7 @@ class VersionChecker(
     suspend fun lookUpVersions(mods: List<Mod>, forceLookup: Boolean) {
         val msSinceLastCheck = Instant.now().toEpochMilli() - versionCheckerCache.lastCheckTimestamp
         val checkIntervalMillis =
-            userManager.getUserProfile().versionCheckerIntervalMillis ?: DEFAULT_CHECK_INTERVAL_MILLIS
+            userManager.activeProfile.value.versionCheckerIntervalMillis ?: DEFAULT_CHECK_INTERVAL_MILLIS
 
         if (!forceLookup && msSinceLastCheck < checkIntervalMillis) {
             Timber.i { "Skipping version check, it has only been ${msSinceLastCheck / 1000}s of ${checkIntervalMillis / 1000}s." }
@@ -64,7 +65,7 @@ class VersionChecker(
                                     client.get<HttpResponse>(modVariant.versionCheckerInfo!!.masterVersionFile!!)
                                         .receive<String>()
                                         .let { JsonValue.readHjson(it) } // Parse first using HJson
-                                        .let { modVariant.mod to gson.fromJson<VersionCheckerInfo>(it.toString()).modVersion!! }
+                                        .let { modVariant.mod(modLoader) to gson.fromJson<VersionCheckerInfo>(it.toString()).modVersion!! }
                                 }
                                     .onFailure {
                                         fun message(error: String?) =

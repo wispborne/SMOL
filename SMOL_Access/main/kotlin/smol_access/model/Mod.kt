@@ -1,5 +1,7 @@
 package smol_access.model
 
+import smol_access.Access
+import smol_access.business.ModLoader
 import java.nio.file.Path
 import java.util.*
 import kotlin.io.path.exists
@@ -103,8 +105,11 @@ data class ModVariant(
     }
 
     // incredibly inelegant way of doing a parent-child relationship
-    @Transient
-    lateinit var mod: Mod
+//    @Transient
+//    lateinit var mod: Mod
+
+    fun mod(modLoader: ModLoader) = modLoader.mods.value!!.first { it.id == modInfo.id }
+    fun mod(access: Access) = access.mods.value!!.first { it.id == modInfo.id }
 
     val exists: Boolean
         get() = (stagingInfo != null && stagingInfo.folder.exists())

@@ -43,7 +43,7 @@ fun AppState.ProfilesView(
     modifier: Modifier = Modifier
 ) {
     var modProfileIdShowingDeleteConfirmation: Int? by remember { mutableStateOf(null) }
-    var userProfile by remember { mutableStateOf(SL.userManager.getUserProfile()) }
+    var userProfile = SL.userManager.activeProfile.collectAsState().value
 
     Scaffold(topBar = {
         TopAppBar {
@@ -206,7 +206,7 @@ fun AppState.ProfilesView(
                                                     GlobalScope.launch(Dispatchers.Default) {
                                                         SL.userModProfileManager.switchModProfile(modProfile.id)
                                                         withContext(Dispatchers.Main) {
-                                                            userProfile = SL.userManager.getUserProfile()
+//                                                            userProfile = SL.userManager.activeProfile.value
                                                             modVariants =
                                                                 (SL.access.mods.value ?: emptyList())
                                                                     .flatMap { it.variants }
@@ -251,10 +251,10 @@ fun AppState.ProfilesView(
                                         SL.userManager.createModProfile(
                                             name = newProfileName,
                                             description = null,
-                                            sortOrder = SL.userManager.getUserProfile().modProfiles.maxOf { it.sortOrder } + 1
+                                            sortOrder = SL.userManager.activeProfile.value.modProfiles.maxOf { it.sortOrder } + 1
                                         )
                                         newProfileName = ""
-                                        userProfile = SL.userManager.getUserProfile()
+                                        userProfile = SL.userManager.activeProfile.value
                                     }
                                 }) {
                                 Icon(
@@ -277,7 +277,7 @@ fun AppState.ProfilesView(
 
     if (modProfileIdShowingDeleteConfirmation != null) {
         val profile =
-            SL.userManager.getUserProfile().modProfiles.firstOrNull { it.id == modProfileIdShowingDeleteConfirmation }
+            userProfile.modProfiles.firstOrNull { it.id == modProfileIdShowingDeleteConfirmation }
         SmolAlertDialog(
             modifier = Modifier,
             onDismissRequest = { modProfileIdShowingDeleteConfirmation = null },
@@ -294,7 +294,6 @@ fun AppState.ProfilesView(
                             return@SmolButton
                         })
                     modProfileIdShowingDeleteConfirmation = null
-                    userProfile = SL.userManager.getUserProfile()
                 }) { Text("Delete") }
             },
             dismissButton = {

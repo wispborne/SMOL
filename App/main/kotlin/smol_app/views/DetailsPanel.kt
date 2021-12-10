@@ -16,7 +16,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -26,7 +25,6 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import smol_access.SL
-import smol_access.business.findDependencies
 import smol_access.model.Mod
 import smol_app.components.SmolLinkText
 import smol_app.components.TiledImage
@@ -124,7 +122,8 @@ fun BoxScope.detailsPanel(
                 Text(modInfo?.author ?: "It's always Techpriest", modifier = Modifier.padding(top = 2.dp))
                 Text("Description", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
                 Text(modInfo?.description ?: "", modifier = Modifier.padding(top = 2.dp))
-                val dependencies = modVariant?.findDependencies(mods = mods) ?: emptyList()
+                val dependencies =
+                    modVariant?.run { SL.dependencies.findDependencies(modVariant = this, mods = mods) } ?: emptyList()
                 if (dependencies.isNotEmpty()) {
                     Text("Dependencies", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
                     Text(
@@ -205,7 +204,9 @@ fun BoxScope.detailsPanelGameStyled(
                 Text(modInfo?.author ?: "It's always Techpriest", modifier = Modifier.padding(top = 2.dp, start = 8.dp))
                 Text("Description", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
                 Text(modInfo?.description ?: "", modifier = Modifier.padding(top = 2.dp))
-                val dependencies = modVariant?.findDependencies(mods = allMods) ?: emptyList()
+                val dependencies =
+                    modVariant?.run { SL.dependencies.findDependencies(modVariant = this, mods = allMods) }
+                        ?: emptyList()
                 if (dependencies.isNotEmpty()) {
                     Text("Dependencies", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
                     Text(

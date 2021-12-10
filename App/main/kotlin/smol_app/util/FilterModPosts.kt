@@ -44,6 +44,13 @@ private fun sublimeFuzzyModPostSearch(query: String, mod: ScrapedMod): Pair<Scra
         }
     }
 
+    val modAbbreviation = mod.name.acronym()
+
+    if (modAbbreviation.length > 1) {
+        Fuzzy.fuzzyMatch(query, modAbbreviation)
+            .run { filterAndAdd(modAbbreviation) }
+    }
+
     Fuzzy.fuzzyMatch(query, mod.name)
         .run { filterAndAdd(mod.name) }
     Fuzzy.fuzzyMatch(query, mod.authors)

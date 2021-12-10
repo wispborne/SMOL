@@ -123,7 +123,7 @@ fun AppState.homeView(
                             shownMods.replaceAllUsingDifference(mods, doesOrderMatter = false)
                         } else {
                             shownMods.replaceAllUsingDifference(
-                                filterModGrid(query, mods).ifEmpty { listOf(null) },
+                                filterModGrid(query, mods, access = SL.access).ifEmpty { listOf(null) },
                                 doesOrderMatter = true
                             )
                         }

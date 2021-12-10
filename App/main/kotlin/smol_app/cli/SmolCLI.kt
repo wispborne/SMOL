@@ -64,7 +64,7 @@ class SmolCLI(
 
     inner class ModProfileList : CliktCommand(name = "modprofile-list", help = "List all mod profiles") {
         override fun run() {
-            echo(userManager.getUserProfile().modProfiles.joinToString(separator = "\n") { it.toString() })
+            echo(userManager.activeProfile.value.modProfiles.joinToString(separator = "\n") { it.toString() })
         }
     }
 
@@ -85,7 +85,7 @@ class SmolCLI(
         override fun run() {
             GlobalScope.launch {
                 userModProfileManager.switchModProfile(profileId)
-                val profile = userManager.getUserProfile().modProfiles.single { it.id == profileId }
+                val profile = userManager.activeProfile.value.modProfiles.single { it.id == profileId }
                 echo("Changed mod profile to $profile.")
             }
         }

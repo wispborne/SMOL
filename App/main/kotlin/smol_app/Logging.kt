@@ -26,9 +26,9 @@ object Logging {
         val tinyLogLevelLower = tinyLogLevel.name.lowercase()
         Configuration.replace(
             mapOf(
-                "writer1" to "console",
-                "writer1.level" to tinyLogLevelLower,
-                "writer1.format" to format,
+//                "writer1" to "console",
+//                "writer1.level" to tinyLogLevelLower,
+//                "writer1.format" to format,
 
                 "writer2" to "rolling file",
                 "writer2.level" to tinyLogLevelLower,
@@ -46,7 +46,7 @@ object Logging {
 
         Timber.uprootAll()
         Timber.plant(Timber.DebugTree())
-//        Timber.plant(tinyLoggerTree())
+        Timber.plant(tinyLoggerTree())
     }
 
     private fun tinyLoggerTree() = object : Timber.Tree() {
