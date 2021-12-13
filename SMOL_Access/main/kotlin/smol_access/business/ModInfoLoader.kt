@@ -31,7 +31,7 @@ class ModInfoLoader(
                 .mapNotNull { modFolder ->
                     var modInfo: ModInfo? = null
 
-                    Timber.d {
+                    Timber.v {
                         "Looking for mod_info.json and ${
                             if (desiredFiles.isEmpty())
                                 "nothing else"

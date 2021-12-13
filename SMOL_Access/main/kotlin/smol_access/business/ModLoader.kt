@@ -178,7 +178,17 @@ class ModLoader internal constructor(
                             }
                         }
 
-                    onModsReloadedEmitter.emit(result)
+                    if (modIds == null) {
+                        onModsReloadedEmitter.emit(result)
+                    } else {
+                        // If this was an update of only some mods, update only those.
+                        onModsReloadedEmitter.emit(onModsReloadedEmitter.value?.toMutableList().apply {
+                            result.forEach { selectedMod ->
+                                this?.removeIf { it.id == selectedMod.id }
+                                this?.add(selectedMod)
+                            }
+                        })
+                    }
                     return@withContext result
                 }
             }

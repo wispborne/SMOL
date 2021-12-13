@@ -125,8 +125,12 @@ internal class Staging(
             Timber.i { "Enabled mod for SMOL: $modVariant" }
         }
 
+        modLoader.reload(listOf(modVariant.modInfo.id))
+
         if (!modVariant.mod(modLoader).isEnabledInGame) {
             gameEnabledMods.enable(modVariant.modInfo.id)
+        } else {
+            Timber.i { "Mod was already enabled in enabled_mods.json." }
         }
 
         return Result.success((Unit))

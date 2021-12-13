@@ -33,7 +33,7 @@ fun main() = application {
     // Logger
     kotlin.runCatching {
         Logging.logLevel = if (safeMode) LogLevel.VERBOSE
-        else LogLevel.VERBOSE
+        else LogLevel.DEBUG
         Logging.setup()
     }
         .onFailure { println(it) }

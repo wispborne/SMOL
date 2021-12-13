@@ -511,7 +511,7 @@ class Archives internal constructor(
                                     archivesManifest?.manifestItems?.entries?.firstOrNull { it.value.sha256HexCodeOfArchiveFile == hashCode }
 
                                 if (existingManifestItem != null) {
-                                    Timber.d { "Skipping search for mod_info.json in $archivePath because the file hashcode is present in the manifest already." }
+                                    Timber.v { "Skipping search for mod_info.json in $archivePath because the file hashcode is present in the manifest already." }
                                     archivePath to DataFiles(
                                         modInfo = existingManifestItem.value.modInfo,
                                         versionCheckerInfo = existingManifestItem.value.versionCheckerInfo

@@ -60,7 +60,7 @@ class GameEnabledMods(
                     .toList()
             )
         }
-        Timber.i { "Enabled mod for game: $modId" }
+        Timber.i { "Enabled mod in enabled_mods.json: $modId" }
     }
 
     fun disable(modId: String) {
