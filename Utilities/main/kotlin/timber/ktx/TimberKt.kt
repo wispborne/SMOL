@@ -2,6 +2,7 @@
 
 package timber.ktx
 
+import timber.LogLevel
 import timber.Timber
 
 //
@@ -79,7 +80,7 @@ object Timber {
 
     /** A [Timber.Tree] for debug builds. Automatically infers the tag from the calling class. */
     @JvmStatic
-    inline fun DebugTree() = Timber.DebugTree()
+    inline fun DebugTree(logLevel: LogLevel) = Timber.DebugTree(logLevel)
 }
 
 //

@@ -4,9 +4,10 @@ import com.google.gson.Gson
 import smol_access.Constants
 import smol_app.util.SmolWindowState
 import utilities.Config
+import utilities.JsonFilePrefStorage
 
 class UIConfig(gson: Gson) : Config(
-    gson, JsonFilePrefStorage(
+    JsonFilePrefStorage(
         gson = gson,
         file = Constants.UI_CONFIG_PATH
     )

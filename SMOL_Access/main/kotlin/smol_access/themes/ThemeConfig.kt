@@ -3,10 +3,11 @@ package smol_access.themes
 import com.google.gson.Gson
 import smol_access.Constants
 import utilities.Config
+import utilities.JsonFilePrefStorage
 
 class ThemeConfig(gson: Gson) :
     Config(
-        gson, JsonFilePrefStorage(
+        JsonFilePrefStorage(
             gson = gson,
             file = Constants.THEME_CONFIG_PATH
         )

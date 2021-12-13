@@ -2,10 +2,9 @@ package mod_repo
 
 import com.google.gson.Gson
 import utilities.Config
-import java.nio.file.Path
+import utilities.JsonFilePrefStorage
 
 class ModIndexCache(gson: Gson = Gson()) : Config(
-    gson = gson,
     prefStorage = JsonFilePrefStorage(
         gson = gson,
         file = location

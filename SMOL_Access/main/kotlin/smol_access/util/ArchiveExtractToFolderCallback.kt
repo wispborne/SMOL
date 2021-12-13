@@ -57,13 +57,11 @@ class ArchiveExtractToFolderCallback(
         if (skipExtraction) return
 
         if (extractOperationResult != ExtractOperationResult.OK) {
-            System.err.println("Extraction error");
+            Timber.e { "Extraction error" }
         } else {
             val filePath = inArchive.getProperty(index, PropID.PATH) as String
 
-            Timber.d {
-                String.format("Extracted %10sb | %s", size, filePath)
-            }
+            Timber.v { String.format("Extracted %10sb | %s", size, filePath) }
 
             val file = parentFolder.resolve(filePath)
             file.parent.createDirectories()

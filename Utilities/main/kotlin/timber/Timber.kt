@@ -195,7 +195,7 @@ class Timber private constructor() {
     }
 
     /** A [Tree] for debug builds. Automatically infers the tag from the calling class. */
-    open class DebugTree : Tree() {
+    open class DebugTree(var logLevel: LogLevel) : Tree() {
 
         override val tag: String?
             get() = super.tag ?: findClassName()
@@ -208,6 +208,8 @@ class Timber private constructor() {
          * {@inheritDoc}
          */
         override fun log(priority: LogLevel, tag: String?, message: String, t: Throwable?) {
+            if (priority < logLevel) return
+
             if (message.length < MAX_LOG_LENGTH) {
                 logToConsole(priority, tag, message)
                 return
@@ -230,10 +232,13 @@ class Timber private constructor() {
         }
 
         private fun logToConsole(priority: LogLevel, tag: String?, message: String) {
+            val priorityChar = "${priority.name.firstOrNull()?.uppercase()}"
+            val formattedMsg =
+                "${if (priorityChar.isNotBlank()) "$priorityChar/" else ""}${if (!tag.isNullOrBlank()) "$tag/" else ""} $message"
             if (priority < LogLevel.WARN) {
-                System.out.println("$tag/ $message")
+                System.out.println(formattedMsg)
             } else {
-                System.err.println("$tag/ $message")
+                System.err.println(formattedMsg)
             }
         }
 

@@ -45,7 +45,7 @@ object Logging {
         }
 
         Timber.uprootAll()
-        Timber.plant(Timber.DebugTree())
+        Timber.plant(Timber.DebugTree(logLevel))
         Timber.plant(tinyLoggerTree())
     }
 

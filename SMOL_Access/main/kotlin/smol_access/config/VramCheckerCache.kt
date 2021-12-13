@@ -5,10 +5,11 @@ import smol_access.Constants
 import smol_access.model.ModId
 import smol_access.model.SmolId
 import utilities.Config
+import utilities.JsonFilePrefStorage
 
 class VramCheckerCache(gson: Gson) :
     Config(
-        gson, JsonFilePrefStorage(
+        JsonFilePrefStorage(
             gson = gson,
             file = Constants.VRAM_CHECKER_RESULTS_PATH
         )

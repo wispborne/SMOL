@@ -60,23 +60,23 @@ internal class Staging(
                 return result
             }
 
-            Timber.d { "Disabling ${modVariant.smolId}: removed from /mods." }
+            Timber.i { "Disabling ${modVariant.smolId}: removed from /mods." }
         }
 
         if (modVariant.mod(modLoader).isEnabledInGame) {
-            Timber.d { "Disabling mod ${modVariant.modInfo.id} as part of disabling variant ${modVariant.smolId}." }
+            Timber.i { "Disabling mod ${modVariant.modInfo.id} as part of disabling variant ${modVariant.smolId}." }
             gameEnabledMods.disable(modVariant.modInfo.id)
         } else {
-            Timber.d { "Mod ${modVariant.modInfo.id} was already disabled and won't be disabled as part of disabling variant ${modVariant.smolId}." }
+            Timber.i { "Mod ${modVariant.modInfo.id} was already disabled and won't be disabled as part of disabling variant ${modVariant.smolId}." }
         }
 
-        Timber.d { "Disabling ${modVariant.smolId}: success." }
+        Timber.i { "Disabling ${modVariant.smolId}: success." }
         return Result.success((Unit))
     }
 
     suspend fun stageInternal(modVariant: ModVariant): Result<Unit> {
         if (modVariant.stagingInfo != null) {
-            Timber.d { "Mod already staged! $modVariant" }
+            Timber.i { "Mod already staged! $modVariant" }
             return Result.success(Unit)
         }
 
@@ -98,7 +98,7 @@ internal class Staging(
                     if (linkFoldersResult.isFailure) {
                         return failLogging(linkFoldersResult.exceptionOrNull()?.message ?: "")
                     } else {
-                        Timber.d { "Mod staged from the /mods folder: $modVariant" }
+                        Timber.i { "Mod staged from the /mods folder: $modVariant" }
                     }
                 } else {
                     return failLogging(it.message ?: "")
@@ -140,7 +140,7 @@ internal class Staging(
         Timber.i { "Disabling mod ${mod.id}." }
         mod.variants.forEach { modVariant ->
             if (modVariant.stagingInfo == null || !modVariant.stagingInfo.folder.exists()) {
-                Timber.d { "Mod not staged! $modVariant" }
+                Timber.i { "Mod not staged! $modVariant" }
                 return@forEach
             }
 
@@ -161,7 +161,7 @@ internal class Staging(
             }
         }
 
-        Timber.d { "Mod unstaged: $mod" }
+        Timber.i { "Mod unstaged: $mod" }
         return Result.success(Unit)
     }
 
@@ -170,10 +170,11 @@ internal class Staging(
      */
     private suspend fun linkFromStagingToGameMods(modToEnable: ModVariant): Result<Unit> {
         var mod = modToEnable
+        Timber.i { "Linking ${modToEnable.smolId} to /mods." }
 
         // If it's not staged, stage it first (from the archive).
         if (mod.stagingInfo == null || !mod.stagingInfo!!.folder.exists()) {
-            Timber.d { "Variant '${modToEnable.smolId}' was not staged, stage it first (from the archive)." }
+            Timber.i { "Variant '${modToEnable.smolId}' was not staged, staging it first (from the archive)." }
             stageInternal(mod)
             // Then reload, to get the new staging path.
             mod = (modLoader.reload() ?: emptyList())
@@ -205,6 +206,7 @@ internal class Staging(
      * Creates (hard)links for all files in the source folder to the destination folder.
      */
     private fun linkFolders(sourceFolder: Path, destFolder: Path): Result<Unit> {
+        Timber.i { "Linking $sourceFolder to $destFolder." }
         trace(onFinished = { _, time ->
             timber.ktx.Timber.tag(Constants.TAG_TRACE).i {
                 "Took ${time}ms to soft/hardlink folder ${sourceFolder.absolutePathString()} to ${destFolder.absolutePathString()}."

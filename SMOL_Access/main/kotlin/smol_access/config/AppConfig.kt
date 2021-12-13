@@ -4,10 +4,11 @@ import com.google.gson.Gson
 import smol_access.Constants
 import smol_access.model.UserProfile
 import utilities.Config
+import utilities.JsonFilePrefStorage
 
 class AppConfig(gson: Gson) :
     Config(
-        gson, JsonFilePrefStorage(
+        JsonFilePrefStorage(
             gson = gson,
             file = Constants.APP_CONFIG_PATH
         )
@@ -17,4 +18,15 @@ class AppConfig(gson: Gson) :
     var stagingPath: String? by pref(prefKey = "stagingPath", defaultValue = null)
     var lastFilePickerDirectory: String? by pref(prefKey = "lastFilePickerDirectory", defaultValue = null)
     internal var userProfile: UserProfile? by pref(prefKey = "userProfile", defaultValue = null)
+
+    override fun toString(): String {
+        return "AppConfig(" +
+                "gamePath=$gamePath, " +
+                "archivesPath=$archivesPath, " +
+                "stagingPath=$stagingPath, " +
+                "lastFilePickerDirectory=$lastFilePickerDirectory, " +
+                "userProfile=$userProfile" +
+                ")"
+    }
+
 }

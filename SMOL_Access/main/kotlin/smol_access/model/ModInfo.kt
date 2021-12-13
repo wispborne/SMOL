@@ -54,6 +54,8 @@ sealed class ModInfo(
 
         override val dependencies: List<Dependency>
             get() = emptyList()
+
+        override fun toString() = super.toString()
     }
 
     data class v095(
@@ -84,6 +86,12 @@ sealed class ModInfo(
             get() = versionString
         override val dependencies: List<Dependency>
             get() = _dependencies ?: emptyList()
+
+        override fun toString() = super.toString()
+    }
+
+    override fun toString(): String {
+        return "ModInfo(id='$id', name='$name', author='$author', utilityString='$utilityString', description='$description', gameVersion='$gameVersion', jars=$jars, modPlugin='$modPlugin', version=$version, dependencies=$dependencies, isUtilityMod=$isUtilityMod)"
     }
 }
 

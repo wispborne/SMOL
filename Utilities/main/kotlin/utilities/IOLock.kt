@@ -19,16 +19,18 @@ class ObservableReentrantReadWriteLock(val lock: ReentrantReadWriteLock) {
 
     val stateFlow: StateFlow<Boolean> = flow.asStateFlow()
 
+    inline fun getCurrentThreadName() = Thread.currentThread().name ?: "unknown thread"
+
     /**
      * Executes the given [action] under the read lock of this lock.
      * @return the return value of the action.
      */
     inline fun <T> read(action: () -> T): T = lock.read {
-        Timber.tag(tag).d { "Read locked from ${timber.Timber.findClassName()}" }
+        Timber.tag(tag).d { "Read locked from ${timber.Timber.findClassName()} on ${getCurrentThreadName()}." }
         return@read try {
             action()
         } finally {
-            Timber.tag(tag).d { "Read unlocked from ${timber.Timber.findClassName()}" }
+            Timber.tag(tag).d { "Read unlocked from ${timber.Timber.findClassName()} on ${getCurrentThreadName()}." }
         }
     }
 
@@ -47,12 +49,12 @@ class ObservableReentrantReadWriteLock(val lock: ReentrantReadWriteLock) {
      */
     inline fun <T> write(action: () -> T): T {
         return lock.write {
-            Timber.tag(tag).d { "Write locked from ${timber.Timber.findClassName()}" }
+            Timber.tag(tag).d { "Write locked from ${timber.Timber.findClassName()} on ${getCurrentThreadName()}." }
             flow.tryEmit(true)
             return@write try {
                 action()
             } finally {
-                Timber.tag(tag).d { "Write unlocked from ${timber.Timber.findClassName()}" }
+                Timber.tag(tag).d { "Write unlocked from ${timber.Timber.findClassName()} on ${getCurrentThreadName()}." }
                 flow.tryEmit(false)
             }
         }

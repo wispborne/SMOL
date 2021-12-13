@@ -62,6 +62,8 @@ fun AppState.homeView(
     val shownMods: SnapshotStateList<Mod?> = mods.toMutableStateList()
     val onRefreshingMods = { refreshing: Boolean -> isRefreshingMods = refreshing }
     val scope = rememberCoroutineScope()
+    val isWriteLocked = IOLock.stateFlow.collectAsState()
+
     LaunchedEffect(refreshTrigger) {
         scope.launch {
             Timber.d { "Initial mod refresh." }
@@ -104,6 +106,11 @@ fun AppState.homeView(
                 profilesButton()
                 settingsButton()
                 modBrowserButton()
+                if (isWriteLocked.value) {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                    )
+                }
                 Row(
                     modifier = Modifier
                         .weight(1f)

@@ -1,9 +1,13 @@
 import androidx.compose.desktop.ui.tooling.preview.Preview
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import com.arkivanov.decompose.extensions.compose.jetbrains.Children
 import smol_access.SL
@@ -38,13 +42,6 @@ fun AppState.appView() {
                 is Screen.ModBrowser -> ModBrowserView()
             }.run { }
             FileDropper()
-            val isWriteLocked = IOLock.stateFlow.collectAsState()
-
-            if (isWriteLocked.value) {
-                CircularProgressIndicator(
-
-                )
-            }
         }
     }
 }
