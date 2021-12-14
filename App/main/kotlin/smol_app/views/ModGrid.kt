@@ -9,6 +9,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -17,10 +19,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.input.pointer.isPrimaryPressed
-import androidx.compose.ui.input.pointer.isSecondaryPressed
-import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -59,7 +58,9 @@ fun AppState.ModGridView(
     var selectedRow: ModRow? by remember { mutableStateOf(null) }
     var modInDebugDialog: Mod? by remember { mutableStateOf(null) }
     val largestVramUsage = SL.vramChecker.vramUsage.value?.values?.maxOf { it.bytesForMod }
+    val profile = SL.userManager.activeProfile.collectAsState()
     val contentPadding = 16.dp
+    val favoritesWidth = 40.dp
 
     Box(modifier.padding(top = contentPadding, bottom = contentPadding)) {
         Column(Modifier) {
@@ -70,6 +71,7 @@ fun AppState.ModGridView(
 
                     Text("Author", Modifier.weight(1f), fontWeight = FontWeight.Bold)
 
+                    Spacer(modifier = Modifier.width(favoritesWidth))
                     SmolTooltipArea(modifier = Modifier.weight(1f),
                         tooltip = { SmolTooltipText(text = "The version(s) tracked by SMOL.") }) {
                         Text(text = "Version(s)", fontWeight = FontWeight.Bold)
@@ -141,13 +143,16 @@ fun AppState.ModGridView(
                             this.items(
                                 items = modsInGroup
                                     .map { ModRow(mod = it) }
-                                    .sortedWith(compareBy { it.mod.findFirstEnabledOrHighestVersion?.modInfo?.name })
+                                    .sortedWith(
+                                        compareByDescending<ModRow> { it.mod.id in profile.value.favoriteMods }
+                                            .thenBy { it.mod.findFirstEnabledOrHighestVersion?.modInfo?.name })
                             ) { modRow ->
                                 val mod = modRow.mod
                                 var showContextMenu by remember { mutableStateOf(false) }
                                 val highestLocalVersion =
                                     mod.findHighestVersion?.versionCheckerInfo?.modVersion
                                 val onlineVersion = SL.versionChecker.getOnlineVersion(modId = mod.id)
+                                var isHighlighted by remember { mutableStateOf(false) }
 
                                 ListItem(
                                     modifier = Modifier
@@ -161,10 +166,19 @@ fun AppState.ModGridView(
                                             }
                                         }
                                         .background(
-                                            color = if (selectedRow?.mod?.id == mod.id)
+                                            color = if (isHighlighted || selectedRow?.mod?.id == mod.id)
                                                 Color.Black.copy(alpha = .1f)
                                             else Color.Transparent
                                         )
+                                        .pointerMoveFilter(
+                                            onEnter = {
+                                                isHighlighted = true
+                                                false
+                                            },
+                                            onExit = {
+                                                isHighlighted = false
+                                                false
+                                            })
                                 ) {
                                     Column(modifier = Modifier.padding(start = contentPadding, end = contentPadding)) {
                                         Row(Modifier.fillMaxWidth()) {
@@ -187,7 +201,7 @@ fun AppState.ModGridView(
 
                                             // Mod Author
                                             Text(
-                                                text = (mod.findFirstEnabled ?: mod.findHighestVersion)?.modInfo?.author
+                                                text = (mod.findFirstEnabledOrHighestVersion)?.modInfo?.author
                                                     ?: "",
                                                 color = SmolTheme.dimmedTextColor(),
                                                 modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
@@ -195,6 +209,32 @@ fun AppState.ModGridView(
                                                 overflow = TextOverflow.Ellipsis
                                             )
 
+                                            // Favorites
+                                            Row(
+                                                modifier = Modifier
+                                                    .width(favoritesWidth)
+                                                    .align(Alignment.CenterVertically),
+                                            ) {
+                                                val isFavorited = mod.id in profile.value.favoriteMods
+                                                if (isFavorited || isHighlighted) {
+                                                    Icon(
+                                                        imageVector =
+                                                        (if (isFavorited)
+                                                            Icons.Default.Favorite
+                                                        else Icons.Default.FavoriteBorder),
+                                                        contentDescription = null,
+                                                        modifier = Modifier
+                                                            .padding(end = 16.dp)
+                                                            .mouseClickable {
+                                                                SL.userManager.setModFavorited(
+                                                                    modId = mod.id,
+                                                                    newFavoriteValue = isFavorited.not()
+                                                                )
+                                                            },
+                                                        tint = MaterialTheme.colors.onSurface.copy(ContentAlpha.medium)
+                                                    )
+                                                }
+                                            }
                                             // Mod version (active or highest)
                                             Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {
                                                 if (highestLocalVersion != null && onlineVersion != null && onlineVersion > highestLocalVersion) {

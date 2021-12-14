@@ -29,7 +29,8 @@ class UserManager internal constructor(
             versionCheckerIntervalMillis = VersionChecker.DEFAULT_CHECK_INTERVAL_MILLIS,
             modProfiles = listOf(defaultModProfile),
             profileVersion = 0,
-            theme = "kemet"
+            theme = "kemet",
+            favoriteMods = emptyList()
         )
     })
 
@@ -79,6 +80,14 @@ class UserManager internal constructor(
                 return@updateUserProfile oldProfile.copy(modProfiles = oldProfile.modProfiles.filterNot { it.id == modProfileId })
                     .also { Timber.d { "Removed mod profile $profileToRemove" } }
             }
+        }
+    }
+
+    fun setModFavorited(modId: String, newFavoriteValue: Boolean) {
+        updateUserProfile { profile ->
+            profile.copy(favoriteMods =
+            if (newFavoriteValue) (profile.favoriteMods + modId).distinct()
+            else profile.favoriteMods.filter { it != modId })
         }
     }
 }

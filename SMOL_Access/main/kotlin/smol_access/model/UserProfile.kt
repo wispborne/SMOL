@@ -7,7 +7,8 @@ data class UserProfile(
     val versionCheckerIntervalMillis: Long?,
     val modProfiles: List<ModProfile>,
     val profileVersion: Int,
-    val theme: String?
+    val theme: String?,
+    val favoriteMods: List<ModId>
 ) {
     val activeModProfile: ModProfile
         get() = modProfiles.firstOrNull { it.id == activeModProfileId } ?: modProfiles.first()
