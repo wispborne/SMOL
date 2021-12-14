@@ -37,6 +37,9 @@ data class Mod(
     val findHighestVersion: ModVariant?
         get() = variants.maxByOrNull { it.modInfo.version }
 
+    val findFirstEnabledOrHighestVersion: ModVariant?
+        get() = findFirstEnabled ?: findHighestVersion
+
     val hasEnabledVariant: Boolean
         get() = findFirstEnabled != null
 

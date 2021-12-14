@@ -139,7 +139,9 @@ fun AppState.ModGridView(
                                 }
                             }
                             this.items(
-                                items = modsInGroup.map { ModRow(mod = it) }
+                                items = modsInGroup
+                                    .map { ModRow(mod = it) }
+                                    .sortedWith(compareBy { it.mod.findFirstEnabledOrHighestVersion?.modInfo?.name })
                             ) { modRow ->
                                 val mod = modRow.mod
                                 var showContextMenu by remember { mutableStateOf(false) }
