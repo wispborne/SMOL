@@ -8,7 +8,8 @@ data class UserProfile(
     val modProfiles: List<ModProfile>,
     val profileVersion: Int,
     val theme: String?,
-    val favoriteMods: List<ModId>
+    val favoriteMods: List<ModId>,
+    val modGridPrefs: ModGridPrefs
 ) {
     val activeModProfile: ModProfile
         get() = modProfiles.firstOrNull { it.id == activeModProfileId } ?: modProfiles.first()
@@ -26,4 +27,9 @@ data class UserProfile(
             val smolVariantId: String
         )
     }
+
+    data class ModGridPrefs(
+        val sortField: String?,
+        val isSortDescending: Boolean = true
+    )
 }

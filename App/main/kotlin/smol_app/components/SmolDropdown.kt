@@ -86,7 +86,7 @@ fun SmolDropdownWithButton(
 }
 
 @Composable
-fun SmolDropdownArrow(modifier: Modifier, expanded: Boolean) {
+fun SmolDropdownArrow(modifier: Modifier = Modifier, expanded: Boolean) {
     Image(
         modifier = modifier
             .width(16.dp)

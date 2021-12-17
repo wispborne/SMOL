@@ -30,7 +30,8 @@ class UserManager internal constructor(
             modProfiles = listOf(defaultModProfile),
             profileVersion = 0,
             theme = "kemet",
-            favoriteMods = emptyList()
+            favoriteMods = emptyList(),
+            modGridPrefs = UserProfile.ModGridPrefs(sortField = null, isSortDescending = true)
         )
     })
 

@@ -28,6 +28,7 @@ import smol_access.SL
 import smol_access.model.Mod
 import smol_app.components.SmolLinkText
 import smol_app.components.TiledImage
+import smol_app.modgrid.ModRow
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.withBrightness
 import smol_app.util.imageResource

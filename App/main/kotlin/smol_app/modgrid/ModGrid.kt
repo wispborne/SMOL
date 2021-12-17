@@ -1,11 +1,10 @@
-package smol_app.views
+package smol_app.modgrid
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -35,10 +34,12 @@ import smol_access.SL
 import smol_access.business.Dependencies
 import smol_access.model.Mod
 import smol_access.model.ModVariant
+import smol_access.model.UserProfile
 import smol_app.AppState
 import smol_app.components.*
 import smol_app.themes.SmolTheme
 import smol_app.util.*
+import smol_app.views.detailsPanel
 import java.awt.Cursor
 import java.awt.Desktop
 import kotlin.io.path.exists
@@ -59,6 +60,9 @@ fun AppState.ModGridView(
     var modInDebugDialog: Mod? by remember { mutableStateOf(null) }
     val largestVramUsage = SL.vramChecker.vramUsage.value?.values?.maxOf { it.bytesForMod }
     val profile = SL.userManager.activeProfile.collectAsState()
+    val activeSortField = profile.value.modGridPrefs.sortField?.let {
+        kotlin.runCatching { ModGridSortField.valueOf(it) }.getOrNull()
+    }
     val contentPadding = 16.dp
     val favoritesWidth = 40.dp
 
@@ -67,9 +71,17 @@ fun AppState.ModGridView(
             ListItem(modifier = Modifier.padding(start = contentPadding, end = contentPadding)) {
                 Row {
                     Spacer(Modifier.width(modGridViewDropdownWidth.dp))
-                    Text("Name", Modifier.weight(1f), fontWeight = FontWeight.Bold)
 
-                    Text("Author", Modifier.weight(1f), fontWeight = FontWeight.Bold)
+                    Row(Modifier.weight(1f)) {
+                        Text("Name", fontWeight = FontWeight.Bold)
+                        columnSortArrow(ModGridSortField.Name, activeSortField, profile)
+                    }
+
+                    Row(Modifier.weight(1f)) {
+                        val columnSortField = ModGridSortField.Author
+                        Text("Author", fontWeight = FontWeight.Bold)
+                        columnSortArrow(ModGridSortField.Author, activeSortField, profile)
+                    }
 
                     Spacer(modifier = Modifier.width(favoritesWidth))
                     SmolTooltipArea(modifier = Modifier.weight(1f),
@@ -92,6 +104,7 @@ fun AppState.ModGridView(
                                 painter = painterResource("more_info.png"),
                                 contentDescription = null
                             )
+                            columnSortArrow(ModGridSortField.VramImpact, activeSortField, profile)
                         }
                     }
 
@@ -99,8 +112,6 @@ fun AppState.ModGridView(
                 }
             }
             Box {
-                val state = rememberLazyListState()
-
                 LazyColumn(Modifier.fillMaxWidth()) {
                     mods
                         .filterNotNull()
@@ -145,6 +156,26 @@ fun AppState.ModGridView(
                                     .map { ModRow(mod = it) }
                                     .sortedWith(
                                         compareByDescending<ModRow> { it.mod.id in profile.value.favoriteMods }
+                                            .run {
+                                                fun getSortValue(modRow: ModRow): Comparable<*>? {
+                                                    return when (activeSortField) {
+                                                        ModGridSortField.Name -> modRow.mod.findFirstEnabledOrHighestVersion?.modInfo?.name
+                                                        ModGridSortField.Author -> modRow.mod.findFirstEnabledOrHighestVersion?.modInfo?.author
+                                                        ModGridSortField.VramImpact -> SL.vramChecker.vramUsage.value?.get(
+                                                            modRow.mod.findFirstEnabledOrHighestVersion?.smolId
+                                                        )?.bytesForMod
+                                                        else -> null
+                                                    }
+                                                }
+                                                return@run when {
+                                                    activeSortField == null -> thenBy { null }
+                                                    profile.value.modGridPrefs.isSortDescending ->
+                                                        thenByDescending { getSortValue(it) }
+                                                    else -> {
+                                                        thenBy { getSortValue(it) }
+                                                    }
+                                                }
+                                            }
                                             .thenBy { it.mod.findFirstEnabledOrHighestVersion?.modInfo?.name })
                             ) { modRow ->
                                 val mod = modRow.mod
@@ -376,6 +407,38 @@ fun AppState.ModGridView(
         if (modInDebugDialog != null) {
             debugDialog(mod = modInDebugDialog!!, onDismiss = { modInDebugDialog = null })
         }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun RowScope.columnSortArrow(
+    columnSortField: ModGridSortField,
+    sortField: ModGridSortField?,
+    profile: State<UserProfile>
+) {
+    Box(
+        modifier = Modifier
+            .align(Alignment.CenterVertically)
+            .mouseClickable {
+                SL.userManager.updateUserProfile {
+                    it.copy(
+                        modGridPrefs = it.modGridPrefs.copy(
+                            sortField = columnSortField.name,
+                            isSortDescending = if (sortField == columnSortField) {
+                                profile.value.modGridPrefs.isSortDescending.not()
+                            } else {
+                                true
+                            }
+                        )
+                    )
+                }
+            }
+    ) {
+        SmolDropdownArrow(
+            modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 8.dp, end = 12.dp),
+            expanded = sortField == columnSortField && profile.value.modGridPrefs.isSortDescending
+        )
     }
 }
 
