@@ -1,4 +1,4 @@
-package smol_app.components
+package smol_app.composables
 
 import androidx.compose.material.Icon
 import androidx.compose.material.Text

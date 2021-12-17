@@ -41,7 +41,7 @@ import smol_app.SLUI
 import smol_app.browser.chromium.CefBrowserPanel
 import smol_app.browser.chromium.ChromiumBrowser
 import smol_app.browser.javafx.javaFxBrowser
-import smol_app.components.*
+import smol_app.composables.*
 import smol_app.themes.SmolTheme
 import smol_app.util.*
 import timber.ktx.Timber

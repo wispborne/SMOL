@@ -15,7 +15,7 @@ import com.arkivanov.decompose.pop
 import smol_access.Constants
 import smol_access.SL
 import smol_app.AppState
-import smol_app.components.*
+import smol_app.composables.*
 import smol_app.themes.SmolTheme.toColors
 import smol_app.util.openInDesktop
 import utilities.rootCause

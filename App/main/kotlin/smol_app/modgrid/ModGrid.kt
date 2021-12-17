@@ -36,7 +36,7 @@ import smol_access.model.Mod
 import smol_access.model.ModVariant
 import smol_access.model.UserProfile
 import smol_app.AppState
-import smol_app.components.*
+import smol_app.composables.*
 import smol_app.themes.SmolTheme
 import smol_app.util.*
 import smol_app.views.detailsPanel

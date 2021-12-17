@@ -1,4 +1,4 @@
-package smol_app.components
+package smol_app.composables
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.TooltipArea

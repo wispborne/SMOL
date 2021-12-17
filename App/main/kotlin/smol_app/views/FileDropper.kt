@@ -16,8 +16,8 @@ import kotlinx.coroutines.launch
 import org.tinylog.Logger
 import smol_access.SL
 import smol_app.AppState
-import smol_app.components.SmolAlertDialog
-import smol_app.components.SmolButton
+import smol_app.composables.SmolAlertDialog
+import smol_app.composables.SmolButton
 import java.awt.dnd.DropTarget
 import java.awt.dnd.DropTargetDragEvent
 import java.awt.dnd.DropTargetDropEvent

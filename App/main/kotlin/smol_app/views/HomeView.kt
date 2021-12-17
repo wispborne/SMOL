@@ -29,7 +29,7 @@ import smol_access.model.Mod
 import smol_access.util.IOLock
 import smol_app.AppState
 import smol_app.cli.SmolCLI
-import smol_app.components.*
+import smol_app.composables.*
 import smol_app.modgrid.ModGridView
 import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
