@@ -3,7 +3,13 @@ package smol_app.home
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
@@ -40,13 +46,13 @@ import smol_app.util.filterModGrid
 import smol_app.util.replaceAllUsingDifference
 import smol_app.util.vmParamsManager
 import smol_app.views.vmParamsContextMenu
+import timber.LogLevel
 import timber.ktx.Timber
 import utilities.equalsAny
 import utilities.toFileOrNull
 import utilities.toPathOrNull
 import utilities.trace
 import java.awt.FileDialog
-import java.util.concurrent.LinkedBlockingQueue
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.exists
 
@@ -184,41 +190,80 @@ fun AppState.homeView(
                         .padding(bottom = bottomBarHeight, top = 8.dp, start = 8.dp, end = 8.dp),
                     shape = RectangleShape
                 ) {
-                    val shownLines = 200
-                    val log = remember { LinkedBlockingQueue<String>(shownLines) }
+                    val linesToShow = 200
+                    val log = remember { mutableStateListOf<String>() }
                     var text by remember { mutableStateOf("") }
 
-                    DisposableEffect(Unit) {
-                        val job = scope.launch {
+                    LaunchedEffect(Unit) {
+                        scope.launch {
                             Logging.logFlow.collect {
-                                if (log.size >= shownLines - 1) log.remove()
+                                if (log.size >= linesToShow) log.removeFirstOrNull()
                                 log.add(it)
                                 text = log.joinToString(separator = "\n")
                             }
                         }
-
-                        onDispose { job.cancel() }
                     }
 
-                    Box {
-                        Text(
-                            modifier = Modifier.padding(8.dp)
-                                .verticalScroll(vertScrollState)
-                                .horizontalScroll(horzScrollState)
-                                .fillMaxHeight(),
-                            text = text,
-                            softWrap = false,
-                            fontFamily = SmolTheme.fireCodeFont,
-                            fontSize = 14.sp,
-                            maxLines = shownLines
-                        )
+                    Box(modifier = Modifier.padding(8.dp)) {
+                        val lazyListState = rememberLazyListState()
+                        Column {
+                            Row {
+                                val selectedLogLevel = remember { Logging.logLevel }
+                                SmolDropdownWithButton(
+                                    modifier = Modifier.padding(bottom = 4.dp),
+                                    items = LogLevel.values().map {
+                                        SmolDropdownMenuItem(
+                                            text = it.name.lowercase().replaceFirstChar { it.uppercaseChar() }) {
+                                            Logging.logLevel = it
+                                        }
+                                    },
+                                    initiallySelectedIndex = selectedLogLevel.ordinal
+                                )
+                                Spacer(Modifier.weight(1f))
+                                IconButton(
+                                    onClick = { showLogPanel = false }) {
+                                    Icon(imageVector = Icons.Default.Close, contentDescription = null)
+                                }
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth()
+                                    .horizontalScroll(horzScrollState)
+                            ) {
+                                SelectionContainer {
+                                    LazyColumn(
+                                        modifier = Modifier
+                                            .fillMaxWidth(),
+                                        state = lazyListState
+                                    ) {
+                                        items(log) {
+                                            Text(
+                                                text = it,
+                                                softWrap = false,
+                                                fontFamily = SmolTheme.fireCodeFont,
+                                                fontSize = 14.sp,
+                                                color = when (it.trim().firstOrNull()?.lowercase()) {
+                                                    "v" -> MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.disabled)
+                                                    "d" -> MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium)
+                                                    "i" -> MaterialTheme.colors.onSurface
+                                                    "w" -> MaterialTheme.colors.error.copy(alpha = ContentAlpha.high)
+                                                    "e" -> MaterialTheme.colors.error
+                                                    else -> MaterialTheme.colors.onSurface
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            HorizontalScrollbar(
+                                modifier = Modifier.align(Alignment.CenterHorizontally).height(8.dp).fillMaxWidth(),
+                                adapter = ScrollbarAdapter(horzScrollState)
+                            )
+                        }
                         VerticalScrollbar(
                             modifier = Modifier.width(8.dp).align(Alignment.CenterEnd).fillMaxHeight(),
-                            adapter = ScrollbarAdapter(vertScrollState)
-                        )
-                        HorizontalScrollbar(
-                            modifier = Modifier.height(8.dp).align(Alignment.BottomCenter).fillMaxWidth(),
-                            adapter = ScrollbarAdapter(horzScrollState)
+                            adapter = ScrollbarAdapter(lazyListState)
                         )
                     }
                 }

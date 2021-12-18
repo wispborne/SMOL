@@ -18,8 +18,8 @@ import smol_app.themes.SmolTheme
 
 data class SmolDropdownMenuItem(
     val text: String,
-    val backgroundColor: Color?,
-    val contentColor: Color?,
+    val backgroundColor: Color? = null,
+    val contentColor: Color? = null,
     val onClick: () -> Unit
 )
 

@@ -10,6 +10,7 @@ import timber.Timber
 import kotlin.properties.Delegates
 
 object Logging {
+    private var wasTinyLogConfigured = false // Dumb library doesn't let you reconfigure and crashes if you try.
     val logFlow = MutableSharedFlow<String>(
         replay = 200,
         extraBufferCapacity = 200,
@@ -19,6 +20,7 @@ object Logging {
     var logLevel by Delegates.observable(LogLevel.DEBUG) { _, _, _ ->
         setup()
     }
+
     private val tinyLogLevel
         get() = when (logLevel) {
             LogLevel.VERBOSE -> Level.TRACE
@@ -32,21 +34,25 @@ object Logging {
     fun setup() {
         val format = "{date:MM-dd HH:mm:ss.SSS} {class}.{method}:{line} {level}: {message}"
         val tinyLogLevelLower = tinyLogLevel.name.lowercase()
-        Configuration.replace(
-            mapOf(
-//                "writer1" to "console",
-//                "writer1.level" to tinyLogLevelLower,
-//                "writer1.format" to format,
 
-                "writer2" to "rolling file",
-                "writer2.level" to tinyLogLevelLower,
-                "writer2.format" to format,
-                "writer2.file" to "SMOL_log.{count}.log",
-                "writer2.buffered" to "true",
-                "writer2.backups" to "2",
-                "writer2.policies" to "size: 10mb",
+        if (!wasTinyLogConfigured) {
+            Configuration.replace(
+                mapOf(
+                    //                "writer1" to "console",
+                    //                "writer1.level" to tinyLogLevelLower,
+                    //                "writer1.format" to format,
+
+                    "writer2" to "rolling file",
+                    "writer2.level" to tinyLogLevelLower,
+                    "writer2.format" to format,
+                    "writer2.file" to "SMOL_log.{count}.log",
+                    "writer2.buffered" to "true",
+                    "writer2.backups" to "2",
+                    "writer2.policies" to "size: 10mb",
+                )
             )
-        )
+            wasTinyLogConfigured = true
+        }
 
         Thread.setDefaultUncaughtExceptionHandler { _, ex ->
             Timber.e(ex)
