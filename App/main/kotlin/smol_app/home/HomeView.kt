@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.WindowPosition.PlatformDefault.y
 import com.arkivanov.decompose.push
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -134,6 +135,7 @@ fun AppState.homeView(
                             .focusRequester(searchFocusRequester())
                             .widthIn(max = 300.dp)
                             .padding(end = 16.dp)
+                            .offset(y = (-3).dp)
                             .align(Alignment.CenterVertically),
                         tooltipText = "Hotkey: Ctrl-F",
                         label = "Filter"
@@ -152,6 +154,7 @@ fun AppState.homeView(
                         modifier = Modifier
                             .widthIn(max = 300.dp)
                             .padding(end = 16.dp)
+                            .offset(y = (-3).dp)
                             .align(Alignment.CenterVertically)
                     )
                 }
