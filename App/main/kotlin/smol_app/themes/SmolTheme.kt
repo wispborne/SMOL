@@ -19,6 +19,7 @@ object SmolTheme {
     val warningOrange = Color(java.awt.Color.decode("#F95D13").rgb)
 
     val cornerClipping = 8.dp
+    val bottomBarHeight = 64.dp
     fun smolNormalButtonShape() = CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp)
     fun smolFullyClippedButtonShape() = CutCornerShape(size = cornerClipping)
 

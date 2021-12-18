@@ -18,7 +18,7 @@ import kotlinx.coroutines.launch
 import smol_access.Constants
 import smol_access.SL
 import smol_app.AppState
-import smol_app.SLUI
+import smol_app.UI
 import smol_app.browser.BrowserUtils
 import smol_app.browser.ForumWebpageModifier
 import smol_app.browser.WebViewHolder
@@ -68,7 +68,7 @@ fun createWebView(
                     // check to see if newLoc is downloadable.
                     // Use GlobalScope, we don't want this to be canceled
                     GlobalScope.launch {
-                        SLUI.downloader.download(url = newLoc)
+                        SL.UI.downloader.download(url = newLoc)
                     }
                 }
                 loadWorker.exceptionProperty().addListener { _, _, throwable ->

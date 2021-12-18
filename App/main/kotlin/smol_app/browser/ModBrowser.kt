@@ -37,7 +37,7 @@ import smol_access.Constants
 import smol_access.SL
 import smol_access.config.Platform
 import smol_app.AppState
-import smol_app.SLUI
+import smol_app.SL_UI
 import smol_app.browser.chromium.CefBrowserPanel
 import smol_app.browser.chromium.ChromiumBrowser
 import smol_app.browser.javafx.javaFxBrowser
@@ -88,11 +88,11 @@ fun AppState.ModBrowserView(
                 fontWeight = FontWeight.Bold
             )
             Spacer(Modifier.weight(1f))
-            downloadBar(modifier = Modifier.padding(top = 4.dp, bottom = 4.dp))
+//            downloadBar(modifier = Modifier.padding(top = 4.dp, bottom = 4.dp))
             Spacer(modifier = Modifier.width(16.dp))
         }
-    }) {
-        Column(modifier) {
+    }, content = {
+        Column(modifier.padding(bottom = SmolTheme.bottomBarHeight - 16.dp)) {
             Row(modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp, top = 8.dp)) {
                 Column {
                     smolSearchField(
@@ -157,10 +157,11 @@ fun AppState.ModBrowserView(
                                     var download: DownloadItem? = null
                                     override fun onStart(suggestedFileName: String?, totalBytes: Long) {
                                         download = DownloadItem(
+                                            id = UUID.randomUUID().toString(),
                                             path = getDownloadPathFor(suggestedFileName),
                                             totalBytes = totalBytes
                                         )
-                                        SLUI.downloadManager.addDownload(download!!)
+                                        SL_UI.downloadManager.addDownload(download!!)
                                     }
 
                                     override fun onProgressUpdate(
@@ -212,7 +213,15 @@ fun AppState.ModBrowserView(
                 }
             }
         }
-    }
+    },
+        bottomBar = {
+            BottomAppBar(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+
+            }
+        }
+    )
 
     if (alertDialogMessage != null) {
         SmolAlertDialog(
@@ -294,7 +303,7 @@ fun downloadBar(
     var downloads by remember { mutableStateOf<List<DownloadItem>>(listOf()) }
 
     rememberCoroutineScope { Dispatchers.Default }.launch {
-        SLUI.downloadManager.downloads.collect {
+        SL_UI.downloadManager.downloads.collect {
             withContext(Dispatchers.Main) {
                 downloads = it
             }
@@ -303,76 +312,82 @@ fun downloadBar(
 
     LazyRow(modifier) {
         items(downloads) { download ->
-            var progressPercent: Float? by remember { mutableStateOf(null) }
-            var progress by remember { mutableStateOf(0L) }
-            val status = download.status.value
-            val total = download.totalBytes
+            downloadCard(download = download)
+        }
+    }
+}
 
-            SmolTooltipArea(
-                tooltip = {
-                    SmolTooltipText(text = buildString {
-                        appendLine(download.path.absolutePathString())
-                        if (status is DownloadItem.Status.Failed) appendLine(status.error.message)
-                    })
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun downloadCard(modifier: Modifier = Modifier, download: DownloadItem) {
+    var progressPercent: Float? by remember { mutableStateOf(null) }
+    var progress by remember { mutableStateOf(0L) }
+    val status = download.status.value
+    val total = download.totalBytes
+
+    SmolTooltipArea(
+        modifier = modifier,
+        tooltip = {
+            SmolTooltipText(text = buildString {
+                appendLine(download.path.absolutePathString())
+                if (status is DownloadItem.Status.Failed) appendLine(status.error.message)
+            })
+        }
+    ) {
+        Card(
+            modifier = Modifier,
+            backgroundColor = MaterialTheme.colors.background
+        ) {
+            rememberCoroutineScope { Dispatchers.Default }.launch {
+                download.progress.collect { newProgress ->
+                    withContext(Dispatchers.Main) {
+                        progress = newProgress
+                        progressPercent = if (total != null)
+                            (newProgress.toFloat() / total.toFloat())
+                        else 0f
+                    }
                 }
-            ) {
-                Card(
-                    modifier = Modifier.padding(start = 16.dp),
-                    backgroundColor = MaterialTheme.colors.background
+            }
+            Row(modifier = Modifier.padding(start = 8.dp, end = 8.dp)) {
+                Column(
+                    modifier = Modifier
+                        .padding(start = 4.dp, top = 4.dp, bottom = 4.dp, end = 8.dp)
+                        .mouseClickable {
+                            kotlin.runCatching { download.path.parent.openInDesktop() }
+                                .onFailure { Timber.e(it) }
+                        }
                 ) {
-
-                    rememberCoroutineScope { Dispatchers.Default }.launch {
-                        download.progress.collect { newProgress ->
-                            withContext(Dispatchers.Main) {
-                                progress = newProgress
-                                progressPercent = if (total != null)
-                                    (newProgress.toFloat() / total.toFloat())
-                                else 0f
+                    val progressMiB = progress.bytesAsReadableMiB
+                    val totalMiB = total?.bytesAsReadableMiB
+                    Text(
+                        modifier = Modifier,
+                        text = download.path.name,
+                        fontSize = 12.sp
+                    )
+                    Text(
+                        modifier = Modifier.padding(top = 4.dp),
+                        text = when (status) {
+                            is DownloadItem.Status.NotStarted -> "Starting"
+                            is DownloadItem.Status.Downloading -> {
+                                "$progressMiB${if (totalMiB != null) " / $totalMiB" else ""}}"
                             }
-                        }
-                    }
-                    Row(modifier = Modifier.padding(start = 8.dp, end = 8.dp)) {
-                        Column(
-                            modifier = Modifier
-                                .padding(start = 4.dp, top = 4.dp, bottom = 4.dp, end = 8.dp)
-                                .mouseClickable {
-                                    kotlin.runCatching { download.path.parent.openInDesktop() }
-                                        .onFailure { Timber.e(it) }
-                                }
-                        ) {
-                            val progressMiB = progress.bytesAsReadableMiB
-                            val totalMiB = total?.bytesAsReadableMiB
-                            Text(
-                                modifier = Modifier,
-                                text = download.path.name,
-                                fontSize = 12.sp
-                            )
-                            Text(
-                                modifier = Modifier.padding(top = 4.dp),
-                                text = when (status) {
-                                    is DownloadItem.Status.NotStarted -> "Starting"
-                                    is DownloadItem.Status.Downloading -> {
-                                        "$progressMiB${if (totalMiB != null) " / $totalMiB" else ""}}"
-                                    }
-                                    is DownloadItem.Status.Completed -> "Completed $progressMiB"
-                                    is DownloadItem.Status.Failed -> "Failed: ${status.error}"
-                                },
-                                fontSize = 12.sp
-                            )
-                        }
-                        if (progressPercent != null || status == DownloadItem.Status.Completed) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp).align(Alignment.CenterVertically),
-                                progress = progressPercent ?: 1f,
-                                color = MaterialTheme.colors.onSurface
-                            )
-                        } else {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp).align(Alignment.CenterVertically),
-                                color = MaterialTheme.colors.onSurface
-                            )
-                        }
-                    }
+                            is DownloadItem.Status.Completed -> "Completed $progressMiB"
+                            is DownloadItem.Status.Failed -> "Failed: ${status.error}"
+                        },
+                        fontSize = 12.sp
+                    )
+                }
+                if (progressPercent != null || status == DownloadItem.Status.Completed) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp).align(Alignment.CenterVertically),
+                        progress = progressPercent ?: 1f,
+                        color = MaterialTheme.colors.onSurface
+                    )
+                } else {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp).align(Alignment.CenterVertically),
+                        color = MaterialTheme.colors.onSurface
+                    )
                 }
             }
         }

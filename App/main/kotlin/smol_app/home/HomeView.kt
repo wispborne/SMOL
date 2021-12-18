@@ -40,6 +40,7 @@ import smol_app.cli.SmolCLI
 import smol_app.composables.*
 import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
+import smol_app.themes.SmolTheme.bottomBarHeight
 import smol_app.themes.SmolTheme.withBrightness
 import smol_app.util.currentPlatform
 import smol_app.util.filterModGrid
@@ -73,7 +74,6 @@ fun AppState.homeView(
     val onRefreshingMods = { refreshing: Boolean -> isRefreshingMods = refreshing }
     val scope = rememberCoroutineScope()
     val isWriteLocked = IOLock.stateFlow.collectAsState()
-    val bottomBarHeight = 64.dp
 
     LaunchedEffect(refreshTrigger) {
         scope.launch {
@@ -182,12 +182,6 @@ fun AppState.homeView(
 
             if (showLogPanel) {
                 logPanel(bottomBarHeight, scope) { showLogPanel = false }
-            }
-
-            val toasterState = remember { ToasterState() }
-            toaster(toasterState = toasterState)
-            LaunchedEffect(Unit) {
-                toasterState.addItem(Toast { SmolButton(onClick = {}) { Text("test") } })
             }
         },
         bottomBar = {

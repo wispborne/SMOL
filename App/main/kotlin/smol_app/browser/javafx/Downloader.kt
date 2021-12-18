@@ -10,6 +10,7 @@ import timber.ktx.Timber
 import utilities.transferTo
 import java.net.URL
 import java.nio.file.Path
+import java.util.*
 import kotlin.io.path.*
 
 class Downloader(
@@ -62,6 +63,7 @@ class Downloader(
                 val downloadSize = conn.getHeaderField("Content-Length")?.toLongOrNull()
 
                 val download = DownloadItem(
+                    id = UUID.randomUUID().toString(),
                     path = file,
                     totalBytes = downloadSize
                 )

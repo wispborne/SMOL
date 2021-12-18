@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import java.nio.file.Path
 
 data class DownloadItem(
+    val id: String,
     val path: Path,
     val totalBytes: Long?,
 ) {
