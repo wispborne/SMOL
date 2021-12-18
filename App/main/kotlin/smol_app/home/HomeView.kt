@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.arkivanov.decompose.push
@@ -34,8 +35,7 @@ import smol_access.business.asWatchChannel
 import smol_access.config.Platform
 import smol_access.model.Mod
 import smol_access.util.IOLock
-import smol_app.AppState
-import smol_app.Logging
+import smol_app.*
 import smol_app.cli.SmolCLI
 import smol_app.composables.*
 import smol_app.navigation.Screen
@@ -181,92 +181,13 @@ fun AppState.homeView(
             }
 
             if (showLogPanel) {
-                val vertScrollState = rememberScrollState(200)
-                val horzScrollState = rememberScrollState()
-                Card(
-                    modifier = Modifier
-                        .width((window.width / 2).dp)
-                        .fillMaxHeight()
-                        .padding(bottom = bottomBarHeight, top = 8.dp, start = 8.dp, end = 8.dp),
-                    shape = RectangleShape
-                ) {
-                    val linesToShow = 200
-                    val log = remember { mutableStateListOf<String>() }
-                    var text by remember { mutableStateOf("") }
+                logPanel(bottomBarHeight, scope) { showLogPanel = false }
+            }
 
-                    LaunchedEffect(Unit) {
-                        scope.launch {
-                            Logging.logFlow.collect {
-                                if (log.size >= linesToShow) log.removeFirstOrNull()
-                                log.add(it)
-                                text = log.joinToString(separator = "\n")
-                            }
-                        }
-                    }
-
-                    Box(modifier = Modifier.padding(8.dp)) {
-                        val lazyListState = rememberLazyListState()
-                        Column {
-                            Row {
-                                val selectedLogLevel = remember { Logging.logLevel }
-                                SmolDropdownWithButton(
-                                    modifier = Modifier.padding(bottom = 4.dp),
-                                    items = LogLevel.values().map {
-                                        SmolDropdownMenuItem(
-                                            text = it.name.lowercase().replaceFirstChar { it.uppercaseChar() }) {
-                                            Logging.logLevel = it
-                                        }
-                                    },
-                                    initiallySelectedIndex = selectedLogLevel.ordinal
-                                )
-                                Spacer(Modifier.weight(1f))
-                                IconButton(
-                                    onClick = { showLogPanel = false }) {
-                                    Icon(imageVector = Icons.Default.Close, contentDescription = null)
-                                }
-                            }
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxWidth()
-                                    .horizontalScroll(horzScrollState)
-                            ) {
-                                SelectionContainer {
-                                    LazyColumn(
-                                        modifier = Modifier
-                                            .fillMaxWidth(),
-                                        state = lazyListState
-                                    ) {
-                                        items(log) {
-                                            Text(
-                                                text = it,
-                                                softWrap = false,
-                                                fontFamily = SmolTheme.fireCodeFont,
-                                                fontSize = 14.sp,
-                                                color = when (it.trim().firstOrNull()?.lowercase()) {
-                                                    "v" -> MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.disabled)
-                                                    "d" -> MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium)
-                                                    "i" -> MaterialTheme.colors.onSurface
-                                                    "w" -> MaterialTheme.colors.error.copy(alpha = ContentAlpha.high)
-                                                    "e" -> MaterialTheme.colors.error
-                                                    else -> MaterialTheme.colors.onSurface
-                                                }
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                            HorizontalScrollbar(
-                                modifier = Modifier.align(Alignment.CenterHorizontally).height(8.dp).fillMaxWidth(),
-                                adapter = ScrollbarAdapter(horzScrollState)
-                            )
-                        }
-                        VerticalScrollbar(
-                            modifier = Modifier.width(8.dp).align(Alignment.CenterEnd).fillMaxHeight(),
-                            adapter = ScrollbarAdapter(lazyListState)
-                        )
-                    }
-                }
+            val toasterState = remember { ToasterState() }
+            toaster(toasterState = toasterState)
+            LaunchedEffect(Unit) {
+                toasterState.addItem(Toast { SmolButton(onClick = {}) { Text("test") } })
             }
         },
         bottomBar = {
@@ -288,7 +209,9 @@ fun AppState.homeView(
                         LaunchedEffect(Unit) {
                             scope.launch {
                                 Logging.logFlow.collectLatest {
-                                    newestLogLine = it
+                                    if (it.trim().startsWith("E/", ignoreCase = true)) {
+                                        newestLogLine = it
+                                    }
                                 }
                             }
                         }
@@ -301,6 +224,99 @@ fun AppState.homeView(
             }
         }
     )
+}
+
+@Composable
+private fun AppState.logPanel(
+    bottomBarHeight: Dp,
+    scope: CoroutineScope,
+    onHideModPanel: () -> Unit
+) {
+    val horzScrollState = rememberScrollState()
+    Card(
+        modifier = Modifier
+            .width((window.width / 2).dp)
+            .fillMaxHeight()
+            .padding(bottom = bottomBarHeight, top = 8.dp, start = 8.dp, end = 8.dp),
+        shape = RectangleShape
+    ) {
+        val linesToShow = 200
+        val log = remember { mutableStateListOf<String>() }
+        var text by remember { mutableStateOf("") }
+
+        LaunchedEffect(Unit) {
+            scope.launch {
+                Logging.logFlow.collect {
+                    if (log.size >= linesToShow) log.removeFirstOrNull()
+                    log.add(it)
+                    text = log.joinToString(separator = "\n")
+                }
+            }
+        }
+
+        Box(modifier = Modifier.padding(8.dp)) {
+            val lazyListState = rememberLazyListState()
+            Column {
+                Row {
+                    val selectedLogLevel = remember { Logging.logLevel }
+                    SmolDropdownWithButton(
+                        modifier = Modifier.padding(bottom = 4.dp),
+                        items = LogLevel.values().map {
+                            SmolDropdownMenuItem(
+                                text = it.name.lowercase().replaceFirstChar { it.uppercaseChar() }) {
+                                Logging.logLevel = it
+                            }
+                        },
+                        initiallySelectedIndex = selectedLogLevel.ordinal
+                    )
+                    Spacer(Modifier.weight(1f))
+                    IconButton(
+                        onClick = { onHideModPanel() }) {
+                        Icon(imageVector = Icons.Default.Close, contentDescription = null)
+                    }
+                }
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .horizontalScroll(horzScrollState)
+                ) {
+                    SelectionContainer {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            state = lazyListState
+                        ) {
+                            items(log) {
+                                Text(
+                                    text = it,
+                                    softWrap = false,
+                                    fontFamily = SmolTheme.fireCodeFont,
+                                    fontSize = 14.sp,
+                                    color = when (it.trim().firstOrNull()?.lowercase()) {
+                                        "v" -> MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.disabled)
+                                        "d" -> MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium)
+                                        "i" -> MaterialTheme.colors.onSurface
+                                        "w" -> MaterialTheme.colors.error.copy(alpha = ContentAlpha.high)
+                                        "e" -> MaterialTheme.colors.error
+                                        else -> MaterialTheme.colors.onSurface
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+                HorizontalScrollbar(
+                    modifier = Modifier.align(Alignment.CenterHorizontally).height(8.dp).fillMaxWidth(),
+                    adapter = ScrollbarAdapter(horzScrollState)
+                )
+            }
+            VerticalScrollbar(
+                modifier = Modifier.width(8.dp).align(Alignment.CenterEnd).fillMaxHeight(),
+                adapter = ScrollbarAdapter(lazyListState)
+            )
+        }
+    }
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
