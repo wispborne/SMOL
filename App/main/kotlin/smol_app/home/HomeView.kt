@@ -1,8 +1,7 @@
-package smol_app.views
+package smol_app.home
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.border
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.*
@@ -11,10 +10,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.arkivanov.decompose.push
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -28,9 +29,9 @@ import smol_access.config.Platform
 import smol_access.model.Mod
 import smol_access.util.IOLock
 import smol_app.AppState
+import smol_app.Logging
 import smol_app.cli.SmolCLI
 import smol_app.composables.*
-import smol_app.modgrid.ModGridView
 import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.withBrightness
@@ -38,12 +39,14 @@ import smol_app.util.currentPlatform
 import smol_app.util.filterModGrid
 import smol_app.util.replaceAllUsingDifference
 import smol_app.util.vmParamsManager
+import smol_app.views.vmParamsContextMenu
 import timber.ktx.Timber
 import utilities.equalsAny
 import utilities.toFileOrNull
 import utilities.toPathOrNull
 import utilities.trace
 import java.awt.FileDialog
+import java.util.concurrent.LinkedBlockingQueue
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.exists
 
@@ -64,6 +67,7 @@ fun AppState.homeView(
     val onRefreshingMods = { refreshing: Boolean -> isRefreshingMods = refreshing }
     val scope = rememberCoroutineScope()
     val isWriteLocked = IOLock.stateFlow.collectAsState()
+    val bottomBarHeight = 64.dp
 
     LaunchedEffect(refreshTrigger) {
         scope.launch {
@@ -91,8 +95,9 @@ fun AppState.homeView(
         onDispose { handle.cancel() }
     }
 
+
 //    var showConfirmMigrateDialog: Boolean by remember { mutableStateOf(false) }
-    val composableScope = rememberCoroutineScope { Dispatchers.Default }
+    var showLogPanel by remember { mutableStateOf(false) }
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -168,18 +173,84 @@ fun AppState.homeView(
                     }
                 }
             }
+
+            if (showLogPanel) {
+                val vertScrollState = rememberScrollState(200)
+                val horzScrollState = rememberScrollState()
+                Card(
+                    modifier = Modifier
+                        .width((window.width / 2).dp)
+                        .fillMaxHeight()
+                        .padding(bottom = bottomBarHeight, top = 8.dp, start = 8.dp, end = 8.dp),
+                    shape = RectangleShape
+                ) {
+                    val shownLines = 200
+                    val log = remember { LinkedBlockingQueue<String>(shownLines) }
+                    var text by remember { mutableStateOf("") }
+
+                    DisposableEffect(Unit) {
+                        val job = scope.launch {
+                            Logging.logFlow.collect {
+                                if (log.size >= shownLines - 1) log.remove()
+                                log.add(it)
+                                text = log.joinToString(separator = "\n")
+                            }
+                        }
+
+                        onDispose { job.cancel() }
+                    }
+
+                    Box {
+                        Text(
+                            modifier = Modifier.padding(8.dp)
+                                .verticalScroll(vertScrollState)
+                                .horizontalScroll(horzScrollState)
+                                .fillMaxHeight(),
+                            text = text,
+                            softWrap = false,
+                            fontFamily = SmolTheme.fireCodeFont,
+                            fontSize = 14.sp,
+                            maxLines = shownLines
+                        )
+                        VerticalScrollbar(
+                            modifier = Modifier.width(8.dp).align(Alignment.CenterEnd).fillMaxHeight(),
+                            adapter = ScrollbarAdapter(vertScrollState)
+                        )
+                        HorizontalScrollbar(
+                            modifier = Modifier.height(8.dp).align(Alignment.BottomCenter).fillMaxWidth(),
+                            adapter = ScrollbarAdapter(horzScrollState)
+                        )
+                    }
+                }
+            }
         },
         bottomBar = {
             BottomAppBar(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(Modifier.weight(1f)) {
+                Column(modifier = Modifier.fillMaxWidth()) {
                     Row {
-                        var status by remember { mutableStateOf("") }
-                        scope.launch {
-                            SL.archives.archiveMovementStatusFlow.collectLatest { status = it }
+                        SmolTooltipArea(tooltip = { SmolTooltipText(text = "Show/Hide Logs") }) {
+                            IconButton(
+                                modifier = Modifier.padding(start = 8.dp),
+                                onClick = { showLogPanel = showLogPanel.not() }
+                            ) {
+                                Icon(painter = painterResource("icon-log.svg"), contentDescription = null)
+                            }
                         }
-                        Text(text = status, modifier = Modifier.align(Alignment.CenterVertically).padding(8.dp))
+
+                        var newestLogLine by remember { mutableStateOf("") }
+                        LaunchedEffect(Unit) {
+                            scope.launch {
+                                Logging.logFlow.collectLatest {
+                                    newestLogLine = it
+                                }
+                            }
+                        }
+                        Text(
+                            text = newestLogLine,
+                            modifier = Modifier.align(Alignment.CenterVertically).padding(start = 8.dp)
+                        )
                     }
                 }
             }

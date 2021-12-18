@@ -152,22 +152,22 @@ class Timber private constructor() {
                 return
             }
 
-            var message = message
-            if (message.isNullOrEmpty()) {
+            var msg = message
+            if (msg.isNullOrEmpty()) {
                 if (t == null) {
                     return  // Swallow message if it's null and there's no throwable.
                 }
-                message = getStackTraceString(t)
+                msg = getStackTraceString(t)
             } else {
                 if (args.isNotEmpty()) {
-                    message = formatMessage(message, args)
+                    msg = formatMessage(msg, args)
                 }
                 if (t != null) {
-                    message += "\n" + getStackTraceString(t)
+                    msg += "\n" + getStackTraceString(t)
                 }
             }
 
-            log(priority, tag, message, t)
+            log(priority, tag, msg, t)
         }
 
         /** Formats a log message with optional arguments. */
@@ -195,7 +195,7 @@ class Timber private constructor() {
     }
 
     /** A [Tree] for debug builds. Automatically infers the tag from the calling class. */
-    open class DebugTree(var logLevel: LogLevel) : Tree() {
+    open class DebugTree(var logLevel: LogLevel, val appenders: List<(String) -> Unit> = emptyList()) : Tree() {
 
         override val tag: String?
             get() = super.tag ?: findClassName()
@@ -222,7 +222,7 @@ class Timber private constructor() {
                 var newline = message.indexOf('\n', i)
                 newline = if (newline != -1) newline else length
                 do {
-                    val end = Math.min(newline, i + MAX_LOG_LENGTH)
+                    val end = newline.coerceAtMost(i + MAX_LOG_LENGTH)
                     val part = message.substring(i, end)
                     logToConsole(priority, tag, part)
                     i = end
@@ -240,6 +240,8 @@ class Timber private constructor() {
             } else {
                 System.err.println(formattedMsg)
             }
+
+            appenders.forEach { it.invoke(formattedMsg) }
         }
 
         companion object {

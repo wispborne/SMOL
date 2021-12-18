@@ -1,5 +1,7 @@
 package smol_app
 
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import org.tinylog.Level
 import org.tinylog.Logger
 import org.tinylog.configuration.Configuration
@@ -8,6 +10,12 @@ import timber.Timber
 import kotlin.properties.Delegates
 
 object Logging {
+    val logFlow = MutableSharedFlow<String>(
+        replay = 200,
+        extraBufferCapacity = 200,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+
     var logLevel by Delegates.observable(LogLevel.DEBUG) { _, _, _ ->
         setup()
     }
@@ -45,7 +53,12 @@ object Logging {
         }
 
         Timber.uprootAll()
-        Timber.plant(Timber.DebugTree(logLevel))
+        Timber.plant(
+            Timber.DebugTree(
+                logLevel = logLevel,
+                appenders = listOf { logMessage -> logFlow.tryEmit(logMessage) }
+            )
+        )
         Timber.plant(tinyLoggerTree())
     }
 

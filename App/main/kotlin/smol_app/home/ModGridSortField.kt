@@ -1,4 +1,4 @@
-package smol_app.modgrid
+package smol_app.home
 
 enum class ModGridSortField {
     Name,
