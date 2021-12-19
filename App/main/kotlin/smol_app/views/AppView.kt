@@ -49,21 +49,21 @@ fun AppState.appView() {
                 FileDropper()
 
                 // Downloads
-                val downloads = SL.UI.downloadManager.downloads.collectAsState()
+                val downloads = SL.UI.downloadManager.downloads.collectAsState().value
                 toaster(
                     modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp),
                     toasterState = toasterState,
-                    items = downloads.value.map {
+                    items = downloads.map {
                         Toast(id = it.id, timeoutMillis = null) { downloadCard(download = it) }
                     },
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 )
 
-                downloads.value
-                    .filter { it.status.value is DownloadItem.Status.Completed }
-                    .forEach {
-                        if (!toasterState.timersByToastId.containsKey(it.id)) {
-                            toasterState.timersByToastId[it.id] = Toaster.defaultTimeoutMillis
+                downloads.map { it to it.status.collectAsState() }
+                    .filter { (_, status) -> status.value is DownloadItem.Status.Completed }
+                    .forEach { (item, _) ->
+                        if (!toasterState.timersByToastId.containsKey(item.id)) {
+                            toasterState.timersByToastId[item.id] = Toaster.defaultTimeoutMillis
                         }
                     }
             }

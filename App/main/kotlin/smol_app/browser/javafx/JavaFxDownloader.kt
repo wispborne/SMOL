@@ -13,7 +13,7 @@ import java.nio.file.Path
 import java.util.*
 import kotlin.io.path.*
 
-class Downloader(
+class JavaFxDownloader(
     private val downloadManager: DownloadManager
 ) {
 

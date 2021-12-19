@@ -2,7 +2,6 @@ package smol_app.browser
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.GridCells
 import androidx.compose.foundation.lazy.LazyRow
@@ -20,36 +19,33 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.arkivanov.decompose.pop
 import javafx.embed.swing.JFXPanel
 import javafx.scene.web.WebView
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.runBlocking
 import mod_repo.ScrapedMod
 import org.tinylog.kotlin.Logger
 import smol_access.Constants
 import smol_access.SL
 import smol_access.config.Platform
 import smol_app.AppState
-import smol_app.SL_UI
+import smol_app.UI
 import smol_app.browser.chromium.CefBrowserPanel
 import smol_app.browser.chromium.ChromiumBrowser
 import smol_app.browser.javafx.javaFxBrowser
 import smol_app.composables.*
 import smol_app.themes.SmolTheme
-import smol_app.util.*
+import smol_app.util.currentPlatform
+import smol_app.util.filterModPosts
+import smol_app.util.openAsUriInBrowser
+import smol_app.util.replaceAllUsingDifference
 import timber.ktx.Timber
 import java.awt.Cursor
 import java.nio.file.Path
 import java.util.*
-import kotlin.io.path.absolutePathString
-import kotlin.io.path.name
 
 object WebViewHolder {
     var webView: WebView? = null
@@ -132,7 +128,7 @@ fun AppState.ModBrowserView(
                             items = (shownIndexMods + shownModdingSubforumMods)
                                 .filterNotNull()
                                 .sortedWith(compareByDescending { it.name })
-                        ) { mod -> modItem(mod, linkLoader) }
+                        ) { mod -> scrapedModCard(mod, linkLoader) }
                     }
                 }
 
@@ -154,45 +150,65 @@ fun AppState.ModBrowserView(
                                 useOSR = Platform.Linux == currentPlatform,
                                 isTransparent = false,
                                 downloadHandler = object : DownloadHander {
-                                    var download: DownloadItem? = null
-                                    override fun onStart(suggestedFileName: String?, totalBytes: Long) {
-                                        download = DownloadItem(
-                                            id = UUID.randomUUID().toString(),
+
+                                    override fun onStart(
+                                        itemId: String,
+                                        suggestedFileName: String?,
+                                        totalBytes: Long
+                                    ) {
+                                        val item = DownloadItem(
+                                            id = itemId,
                                             path = getDownloadPathFor(suggestedFileName),
                                             totalBytes = totalBytes
                                         )
-                                        SL_UI.downloadManager.addDownload(download!!)
+                                        SL.UI.downloadManager.addDownload(item)
                                     }
 
                                     override fun onProgressUpdate(
+                                        itemId: String,
                                         progressBytes: Long?,
                                         totalBytes: Long?,
                                         speedBps: Long?,
                                         endTime: Date
                                     ) {
-                                        download?.let { download ->
-                                            if (progressBytes != null) download.progress.tryEmit(progressBytes)
-                                            if (download.status.value is DownloadItem.Status.NotStarted)
-                                                scope.launch {
-                                                    download.status.emit(DownloadItem.Status.Downloading)
+                                        SL.UI.downloadManager.downloads.value.firstOrNull { it.id == itemId }
+                                            ?.let { download ->
+                                                Timber.d { "" }
+                                                runBlocking {
+                                                    if (progressBytes != null)
+                                                        download.progress.emit(progressBytes)
                                                 }
-                                        }
+                                                if (download.status.value is DownloadItem.Status.NotStarted)
+                                                    runBlocking {
+                                                        download.status.emit(DownloadItem.Status.Downloading)
+                                                    }
+                                            }
                                     }
 
-                                    override fun onCanceled() {
-                                        download?.let { download ->
-                                            scope.launch {
-                                                download.status.emit(DownloadItem.Status.Failed(RuntimeException("Download canceled.")))
+                                    override fun onCanceled(itemId: String) {
+                                        SL.UI.downloadManager.downloads.value.firstOrNull { it.id == itemId }
+                                            ?.let { download ->
+                                                runBlocking {
+                                                    download.status.emit(
+                                                        DownloadItem.Status.Failed(
+                                                            RuntimeException(
+                                                                "Download canceled."
+                                                            )
+                                                        )
+                                                    )
+                                                }
                                             }
-                                        }
                                     }
 
-                                    override fun onCompleted() {
-                                        download?.let { download ->
-                                            scope.launch {
-                                                download.status.emit(DownloadItem.Status.Completed)
+                                    override fun onCompleted(itemId: String) {
+                                        SL.UI.downloadManager.downloads.value.firstOrNull { it.id == itemId }
+                                            ?.let { download ->
+                                                runBlocking {
+                                                    if (download.totalBytes != null)
+                                                        download.progress.emit(download.totalBytes)
+                                                    download.status.emit(DownloadItem.Status.Completed)
+                                                }
                                             }
-                                        }
                                     }
 
                                     override fun getDownloadPathFor(filename: String?): Path =
@@ -233,42 +249,7 @@ fun AppState.ModBrowserView(
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
-private fun modItem(mod: ScrapedMod, linkLoader: ((String) -> Unit)?) {
-    Card(
-        modifier = Modifier
-            .wrapContentHeight()
-            .clickable {
-                mod.forumPostLink?.run { linkLoader?.invoke(this.toString()) }
-            },
-        shape = SmolTheme.smolFullyClippedButtonShape()
-    ) {
-        Row(modifier = Modifier.padding(12.dp)) {
-            Column(
-                modifier = Modifier.align(Alignment.CenterVertically)
-                    .weight(1f)
-                    .padding(end = 16.dp)
-            ) {
-                Text(
-                    modifier = Modifier,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    text = mod.name
-                )
-                Text(
-                    modifier = Modifier.padding(top = 8.dp),
-                    fontSize = 11.sp,
-                    fontStyle = FontStyle.Italic,
-                    text = mod.authors
-                )
-            }
-            browserIcon(modifier = Modifier.align(Alignment.Top), mod = mod)
-        }
-    }
-}
-
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
-@Composable
-private fun browserIcon(modifier: Modifier = Modifier, mod: ScrapedMod) {
+fun browserIcon(modifier: Modifier = Modifier, mod: ScrapedMod) {
     if (mod.forumPostLink?.toString()?.isBlank() == false) {
         val descText = "Open in a browser"
         SmolTooltipArea(
@@ -300,96 +281,11 @@ private fun browserIcon(modifier: Modifier = Modifier, mod: ScrapedMod) {
 fun downloadBar(
     modifier: Modifier = Modifier,
 ) {
-    var downloads by remember { mutableStateOf<List<DownloadItem>>(listOf()) }
-
-    rememberCoroutineScope { Dispatchers.Default }.launch {
-        SL_UI.downloadManager.downloads.collect {
-            withContext(Dispatchers.Main) {
-                downloads = it
-            }
-        }
-    }
+    val downloads = SL.UI.downloadManager.downloads.collectAsState().value
 
     LazyRow(modifier) {
         items(downloads) { download ->
             downloadCard(download = download)
-        }
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun downloadCard(modifier: Modifier = Modifier, download: DownloadItem) {
-    var progressPercent: Float? by remember { mutableStateOf(null) }
-    var progress by remember { mutableStateOf(0L) }
-    val status = download.status.value
-    val total = download.totalBytes
-
-    SmolTooltipArea(
-        modifier = modifier,
-        tooltip = {
-            SmolTooltipText(text = buildString {
-                appendLine(download.path.absolutePathString())
-                if (status is DownloadItem.Status.Failed) appendLine(status.error.message)
-            })
-        }
-    ) {
-        Card(
-            modifier = Modifier,
-            backgroundColor = MaterialTheme.colors.background
-        ) {
-            rememberCoroutineScope { Dispatchers.Default }.launch {
-                download.progress.collect { newProgress ->
-                    withContext(Dispatchers.Main) {
-                        progress = newProgress
-                        progressPercent = if (total != null)
-                            (newProgress.toFloat() / total.toFloat())
-                        else 0f
-                    }
-                }
-            }
-            Row(modifier = Modifier.padding(start = 8.dp, end = 8.dp)) {
-                Column(
-                    modifier = Modifier
-                        .padding(start = 4.dp, top = 4.dp, bottom = 4.dp, end = 8.dp)
-                        .mouseClickable {
-                            kotlin.runCatching { download.path.parent.openInDesktop() }
-                                .onFailure { Timber.e(it) }
-                        }
-                ) {
-                    val progressMiB = progress.bytesAsReadableMiB
-                    val totalMiB = total?.bytesAsReadableMiB
-                    Text(
-                        modifier = Modifier,
-                        text = download.path.name,
-                        fontSize = 12.sp
-                    )
-                    Text(
-                        modifier = Modifier.padding(top = 4.dp),
-                        text = when (status) {
-                            is DownloadItem.Status.NotStarted -> "Starting"
-                            is DownloadItem.Status.Downloading -> {
-                                "$progressMiB${if (totalMiB != null) " / $totalMiB" else ""}}"
-                            }
-                            is DownloadItem.Status.Completed -> "Completed $progressMiB"
-                            is DownloadItem.Status.Failed -> "Failed: ${status.error}"
-                        },
-                        fontSize = 12.sp
-                    )
-                }
-                if (progressPercent != null || status == DownloadItem.Status.Completed) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp).align(Alignment.CenterVertically),
-                        progress = progressPercent ?: 1f,
-                        color = MaterialTheme.colors.onSurface
-                    )
-                } else {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp).align(Alignment.CenterVertically),
-                        color = MaterialTheme.colors.onSurface
-                    )
-                }
-            }
         }
     }
 }

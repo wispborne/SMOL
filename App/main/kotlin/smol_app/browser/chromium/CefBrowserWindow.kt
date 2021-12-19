@@ -130,12 +130,13 @@ class CefBrowserWindow//                XDataViewer.dispose(null)// calling Syst
 
     fun cefDownloadHandler() = object : CefDownloadHandler {
         override fun onBeforeDownload(
-            browser: CefBrowser?, downloadItem: CefDownloadItem,
+            browser: CefBrowser?, item: CefDownloadItem,
             suggestedName: String?, callback: CefBeforeDownloadCallback
         ) {
             downloadHandler?.onStart(
-                suggestedFileName = downloadItem.suggestedFileName,
-                totalBytes = downloadItem.totalBytes
+                itemId = item.id.toString(),
+                suggestedFileName = item.suggestedFileName,
+                totalBytes = item.totalBytes
             )
             /**
             public void Continue(String downloadPath, boolean showDialog);
@@ -170,9 +171,10 @@ class CefBrowserWindow//                XDataViewer.dispose(null)// calling Syst
             callback: CefDownloadItemCallback?
         ) {
             when {
-                item.isComplete -> downloadHandler?.onCompleted()
-                !item.isValid || item.isCanceled -> downloadHandler?.onCanceled()
+                item.isComplete -> downloadHandler?.onCompleted(item.id.toString())
+                !item.isValid || item.isCanceled -> downloadHandler?.onCanceled(item.id.toString())
                 else -> downloadHandler?.onProgressUpdate(
+                    itemId = item.id.toString(),
                     progressBytes = item.receivedBytes,
                     totalBytes = item.totalBytes,
                     speedBps = item.currentSpeed,

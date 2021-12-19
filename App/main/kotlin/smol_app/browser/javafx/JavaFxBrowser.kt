@@ -68,7 +68,7 @@ fun createWebView(
                     // check to see if newLoc is downloadable.
                     // Use GlobalScope, we don't want this to be canceled
                     GlobalScope.launch {
-                        SL.UI.downloader.download(url = newLoc)
+                        SL.UI.javaFxDownloader.download(url = newLoc)
                     }
                 }
                 loadWorker.exceptionProperty().addListener { _, _, throwable ->

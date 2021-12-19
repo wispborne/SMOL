@@ -214,12 +214,13 @@ class CefBrowserPanel
 
     fun cefDownloadHandler() = object : CefDownloadHandler {
         override fun onBeforeDownload(
-            browser: CefBrowser?, downloadItem: CefDownloadItem,
+            browser: CefBrowser?, item: CefDownloadItem,
             suggestedName: String?, callback: CefBeforeDownloadCallback
         ) {
             downloadHandler.onStart(
+                itemId = item.id.toString(),
                 suggestedFileName = suggestedName,
-                totalBytes = downloadItem.totalBytes
+                totalBytes = item.totalBytes
             )
             /**
             public void Continue(String downloadPath, boolean showDialog);
@@ -254,9 +255,10 @@ class CefBrowserPanel
             callback: CefDownloadItemCallback?
         ) {
             when {
-                item.isComplete -> downloadHandler.onCompleted()
-                !item.isValid || item.isCanceled -> downloadHandler.onCanceled()
+                item.isComplete -> downloadHandler.onCompleted(itemId = item.id.toString())
+                !item.isValid || item.isCanceled -> downloadHandler.onCanceled(itemId = item.id.toString())
                 else -> downloadHandler.onProgressUpdate(
+                    itemId = item.id.toString(),
                     progressBytes = item.receivedBytes,
                     totalBytes = item.totalBytes,
                     speedBps = item.currentSpeed,
