@@ -44,7 +44,7 @@ import java.awt.Cursor
 import java.awt.Desktop
 import kotlin.io.path.exists
 
-private val modGridViewDropdownWidth = 180
+private const val modGridViewDropdownWidth = 180
 
 @OptIn(
     ExperimentalMaterialApi::class,
@@ -70,6 +70,7 @@ fun AppState.ModGridView(
         Column(Modifier) {
             ListItem(modifier = Modifier.padding(start = contentPadding, end = contentPadding)) {
                 Row {
+                    Spacer(modifier = Modifier.width(favoritesWidth))
                     Spacer(Modifier.width(modGridViewDropdownWidth.dp))
 
                     Row(Modifier.weight(1f)) {
@@ -83,7 +84,6 @@ fun AppState.ModGridView(
                         columnSortArrow(ModGridSortField.Author, activeSortField, profile)
                     }
 
-                    Spacer(modifier = Modifier.width(favoritesWidth))
                     SmolTooltipArea(modifier = Modifier.weight(1f),
                         tooltip = { SmolTooltipText(text = "The version(s) tracked by SMOL.") }) {
                         Text(text = "Version(s)", fontWeight = FontWeight.Bold)
@@ -213,6 +213,34 @@ fun AppState.ModGridView(
                                 ) {
                                     Column(modifier = Modifier.padding(start = contentPadding, end = contentPadding)) {
                                         Row(Modifier.fillMaxWidth()) {
+                                            // Favorites
+                                            Row(
+                                                modifier = Modifier
+                                                    .width(favoritesWidth)
+                                                    .align(Alignment.CenterVertically),
+                                            ) {
+                                                val isFavorited = mod.id in profile.value.favoriteMods
+                                                if (isFavorited || isHighlighted) {
+                                                    Icon(
+                                                        imageVector =
+                                                        (if (isFavorited)
+                                                            Icons.Default.Favorite
+                                                        else Icons.Default.FavoriteBorder),
+                                                        contentDescription = null,
+                                                        modifier = Modifier
+                                                            .padding(end = 16.dp)
+                                                            .mouseClickable {
+                                                                SL.userManager.setModFavorited(
+                                                                    modId = mod.id,
+                                                                    newFavoriteValue = isFavorited.not()
+                                                                )
+                                                            },
+                                                        tint = MaterialTheme.colors.primary
+                                                    )
+                                                }
+                                            }
+
+                                            // Mod Version Dropdown
                                             modStateDropdown(
                                                 modifier = Modifier
                                                     .width(modGridViewDropdownWidth.dp)
@@ -240,32 +268,6 @@ fun AppState.ModGridView(
                                                 overflow = TextOverflow.Ellipsis
                                             )
 
-                                            // Favorites
-                                            Row(
-                                                modifier = Modifier
-                                                    .width(favoritesWidth)
-                                                    .align(Alignment.CenterVertically),
-                                            ) {
-                                                val isFavorited = mod.id in profile.value.favoriteMods
-                                                if (isFavorited || isHighlighted) {
-                                                    Icon(
-                                                        imageVector =
-                                                        (if (isFavorited)
-                                                            Icons.Default.Favorite
-                                                        else Icons.Default.FavoriteBorder),
-                                                        contentDescription = null,
-                                                        modifier = Modifier
-                                                            .padding(end = 16.dp)
-                                                            .mouseClickable {
-                                                                SL.userManager.setModFavorited(
-                                                                    modId = mod.id,
-                                                                    newFavoriteValue = isFavorited.not()
-                                                                )
-                                                            },
-                                                        tint = MaterialTheme.colors.onSurface.copy(ContentAlpha.medium)
-                                                    )
-                                                }
-                                            }
                                             // Mod version (active or highest)
                                             Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {
                                                 if (highestLocalVersion != null && onlineVersion != null && onlineVersion > highestLocalVersion) {
