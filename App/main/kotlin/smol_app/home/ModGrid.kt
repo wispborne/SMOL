@@ -73,15 +73,22 @@ fun AppState.ModGridView(
                     Spacer(modifier = Modifier.width(favoritesWidth))
                     Spacer(Modifier.width(modGridViewDropdownWidth.dp))
 
-                    Row(Modifier.weight(1f)) {
+                    SortableHeader(
+                        modifier = Modifier.weight(1f),
+                        columnSortField = ModGridSortField.Name,
+                        sortField = activeSortField,
+                        profile = profile
+                    ) {
                         Text("Name", fontWeight = FontWeight.Bold)
-                        columnSortArrow(ModGridSortField.Name, activeSortField, profile)
                     }
 
-                    Row(Modifier.weight(1f)) {
-                        val columnSortField = ModGridSortField.Author
+                    SortableHeader(
+                        modifier = Modifier.weight(1f),
+                        columnSortField = ModGridSortField.Author,
+                        sortField = activeSortField,
+                        profile = profile
+                    ) {
                         Text("Author", fontWeight = FontWeight.Bold)
-                        columnSortArrow(ModGridSortField.Author, activeSortField, profile)
                     }
 
                     SmolTooltipArea(modifier = Modifier.weight(1f),
@@ -96,7 +103,12 @@ fun AppState.ModGridView(
                                         "\nAll images are counted, even if not used by the game."
                             )
                         }) {
-                        Row {
+                        SortableHeader(
+                            modifier = Modifier.weight(1f),
+                            columnSortField = ModGridSortField.VramImpact,
+                            sortField = activeSortField,
+                            profile = profile
+                        ) {
                             Text(text = "VRAM Impact", fontWeight = FontWeight.Bold)
                             Icon(
                                 modifier = Modifier.padding(start = 8.dp).width(12.dp).height(12.dp)
@@ -104,7 +116,6 @@ fun AppState.ModGridView(
                                 painter = painterResource("more_info.png"),
                                 contentDescription = null
                             )
-                            columnSortArrow(ModGridSortField.VramImpact, activeSortField, profile)
                         }
                     }
 
@@ -414,33 +425,38 @@ fun AppState.ModGridView(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun RowScope.columnSortArrow(
+private fun RowScope.SortableHeader(
+    modifier: Modifier = Modifier,
     columnSortField: ModGridSortField,
     sortField: ModGridSortField?,
-    profile: State<UserProfile>
+    profile: State<UserProfile>,
+    content: @Composable (() -> Unit)?
 ) {
-    Box(
-        modifier = Modifier
-            .align(Alignment.CenterVertically)
-            .mouseClickable {
-                SL.userManager.updateUserProfile {
-                    it.copy(
-                        modGridPrefs = it.modGridPrefs.copy(
-                            sortField = columnSortField.name,
-                            isSortDescending = if (sortField == columnSortField) {
-                                profile.value.modGridPrefs.isSortDescending.not()
-                            } else {
-                                true
-                            }
-                        )
+    Row(modifier
+        .mouseClickable {
+            SL.userManager.updateUserProfile {
+                it.copy(
+                    modGridPrefs = it.modGridPrefs.copy(
+                        sortField = columnSortField.name,
+                        isSortDescending = if (sortField == columnSortField) {
+                            profile.value.modGridPrefs.isSortDescending.not()
+                        } else {
+                            true
+                        }
                     )
-                }
+                )
             }
-    ) {
-        SmolDropdownArrow(
-            modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 8.dp, end = 12.dp),
-            expanded = sortField == columnSortField && profile.value.modGridPrefs.isSortDescending
-        )
+        }) {
+        content?.invoke()
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterVertically)
+        ) {
+            SmolDropdownArrow(
+                modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 8.dp, end = 12.dp),
+                expanded = sortField == columnSortField && profile.value.modGridPrefs.isSortDescending
+            )
+        }
     }
 }
 
