@@ -1,11 +1,13 @@
 package smol_app.home
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
-import androidx.compose.foundation.*
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.mouseClickable
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
@@ -24,25 +26,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.tinylog.Logger
-import smol_access.Constants
 import smol_access.SL
-import smol_access.business.Dependencies
 import smol_access.model.Mod
-import smol_access.model.ModVariant
 import smol_access.model.UserProfile
 import smol_app.AppState
-import smol_app.composables.*
+import smol_app.composables.SmolDropdownArrow
+import smol_app.composables.SmolTooltipArea
+import smol_app.composables.SmolTooltipText
 import smol_app.themes.SmolTheme
-import smol_app.util.*
+import smol_app.util.bytesAsReadableMiB
+import smol_app.util.getModThreadUrl
+import smol_app.util.openModThread
+import smol_app.util.uiEnabled
 import smol_app.views.detailsPanel
 import java.awt.Cursor
-import java.awt.Desktop
-import kotlin.io.path.exists
 
 private const val modGridViewDropdownWidth = 180
 
@@ -170,8 +167,8 @@ fun AppState.ModGridView(
                                             .run {
                                                 fun getSortValue(modRow: ModRow): Comparable<*>? {
                                                     return when (activeSortField) {
-                                                        ModGridSortField.Name -> modRow.mod.findFirstEnabledOrHighestVersion?.modInfo?.name
-                                                        ModGridSortField.Author -> modRow.mod.findFirstEnabledOrHighestVersion?.modInfo?.author
+                                                        ModGridSortField.Name -> modRow.mod.findFirstEnabledOrHighestVersion?.modInfo?.name?.lowercase()
+                                                        ModGridSortField.Author -> modRow.mod.findFirstEnabledOrHighestVersion?.modInfo?.author?.lowercase()
                                                         ModGridSortField.VramImpact -> SL.vramChecker.vramUsage.value?.get(
                                                             modRow.mod.findFirstEnabledOrHighestVersion?.smolId
                                                         )?.bytesForMod
@@ -281,13 +278,51 @@ fun AppState.ModGridView(
 
                                             // Mod version (active or highest)
                                             Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {
+                                                // Update badge icon
                                                 if (highestLocalVersion != null && onlineVersion != null && onlineVersion > highestLocalVersion) {
+                                                    val ddUrl =
+                                                        mod.findHighestVersion?.versionCheckerInfo?.directDownloadURL
+                                                    if (ddUrl != null) {
+                                                        SmolTooltipArea(tooltip = {
+                                                            SmolTooltipText(
+                                                                text = buildString {
+                                                                    append("Newer version available: $onlineVersion")
+                                                                    append("\n\nClick to download and update.")
+                                                                }
+                                                            )
+                                                        }, modifier = Modifier.mouseClickable {
+                                                            if (this.buttons.isPrimaryPressed) {
+                                                                // TODO
+                                                            }
+                                                        }
+                                                            .align(Alignment.CenterVertically)) {
+                                                            Image(
+                                                                painter = painterResource("icon-direct-install.svg"),
+                                                                contentDescription = null,
+                                                                colorFilter = ColorFilter.tint(color = MaterialTheme.colors.secondary),
+                                                                modifier = Modifier.width(28.dp).height(28.dp)
+                                                                    .padding(end = 8.dp)
+                                                                    .align(Alignment.CenterVertically)
+                                                                    .pointerHoverIcon(
+                                                                        PointerIcon(
+                                                                            Cursor.getPredefinedCursor(
+                                                                                Cursor.HAND_CURSOR
+                                                                            )
+                                                                        )
+                                                                    )
+                                                            )
+                                                        }
+                                                    }
+
                                                     val modThreadId =
                                                         mod.findHighestVersion?.versionCheckerInfo?.modThreadId
                                                     SmolTooltipArea(tooltip = {
                                                         SmolTooltipText(
-                                                            text = "Newer version available: $onlineVersion" +
-                                                                    "\n\nClick to open ${modThreadId?.getModThreadUrl()}."
+                                                            text = buildString {
+                                                                append("Newer version available: $onlineVersion")
+                                                                if (ddUrl == null) append("This mod does not support direct download and should be downloaded manually.")
+                                                                append("\n\nClick to open ${modThreadId?.getModThreadUrl()}.")
+                                                            }
                                                         )
                                                     }, modifier = Modifier.mouseClickable {
                                                         if (this.buttons.isPrimaryPressed) {
@@ -298,7 +333,11 @@ fun AppState.ModGridView(
                                                         Image(
                                                             painter = painterResource("new-box.svg"),
                                                             contentDescription = null,
-                                                            colorFilter = ColorFilter.tint(color = MaterialTheme.colors.secondary),
+                                                            colorFilter = ColorFilter.tint(
+                                                                color =
+                                                                if (ddUrl == null) MaterialTheme.colors.secondary
+                                                                else MaterialTheme.colors.secondary.copy(alpha = ContentAlpha.disabled)
+                                                            ),
                                                             modifier = Modifier.width(28.dp).height(28.dp)
                                                                 .padding(end = 8.dp)
                                                                 .align(Alignment.CenterVertically)
@@ -312,6 +351,7 @@ fun AppState.ModGridView(
                                                         )
                                                     }
                                                 }
+                                                // Versions discovered
                                                 Text(
                                                     text = mod.variants
                                                         .joinToString() { it.modInfo.version.toString() },
@@ -459,354 +499,6 @@ private fun RowScope.SortableHeader(
         }
     }
 }
-
-@OptIn(ExperimentalMaterialApi::class)
-@Composable
-private fun ModContextMenu(
-    showContextMenu: Boolean,
-    onShowContextMenuChange: (Boolean) -> Unit,
-    mod: Mod,
-    modInDebugDialog: Mod?,
-    onModInDebugDialogChanged: (Mod?) -> Unit
-) {
-    val coroutineScope = rememberCoroutineScope()
-    CursorDropdownMenu(
-        expanded = showContextMenu,
-        onDismissRequest = { onShowContextMenuChange(false) }) {
-        val modsFolder = (mod.findFirstEnabled
-            ?: mod.findFirstDisabled)?.modsFolderInfo?.folder
-        if (modsFolder?.exists() == true) {
-            DropdownMenuItem(onClick = {
-                kotlin.runCatching {
-                    modsFolder.also {
-                        Desktop.getDesktop().open(it.toFile())
-                    }
-                }
-                    .onFailure { Logger.warn(it) { "Error trying to open file browser for $mod." } }
-                onShowContextMenuChange(false)
-            }) {
-                Text("Open Folder")
-            }
-        }
-
-        val archiveFolder = (mod.findFirstEnabled
-            ?: mod.findFirstDisabled)?.archiveInfo?.folder
-        if (archiveFolder?.exists() == true) {
-            DropdownMenuItem(onClick = {
-                kotlin.runCatching {
-                    archiveFolder.also {
-                        Desktop.getDesktop().open(it.toFile())
-                    }
-                }
-                    .onFailure { Logger.warn(it) { "Error trying to open file browser for $mod." } }
-                onShowContextMenuChange(false)
-            }) {
-                Text("Open Archive")
-            }
-        }
-
-        val modThreadId = mod.getModThreadId()
-        if (modThreadId != null) {
-            DropdownMenuItem(
-                onClick = {
-                    modThreadId.openModThread()
-                    onShowContextMenuChange(false)
-                },
-                modifier = Modifier.width(200.dp)
-            ) {
-                Image(
-                    painter = painterResource("open-in-new.svg"),
-                    colorFilter = ColorFilter.tint(MaterialTheme.colors.onSurface),
-                    modifier = Modifier.padding(end = 8.dp),
-                    contentDescription = null
-                )
-                Text(
-                    text = "Forum Page",
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.align(Alignment.CenterVertically)
-                )
-            }
-        }
-
-        DropdownMenuItem(onClick = {
-            coroutineScope.launch {
-                withContext(Dispatchers.Default) {
-                    SL.vramChecker.refreshVramUsage(mods = listOf(mod))
-                }
-            }
-            onShowContextMenuChange(false)
-        }) {
-            Text("Check VRAM")
-        }
-
-        DropdownMenuItem(onClick = {
-            onModInDebugDialogChanged(mod)
-            onShowContextMenuChange(false)
-        }) {
-            Text("Debug Info")
-        }
-    }
-}
-
-@Composable
-private fun DependencyFixerRow(
-    mod: Mod,
-    allMods: List<Mod>
-) {
-    val dependencies =
-        (mod.findFirstEnabled ?: mod.findHighestVersion)
-            ?.run { SL.dependencies.findDependencyStates(modVariant = this, mods = allMods) }
-            ?.sortedWith(compareByDescending { it is Dependencies.DependencyState.Disabled })
-            ?: emptyList()
-    dependencies
-        .filter { it is Dependencies.DependencyState.Missing || it is Dependencies.DependencyState.Disabled }
-        .forEach { depState ->
-            Row(Modifier.padding(start = 16.dp)) {
-                Image(
-                    painter = painterResource("beacon_med.png"),
-                    modifier = Modifier
-                        .width(38.dp)
-                        .height(28.dp)
-                        .padding(end = 8.dp)
-                        .align(Alignment.CenterVertically),
-                    contentDescription = null
-                )
-                Text(
-                    modifier = Modifier.align(Alignment.CenterVertically),
-                    text = when (depState) {
-                        is Dependencies.DependencyState.Disabled -> "Disabled dependency: ${depState.variant.modInfo.name} ${depState.variant.modInfo.version}"
-                        is Dependencies.DependencyState.Missing -> "Missing dependency: ${depState.dependency.name?.ifBlank { null } ?: depState.dependency.id}${depState.dependency.version?.let { " $it" }}"
-                        is Dependencies.DependencyState.Enabled -> "you should never see this"
-                    }
-                )
-                SmolButton(
-                    modifier = Modifier.align(Alignment.CenterVertically).padding(start = 16.dp),
-                    onClick = {
-                        when (depState) {
-                            is Dependencies.DependencyState.Disabled -> GlobalScope.launch {
-                                SL.access.enableModVariant(
-                                    depState.variant
-                                )
-                            }
-                            is Dependencies.DependencyState.Missing -> {
-                                GlobalScope.launch {
-                                    depState.outdatedModIfFound?.getModThreadId()?.openModThread()
-                                        ?: "https://google.com/search?q=starsector+${depState.dependency.name ?: depState.dependency.id}+${depState.dependency.versionString}"
-                                            .openAsUriInBrowser()
-                                }
-                            }
-                            is Dependencies.DependencyState.Enabled -> TODO("you should never see this")
-                        }
-                    }
-                ) {
-                    Text(
-                        text = when (depState) {
-                            is Dependencies.DependencyState.Disabled -> "Enable"
-                            is Dependencies.DependencyState.Missing -> "Search"
-                            is Dependencies.DependencyState.Enabled -> "you should never see this"
-                        }
-                    )
-                    if (depState is Dependencies.DependencyState.Missing) {
-                        Image(
-                            painter = painterResource("open-in-new.svg"),
-                            colorFilter = ColorFilter.tint(SmolTheme.dimmedIconColor()),
-                            modifier = Modifier.padding(start = 8.dp),
-                            contentDescription = null
-                        )
-                    }
-                }
-            }
-        }
-}
-
-private sealed class DropdownAction {
-    data class ChangeToVariant(val variant: ModVariant) : DropdownAction()
-    object Disable : DropdownAction()
-    data class MigrateMod(val mod: Mod) : DropdownAction()
-    data class ResetToArchive(val variant: ModVariant) : DropdownAction()
-}
-
-@OptIn(ExperimentalComposeUiApi::class)
-@Composable
-private fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
-    val firstEnabledVariant = mod.findFirstEnabled
-
-    /**
-     * Disable: at least one variant enabled
-     * Switch to variant: other variant (in /mods, staging, or archives)
-     * Reinstall: has archive
-     * Snapshot (bring up dialog asking which variants to snapshot): at least one variant without archive
-     */
-    val dropdownMenuItems: List<DropdownAction> = mutableListOf<DropdownAction>()
-        .run {
-            val otherVariantsThanEnabled = mod.variants
-                .filter { variant ->
-                    firstEnabledVariant == null
-                            || mod.enabledVariants.any { enabledVariant -> enabledVariant.smolId != variant.smolId }
-                }
-
-            if (otherVariantsThanEnabled.any()) {
-                val otherVariants = otherVariantsThanEnabled
-                    .map { DropdownAction.ChangeToVariant(variant = it) }
-                this.addAll(otherVariants)
-            }
-
-            if (firstEnabledVariant != null) {
-                this.add(DropdownAction.Disable)
-            }
-
-            // If the enabled variant has an archive, they can reset the state back to the archived state.
-            if (firstEnabledVariant?.archiveInfo != null) {
-                this.add(DropdownAction.ResetToArchive(firstEnabledVariant))
-            }
-
-            this
-        }
-
-
-    var expanded by remember { mutableStateOf(false) }
-    var selectedIndex by remember { mutableStateOf(0) }
-    Box(modifier) {
-        Box(Modifier.width(IntrinsicSize.Min)) {
-            SmolButton(
-                onClick = { expanded = true },
-                modifier = Modifier
-                    .align(Alignment.CenterStart),
-                shape = SmolTheme.smolFullyClippedButtonShape(),
-                colors = ButtonDefaults.buttonColors(
-                    backgroundColor = when (mod.state) {
-                        ModState.Enabled -> MaterialTheme.colors.primary
-                        else -> MaterialTheme.colors.primaryVariant
-                    }
-                )
-            ) {
-                // Text of the dropdown menu, current state of the mod
-                if (mod.enabledVariants.size > 1) {
-                    SmolTooltipArea(tooltip = {
-                        SmolTooltipText(
-                            text = "Warning: ${mod.enabledVariants.size} versions of " +
-                                    "${mod.findHighestVersion!!.modInfo.name} in the mods folder." +
-                                    " Remove one."
-                        )
-                    }) {
-                        Image(
-                            painter = painterResource("beacon_med.png"),
-                            modifier = Modifier.width(38.dp).height(28.dp).padding(end = 8.dp),
-                            contentDescription = null
-                        )
-                    }
-                }
-                Text(
-                    text = when {
-                        // If there is an enabled variant, show its version string.
-                        mod.enabledVariants.isNotEmpty() -> mod.enabledVariants.joinToString { it.modInfo.version.toString() }
-                        // If no enabled variant, show "Disabled"
-                        else -> "Disabled"
-                    },
-                    fontWeight = FontWeight.Bold
-                )
-                SmolDropdownArrow(
-                    Modifier.align(Alignment.CenterVertically),
-                    expanded
-                )
-            }
-            DropdownMenu(
-                expanded = expanded,
-                modifier = Modifier
-                    .background(MaterialTheme.colors.background)
-                    .border(1.dp, MaterialTheme.colors.primary, shape = SmolTheme.smolFullyClippedButtonShape()),
-                onDismissRequest = { expanded = false }
-            ) {
-                val coroutineScope = rememberCoroutineScope()
-                dropdownMenuItems.forEachIndexed { index, action ->
-                    Box {
-                        var background: Color? by remember { mutableStateOf(null) }
-//                        val highlightColor = MaterialTheme.colors.surface
-                        DropdownMenuItem(
-                            modifier = Modifier.sizeIn(maxWidth = 400.dp)
-                                .background(background ?: MaterialTheme.colors.background)
-//                                .pointerMoveFilter( // doesn't work: https://github.com/JetBrains/compose-jb/issues/819
-//                                    onEnter = {
-//                                        Logger.debug { "Entered dropdown item" }
-//                                        background = highlightColor;true
-//                                    },
-//                                    onExit = {
-//                                        Logger.debug { "Exited dropdown item" }
-//                                        background = null;true
-//                                    }
-                            ,
-                            onClick = {
-                                selectedIndex = index
-                                expanded = false
-                                Logger.debug { "Selected $action." }
-
-                                // Don't use composition scope, we don't want
-                                // it to cancel an operation due to a UI recomposition.
-                                // A two-step operation will trigger a mod refresh and therefore recomposition and cancel
-                                // the second part of the operation!
-                                GlobalScope.launch {
-                                    kotlin.runCatching {
-                                        // Change mod state
-                                        when (action) {
-                                            is DropdownAction.ChangeToVariant -> {
-                                                SL.access.changeActiveVariant(mod, action.variant)
-                                            }
-                                            is DropdownAction.Disable -> {
-                                                SL.access.disableModVariant(firstEnabledVariant ?: return@runCatching)
-                                            }
-                                            is DropdownAction.MigrateMod -> {
-                                                // TODO
-//                                                SL.archives.compressModsInFolder(
-//                                                    mod.modsFolderInfo?.folder ?: return@runCatching
-//                                                )
-                                            }
-                                            is DropdownAction.ResetToArchive -> {
-                                                // TODO
-                                            }
-                                        }
-                                    }
-                                        .onFailure { Logger.error(it) }
-                                }
-                            }) {
-                            Text(
-                                text = when (action) {
-                                    is DropdownAction.ChangeToVariant -> action.variant.modInfo.version.toString()
-                                    is DropdownAction.Disable -> "Disable"
-                                    is DropdownAction.MigrateMod -> "Migrate to ${Constants.APP_NAME}"
-                                    is DropdownAction.ResetToArchive -> "Reset to default"
-                                },
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterialApi::class)
-@Composable
-fun debugDialog(
-    modifier: Modifier = Modifier,
-    mod: Mod,
-    onDismiss: () -> Unit
-) {
-    SmolAlertDialog(
-        modifier = modifier,
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            Button(onClick = onDismiss) { Text("Ok") }
-        },
-        text = {
-            SelectionContainer {
-                Text(text = mod.toString())
-            }
-        }
-    )
-}
-
 
 @Preview
 @Composable

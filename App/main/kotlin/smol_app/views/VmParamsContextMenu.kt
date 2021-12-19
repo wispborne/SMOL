@@ -96,14 +96,21 @@ fun vmParamsContextMenu(
                             SL.vmParamsManager.update { it?.run { withGb(presetGb) } }
                             assignedRam = SL.vmParamsManager.read()?.xmx
                         }
-                    ) { Text(text = "$presetGb GB") }
+                    ) {
+                        Text(
+                            text = "$presetGb GB",
+                            fontWeight = if (presetGb == recommendation) FontWeight.ExtraBold else FontWeight.Normal,
+                        )
+                    }
 
                     if (presetGb == recommendation) {
                         Text(
                             text = "Suggested",
                             style = MaterialTheme.typography.caption,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .align(Alignment.CenterHorizontally)
+                                .offset(y = (-4).dp)
                         )
                     }
                 }

@@ -5,7 +5,8 @@ import com.squareup.moshi.Json
 data class VersionCheckerInfo(
     @Json(name = "masterVersionFile") val masterVersionFile: String?,
     @Json(name = "modThreadId") val modThreadId: String?,
-    @Json(name = "modVersion") val modVersion: Version?
+    @Json(name = "modVersion") val modVersion: Version?,
+    @Json(name = "directDownloadURL") val directDownloadURL: String?,
 ) {
     data class Version(
         @Json(name = "major") val major: String?,
