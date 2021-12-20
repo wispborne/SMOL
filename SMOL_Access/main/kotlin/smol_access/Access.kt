@@ -86,6 +86,12 @@ class Access internal constructor(
      */
     suspend fun reload() = modLoader.reload()
 
+    /**
+     * Given an arbitrary file, find and install the associated mod into the given folder.
+     * @param inputFile A file or folder to try to install.
+     * @param destinationFolder The folder to place the result into. Not the mod folder, but the parent of that (eg /mods).
+     * @param shouldCompressModFolder If true, will compress the mod as needed and place the archive in the folder.
+     */
     suspend fun installFromUnknownSource(
         inputFile: Path,
         destinationFolder: Path = archives.getArchivesPath().toPathOrNull()!!,

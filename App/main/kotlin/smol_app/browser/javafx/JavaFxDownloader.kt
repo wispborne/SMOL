@@ -53,7 +53,7 @@ class JavaFxDownloader(
                 filename
             )
 
-            if (downloadManager.downloads.value.map { it.path.name }.any { it == filename }) {
+            if (downloadManager.downloads.value.map { it.path.value?.name }.any { it == filename }) {
                 Timber.i { "Skipping file that is already in the downloads list: $filename." }
                 return null
             }
@@ -63,10 +63,12 @@ class JavaFxDownloader(
                 val downloadSize = conn.getHeaderField("Content-Length")?.toLongOrNull()
 
                 val download = DownloadItem(
-                    id = UUID.randomUUID().toString(),
-                    path = file,
-                    totalBytes = downloadSize
+                    id = UUID.randomUUID().toString()
                 )
+                    .apply {
+                        this.path.value = file
+                        this.totalBytes.value = downloadSize
+                    }
 
                 IOLock.write {
                     file.deleteIfExists()

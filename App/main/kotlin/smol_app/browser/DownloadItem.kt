@@ -5,8 +5,8 @@ import java.nio.file.Path
 
 data class DownloadItem(
     val id: String,
-    val path: Path,
-    val totalBytes: Long?,
+    val path: MutableStateFlow<Path?> = MutableStateFlow(null),
+    val totalBytes: MutableStateFlow<Long?> = MutableStateFlow(null),
 ) {
     val progress: MutableStateFlow<Long> = MutableStateFlow(0L)
     val status: MutableStateFlow<Status> = MutableStateFlow(Status.NotStarted)
@@ -15,6 +15,8 @@ data class DownloadItem(
         object NotStarted : Status()
         object Downloading : Status()
         object Completed : Status()
+        object Cancelled : Status()
+
         data class Failed(val error: Throwable) : Status()
     }
 }

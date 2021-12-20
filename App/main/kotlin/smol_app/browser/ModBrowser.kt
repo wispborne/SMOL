@@ -157,10 +157,12 @@ fun AppState.ModBrowserView(
                                         totalBytes: Long
                                     ) {
                                         val item = DownloadItem(
-                                            id = itemId,
-                                            path = getDownloadPathFor(suggestedFileName),
-                                            totalBytes = totalBytes
+                                            id = itemId
                                         )
+                                            .apply {
+                                                this.path.value = getDownloadPathFor(suggestedFileName)
+                                                this.totalBytes.value = totalBytes
+                                            }
                                         SL.UI.downloadManager.addDownload(item)
                                     }
 
@@ -204,8 +206,8 @@ fun AppState.ModBrowserView(
                                         SL.UI.downloadManager.downloads.value.firstOrNull { it.id == itemId }
                                             ?.let { download ->
                                                 runBlocking {
-                                                    if (download.totalBytes != null)
-                                                        download.progress.emit(download.totalBytes)
+                                                    if (download.totalBytes.value != null)
+                                                        download.progress.emit(download.totalBytes.value ?: 0)
                                                     download.status.emit(DownloadItem.Status.Completed)
                                                 }
                                             }

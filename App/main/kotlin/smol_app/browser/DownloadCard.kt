@@ -31,15 +31,15 @@ fun downloadCard(modifier: Modifier = Modifier, download: DownloadItem) {
     val progress = download.progress.collectAsState().value
     val total = download.totalBytes
 
-    val progressPercent: Float = if (total != null)
-        (progress.toFloat() / total.toFloat())
+    val progressPercent: Float = if (total.value != null)
+        (progress.toFloat() / total.value!!.toFloat())
     else 0f
 
     SmolTooltipArea(
         modifier = modifier,
         tooltip = {
             SmolTooltipText(text = buildString {
-                appendLine(download.path.absolutePathString())
+                appendLine(download.path.value?.absolutePathString())
                 if (status is DownloadItem.Status.Failed) appendLine(status.error.message)
             })
         }
@@ -53,15 +53,15 @@ fun downloadCard(modifier: Modifier = Modifier, download: DownloadItem) {
                     modifier = Modifier
                         .padding(start = 4.dp, top = 4.dp, bottom = 4.dp, end = 8.dp)
                         .mouseClickable {
-                            kotlin.runCatching { download.path.parent.openInDesktop() }
+                            kotlin.runCatching { download.path.value?.parent?.openInDesktop() }
                                 .onFailure { Timber.e(it) }
                         }
                 ) {
                     val progressMiB = progress.bytesAsReadableMiB
-                    val totalMiB = total?.bytesAsReadableMiB
+                    val totalMiB = total.value?.bytesAsReadableMiB
                     Text(
                         modifier = Modifier,
-                        text = download.path.name,
+                        text = download.path.value?.name ?: "",
                         fontSize = 12.sp
                     )
                     Text(
@@ -73,6 +73,7 @@ fun downloadCard(modifier: Modifier = Modifier, download: DownloadItem) {
                             }
                             is DownloadItem.Status.Completed -> "Completed $progressMiB"
                             is DownloadItem.Status.Failed -> "Failed: ${status.error}"
+                            DownloadItem.Status.Cancelled -> "Cancelled"
                         },
                         fontSize = 12.sp
                     )

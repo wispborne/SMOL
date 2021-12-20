@@ -30,6 +30,7 @@ import smol_access.SL
 import smol_access.model.Mod
 import smol_access.model.UserProfile
 import smol_app.AppState
+import smol_app.UI
 import smol_app.composables.SmolDropdownArrow
 import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
@@ -292,7 +293,10 @@ fun AppState.ModGridView(
                                                             )
                                                         }, modifier = Modifier.mouseClickable {
                                                             if (this.buttons.isPrimaryPressed) {
-                                                                // TODO
+                                                                SL.UI.downloadManager.downloadFromUrl(
+                                                                    url = ddUrl,
+                                                                    shouldInstallAfter = true
+                                                                )
                                                             }
                                                         }
                                                             .align(Alignment.CenterVertically)) {
