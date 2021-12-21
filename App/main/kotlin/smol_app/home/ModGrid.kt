@@ -27,6 +27,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import smol_access.SL
 import smol_access.model.Mod
 import smol_access.model.ModId
@@ -37,6 +40,7 @@ import smol_app.composables.*
 import smol_app.themes.SmolTheme
 import smol_app.util.*
 import smol_app.views.detailsPanel
+import utilities.parallelMap
 import java.awt.Cursor
 
 private const val modGridViewDropdownWidth = 180
@@ -124,15 +128,9 @@ fun AppState.ModGridView(
                     Row(
                         modifier = Modifier.width(checkboxesWidth).align(Alignment.CenterVertically)
                     ) {
-                        SmolPopupMenu(
-                            modifier = Modifier
-                                .align(Alignment.CenterVertically)
-                                .padding(end = 8.dp)
-                                .alpha(if (checkedRows.any()) 1f else 0f),
-                            items = listOf(SmolDropdownMenuItemTemplate(
-                                text = "Disable All",
-                                onClick = {} // TODO
-                            ))
+                        modGridBulkActionMenu(
+                            modifier = Modifier.align(Alignment.CenterVertically),
+                            checkedRows = checkedRows
                         )
                         Checkbox(
                             checked = mods.all { mod -> mod != null && mod.id in checkedRows },
@@ -473,16 +471,7 @@ fun AppState.ModGridView(
                                                     .align(Alignment.CenterVertically)
                                                     .alpha(if (isCheckboxVisible) 1f else 0f)
                                             ) {
-                                                SmolPopupMenu(
-                                                    modifier = Modifier
-                                                        .align(Alignment.CenterVertically)
-                                                        .padding(end = 8.dp)
-                                                        .alpha(if (checkedRows.any()) 1f else 0f),
-                                                    items = listOf(SmolDropdownMenuItemTemplate(
-                                                        text = "Disable All",
-                                                        onClick = {} // TODO
-                                                    ))
-                                                )
+                                                modGridBulkActionMenu(checkedRows = checkedRows)
                                                 Checkbox(
                                                     modifier = Modifier.width(checkboxesWidth),
                                                     checked = isChecked,
@@ -539,6 +528,25 @@ fun AppState.ModGridView(
             debugDialog(mod = modInDebugDialog!!, onDismiss = { modInDebugDialog = null })
         }
     }
+}
+
+@Composable
+private fun modGridBulkActionMenu(modifier: Modifier = Modifier, checkedRows: SnapshotStateList<ModId>) {
+    SmolPopupMenu(
+        modifier = modifier
+            .padding(end = 8.dp)
+            .alpha(if (checkedRows.any()) 1f else 0f),
+        items = listOf(SmolDropdownMenuItemTemplate(
+            text = "Disable All",
+            onClick = {
+                GlobalScope.launch(Dispatchers.IO) {
+                    checkedRows
+                        .mapNotNull { modId -> SL.access.mods.value?.firstOrNull { it.id == modId } }
+                        .parallelMap { SL.access.disableMod(it) }
+                }
+            }
+        ))
+    )
 }
 
 @OptIn(ExperimentalFoundationApi::class)
