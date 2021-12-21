@@ -18,6 +18,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.*
@@ -28,17 +29,13 @@ import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.dp
 import smol_access.SL
 import smol_access.model.Mod
+import smol_access.model.ModId
 import smol_access.model.UserProfile
 import smol_app.AppState
 import smol_app.UI
-import smol_app.composables.SmolDropdownArrow
-import smol_app.composables.SmolTooltipArea
-import smol_app.composables.SmolTooltipText
+import smol_app.composables.*
 import smol_app.themes.SmolTheme
-import smol_app.util.bytesAsReadableMiB
-import smol_app.util.getModThreadUrl
-import smol_app.util.openModThread
-import smol_app.util.uiEnabled
+import smol_app.util.*
 import smol_app.views.detailsPanel
 import java.awt.Cursor
 
@@ -54,25 +51,27 @@ fun AppState.ModGridView(
     modifier: Modifier = Modifier,
     mods: SnapshotStateList<Mod?>
 ) {
+    val contentPadding = 16.dp
+    val favoritesWidth = 40.dp
+    val checkboxesWidth = 40.dp
     var selectedRow: ModRow? by remember { mutableStateOf(null) }
+    val checkedRows = remember { mutableStateListOf<ModId>() }
     var modInDebugDialog: Mod? by remember { mutableStateOf(null) }
     val largestVramUsage = SL.vramChecker.vramUsage.value?.values?.maxOf { it.bytesForMod }
     val profile = SL.userManager.activeProfile.collectAsState()
     val activeSortField = profile.value.modGridPrefs.sortField?.let {
         kotlin.runCatching { ModGridSortField.valueOf(it) }.getOrNull()
     }
-    val contentPadding = 16.dp
-    val favoritesWidth = 40.dp
 
     Box(modifier.padding(top = contentPadding, bottom = contentPadding)) {
         Column(Modifier) {
             ListItem(modifier = Modifier.padding(start = contentPadding, end = contentPadding)) {
                 Row {
-                    Spacer(modifier = Modifier.width(favoritesWidth))
-                    Spacer(Modifier.width(modGridViewDropdownWidth.dp))
+                    Spacer(modifier = Modifier.width(favoritesWidth).align(Alignment.CenterVertically))
+                    Spacer(Modifier.width(modGridViewDropdownWidth.dp).align(Alignment.CenterVertically))
 
                     SortableHeader(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
                         columnSortField = ModGridSortField.Name,
                         sortField = activeSortField,
                         profile = profile
@@ -81,7 +80,7 @@ fun AppState.ModGridView(
                     }
 
                     SortableHeader(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
                         columnSortField = ModGridSortField.Author,
                         sortField = activeSortField,
                         profile = profile
@@ -89,12 +88,12 @@ fun AppState.ModGridView(
                         Text("Author", fontWeight = FontWeight.Bold)
                     }
 
-                    SmolTooltipArea(modifier = Modifier.weight(1f),
+                    SmolTooltipArea(modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
                         tooltip = { SmolTooltipText(text = "The version(s) tracked by SMOL.") }) {
                         Text(text = "Version(s)", fontWeight = FontWeight.Bold)
                     }
 
-                    SmolTooltipArea(modifier = Modifier.weight(1f),
+                    SmolTooltipArea(modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
                         tooltip = {
                             SmolTooltipText(
                                 text = "An estimate of how much VRAM the mod will use." +
@@ -117,7 +116,38 @@ fun AppState.ModGridView(
                         }
                     }
 
-                    Text("Game Version", Modifier.weight(1f), fontWeight = FontWeight.Bold)
+                    Text(
+                        text = "Game Version",
+                        modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
+                        fontWeight = FontWeight.Bold
+                    )
+                    Row(
+                        modifier = Modifier.width(checkboxesWidth).align(Alignment.CenterVertically)
+                    ) {
+                        SmolPopupMenu(
+                            modifier = Modifier
+                                .align(Alignment.CenterVertically)
+                                .padding(end = 8.dp)
+                                .alpha(if (checkedRows.any()) 1f else 0f),
+                            items = listOf(SmolDropdownMenuItemTemplate(
+                                text = "Disable All",
+                                onClick = {} // TODO
+                            ))
+                        )
+                        Checkbox(
+                            checked = mods.all { mod -> mod != null && mod.id in checkedRows },
+                            onCheckedChange = { isChecked ->
+                                if (isChecked) {
+                                    checkedRows.replaceAllUsingDifference(
+                                        mods.mapNotNull { it?.id },
+                                        doesOrderMatter = false
+                                    )
+                                } else {
+                                    checkedRows.clear()
+                                }
+                            }
+                        )
+                    }
                 }
             }
             Box {
@@ -192,31 +222,41 @@ fun AppState.ModGridView(
                                 val highestLocalVersion =
                                     mod.findHighestVersion?.versionCheckerInfo?.modVersion
                                 val onlineVersion = SL.versionChecker.getOnlineVersion(modId = mod.id)
-                                var isHighlighted by remember { mutableStateOf(false) }
+                                var isRowHighlighted by remember { mutableStateOf(false) }
 
                                 ListItem(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .mouseClickable {
                                             if (this.buttons.isPrimaryPressed) {
-                                                selectedRow =
-                                                    (if (selectedRow === modRow) null else modRow)
+                                                // If in "Checking rows" mode, clicking a row toggles checked.
+                                                // Otherwise, it open/closes Details panel
+                                                if (checkedRows.any()) {
+                                                    if (mod.id !in checkedRows) {
+                                                        checkedRows.add(mod.id)
+                                                    } else {
+                                                        checkedRows.remove(mod.id)
+                                                    }
+                                                } else {
+                                                    selectedRow =
+                                                        (if (selectedRow === modRow) null else modRow)
+                                                }
                                             } else if (this.buttons.isSecondaryPressed) {
                                                 showContextMenu = !showContextMenu
                                             }
                                         }
                                         .background(
-                                            color = if (isHighlighted || selectedRow?.mod?.id == mod.id)
+                                            color = if (isRowHighlighted || selectedRow?.mod?.id == mod.id)
                                                 Color.Black.copy(alpha = .1f)
                                             else Color.Transparent
                                         )
                                         .pointerMoveFilter(
                                             onEnter = {
-                                                isHighlighted = true
+                                                isRowHighlighted = true
                                                 false
                                             },
                                             onExit = {
-                                                isHighlighted = false
+                                                isRowHighlighted = false
                                                 false
                                             })
                                 ) {
@@ -229,7 +269,7 @@ fun AppState.ModGridView(
                                                     .align(Alignment.CenterVertically),
                                             ) {
                                                 val isFavorited = mod.id in profile.value.favoriteMods
-                                                if (isFavorited || isHighlighted) {
+                                                if (isFavorited || isRowHighlighted) {
                                                     Icon(
                                                         imageVector =
                                                         (if (isFavorited)
@@ -423,6 +463,39 @@ fun AppState.ModGridView(
                                                 )
                                             }
 
+                                            // Checkbox
+                                            val isChecked = mod.id in checkedRows
+
+                                            val isCheckboxVisible = isRowHighlighted || isChecked || checkedRows.any()
+
+                                            Row(
+                                                modifier = Modifier.width(checkboxesWidth)
+                                                    .align(Alignment.CenterVertically)
+                                                    .alpha(if (isCheckboxVisible) 1f else 0f)
+                                            ) {
+                                                SmolPopupMenu(
+                                                    modifier = Modifier
+                                                        .align(Alignment.CenterVertically)
+                                                        .padding(end = 8.dp)
+                                                        .alpha(if (checkedRows.any()) 1f else 0f),
+                                                    items = listOf(SmolDropdownMenuItemTemplate(
+                                                        text = "Disable All",
+                                                        onClick = {} // TODO
+                                                    ))
+                                                )
+                                                Checkbox(
+                                                    modifier = Modifier.width(checkboxesWidth),
+                                                    checked = isChecked,
+                                                    onCheckedChange = { checked ->
+                                                        if (checked) {
+                                                            checkedRows.add(mod.id)
+                                                        } else {
+                                                            checkedRows.remove(mod.id)
+                                                        }
+                                                    }
+                                                )
+                                            }
+
                                             // Context menu
                                             ModContextMenu(
                                                 showContextMenu = showContextMenu,
@@ -457,7 +530,8 @@ fun AppState.ModGridView(
             detailsPanel(
                 modifier = Modifier.padding(bottom = contentPadding),
                 selectedRow = selectedRow,
-                mods = SL.access.mods.value ?: emptyList()
+                mods = SL.access.mods.value ?: emptyList(),
+                closePanel = { selectedRow = null }
             )
         }
 

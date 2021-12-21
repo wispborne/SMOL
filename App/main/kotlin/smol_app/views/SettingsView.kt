@@ -11,9 +11,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.pop
@@ -235,25 +232,23 @@ private fun AppState.themeDropdown(modifier: Modifier = Modifier): String {
         SmolDropdownWithButton(
             modifier = Modifier.padding(start = 16.dp).align(Alignment.CenterVertically),
             items = themes
-                .map {
-                    val colors = it.value.toColors()
-                    SmolDropdownMenuItem(
-                        text = it.key,
+                .map { entry ->
+                    val colors = entry.value.toColors()
+                    SmolDropdownMenuItemCustom(
                         backgroundColor = colors.surface,
-                        contentColor = colors.onSurface,
                         onClick = {
-                            themeName = it.key
-                            SL.themeManager.setActiveTheme(it.key)
+                            themeName = entry.key
+                            SL.themeManager.setActiveTheme(entry.key)
                         },
-                        customItemContent = { item ->
+                        customItemContent = { _, isMenuButton ->
                             val height = 24.dp
                             Text(
-                                text = item.text,
-                                modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
+                                text = entry.key,
+                                modifier = Modifier
+                                    .run { if (!isMenuButton) this.weight(1f) else this }
+                                    .align(Alignment.CenterVertically),
                                 fontWeight = FontWeight.Bold,
-                                color = item.contentColor ?: contentColorFor(
-                                    item.backgroundColor ?: MaterialTheme.colors.surface
-                                )
+                                color = colors.onSurface
                             )
                             Box(
                                 modifier = Modifier

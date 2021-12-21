@@ -259,7 +259,7 @@ private fun AppState.logPanel(
                     SmolDropdownWithButton(
                         modifier = Modifier.padding(bottom = 4.dp),
                         items = LogLevel.values().map {
-                            SmolDropdownMenuItem(
+                            SmolDropdownMenuItemTemplate(
                                 text = it.name.lowercase().replaceFirstChar { it.uppercaseChar() },
                                 onClick = {
                                     Logging.logLevel = it

@@ -5,9 +5,9 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material.Card
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,7 +39,7 @@ import smol_app.util.openModThread
 @Preview
 fun detailsPanelPreview() {
     Box {
-        detailsPanel(selectedRow = ModRow(Mod.mock), mods = listOf(Mod.mock))
+        detailsPanel(selectedRow = ModRow(Mod.mock), mods = listOf(Mod.mock), closePanel = {})
     }
 }
 
@@ -51,6 +51,7 @@ fun detailsPanelPreview() {
 fun BoxScope.detailsPanel(
     modifier: Modifier = Modifier,
     selectedRow: ModRow?,
+    closePanel: () -> Unit,
     mods: List<Mod>
 ) {
     val row = selectedRow ?: return
@@ -92,66 +93,78 @@ fun BoxScope.detailsPanel(
             },
         shape = RectangleShape
     ) {
-        val state = rememberScrollState()
-        SelectionContainer {
-            Column(
-                Modifier.padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 24.dp).verticalScroll(state)
-            ) {
-                val modVariant = row.mod.findFirstEnabled ?: row.mod.findHighestVersion
-                val modInfo = modVariant?.modInfo
-                Text(
-                    modInfo?.name ?: "VNSector",
-                    fontWeight = FontWeight.ExtraBold,
-                    fontFamily = SmolTheme.orbitronSpaceFont,
-                    fontSize = TextUnit(18f, TextUnitType.Sp)
-                )
-                Text(
-                    "${modInfo?.id ?: "vnsector"} ${modInfo?.version?.toString() ?: "no version"}",
-                    modifier = Modifier.padding(top = 4.dp),
-                    fontSize = TextUnit(12f, TextUnitType.Sp),
-                    fontFamily = SmolTheme.fireCodeFont
-                )
-                if (!modInfo?.gameVersion.isNullOrBlank()) {
+        Box {
+            val state = rememberScrollState()
+            SelectionContainer {
+                Column(
+                    Modifier.padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 24.dp).verticalScroll(state)
+                ) {
+                    val modVariant = row.mod.findFirstEnabled ?: row.mod.findHighestVersion
+                    val modInfo = modVariant?.modInfo
                     Text(
-                        "Starsector ${modInfo?.gameVersion}",
-                        modifier = Modifier.padding(top = 8.dp),
+                        modInfo?.name ?: "VNSector",
+                        fontWeight = FontWeight.ExtraBold,
+                        fontFamily = SmolTheme.orbitronSpaceFont,
+                        fontSize = TextUnit(18f, TextUnitType.Sp)
+                    )
+                    Text(
+                        "${modInfo?.id ?: "vnsector"} ${modInfo?.version?.toString() ?: "no version"}",
+                        modifier = Modifier.padding(top = 4.dp),
                         fontSize = TextUnit(12f, TextUnitType.Sp),
                         fontFamily = SmolTheme.fireCodeFont
                     )
-                }
-                Text("Author", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
-                Text(modInfo?.author ?: "It's always Techpriest", modifier = Modifier.padding(top = 2.dp))
-                Text("Description", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
-                Text(modInfo?.description ?: "", modifier = Modifier.padding(top = 2.dp))
-                val dependencies =
-                    modVariant?.run { SL.dependencies.findDependencies(modVariant = this, mods = mods) } ?: emptyList()
-                if (dependencies.isNotEmpty()) {
-                    Text("Dependencies", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
-                    Text(
-                        dependencies
-                            .joinToString {
-                                val depName: String =
-                                    it.second?.findHighestVersion?.modInfo?.name ?: it.second?.id ?: it.first.id
-                                depName + if (it.first.versionString != null) " v${it.first.versionString}" else ""
-                            },
-                        modifier = Modifier.padding(top = 2.dp)
-                    )
-                }
-
-                val versionCheckerInfo = row.mod.findHighestVersion?.versionCheckerInfo
-                if (versionCheckerInfo?.modThreadId != null) {
-                    DisableSelection {
-                        SmolLinkText(
-                            text = "Forum Thread",
-                            modifier = Modifier.padding(top = 16.dp)
-                                .mouseClickable {
-                                    if (this.buttons.isPrimaryPressed) {
-                                        versionCheckerInfo.modThreadId!!.openModThread()
-                                    }
-                                }
+                    if (!modInfo?.gameVersion.isNullOrBlank()) {
+                        Text(
+                            "Starsector ${modInfo?.gameVersion}",
+                            modifier = Modifier.padding(top = 8.dp),
+                            fontSize = TextUnit(12f, TextUnitType.Sp),
+                            fontFamily = SmolTheme.fireCodeFont
                         )
                     }
+                    Text("Author", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
+                    Text(modInfo?.author ?: "It's always Techpriest", modifier = Modifier.padding(top = 2.dp))
+                    Text("Description", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
+                    Text(modInfo?.description ?: "", modifier = Modifier.padding(top = 2.dp))
+                    val dependencies =
+                        modVariant?.run { SL.dependencies.findDependencies(modVariant = this, mods = mods) }
+                            ?: emptyList()
+                    if (dependencies.isNotEmpty()) {
+                        Text("Dependencies", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
+                        Text(
+                            dependencies
+                                .joinToString {
+                                    val depName: String =
+                                        it.second?.findHighestVersion?.modInfo?.name ?: it.second?.id ?: it.first.id
+                                    depName + if (it.first.versionString != null) " v${it.first.versionString}" else ""
+                                },
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+                    }
+
+                    val versionCheckerInfo = row.mod.findHighestVersion?.versionCheckerInfo
+                    if (versionCheckerInfo?.modThreadId != null) {
+                        DisableSelection {
+                            SmolLinkText(
+                                text = "Forum Thread",
+                                modifier = Modifier.padding(top = 16.dp)
+                                    .mouseClickable {
+                                        if (this.buttons.isPrimaryPressed) {
+                                            versionCheckerInfo.modThreadId!!.openModThread()
+                                        }
+                                    }
+                            )
+                        }
+                    }
                 }
+            }
+
+            IconButton(
+                onClick = { closePanel.invoke() },
+                modifier = Modifier
+                    .padding(start = 8.dp, end = 8.dp, top = 8.dp)
+                    .align(Alignment.TopEnd)
+            ) {
+                Icon(imageVector = Icons.Default.Close, contentDescription = null)
             }
         }
     }
