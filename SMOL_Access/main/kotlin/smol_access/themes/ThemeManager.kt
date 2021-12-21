@@ -10,17 +10,19 @@ class ThemeManager(
     private val userManager: UserManager,
     private val themeConfig: ThemeConfig
 ) {
-    private val defaultTheme = "Starfarer" to Theme(
-        isDark = true,
-        primary = 0xFF184957,
-        primaryVariant = 0xFF00212e,
-        surface = 0xFF0A1D22,
-        secondary = 0xFFFCCF00,
-        background = 0xFF091A1F,
-        onPrimary = 0xFFA8DBFC,
-        hyperlink = 0xFF00FFFF,
+    companion object {
+        val defaultTheme = "Starfarer" to Theme(
+            isDark = true,
+            primary = 0xFF184957,
+            primaryVariant = 0xFF00212e,
+            surface = 0xFF0A1D22,
+            secondary = 0xFFFCCF00,
+            background = 0xFF091A1F,
+            onPrimary = 0xFFA8DBFC,
+            hyperlink = 0xFF00FFFF,
 //        onBackground = 0xFF2d304e
-    )
+        )
+    }
 
     private val activeThemeInner = MutableStateFlow(getActiveTheme())
     val activeTheme = activeThemeInner.asStateFlow()

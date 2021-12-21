@@ -1,34 +1,41 @@
 package smol_app.browser
 
+import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.mouseClickable
-import androidx.compose.material.Card
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import smol_access.SL
+import smol_app.UI
 import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
-import smol_app.util.bytesAsReadableMiB
-import smol_app.util.openInDesktop
+import smol_app.util.*
 import timber.ktx.Timber
+import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.name
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun downloadCard(modifier: Modifier = Modifier, download: DownloadItem) {
+fun downloadCard(
+    modifier: Modifier = Modifier,
+    download: DownloadItem,
+    requestToastDismissal: () -> Unit
+) {
     val status = download.status.collectAsState().value
     val progress = download.progress.collectAsState().value
+    val bitsPerSecond = download.bitsPerSecond.collectAsState().value
     val total = download.totalBytes
 
     val progressPercent: Float = if (total.value != null)
@@ -37,6 +44,7 @@ fun downloadCard(modifier: Modifier = Modifier, download: DownloadItem) {
 
     SmolTooltipArea(
         modifier = modifier,
+        delayMillis = 300,
         tooltip = {
             SmolTooltipText(text = buildString {
                 appendLine(download.path.value?.absolutePathString())
@@ -57,8 +65,8 @@ fun downloadCard(modifier: Modifier = Modifier, download: DownloadItem) {
                                 .onFailure { Timber.e(it) }
                         }
                 ) {
-                    val progressMiB = progress.bytesAsReadableMiB
-                    val totalMiB = total.value?.bytesAsReadableMiB
+                    val progressMiB = progress.bytesAsShortReadableMiB
+                    val totalMiB = total.value?.bytesAsShortReadableMiB
                     Text(
                         modifier = Modifier,
                         text = download.path.value?.name ?: "",
@@ -69,28 +77,63 @@ fun downloadCard(modifier: Modifier = Modifier, download: DownloadItem) {
                         text = when (status) {
                             is DownloadItem.Status.NotStarted -> "Starting"
                             is DownloadItem.Status.Downloading -> {
-                                "$progressMiB${if (totalMiB != null) " / $totalMiB" else ""}}"
+                                "${if(bitsPerSecond != null) "${"%.1f Mbps".format(bitsPerSecond.bitsToMiB)}, " else ""}$progressMiB${if (totalMiB != null) " / $totalMiB" else ""}"
                             }
-                            is DownloadItem.Status.Completed -> "Completed $progressMiB"
+                            is DownloadItem.Status.Completed -> "Completed, $progressMiB"
                             is DownloadItem.Status.Failed -> "Failed: ${status.error}"
                             DownloadItem.Status.Cancelled -> "Cancelled"
                         },
                         fontSize = 12.sp
                     )
                 }
-                if (status == DownloadItem.Status.Completed) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp).align(Alignment.CenterVertically),
-                        progress = progressPercent,
-                        color = MaterialTheme.colors.onSurface
-                    )
-                } else {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp).align(Alignment.CenterVertically),
-                        color = MaterialTheme.colors.onSurface
-                    )
+
+                when (download.status.value) {
+                    DownloadItem.Status.Downloading -> {
+                        if (download.totalBytes.value != null) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp).align(Alignment.CenterVertically),
+                                progress = progressPercent,
+                                color = MaterialTheme.colors.onSurface
+                            )
+                        } else {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp).align(Alignment.CenterVertically),
+                                color = MaterialTheme.colors.onSurface
+                            )
+                        }
+                    }
+                }
+
+                IconButton(
+                    modifier = Modifier
+                        .padding(start = 8.dp)
+                        .align(Alignment.CenterVertically)
+                        .size(16.dp),
+                    onClick = {
+                        SL.UI.downloadManager.activeDownloads[download.id]?.cancel()
+                        requestToastDismissal()
+                    }
+                ) {
+                    Icon(imageVector = Icons.Default.Close, contentDescription = null)
                 }
             }
         }
     }
 }
+
+@Preview
+@Composable
+fun downloadCardPreview() =
+    previewTheme {
+        downloadCard(
+            download = DownloadItem(id = "")
+                .apply {
+                    this.path.value = Path.of("C:/temp/perseanchronicles.7z")
+                    this.totalBytes.value = 1000
+                    this.progress.value = 750
+                    this.bitsPerSecond.value = 512000
+                    this.status.value = DownloadItem.Status.Downloading
+                },
+            requestToastDismissal = {}
+        )
+    }

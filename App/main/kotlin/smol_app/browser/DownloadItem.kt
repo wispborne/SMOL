@@ -9,6 +9,7 @@ data class DownloadItem(
     val totalBytes: MutableStateFlow<Long?> = MutableStateFlow(null),
 ) {
     val progress: MutableStateFlow<Long> = MutableStateFlow(0L)
+    val bitsPerSecond: MutableStateFlow<Long?> = MutableStateFlow(0L)
     val status: MutableStateFlow<Status> = MutableStateFlow(Status.NotStarted)
 
     sealed class Status {

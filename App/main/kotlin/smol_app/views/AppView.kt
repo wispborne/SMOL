@@ -14,7 +14,6 @@ import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.extensions.compose.jetbrains.Children
 import smol_access.SL
 import smol_app.*
-import smol_app.browser.DownloadItem
 import smol_app.browser.ModBrowserView
 import smol_app.browser.downloadCard
 import smol_app.home.homeView
@@ -54,18 +53,26 @@ fun AppState.appView() {
                     modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp),
                     toasterState = toasterState,
                     items = downloads.map {
-                        Toast(id = it.id, timeoutMillis = null) { downloadCard(download = it) }
+                        Toast(id = it.id, timeoutMillis = null) {
+                            downloadCard(download = it,
+                                requestToastDismissal = {
+                                    if (!toasterState.timersByToastId.containsKey(it.id)) {
+                                        toasterState.timersByToastId[it.id] = 0
+                                    }
+                                })
+                        }
                     },
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 )
 
-                downloads.map { it to it.status.collectAsState() }
-                    .filter { (_, status) -> status.value is DownloadItem.Status.Completed }
-                    .forEach { (item, _) ->
-                        if (!toasterState.timersByToastId.containsKey(item.id)) {
-                            toasterState.timersByToastId[item.id] = Toaster.defaultTimeoutMillis
-                        }
-                    }
+                // Uncomment to clear out completed downloads after 10s.
+//                downloads.map { it to it.status.collectAsState() }
+//                    .filter { (_, status) -> status.value is DownloadItem.Status.Completed }
+//                    .forEach { (item, _) ->
+//                        if (!toasterState.timersByToastId.containsKey(item.id)) {
+//                            toasterState.timersByToastId[item.id] = Toaster.defaultTimeoutMillis
+//                        }
+//                    }
             }
         }
     }

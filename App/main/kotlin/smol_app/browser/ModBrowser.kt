@@ -4,7 +4,6 @@ import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.GridCells
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.mouseClickable
@@ -179,6 +178,8 @@ fun AppState.ModBrowserView(
                                                 runBlocking {
                                                     if (progressBytes != null)
                                                         download.progress.emit(progressBytes)
+                                                    if (speedBps != null)
+                                                        download.bitsPerSecond.emit(speedBps)
                                                 }
                                                 if (download.status.value is DownloadItem.Status.NotStarted)
                                                     runBlocking {
@@ -278,16 +279,19 @@ fun browserIcon(modifier: Modifier = Modifier, mod: ScrapedMod) {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun downloadBar(
-    modifier: Modifier = Modifier,
-) {
-    val downloads = SL.UI.downloadManager.downloads.collectAsState().value
-
-    LazyRow(modifier) {
-        items(downloads) { download ->
-            downloadCard(download = download)
-        }
-    }
-}
+//@OptIn(ExperimentalFoundationApi::class)
+//@Composable
+//fun downloadBar(
+//    modifier: Modifier = Modifier,
+//) {
+//    val downloads = SL.UI.downloadManager.downloads.collectAsState().value
+//
+//    LazyRow(modifier) {
+//        items(downloads) { download ->
+//            downloadCard(
+//                download = download,
+//                requestToastDismissal = {}
+//            )
+//        }
+//    }
+//}

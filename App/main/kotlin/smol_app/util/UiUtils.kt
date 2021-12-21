@@ -1,17 +1,27 @@
 package smol_app.util
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.res.useResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.dp
 import dev.andrewbailey.diff.differenceOf
 import smol_access.Constants
 import smol_access.ServiceLocator
 import smol_access.business.VmParamsManager
 import smol_access.config.Platform
 import smol_access.model.Mod
+import smol_access.themes.ThemeManager
+import smol_app.themes.SmolTheme
+import smol_app.themes.SmolTheme.toColors
 import java.awt.Desktop
 import java.net.URI
 import java.nio.file.Path
@@ -52,8 +62,20 @@ fun String.ellipsizeAfter(length: Int): String {
 /**
  * A mebibyte is 2^20 bytes (1024 KiB instead of 1000 KB).
  */
+val Long.bitsToMiB
+    get() = (this / 1048576f)
+
+/**
+ * 0.111 MiB
+ */
 val Long.bytesAsReadableMiB: String
-    get() = "%.3f MiB".format(this / 1048576f)
+    get() = "%.3f MiB".format(this.bitsToMiB)
+
+/**
+ * 0.1 MiB
+ */
+val Long.bytesAsShortReadableMiB: String
+    get() = "%.1f MiB".format(this.bitsToMiB)
 
 /**
  * From [https://github.com/JetBrains/skija/blob/ebd63708b35e23667c1bf65845182430d0cf0860/shared/java/impl/Platform.java].
@@ -127,3 +149,17 @@ fun String.acronym(): String =
 // TODO These should be injected via an actual DI framework or something
 val ServiceLocator.vmParamsManager: VmParamsManager
     get() = VmParamsManager(gamePath, currentPlatform)
+
+@Composable
+fun previewTheme(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    MaterialTheme(
+        colors = ThemeManager.defaultTheme.second.toColors(),
+        typography = Typography(
+            button = TextStyle(fontFamily = SmolTheme.orbitronSpaceFont)
+        )
+    ) {
+        Box(modifier.padding(24.dp)) {
+            content.invoke()
+        }
+    }
+}
