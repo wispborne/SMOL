@@ -2,6 +2,7 @@ package smol_app.views
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.mouseClickable
@@ -10,6 +11,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.pop
 import smol_access.Constants
@@ -98,7 +103,6 @@ fun AppState.settingsView(
         }
     }
 }
-
 
 @Composable
 private fun AppState.gamePathSetting(gamePath: String): String {
@@ -232,13 +236,39 @@ private fun AppState.themeDropdown(modifier: Modifier = Modifier): String {
             modifier = Modifier.padding(start = 16.dp).align(Alignment.CenterVertically),
             items = themes
                 .map {
+                    val colors = it.value.toColors()
                     SmolDropdownMenuItem(
                         text = it.key,
-                        backgroundColor = it.value.toColors().surface,
-                        contentColor = it.value.toColors().onSurface,
+                        backgroundColor = colors.surface,
+                        contentColor = colors.onSurface,
                         onClick = {
                             themeName = it.key
                             SL.themeManager.setActiveTheme(it.key)
+                        },
+                        customItemContent = { item ->
+                            val height = 24.dp
+                            Text(
+                                text = item.text,
+                                modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
+                                fontWeight = FontWeight.Bold,
+                                color = item.contentColor ?: contentColorFor(
+                                    item.backgroundColor ?: MaterialTheme.colors.surface
+                                )
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .padding(start = 16.dp)
+                                    .width(height * 3)
+                                    .height(height)
+                                    .background(color = colors.primary)
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .padding(start = 8.dp)
+                                    .width(height)
+                                    .height(height)
+                                    .background(color = colors.secondary)
+                            )
                         }
                     )
                 },

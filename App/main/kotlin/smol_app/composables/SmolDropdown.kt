@@ -20,7 +20,8 @@ data class SmolDropdownMenuItem(
     val text: String,
     val backgroundColor: Color? = null,
     val contentColor: Color? = null,
-    val onClick: () -> Unit
+    val onClick: () -> Unit,
+    val customItemContent: @Composable (RowScope.(item: SmolDropdownMenuItem) -> Unit)? = null
 )
 
 @Composable
@@ -70,14 +71,18 @@ fun SmolDropdownWithButton(
                         items[index].onClick()
                     }) {
                     Row {
-                        Text(
-                            text = item.text,
-                            modifier = Modifier.weight(1f),
-                            fontWeight = FontWeight.Bold,
-                            color = item.contentColor ?: contentColorFor(
-                                item.backgroundColor ?: MaterialTheme.colors.surface
+                        if (item.customItemContent != null) {
+                            item.customItemContent.invoke(this, item)
+                        } else {
+                            Text(
+                                text = item.text,
+                                modifier = Modifier.weight(1f),
+                                fontWeight = FontWeight.Bold,
+                                color = item.contentColor ?: contentColorFor(
+                                    item.backgroundColor ?: MaterialTheme.colors.surface
+                                )
                             )
-                        )
+                        }
                     }
                 }
             }

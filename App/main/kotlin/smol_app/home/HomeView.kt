@@ -260,9 +260,10 @@ private fun AppState.logPanel(
                         modifier = Modifier.padding(bottom = 4.dp),
                         items = LogLevel.values().map {
                             SmolDropdownMenuItem(
-                                text = it.name.lowercase().replaceFirstChar { it.uppercaseChar() }) {
-                                Logging.logLevel = it
-                            }
+                                text = it.name.lowercase().replaceFirstChar { it.uppercaseChar() },
+                                onClick = {
+                                    Logging.logLevel = it
+                                })
                         },
                         initiallySelectedIndex = selectedLogLevel.ordinal
                     )

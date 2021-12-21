@@ -21,6 +21,26 @@
       "background": "#282C34",
       "hyperlink": "#C26C6A"
     },
+    "Sigma": {
+      "isDark": true,
+      "primary": "#40D7A3",
+      "primaryVariant": "#39BE91",
+      "secondary": "#18FFFF",
+      "secondaryVariant": "#18D1D1",
+      "surface": "#21242B",
+      "background": "#282C34",
+      "hyperlink": "#6FA9E2"
+    },
+    "Nia": {
+      "isDark": true,
+      "primary": "#BE00FF",
+      "primaryVariant": "#9900CD",
+      "secondary": "#CE3867",
+      "secondaryVariant": "#A22C51",
+      "surface": "#21242B",
+      "background": "#282C34",
+      "hyperlink": "#D6D281"
+    },
     "Kemet - Twilight": {
       "isDark": true,
       "onPrimary": "#E3E4E9",
@@ -41,26 +61,6 @@
       "background": "#136E64",
       "hyperlink": "#F50607"
     },
-    "Aurica": {
-      "isDark": false,
-      "primary": "#FFC900",
-      "primaryVariant": "#FFD539",
-      "secondary": "#FFDE00",
-      "secondaryVariant": "#FFE739",
-      "surface": "#F0F0F0",
-      "background": "#FFFFFF",
-      "hyperlink": "#00B5B5"
-    },
-    "Nia": {
-      "isDark": true,
-      "primary": "#BE00FF",
-      "primaryVariant": "#9900CD",
-      "secondary": "#CE3867",
-      "secondaryVariant": "#A22C51",
-      "surface": "#21242B",
-      "background": "#282C34",
-      "hyperlink": "#D6D281"
-    },
     "VIC": {
       "isDark": true,
       "primary": "#EE9E00",
@@ -80,6 +80,16 @@
       "surface": "#0C1009",
       "background": "#020101",
       "hyperlink": "#C3B9A4"
+    },
+    "Aurica": {
+      "isDark": false,
+      "primary": "#FFC900",
+      "primaryVariant": "#FFD539",
+      "secondary": "#FFDE00",
+      "secondaryVariant": "#FFE739",
+      "surface": "#F0F0F0",
+      "background": "#FFFFFF",
+      "hyperlink": "#00B5B5"
     }
   }
 }
