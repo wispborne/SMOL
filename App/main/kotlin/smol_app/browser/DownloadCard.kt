@@ -13,20 +13,27 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import smol_access.SL
 import smol_app.UI
 import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
-import smol_app.util.*
+import smol_app.util.bitsToMiB
+import smol_app.util.bytesAsShortReadableMiB
+import smol_app.util.openInDesktop
+import smol_app.util.previewTheme
 import timber.ktx.Timber
+import java.awt.Cursor
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.name
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun downloadCard(
     modifier: Modifier = Modifier,
@@ -41,15 +48,31 @@ fun downloadCard(
     val progressPercent: Float = if (total.value != null)
         (progress.toFloat() / total.value!!.toFloat())
     else 0f
+    val progressMiB = progress.bytesAsShortReadableMiB
+    val totalMiB = total.value?.bytesAsShortReadableMiB
+
+    val statusText = when (status) {
+        is DownloadItem.Status.NotStarted -> "Starting"
+        is DownloadItem.Status.Downloading -> {
+            "${if (bitsPerSecond != null) "${"%.1f Mbps".format(bitsPerSecond.bitsToMiB)}, " else ""}$progressMiB${if (totalMiB != null) " / $totalMiB" else ""}"
+        }
+        is DownloadItem.Status.Completed -> "Completed, $progressMiB"
+        is DownloadItem.Status.Failed -> "Failed: ${status.error}"
+        DownloadItem.Status.Cancelled -> "Cancelled"
+    }
 
     SmolTooltipArea(
         modifier = modifier,
         delayMillis = 300,
         tooltip = {
-            SmolTooltipText(text = buildString {
-                appendLine(download.path.value?.absolutePathString())
-                if (status is DownloadItem.Status.Failed) appendLine(status.error.message)
-            })
+            SmolTooltipText(
+                text = listOfNotNull(
+                    download.path.value?.name.toString(),
+                    "Path: ${download.path.value?.absolutePathString()}",
+                    if (status is DownloadItem.Status.Failed) status.error.message.toString() else null,
+                    statusText
+                ).joinToString(separator = "\n")
+            )
         }
     ) {
         Card(
@@ -64,9 +87,8 @@ fun downloadCard(
                             kotlin.runCatching { download.path.value?.parent?.openInDesktop() }
                                 .onFailure { Timber.e(it) }
                         }
+                        .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)))
                 ) {
-                    val progressMiB = progress.bytesAsShortReadableMiB
-                    val totalMiB = total.value?.bytesAsShortReadableMiB
                     Text(
                         modifier = Modifier,
                         text = download.path.value?.name ?: "",
@@ -74,15 +96,7 @@ fun downloadCard(
                     )
                     Text(
                         modifier = Modifier.padding(top = 4.dp),
-                        text = when (status) {
-                            is DownloadItem.Status.NotStarted -> "Starting"
-                            is DownloadItem.Status.Downloading -> {
-                                "${if(bitsPerSecond != null) "${"%.1f Mbps".format(bitsPerSecond.bitsToMiB)}, " else ""}$progressMiB${if (totalMiB != null) " / $totalMiB" else ""}"
-                            }
-                            is DownloadItem.Status.Completed -> "Completed, $progressMiB"
-                            is DownloadItem.Status.Failed -> "Failed: ${status.error}"
-                            DownloadItem.Status.Cancelled -> "Cancelled"
-                        },
+                        text = statusText,
                         fontSize = 12.sp
                     )
                 }
