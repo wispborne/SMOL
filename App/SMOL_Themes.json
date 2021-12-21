@@ -31,6 +31,17 @@
       "background": "#282C34",
       "hyperlink": "#6FA9E2"
     },
+    "Wisp": {
+      "isDark": true,
+      "primary": "#1080D6",
+      "primaryVariant": "#066BB8",
+      "secondary": "#2BE394",
+      "secondaryVariant": "#03DB7E",
+      "onPrimary": "#FDFDFD",
+      "surface": "#042138",
+      "background": "#282C34",
+      "hyperlink": "#6FA9E2"
+    },
     "Nia": {
       "isDark": true,
       "primary": "#BE00FF",
