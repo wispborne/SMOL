@@ -398,7 +398,7 @@ fun AppState.ModGridView(
                                                                                 val modThreadId =
                                                                                     mod.findHighestVersion?.versionCheckerInfo?.modThreadId
                                                                                 if (modThreadId != null) {
-                                                                                    SmolSecondaryButton(
+                                                                                    SmolButton(
                                                                                         modifier = Modifier.padding(top = 16.dp),
                                                                                         onClick = { modThreadId.openModThread() }) {
                                                                                         Icon(

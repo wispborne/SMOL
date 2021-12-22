@@ -1,6 +1,7 @@
 package smol_app.composables
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -64,7 +65,7 @@ fun SmolAlertDialog(
         AlertDialog(
             onDismissRequest = onDismissRequest,
             confirmButton = confirmButton,
-            modifier = modifier,
+            modifier = modifier.clickable(enabled = false) {}, // Don't dismiss the dialog when you click on it!
             dismissButton = dismissButton,
             title = title,
             text = text,
