@@ -2,6 +2,7 @@
 
 package smol_app.home
 
+import AppState
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -26,10 +27,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -37,8 +42,8 @@ import smol_access.SL
 import smol_access.model.Mod
 import smol_access.model.ModId
 import smol_access.model.UserProfile
-import smol_app.AppState
 import smol_app.UI
+import smol_app.WindowState
 import smol_app.composables.*
 import smol_app.themes.SmolTheme
 import smol_app.util.*
@@ -340,10 +345,76 @@ fun AppState.ModGridView(
                                                             )
                                                         }, modifier = Modifier.mouseClickable {
                                                             if (this.buttons.isPrimaryPressed) {
-                                                                SL.UI.downloadManager.downloadFromUrl(
-                                                                    url = ddUrl,
-                                                                    shouldInstallAfter = true
-                                                                )
+                                                                alertDialogSetter {
+                                                                    SmolAlertDialog(
+                                                                        onDismissRequest = { alertDialogSetter(null) },
+                                                                        confirmButton = {
+                                                                            SmolButton(onClick = {
+                                                                                SL.UI.downloadManager.downloadFromUrl(
+                                                                                    url = ddUrl,
+                                                                                    shouldInstallAfter = true
+                                                                                )
+                                                                            }) { Text("Take the risk") }
+                                                                        },
+                                                                        dismissButton = {
+                                                                            SmolSecondaryButton(onClick = {
+                                                                                alertDialogSetter(null)
+                                                                            }) { Text("Cancel") }
+                                                                        },
+                                                                        title = { Text(text = "Auto-update ${mod.findFirstEnabledOrHighestVersion?.modInfo?.name}", fontSize = 20.sp) },
+                                                                        text = {
+                                                                            Column {
+                                                                                Text(
+                                                                                    text = ("Do you want to automatically download and update <b>${mod.findFirstEnabledOrHighestVersion?.modInfo?.name}</b> " +
+                                                                                            "from version <b>${mod.findFirstEnabledOrHighestVersion?.modInfo?.version}</b> " +
+                                                                                            "to version <b>$onlineVersion</b>?")
+                                                                                        .parseHtml(),
+                                                                                    fontSize = 16.sp
+                                                                                )
+                                                                                Text(
+                                                                                    text = "WARNING",
+                                                                                    color = SmolTheme.warningOrange,
+                                                                                    modifier = Modifier.padding(top = 16.dp).align(Alignment.CenterHorizontally),
+                                                                                    fontWeight = FontWeight.SemiBold,
+                                                                                    fontSize = 18.sp
+                                                                                )
+                                                                                Text(
+                                                                                    text = "This may break your save",
+                                                                                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                                                                                    fontWeight = FontWeight.SemiBold,
+                                                                                    fontSize = 18.sp
+                                                                                )
+                                                                                Text(
+                                                                                    text = "Save compatibility is not guaranteed when updating a mod. " +
+                                                                                            "Check the mod's patch notes to see if save compatibility is mentioned.",
+                                                                                    modifier = Modifier.padding(top = 16.dp),
+                                                                                    fontSize = 16.sp
+                                                                                )
+                                                                                Text(
+                                                                                    text = "Bug reports about saves broken by using this feature will be ignored.",
+                                                                                    modifier = Modifier.padding(top = 8.dp),
+                                                                                    fontSize = 16.sp
+                                                                                )
+                                                                                val modThreadId =
+                                                                                    mod.findHighestVersion?.versionCheckerInfo?.modThreadId
+                                                                                if (modThreadId != null) {
+                                                                                    SmolSecondaryButton(
+                                                                                        modifier = Modifier.padding(top = 16.dp),
+                                                                                        onClick = { modThreadId.openModThread() }) {
+                                                                                        Icon(
+                                                                                            modifier = Modifier.padding(
+                                                                                                end = 8.dp
+                                                                                            ),
+                                                                                            painter = painterResource("open-in-new.svg"),
+                                                                                            contentDescription = null
+                                                                                        )
+                                                                                        Text("Mod Page")
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    )
+                                                                }
                                                             }
                                                         }
                                                             .align(Alignment.CenterVertically)) {
@@ -413,51 +484,7 @@ fun AppState.ModGridView(
 
                                             // VRAM
                                             Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {
-                                                val vramResult =
-                                                    SL.vramChecker.vramUsage.value?.get(mod.findHighestVersion?.smolId)
-                                                SmolTooltipArea(tooltip = {
-                                                    if (vramResult != null) {
-                                                        val impactText =
-                                                            vramResult.bytesForMod.bytesAsReadableMiB
-                                                                .let { if (vramResult.bytesForMod == 0L) "No impact" else it }
-                                                        SmolTooltipText(
-                                                            text = buildString {
-                                                                appendLine("Version: ${vramResult.version}")
-                                                                appendLine(impactText)
-                                                                append("${vramResult.imageCount} images")
-                                                            }
-                                                        )
-                                                    }
-                                                }) {
-                                                    // VRAM relative size bar
-                                                    if (vramResult?.bytesForMod != null && vramResult.bytesForMod > 0 && largestVramUsage != null) {
-                                                        val widthWeight =
-                                                            (vramResult.bytesForMod.toFloat() / largestVramUsage)
-                                                                .coerceIn(0.01f, 0.99f)
-                                                        Row(Modifier.height(28.dp)) {
-                                                            Box(
-                                                                Modifier
-                                                                    .background(
-                                                                        color = MaterialTheme.colors.primary,
-                                                                        shape = SmolTheme.smolNormalButtonShape()
-                                                                    )
-                                                                    .weight(widthWeight)
-                                                                    .height(8.dp)
-                                                                    .align(Alignment.Bottom)
-                                                            )
-                                                            Spacer(Modifier.weight(1f - widthWeight))
-                                                        }
-                                                    }
-                                                    Text(
-                                                        text =
-                                                        vramResult?.bytesForMod?.bytesAsReadableMiB
-                                                            ?.let { if (vramResult.bytesForMod == 0L) "None" else it }
-                                                            ?: "Unavailable",
-                                                        modifier = Modifier.fillMaxSize()
-                                                            .align(Alignment.CenterVertically),
-                                                        color = SmolTheme.dimmedTextColor()
-                                                    )
-                                                }
+                                                vramBar(mod, largestVramUsage)
                                             }
 
                                             // Game version (for active or highest)
@@ -599,7 +626,7 @@ private fun RowScope.SortableHeader(
 @Preview
 @Composable
 fun previewModGrid() {
-    AppState()
+    AppState(WindowState())
         .ModGridView(Modifier, SnapshotStateList())
 }
 

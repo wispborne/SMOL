@@ -1,5 +1,6 @@
 package smol_app.views
 
+import AppState
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -16,7 +17,6 @@ import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.pop
 import smol_access.Constants
 import smol_access.SL
-import smol_app.AppState
 import smol_app.composables.*
 import smol_app.themes.SmolTheme.toColors
 import smol_app.util.openInDesktop

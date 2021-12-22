@@ -1,5 +1,6 @@
 package smol_app.views
 
+import AppState
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,12 +25,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import smol_access.SL
 import smol_access.model.UserProfile
-import smol_app.AppState
 import smol_app.composables.SmolAlertDialog
 import smol_app.composables.SmolButton
 import smol_app.composables.SmolSecondaryButton
 import smol_app.composables.SmolTextField
-import smol_app.themes.*
+import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.lighten
 import smol_app.util.ellipsizeAfter
 

@@ -1,5 +1,6 @@
 package smol_app.browser.javafx
 
+import AppState
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -17,7 +18,6 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import smol_access.Constants
 import smol_access.SL
-import smol_app.AppState
 import smol_app.UI
 import smol_app.browser.BrowserUtils
 import smol_app.browser.ForumWebpageModifier

@@ -1,5 +1,6 @@
 package smol_app.browser
 
+import AppState
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
@@ -30,7 +31,6 @@ import org.tinylog.kotlin.Logger
 import smol_access.Constants
 import smol_access.SL
 import smol_access.config.Platform
-import smol_app.AppState
 import smol_app.UI
 import smol_app.browser.chromium.CefBrowserPanel
 import smol_app.browser.chromium.ChromiumBrowser

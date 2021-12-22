@@ -5,9 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Typography
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
@@ -30,9 +28,16 @@ import smol_app.views.settingsView
 @OptIn(ExperimentalStdlibApi::class, ExperimentalDecomposeApi::class)
 @Composable
 @Preview
-fun AppState.appView() {
+fun WindowState.appView() {
     val theme = SL.themeManager.activeTheme.collectAsState()
     val toasterState = remember { ToasterState() }
+
+    var alertDialogBuilder: @Composable (() -> Unit)? by remember { mutableStateOf(null) }
+    val appState by remember {
+        mutableStateOf(AppState(this).apply {
+            this.alertDialogSetter = { alertDialogBuilder = it }
+        })
+    }
 
     MaterialTheme(
         colors = theme.value.second.toColors(),
@@ -44,12 +49,12 @@ fun AppState.appView() {
             Children(router.state, animation = crossfade()) { screen ->
                 Box {
                     when (screen.configuration) {
-                        is Screen.Home -> homeView()
-                        is Screen.Settings -> settingsView()
-                        is Screen.Profiles -> ProfilesView()
-                        is Screen.ModBrowser -> ModBrowserView()
+                        is Screen.Home -> appState.homeView()
+                        is Screen.Settings -> appState.settingsView()
+                        is Screen.Profiles -> appState.ProfilesView()
+                        is Screen.ModBrowser -> appState.ModBrowserView()
                     }.run { }
-                    FileDropper()
+                    appState.FileDropper()
 
                     // Downloads
                     val downloads = SL.UI.downloadManager.downloads.collectAsState().value
@@ -79,6 +84,18 @@ fun AppState.appView() {
 //                    }
                 }
             }
+
+            if (alertDialogBuilder != null) {
+                alertDialogBuilder?.invoke()
+            }
         }
     }
+}
+
+class AppState(windowState: WindowState) : IWindowState by windowState {
+
+    /**
+     * Usage: alertDialogSetter.invoke { AlertDialog(...) }
+     */
+    lateinit var alertDialogSetter: (@Composable (() -> Unit)?) -> Unit
 }

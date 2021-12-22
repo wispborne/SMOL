@@ -5,12 +5,15 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material.*
+import androidx.compose.material.MaterialTheme.colors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ExperimentalGraphicsApi
 import androidx.compose.ui.graphics.Shape
+import org.jetbrains.skia.impl.Stats.enabled
 import smol_app.themes.SmolTheme
+import smol_app.util.hexToColor
 
 @Composable
 @OptIn(ExperimentalMaterialApi::class, ExperimentalGraphicsApi::class)
@@ -23,8 +26,8 @@ fun SmolSecondaryButton(
     shape: Shape? = null,
     border: BorderStroke? = null,
     colors: ButtonColors = ButtonDefaults.buttonColors(
-        backgroundColor = MaterialTheme.colors.primary.copy(alpha = ContentAlpha.high),
-        contentColor = MaterialTheme.colors.onPrimary.copy(alpha = ContentAlpha.high)
+        backgroundColor = if (MaterialTheme.colors.isLight) "#DDDDDD".hexToColor()!! else "#333333".hexToColor()!!,
+//        contentColor = MaterialTheme.colors.onPrimary.copy(alpha = ContentAlpha.high)
     ),
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
     content: @Composable RowScope.() -> Unit

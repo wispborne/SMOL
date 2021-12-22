@@ -1,5 +1,6 @@
 package smol_app
 
+import AppState
 import androidx.compose.runtime.*
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.input.key.KeyEvent
@@ -84,8 +85,8 @@ fun main() = application {
             handleBackButton = true
         )
 
-        val appState by remember {
-            mutableStateOf(AppState().apply {
+        val windowState by remember {
+            mutableStateOf(WindowState().apply {
                 this.router = router
                 this.window = this@Window.window
                 this.onWindowKeyEventHandlers = onKeyEventHandlers
@@ -126,12 +127,19 @@ fun main() = application {
                 .launchIn(this)
         }
 
-        appState.appView()
+        windowState.appView()
     }
 }
 
-class AppState {
-    lateinit var router: Router<Screen, Any>
-    lateinit var window: ComposeWindow
-    lateinit var onWindowKeyEventHandlers: MutableList<(KeyEvent) -> Boolean>
+
+interface IWindowState {
+    var router: Router<Screen, Any>
+    var window: ComposeWindow
+    var onWindowKeyEventHandlers: MutableList<(KeyEvent) -> Boolean>
+}
+
+class WindowState : IWindowState {
+    override lateinit var router: Router<Screen, Any>
+    override lateinit var window: ComposeWindow
+    override lateinit var onWindowKeyEventHandlers: MutableList<(KeyEvent) -> Boolean>
 }

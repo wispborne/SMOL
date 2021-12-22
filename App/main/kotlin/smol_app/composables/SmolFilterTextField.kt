@@ -1,5 +1,6 @@
 package smol_app.composables
 
+import AppState
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
@@ -12,7 +13,6 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.res.painterResource
-import smol_app.AppState
 
 @Composable
 fun smolSearchField(

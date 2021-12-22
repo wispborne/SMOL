@@ -1,5 +1,6 @@
 package smol_app.views
 
+import AppState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CutCornerShape
@@ -15,7 +16,6 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.tinylog.Logger
 import smol_access.SL
-import smol_app.AppState
 import smol_app.composables.SmolAlertDialog
 import smol_app.composables.SmolButton
 import java.awt.dnd.DropTarget
