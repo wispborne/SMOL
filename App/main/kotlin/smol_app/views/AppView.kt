@@ -1,4 +1,5 @@
 import androidx.compose.desktop.ui.tooling.preview.Preview
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
@@ -11,7 +12,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.jetbrains.Children
+import com.arkivanov.decompose.extensions.compose.jetbrains.animation.child.crossfade
 import smol_access.SL
 import smol_app.*
 import smol_app.browser.ModBrowserView
@@ -24,7 +27,7 @@ import smol_app.views.FileDropper
 import smol_app.views.ProfilesView
 import smol_app.views.settingsView
 
-@OptIn(ExperimentalStdlibApi::class)
+@OptIn(ExperimentalStdlibApi::class, ExperimentalDecomposeApi::class)
 @Composable
 @Preview
 fun AppState.appView() {
@@ -37,35 +40,36 @@ fun AppState.appView() {
             button = TextStyle(fontFamily = SmolTheme.orbitronSpaceFont)
         )
     ) {
-        Children(router.state) { screen ->
-            Box {
-                when (screen.configuration) {
-                    is Screen.Home -> homeView()
-                    is Screen.Settings -> settingsView()
-                    is Screen.Profiles -> ProfilesView()
-                    is Screen.ModBrowser -> ModBrowserView()
-                }.run { }
-                FileDropper()
+        Box(Modifier.background(MaterialTheme.colors.background)) {
+            Children(router.state, animation = crossfade()) { screen ->
+                Box {
+                    when (screen.configuration) {
+                        is Screen.Home -> homeView()
+                        is Screen.Settings -> settingsView()
+                        is Screen.Profiles -> ProfilesView()
+                        is Screen.ModBrowser -> ModBrowserView()
+                    }.run { }
+                    FileDropper()
 
-                // Downloads
-                val downloads = SL.UI.downloadManager.downloads.collectAsState().value
-                toaster(
-                    modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp),
-                    toasterState = toasterState,
-                    items = downloads.map {
-                        Toast(id = it.id, timeoutMillis = null) {
-                            downloadCard(download = it,
-                                requestToastDismissal = {
-                                    if (!toasterState.timersByToastId.containsKey(it.id)) {
-                                        toasterState.timersByToastId[it.id] = 0
-                                    }
-                                })
-                        }
-                    },
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                )
+                    // Downloads
+                    val downloads = SL.UI.downloadManager.downloads.collectAsState().value
+                    toaster(
+                        modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp),
+                        toasterState = toasterState,
+                        items = downloads.map {
+                            Toast(id = it.id, timeoutMillis = null) {
+                                downloadCard(download = it,
+                                    requestToastDismissal = {
+                                        if (!toasterState.timersByToastId.containsKey(it.id)) {
+                                            toasterState.timersByToastId[it.id] = 0
+                                        }
+                                    })
+                            }
+                        },
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    )
 
-                // Uncomment to clear out completed downloads after 10s.
+                    // Uncomment to clear out completed downloads after 10s.
 //                downloads.map { it to it.status.collectAsState() }
 //                    .filter { (_, status) -> status.value is DownloadItem.Status.Completed }
 //                    .forEach { (item, _) ->
@@ -73,6 +77,7 @@ fun AppState.appView() {
 //                            toasterState.timersByToastId[item.id] = Toaster.defaultTimeoutMillis
 //                        }
 //                    }
+                }
             }
         }
     }

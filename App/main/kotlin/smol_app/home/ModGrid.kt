@@ -1,5 +1,8 @@
+@file:OptIn(ExperimentalAnimationApi::class)
+
 package smol_app.home
 
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -258,7 +261,12 @@ fun AppState.ModGridView(
                                                 false
                                             })
                                 ) {
-                                    Column(modifier = Modifier.padding(start = contentPadding, end = contentPadding)) {
+                                    Column(
+                                        modifier = Modifier.padding(
+                                            start = contentPadding,
+                                            end = contentPadding
+                                        )
+                                    ) {
                                         Row(Modifier.fillMaxWidth()) {
                                             // Favorites
                                             Row(
@@ -298,7 +306,8 @@ fun AppState.ModGridView(
                                             // Mod name
                                             Text(
                                                 modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
-                                                text = (mod.findFirstEnabled ?: mod.findHighestVersion)?.modInfo?.name
+                                                text = (mod.findFirstEnabled
+                                                    ?: mod.findHighestVersion)?.modInfo?.name
                                                     ?: "",
                                                 fontWeight = FontWeight.SemiBold,
                                                 maxLines = 1,
@@ -464,7 +473,8 @@ fun AppState.ModGridView(
                                             // Checkbox
                                             val isChecked = mod.id in checkedRows
 
-                                            val isCheckboxVisible = isRowHighlighted || isChecked || checkedRows.any()
+                                            val isCheckboxVisible =
+                                                isRowHighlighted || isChecked || checkedRows.any()
 
                                             Row(
                                                 modifier = Modifier.width(checkboxesWidth)
@@ -596,10 +606,3 @@ fun previewModGrid() {
 data class ModRow(
     val mod: Mod
 )
-
-private enum class Fields {
-    StateDropdown,
-    Name,
-    Versions,
-    Authors
-}
