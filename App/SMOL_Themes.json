@@ -52,6 +52,17 @@
       "background": "#282C34",
       "hyperlink": "#D6D281"
     },
+    "Tidal": {
+      "isDark": true,
+      "primary": "#CD005D",
+      "primaryVariant": "#A2004A",
+      "secondary": "#00FFFF",
+      "secondaryVariant": "#00B6B6",
+      "onPrimary": "#FDFDFD",
+      "surface": "#17171A",
+      "background": "#17171A",
+      "hyperlink": "#21FEEC"
+    },
     "Kemet - Twilight": {
       "isDark": true,
       "onPrimary": "#E3E4E9",
