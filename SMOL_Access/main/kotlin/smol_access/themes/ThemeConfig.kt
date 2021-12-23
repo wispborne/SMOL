@@ -3,13 +3,16 @@ package smol_access.themes
 import com.google.gson.Gson
 import smol_access.Constants
 import utilities.Config
+import utilities.InMemoryPrefStorage
 import utilities.JsonFilePrefStorage
 
 class ThemeConfig(gson: Gson) :
     Config(
-        JsonFilePrefStorage(
-            gson = gson,
-            file = Constants.THEME_CONFIG_PATH
+        InMemoryPrefStorage(
+            JsonFilePrefStorage(
+                gson = gson,
+                file = Constants.THEME_CONFIG_PATH
+            )
         )
     ) {
     var themes: Map<String, Theme> by pref(prefKey = "themes", defaultValue = emptyMap())

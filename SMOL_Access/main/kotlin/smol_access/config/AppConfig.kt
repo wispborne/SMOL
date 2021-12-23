@@ -4,13 +4,16 @@ import com.google.gson.Gson
 import smol_access.Constants
 import smol_access.model.UserProfile
 import utilities.Config
+import utilities.InMemoryPrefStorage
 import utilities.JsonFilePrefStorage
 
 class AppConfig(gson: Gson) :
     Config(
-        JsonFilePrefStorage(
-            gson = gson,
-            file = Constants.APP_CONFIG_PATH
+        InMemoryPrefStorage(
+            JsonFilePrefStorage(
+                gson = gson,
+                file = Constants.APP_CONFIG_PATH
+            )
         )
     ) {
     var gamePath: String? by pref(prefKey = "gamePath", defaultValue = null)
