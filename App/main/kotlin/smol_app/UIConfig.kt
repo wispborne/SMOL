@@ -17,5 +17,5 @@ class UIConfig(gson: Gson) : Config(
 }
 
 data class ModBrowserState(
-    val modListWidthDp: Float
+    val modListWidthPercent: Float
 )

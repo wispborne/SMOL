@@ -1,5 +1,6 @@
 package smol_app.home
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -36,6 +37,7 @@ sealed class DropdownAction {
     data class ResetToArchive(val variant: ModVariant) : DropdownAction()
 }
 
+@ExperimentalFoundationApi
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
