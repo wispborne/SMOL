@@ -33,72 +33,86 @@ import javax.swing.JFileChooser
 fun AppState.settingsView(
     modifier: Modifier = Modifier
 ) {
+    val showLogPanel = remember { mutableStateOf(false) }
     Scaffold(topBar = {
         TopAppBar {
             SmolButton(onClick = router::pop, modifier = Modifier.padding(start = 16.dp)) {
                 Text("Back")
             }
         }
-    }) {
-        Box(modifier) {
-            Column(Modifier.padding(16.dp)) {
-                var gamePath by remember { mutableStateOf(SL.appConfig.gamePath ?: "") }
-                var archivesPath by remember { mutableStateOf(SL.appConfig.archivesPath ?: "") }
-                var stagingPath by remember { mutableStateOf(SL.appConfig.stagingPath ?: "") }
-                var alertDialogMessage: String? by remember { mutableStateOf(null) }
+    },
+        content = {
+            Box(modifier) {
+                Column(Modifier.padding(16.dp)) {
+                    var gamePath by remember { mutableStateOf(SL.appConfig.gamePath ?: "") }
+                    var archivesPath by remember { mutableStateOf(SL.appConfig.archivesPath ?: "") }
+                    var stagingPath by remember { mutableStateOf(SL.appConfig.stagingPath ?: "") }
+                    var alertDialogMessage: String? by remember { mutableStateOf(null) }
 
-                fun save(): Boolean {
-                    SL.appConfig.gamePath = gamePath
+                    fun save(): Boolean {
+                        SL.appConfig.gamePath = gamePath
 
-                    kotlin.runCatching {
-                        SL.archives.changePath(archivesPath)
-                        SL.access.changeStagingPath(stagingPath)
+                        kotlin.runCatching {
+                            SL.archives.changePath(archivesPath)
+                            SL.access.changeStagingPath(stagingPath)
+                        }
+                            .onFailure { ex ->
+                                alertDialogMessage =
+                                    "${ex.rootCause()::class.simpleName}\n${ex.rootCause().message}"
+                                return false
+                            }
+
+                        return true
                     }
-                        .onFailure { ex ->
-                            alertDialogMessage =
-                                "${ex.rootCause()::class.simpleName}\n${ex.rootCause().message}"
-                            return false
-                        }
 
-                    return true
-                }
+                    if (alertDialogMessage != null) {
+                        SmolAlertDialog(
+                            title = { Text("Error") },
+                            text = { alertDialogMessage?.let { Text(alertDialogMessage!!) } },
+                            onDismissRequest = { alertDialogMessage = null },
+                            confirmButton = { Button(onClick = { alertDialogMessage = null }) { Text("Ok") } }
+                        )
+                    }
 
-                if (alertDialogMessage != null) {
-                    SmolAlertDialog(
-                        title = { Text("Error") },
-                        text = { alertDialogMessage?.let { Text(alertDialogMessage!!) } },
-                        onDismissRequest = { alertDialogMessage = null },
-                        confirmButton = { Button(onClick = { alertDialogMessage = null }) { Text("Ok") } }
-                    )
-                }
-
-                LazyColumn(Modifier.weight(1f)) {
-                    item {
-                        Column {
-                            gamePath = gamePathSetting(gamePath)
-                            archivesPath = archivesPathSetting(archivesPath)
-                            stagingPath = stagingPathSetting(stagingPath)
-                            themeDropdown(Modifier.padding(start = 16.dp, top = 16.dp))
+                    LazyColumn(Modifier.weight(1f)) {
+                        item {
+                            Column {
+                                gamePath = gamePathSetting(gamePath)
+                                archivesPath = archivesPathSetting(archivesPath)
+                                stagingPath = stagingPathSetting(stagingPath)
+                                themeDropdown(Modifier.padding(start = 16.dp, top = 16.dp))
+                            }
                         }
                     }
-                }
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    SmolButton(modifier = Modifier.padding(end = 16.dp), onClick = {
-                        if (save()) {
-                            router.pop()
-                        }
-                    }) { Text("Ok") }
-                    SmolSecondaryButton(
-                        modifier = Modifier.padding(end = 16.dp),
-                        onClick = { router.pop() }) { Text("Cancel") }
-                    SmolSecondaryButton(onClick = { save() }) { Text("Apply") }
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        SmolButton(modifier = Modifier.padding(end = 16.dp), onClick = {
+                            if (save()) {
+                                router.pop()
+                            }
+                        }) { Text("Ok") }
+                        SmolSecondaryButton(
+                            modifier = Modifier.padding(end = 16.dp),
+                            onClick = { router.pop() }) { Text("Cancel") }
+                        SmolSecondaryButton(onClick = { save() }) { Text("Apply") }
+                    }
                 }
             }
+
+            if (showLogPanel.value) {
+                logPanel { showLogPanel.value = false }
+            }
+        },
+        bottomBar = {
+            BottomAppBar(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                logButtonAndErrorDisplay(showLogPanel)
+            }
         }
-    }
+    )
 }
 
 @Composable

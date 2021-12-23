@@ -81,6 +81,7 @@ fun AppState.ModBrowserView(
     val browser = remember { mutableStateOf<ChromiumBrowser?>(null) }
     val linkLoader = remember { mutableStateOf<((String) -> Unit)?>(null) }
     var alertDialogMessage: String? by remember { mutableStateOf(null) }
+    val showLogPanel = remember { mutableStateOf(false) }
 
     Scaffold(topBar = {
         TopAppBar {
@@ -184,12 +185,16 @@ fun AppState.ModBrowserView(
                 }
             }
         }
+
+        if (showLogPanel.value) {
+            logPanel { showLogPanel.value = false }
+        }
     },
         bottomBar = {
             BottomAppBar(
                 modifier = Modifier.fillMaxWidth()
             ) {
-
+                logButtonAndErrorDisplay(showLogPanel)
             }
         }
     )

@@ -32,7 +32,7 @@ import smol_app.composables.SmolLinkText
 import smol_app.composables.TiledImage
 import smol_app.home.ModRow
 import smol_app.themes.SmolTheme
-import smol_app.themes.SmolTheme.withBrightness
+import smol_app.themes.SmolTheme.withAdjustedBrightness
 import smol_app.util.imageResource
 import smol_app.util.openModThread
 
@@ -56,7 +56,7 @@ fun BoxScope.detailsPanel(
     mods: List<Mod>
 ) {
     val row = selectedRow ?: return
-    val borderColor = MaterialTheme.colors.surface.withBrightness(-15)
+    val borderColor = MaterialTheme.colors.surface.withAdjustedBrightness(-15)
 
     Card(
         modifier.width(400.dp)

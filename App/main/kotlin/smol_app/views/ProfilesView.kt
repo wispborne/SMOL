@@ -28,10 +28,7 @@ import smol_access.business.UserManager
 import smol_access.model.ModVariant
 import smol_access.model.SmolId
 import smol_access.model.UserProfile
-import smol_app.composables.SmolAlertDialog
-import smol_app.composables.SmolButton
-import smol_app.composables.SmolSecondaryButton
-import smol_app.composables.SmolTextField
+import smol_app.composables.*
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.lighten
 import smol_app.util.ellipsizeAfter
@@ -48,176 +45,191 @@ fun AppState.ProfilesView(
 ) {
     val modProfileIdShowingDeleteConfirmation = remember { mutableStateOf<Int?>(null) }
     var userProfile = SL.userManager.activeProfile.collectAsState().value
+    val showLogPanel = remember { mutableStateOf(false) }
 
-    Scaffold(topBar = {
-        TopAppBar {
-            SmolButton(onClick = router::pop, modifier = Modifier.padding(start = 16.dp)) {
-                Text("Back")
+    Scaffold(
+        topBar = {
+            TopAppBar {
+                SmolButton(onClick = router::pop, modifier = Modifier.padding(start = 16.dp)) {
+                    Text("Back")
+                }
+                Text(
+                    modifier = Modifier.padding(8.dp).padding(start = 16.dp),
+                    text = "Mod Profiles",
+                    fontWeight = FontWeight.Bold
+                )
             }
-            Text(
-                modifier = Modifier.padding(8.dp).padding(start = 16.dp),
-                text = "Mod Profiles",
-                fontWeight = FontWeight.Bold
-            )
-        }
-    }) {
-        Box(modifier.padding(16.dp)) {
-            val modVariants = remember {
-                mutableStateOf(SL.access.mods.value?.flatMap { it.variants }?.associateBy { it.smolId } ?: emptyMap())
-            }
+        }, content = {
+            Box(modifier.padding(16.dp)) {
+                val modVariants = remember {
+                    mutableStateOf(SL.access.mods.value?.flatMap { it.variants }?.associateBy { it.smolId }
+                        ?: emptyMap())
+                }
 
-            LazyVerticalGrid(
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                cells = GridCells.Adaptive(370.dp)
-            ) {
-                this.items(items = userProfile.modProfiles
-                    .sortedWith(
-                        compareByDescending<UserProfile.ModProfile> { it.id == userProfile.activeModProfileId }
-                            .thenBy { it.sortOrder })
-                ) { modProfile ->
-                    val isActiveProfile = userProfile.activeModProfileId == modProfile.id
-                    val isEditMode = remember { mutableStateOf(false) }
-                    val modProfileName = remember { mutableStateOf(modProfile.name) }
-                    Card(
-                        modifier = Modifier.wrapContentHeight()
-                            .run {
-                                // Highlight active profile
-                                if (isActiveProfile) this.border(
-                                    width = 4.dp,
-                                    color = MaterialTheme.colors.onSurface.lighten(),
-                                    shape = SmolTheme.smolFullyClippedButtonShape()
-                                ) else this
-                            },
-                        shape = SmolTheme.smolFullyClippedButtonShape()
-                    ) {
-                        SelectionContainer {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Row {
-                                    if (!isEditMode.value) {
-                                        Text(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .padding(end = 16.dp)
-                                                .align(Alignment.CenterVertically),
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 18.sp,
-                                            text = modProfileName.value
-                                        )
-                                    } else {
-                                        SmolTextField(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .padding(end = 16.dp)
-                                                .align(Alignment.CenterVertically),
-                                            value = modProfileName.value,
-                                            label = { Text(text = "Profile Name") },
-                                            singleLine = true,
-                                            onValueChange = { newValue ->
-                                                modProfileName.value = newValue
-                                                SL.userManager.updateUserProfile { old ->
-                                                    old.copy(modProfiles = old.modProfiles.map { profile ->
-                                                        if (profile.id == modProfile.id) {
-                                                            profile.copy(name = newValue)
-                                                        } else profile
-                                                    })
+                LazyVerticalGrid(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    cells = GridCells.Adaptive(370.dp)
+                ) {
+                    this.items(items = userProfile.modProfiles
+                        .sortedWith(
+                            compareByDescending<UserProfile.ModProfile> { it.id == userProfile.activeModProfileId }
+                                .thenBy { it.sortOrder })
+                    ) { modProfile ->
+                        val isActiveProfile = userProfile.activeModProfileId == modProfile.id
+                        val isEditMode = remember { mutableStateOf(false) }
+                        val modProfileName = remember { mutableStateOf(modProfile.name) }
+                        Card(
+                            modifier = Modifier.wrapContentHeight()
+                                .run {
+                                    // Highlight active profile
+                                    if (isActiveProfile) this.border(
+                                        width = 4.dp,
+                                        color = MaterialTheme.colors.onSurface.lighten(),
+                                        shape = SmolTheme.smolFullyClippedButtonShape()
+                                    ) else this
+                                },
+                            shape = SmolTheme.smolFullyClippedButtonShape()
+                        ) {
+                            SelectionContainer {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Row {
+                                        if (!isEditMode.value) {
+                                            Text(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .padding(end = 16.dp)
+                                                    .align(Alignment.CenterVertically),
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 18.sp,
+                                                text = modProfileName.value
+                                            )
+                                        } else {
+                                            SmolTextField(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .padding(end = 16.dp)
+                                                    .align(Alignment.CenterVertically),
+                                                value = modProfileName.value,
+                                                label = { Text(text = "Profile Name") },
+                                                singleLine = true,
+                                                onValueChange = { newValue ->
+                                                    modProfileName.value = newValue
+                                                    SL.userManager.updateUserProfile { old ->
+                                                        old.copy(modProfiles = old.modProfiles.map { profile ->
+                                                            if (profile.id == modProfile.id) {
+                                                                profile.copy(name = newValue)
+                                                            } else profile
+                                                        })
+                                                    }
                                                 }
-                                            }
-                                        )
+                                            )
+                                        }
+
+                                        // Control buttons
+                                        DisableSelection {
+                                            profileControls(
+                                                isEditMode = isEditMode,
+                                                modProfileIdShowingDeleteConfirmation = modProfileIdShowingDeleteConfirmation,
+                                                modProfile = modProfile,
+                                                isActiveProfile = isActiveProfile,
+                                                modVariants = modVariants
+                                            )
+                                        }
                                     }
 
-                                    // Control buttons
-                                    DisableSelection {
-                                        profileControls(
-                                            isEditMode = isEditMode,
-                                            modProfileIdShowingDeleteConfirmation = modProfileIdShowingDeleteConfirmation,
-                                            modProfile = modProfile,
-                                            isActiveProfile = isActiveProfile,
-                                            modVariants = modVariants
-                                        )
-                                    }
-                                }
-
-                                Text(
+                                    Text(
 //                                    modifier = Modifier.align(Alignment.CenterVertically),
-                                    text = "${modProfile.enabledModVariants.count()} mods",
-                                    fontFamily = SmolTheme.fireCodeFont,
-                                    fontSize = 12.sp,
-                                )
+                                        text = "${modProfile.enabledModVariants.count()} mods",
+                                        fontFamily = SmolTheme.fireCodeFont,
+                                        fontSize = 12.sp,
+                                    )
 
-                                // Mod list
-                                Box {
-                                    val modNameLength = 28
-                                    Text(
-                                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
-                                            .align(Alignment.TopStart),
-                                        fontFamily = SmolTheme.fireCodeFont,
-                                        softWrap = false,
-                                        fontWeight = FontWeight.Light,
-                                        fontSize = 14.sp,
-                                        text = modProfile.enabledModVariants.joinToString(separator = "\n") {
-                                            val modVariant = modVariants.value[it.smolVariantId]
-                                            modVariant?.modInfo?.name?.ellipsizeAfter(modNameLength)?.plus(": ")
-                                                ?: "${it.modId} (missing)\n    ${it.smolVariantId}"
-                                        })
-                                    Text(
-                                        modifier = Modifier.padding(top = 16.dp).align(Alignment.TopEnd),
-                                        fontFamily = SmolTheme.fireCodeFont,
-                                        softWrap = false,
-                                        fontWeight = FontWeight.Light,
-                                        fontSize = 14.sp,
-                                        text = modProfile.enabledModVariants.joinToString(separator = "\n") {
-                                            val modVariant = modVariants.value[it.smolVariantId]
-                                            modVariant?.modInfo?.version?.toString() ?: ""
-                                        })
+                                    // Mod list
+                                    Box {
+                                        val modNameLength = 28
+                                        Text(
+                                            modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+                                                .align(Alignment.TopStart),
+                                            fontFamily = SmolTheme.fireCodeFont,
+                                            softWrap = false,
+                                            fontWeight = FontWeight.Light,
+                                            fontSize = 14.sp,
+                                            text = modProfile.enabledModVariants.joinToString(separator = "\n") {
+                                                val modVariant = modVariants.value[it.smolVariantId]
+                                                modVariant?.modInfo?.name?.ellipsizeAfter(modNameLength)?.plus(": ")
+                                                    ?: "${it.modId} (missing)\n    ${it.smolVariantId}"
+                                            })
+                                        Text(
+                                            modifier = Modifier.padding(top = 16.dp).align(Alignment.TopEnd),
+                                            fontFamily = SmolTheme.fireCodeFont,
+                                            softWrap = false,
+                                            fontWeight = FontWeight.Light,
+                                            fontSize = 14.sp,
+                                            text = modProfile.enabledModVariants.joinToString(separator = "\n") {
+                                                val modVariant = modVariants.value[it.smolVariantId]
+                                                modVariant?.modInfo?.version?.toString() ?: ""
+                                            })
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                this.item {
-                    var newProfileName by remember { mutableStateOf("") }
-                    Card(
-                        shape = SmolTheme.smolFullyClippedButtonShape()
-                    ) {
-                        Column(Modifier.padding(16.dp).fillMaxWidth()) {
-                            SmolTextField(
-                                value = newProfileName,
-                                onValueChange = { newProfileName = it },
-                                singleLine = true,
-                                label = { Text("Name") }
-                            )
-                            SmolButton(
-                                modifier = Modifier.padding(top = 16.dp),
-                                onClick = {
-                                    if (newProfileName.isNotBlank()) {
-                                        SL.userManager.createModProfile(
-                                            name = newProfileName,
-                                            description = null,
-                                            sortOrder = SL.userManager.activeProfile.value.modProfiles.maxOf { it.sortOrder } + 1
-                                        )
-                                        newProfileName = ""
-                                        userProfile = SL.userManager.activeProfile.value
-                                    }
-                                }) {
-                                Icon(
-                                    modifier = Modifier
-                                        .height(SmolTheme.textIconHeightWidth())
-                                        .width(SmolTheme.textIconHeightWidth()),
-                                    painter = painterResource("plus.svg"),
-                                    contentDescription = null
+                    this.item {
+                        var newProfileName by remember { mutableStateOf("") }
+                        Card(
+                            shape = SmolTheme.smolFullyClippedButtonShape()
+                        ) {
+                            Column(Modifier.padding(16.dp).fillMaxWidth()) {
+                                SmolTextField(
+                                    value = newProfileName,
+                                    onValueChange = { newProfileName = it },
+                                    singleLine = true,
+                                    label = { Text("Name") }
                                 )
-                                Text(
-                                    text = "New Profile"
-                                )
+                                SmolButton(
+                                    modifier = Modifier.padding(top = 16.dp),
+                                    onClick = {
+                                        if (newProfileName.isNotBlank()) {
+                                            SL.userManager.createModProfile(
+                                                name = newProfileName,
+                                                description = null,
+                                                sortOrder = SL.userManager.activeProfile.value.modProfiles.maxOf { it.sortOrder } + 1
+                                            )
+                                            newProfileName = ""
+                                            userProfile = SL.userManager.activeProfile.value
+                                        }
+                                    }) {
+                                    Icon(
+                                        modifier = Modifier
+                                            .height(SmolTheme.textIconHeightWidth())
+                                            .width(SmolTheme.textIconHeightWidth()),
+                                        painter = painterResource("plus.svg"),
+                                        contentDescription = null
+                                    )
+                                    Text(
+                                        text = "New Profile"
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
+
+            if (showLogPanel.value) {
+                logPanel { showLogPanel.value = false }
+            }
+        },
+        bottomBar = {
+            BottomAppBar(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                logButtonAndErrorDisplay(showLogPanel)
+            }
         }
-    }
+    )
 
     if (modProfileIdShowingDeleteConfirmation.value != null) {
         val profile =
