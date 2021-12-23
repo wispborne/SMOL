@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import javafx.application.Platform
@@ -29,7 +30,7 @@ import java.net.URI
 fun AppState.javaFxBrowser(
     jfxpanel: JFXPanel,
     background: androidx.compose.ui.graphics.Color,
-    linkLoader: ((String) -> Unit)?
+    linkLoader: MutableState<((String) -> Unit)?>
 ) {
     var linkLoader1 = linkLoader
     javaFXPanel(
@@ -47,7 +48,7 @@ fun AppState.javaFxBrowser(
             Color.rgb(background.red.toInt(), background.green.toInt(), background.blue.toInt())
         )
         if (WebViewHolder.webView == null) {
-            createWebView(linkLoader1) { linkLoader1 = it }
+            createWebView(linkLoader.value) { linkLoader.value = it }
         }
         WebViewHolder.webView!!.prefWidth = jfxpanel.width.toDouble()
         WebViewHolder.webView!!.prefHeight = jfxpanel.height.toDouble()

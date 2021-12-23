@@ -358,7 +358,12 @@ fun AppState.ModGridView(
                                                                                 alertDialogSetter(null)
                                                                             }) { Text("Cancel") }
                                                                         },
-                                                                        title = { Text(text = "Auto-update ${mod.findFirstEnabledOrHighestVersion?.modInfo?.name}", fontSize = 20.sp) },
+                                                                        title = {
+                                                                            Text(
+                                                                                text = "Auto-update ${mod.findFirstEnabledOrHighestVersion?.modInfo?.name}",
+                                                                                fontSize = 20.sp
+                                                                            )
+                                                                        },
                                                                         text = {
                                                                             Column {
                                                                                 Text(
@@ -371,7 +376,8 @@ fun AppState.ModGridView(
                                                                                 Text(
                                                                                     text = "WARNING",
                                                                                     color = SmolTheme.warningOrange,
-                                                                                    modifier = Modifier.padding(top = 16.dp).align(Alignment.CenterHorizontally),
+                                                                                    modifier = Modifier.padding(top = 16.dp)
+                                                                                        .align(Alignment.CenterHorizontally),
                                                                                     fontWeight = FontWeight.SemiBold,
                                                                                     fontSize = 18.sp
                                                                                 )
@@ -505,7 +511,10 @@ fun AppState.ModGridView(
                                                     .align(Alignment.CenterVertically)
                                                     .alpha(if (isCheckboxVisible) 1f else 0f)
                                             ) {
-                                                modGridBulkActionMenu(checkedRows = checkedRows)
+                                                modGridBulkActionMenu(
+                                                    modifier = Modifier.align(Alignment.CenterVertically),
+                                                    checkedRows = checkedRows
+                                                )
                                                 Checkbox(
                                                     modifier = Modifier.width(checkboxesWidth),
                                                     checked = isChecked,

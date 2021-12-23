@@ -9,7 +9,8 @@ var SL_UI = AppServiceLocator()
 
 class AppServiceLocator internal constructor(
     val downloadManager: DownloadManager = DownloadManager(SL.access),
-    val javaFxDownloader: JavaFxDownloader = JavaFxDownloader(downloadManager)
+    val javaFxDownloader: JavaFxDownloader = JavaFxDownloader(downloadManager),
+    val uiConfig: UIConfig = UIConfig(SL.gson)
 )
 
 val ServiceLocator.UI

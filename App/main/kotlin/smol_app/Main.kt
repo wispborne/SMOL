@@ -28,9 +28,6 @@ import utilities.makeFinite
 var safeMode = false
 
 fun main() = application {
-    val uiConfig = UIConfig(SL.gson)
-    val access = SL.access
-
     // Logger
     kotlin.runCatching {
         Logging.logLevel = if (safeMode) LogLevel.VERBOSE
@@ -40,6 +37,9 @@ fun main() = application {
         .onFailure { println(it) }
 
     var newState = rememberWindowState()
+
+    val uiConfig = SL.UI.uiConfig
+    val access = SL.access
 
     kotlin.runCatching {
         access.checkAndSetDefaultPaths(currentPlatform)

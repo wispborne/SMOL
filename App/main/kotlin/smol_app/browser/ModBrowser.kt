@@ -37,6 +37,7 @@ import org.tinylog.kotlin.Logger
 import smol_access.Constants
 import smol_access.SL
 import smol_access.config.Platform
+import smol_app.ModBrowserState
 import smol_app.UI
 import smol_app.browser.chromium.CefBrowserPanel
 import smol_app.browser.chromium.ChromiumBrowser
@@ -73,8 +74,8 @@ fun AppState.ModBrowserView(
         remember { mutableStateListOf<ScrapedMod?>(elements = moddingSubforumMods.toTypedArray()) }
 
     val jfxpanel: JFXPanel = remember { JFXPanel() }
-    var browser: ChromiumBrowser? by remember { mutableStateOf(null) }
-    var linkLoader: ((String) -> Unit)? by remember { mutableStateOf(null) }
+    var browser = remember { mutableStateOf<ChromiumBrowser?>(null) }
+    var linkLoader = remember { mutableStateOf<((String) -> Unit)?>(null) }
     val scope = rememberCoroutineScope { Dispatchers.Default }
     var alertDialogMessage: String? by remember { mutableStateOf(null) }
 
@@ -89,163 +90,78 @@ fun AppState.ModBrowserView(
                 fontWeight = FontWeight.Bold
             )
             Spacer(Modifier.weight(1f))
-//            downloadBar(modifier = Modifier.padding(top = 4.dp, bottom = 4.dp))
             Spacer(modifier = Modifier.width(16.dp))
         }
     }, content = {
         Column(modifier.padding(bottom = SmolTheme.bottomBarHeight - 16.dp)) {
             Row(modifier = Modifier.padding(start = 16.dp, bottom = 16.dp, top = 8.dp)) {
-                Column(modifier = Modifier
-                    .draggable(state = rememberDraggableState { }, orientation = Orientation.Vertical)
-                ) {
-                    smolSearchField(
-                        modifier = Modifier
-                            .focusRequester(searchFocusRequester())
-                            .widthIn(max = 320.dp)
-                            .align(Alignment.CenterHorizontally)
-                            .padding(bottom = 16.dp, end = 16.dp),
-                        tooltipText = "Hotkey: Ctrl-F",
-                        label = "Filter"
-                    ) { query ->
-                        if (query.isBlank()) {
-                            shownIndexMods.replaceAllUsingDifference(indexMods, doesOrderMatter = false)
-                            shownModdingSubforumMods.replaceAllUsingDifference(
-                                moddingSubforumMods,
-                                doesOrderMatter = false
-                            )
-                        } else {
-                            shownIndexMods.replaceAllUsingDifference(
-                                filterModPosts(query, indexMods).ifEmpty { listOf(null) },
-                                doesOrderMatter = true
-                            )
-                            shownModdingSubforumMods.replaceAllUsingDifference(
-                                filterModPosts(query, moddingSubforumMods).ifEmpty { listOf(null) },
-                                doesOrderMatter = true
-                            )
-                        }
-                    }
-
-                    val scrollState = rememberLazyListState()
-                    Row {
-                        LazyVerticalGrid(
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                            cells = GridCells.Adaptive(200.dp),
-                            state = scrollState,
-                            modifier = Modifier
-                                .widthIn(min = 200.dp, max = 600.dp)
-                        ) {
-                            this.items(
-                                items = (shownIndexMods + shownModdingSubforumMods)
-                                    .filterNotNull()
-                                    .sortedWith(compareByDescending { it.name })
-                            ) { mod -> scrapedModCard(mod, linkLoader) }
-                        }
-                        VerticalScrollbar(
-                            adapter = ScrollbarAdapter(scrollState),
-                            modifier = Modifier.padding(start = 4.dp, end = 8.dp)
-                        )
-                    }
-                }
-
-                val background = MaterialTheme.colors.background
-
-                val useCEF = true
-
-                if (useCEF) {
-                    SwingPanel(
-                        background = MaterialTheme.colors.background,
-                        modifier = Modifier
-                            .padding(start = 16.dp)
-                            .fillMaxHeight()
-                            .fillMaxWidth()
-                            .sizeIn(minWidth = 200.dp),
-                        factory = {
-                            CefBrowserPanel(
-                                startURL = Constants.FORUM_MOD_INDEX_URL,
-                                useOSR = Platform.Linux == currentPlatform,
-                                isTransparent = false,
-                                downloadHandler = object : DownloadHander {
-
-                                    override fun onStart(
-                                        itemId: String,
-                                        suggestedFileName: String?,
-                                        totalBytes: Long
-                                    ) {
-                                        val item = DownloadItem(
-                                            id = itemId
-                                        )
-                                            .apply {
-                                                this.path.value = getDownloadPathFor(suggestedFileName)
-                                                this.totalBytes.value = totalBytes
-                                            }
-                                        SL.UI.downloadManager.addDownload(item)
-                                    }
-
-                                    override fun onProgressUpdate(
-                                        itemId: String,
-                                        progressBytes: Long?,
-                                        totalBytes: Long?,
-                                        speedBps: Long?,
-                                        endTime: Date
-                                    ) {
-                                        SL.UI.downloadManager.downloads.value.firstOrNull { it.id == itemId }
-                                            ?.let { download ->
-                                                Timber.d { "" }
-                                                runBlocking {
-                                                    if (progressBytes != null)
-                                                        download.progress.emit(progressBytes)
-                                                    if (speedBps != null)
-                                                        download.bitsPerSecond.emit(speedBps)
-                                                }
-                                                if (download.status.value is DownloadItem.Status.NotStarted)
-                                                    runBlocking {
-                                                        download.status.emit(DownloadItem.Status.Downloading)
-                                                    }
-                                            }
-                                    }
-
-                                    override fun onCanceled(itemId: String) {
-                                        SL.UI.downloadManager.downloads.value.firstOrNull { it.id == itemId }
-                                            ?.let { download ->
-                                                runBlocking {
-                                                    download.status.emit(
-                                                        DownloadItem.Status.Failed(
-                                                            RuntimeException(
-                                                                "Download canceled."
-                                                            )
-                                                        )
-                                                    )
-                                                }
-                                            }
-                                    }
-
-                                    override fun onCompleted(itemId: String) {
-                                        SL.UI.downloadManager.downloads.value.firstOrNull { it.id == itemId }
-                                            ?.let { download ->
-                                                runBlocking {
-                                                    if (download.totalBytes.value != null)
-                                                        download.progress.emit(download.totalBytes.value ?: 0)
-                                                    download.status.emit(DownloadItem.Status.Completed)
-                                                }
-                                            }
-                                    }
-
-                                    override fun getDownloadPathFor(filename: String?): Path =
-                                        Constants.TEMP_DIR.resolve(
-                                            filename?.ifEmpty { null } ?: UUID.randomUUID().toString())
-                                }
-                            )
-                                .also { browserPanel ->
-                                    browser = browserPanel
-                                    linkLoader = { url ->
-                                        browserPanel.loadUrl(url)
-                                    }
-                                }
-                        }
+                var listingWidth by remember {
+                    mutableStateOf(
+                        SL.UI.uiConfig.modBrowserState?.modListWidthDp?.dp ?: 600.dp
                     )
-                } else {
-                    javaFxBrowser(jfxpanel, background, linkLoader)
+                }
+                val splitterState = remember { SplitterState() }
+                VerticalSplittable(splitterState = splitterState, onResize = {
+                    listingWidth += it
+                    SL.UI.uiConfig.modBrowserState =
+                        SL.UI.uiConfig.modBrowserState?.copy(modListWidthDp = listingWidth.value)
+                            ?: ModBrowserState(modListWidthDp = listingWidth.value)
+                }) {
+                    Column(
+                        modifier = Modifier
+                            .draggable(state = rememberDraggableState { }, orientation = Orientation.Vertical)
+                    ) {
+                        smolSearchField(
+                            modifier = Modifier
+                                .focusRequester(searchFocusRequester())
+                                .widthIn(max = 320.dp)
+                                .align(Alignment.CenterHorizontally)
+                                .padding(bottom = 16.dp, end = 16.dp),
+                            tooltipText = "Hotkey: Ctrl-F",
+                            label = "Filter"
+                        ) { query ->
+                            if (query.isBlank()) {
+                                shownIndexMods.replaceAllUsingDifference(indexMods, doesOrderMatter = false)
+                                shownModdingSubforumMods.replaceAllUsingDifference(
+                                    moddingSubforumMods,
+                                    doesOrderMatter = false
+                                )
+                            } else {
+                                shownIndexMods.replaceAllUsingDifference(
+                                    filterModPosts(query, indexMods).ifEmpty { listOf(null) },
+                                    doesOrderMatter = true
+                                )
+                                shownModdingSubforumMods.replaceAllUsingDifference(
+                                    filterModPosts(query, moddingSubforumMods).ifEmpty { listOf(null) },
+                                    doesOrderMatter = true
+                                )
+                            }
+                        }
+
+                        val scrollState = rememberLazyListState()
+                        Row {
+                            LazyVerticalGrid(
+                                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                                cells = GridCells.Adaptive(200.dp),
+                                state = scrollState,
+                                modifier = Modifier
+                                    .widthIn(min = 200.dp, max = listingWidth)
+                            ) {
+                                this.items(
+                                    items = (shownIndexMods + shownModdingSubforumMods)
+                                        .filterNotNull()
+                                        .sortedWith(compareByDescending { it.name })
+                                ) { mod -> scrapedModCard(mod, linkLoader) }
+                            }
+                            VerticalScrollbar(
+                                adapter = ScrollbarAdapter(scrollState),
+                                modifier = Modifier.padding(start = 4.dp, end = 8.dp)
+                            )
+                        }
+                    }
+
+                    embeddedBrowser(browser, linkLoader, jfxpanel)
                 }
             }
         }
@@ -264,6 +180,112 @@ fun AppState.ModBrowserView(
             onDismissRequest = { alertDialogMessage = null },
             text = { Text(text = alertDialogMessage ?: "") }
         )
+    }
+}
+
+@Composable
+private fun AppState.embeddedBrowser(
+    browser: MutableState<ChromiumBrowser?>,
+    linkLoader: MutableState<((String) -> Unit)?>,
+    jfxpanel: JFXPanel
+) {
+    val background = MaterialTheme.colors.background
+    val useCEF = true
+
+    if (useCEF) {
+        SwingPanel(
+            background = MaterialTheme.colors.background,
+            modifier = Modifier
+                .padding(start = 16.dp)
+                .fillMaxHeight()
+                .fillMaxWidth()
+                .sizeIn(minWidth = 200.dp),
+            factory = {
+                CefBrowserPanel(
+                    startURL = Constants.FORUM_MOD_INDEX_URL,
+                    useOSR = Platform.Linux == currentPlatform,
+                    isTransparent = false,
+                    downloadHandler = object : DownloadHander {
+
+                        override fun onStart(
+                            itemId: String,
+                            suggestedFileName: String?,
+                            totalBytes: Long
+                        ) {
+                            val item = DownloadItem(
+                                id = itemId
+                            )
+                                .apply {
+                                    this.path.value = getDownloadPathFor(suggestedFileName)
+                                    this.totalBytes.value = totalBytes
+                                }
+                            SL.UI.downloadManager.addDownload(item)
+                        }
+
+                        override fun onProgressUpdate(
+                            itemId: String,
+                            progressBytes: Long?,
+                            totalBytes: Long?,
+                            speedBps: Long?,
+                            endTime: Date
+                        ) {
+                            SL.UI.downloadManager.downloads.value.firstOrNull { it.id == itemId }
+                                ?.let { download ->
+                                    Timber.d { "" }
+                                    runBlocking {
+                                        if (progressBytes != null)
+                                            download.progress.emit(progressBytes)
+                                        if (speedBps != null)
+                                            download.bitsPerSecond.emit(speedBps)
+                                    }
+                                    if (download.status.value is DownloadItem.Status.NotStarted)
+                                        runBlocking {
+                                            download.status.emit(DownloadItem.Status.Downloading)
+                                        }
+                                }
+                        }
+
+                        override fun onCanceled(itemId: String) {
+                            SL.UI.downloadManager.downloads.value.firstOrNull { it.id == itemId }
+                                ?.let { download ->
+                                    runBlocking {
+                                        download.status.emit(
+                                            DownloadItem.Status.Failed(
+                                                RuntimeException(
+                                                    "Download canceled."
+                                                )
+                                            )
+                                        )
+                                    }
+                                }
+                        }
+
+                        override fun onCompleted(itemId: String) {
+                            SL.UI.downloadManager.downloads.value.firstOrNull { it.id == itemId }
+                                ?.let { download ->
+                                    runBlocking {
+                                        if (download.totalBytes.value != null)
+                                            download.progress.emit(download.totalBytes.value ?: 0)
+                                        download.status.emit(DownloadItem.Status.Completed)
+                                    }
+                                }
+                        }
+
+                        override fun getDownloadPathFor(filename: String?): Path =
+                            Constants.TEMP_DIR.resolve(
+                                filename?.ifEmpty { null } ?: UUID.randomUUID().toString())
+                    }
+                )
+                    .also { browserPanel ->
+                        browser.value = browserPanel
+                        linkLoader.value = { url ->
+                            browserPanel.loadUrl(url)
+                        }
+                    }
+            }
+        )
+    } else {
+        javaFxBrowser(jfxpanel, background, linkLoader)
     }
 }
 

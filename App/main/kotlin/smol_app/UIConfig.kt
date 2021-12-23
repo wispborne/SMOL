@@ -13,4 +13,9 @@ class UIConfig(gson: Gson) : Config(
     )
 ) {
     var windowState: SmolWindowState? by pref(prefKey = "windowState", defaultValue = null)
+    var modBrowserState: ModBrowserState? by pref(prefKey = "modBrowserState", defaultValue = null)
 }
+
+data class ModBrowserState(
+    val modListWidthDp: Float
+)

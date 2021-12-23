@@ -10,6 +10,8 @@ import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -28,13 +30,17 @@ import java.net.URI
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
-fun scrapedModCard(mod: ScrapedMod, linkLoader: ((String) -> Unit)?) {
+fun scrapedModCard(mod: ScrapedMod, linkLoader: MutableState<((String) -> Unit)?>) {
     Card(
         modifier = Modifier
             .wrapContentHeight()
-            .border(width = 1.dp, color = MaterialTheme.colors.surface.lighten(), shape = SmolTheme.smolFullyClippedButtonShape())
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colors.surface.lighten(),
+                shape = SmolTheme.smolFullyClippedButtonShape()
+            )
             .clickable {
-                mod.forumPostLink?.run { linkLoader?.invoke(this.toString()) }
+                mod.forumPostLink?.run { linkLoader.value?.invoke(this.toString()) }
             },
         shape = SmolTheme.smolFullyClippedButtonShape()
     ) {
@@ -91,6 +97,7 @@ fun scrapedModCardPreview() = previewTheme {
             forumPostLink = URI.create("index0026.html?PHPSESSID=30de1ecdaac1b579e7b6ddd2b384c554&topic=13183.0"),
             categories = listOf("Total Conversions"),
             source = ModSource.Index
-        )
-    ) {}
+        ),
+        mutableStateOf({})
+    )
 }
