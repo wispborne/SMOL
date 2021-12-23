@@ -26,7 +26,7 @@ fun SmolSecondaryButton(
     shape: Shape? = null,
     border: BorderStroke? = null,
     colors: ButtonColors = ButtonDefaults.buttonColors(
-        backgroundColor = if (MaterialTheme.colors.isLight) "#DDDDDD".hexToColor()!! else "#333333".hexToColor()!!,
+        backgroundColor = SmolTheme.grey(),
 //        contentColor = MaterialTheme.colors.onPrimary.copy(alpha = ContentAlpha.high)
     ),
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding,

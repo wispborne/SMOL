@@ -101,6 +101,7 @@ fun AppState.ProfilesView(
                                                 .padding(end = 16.dp)
                                                 .align(Alignment.CenterVertically),
                                             fontWeight = FontWeight.Bold,
+                                            fontSize = 18.sp,
                                             text = modProfileName.value
                                         )
                                     } else {
@@ -124,44 +125,50 @@ fun AppState.ProfilesView(
                                             }
                                         )
                                     }
-                                    Text(
-                                        modifier = Modifier.align(Alignment.CenterVertically),
-                                        text = "${modProfile.enabledModVariants.count()} mods",
-                                        fontFamily = SmolTheme.fireCodeFont,
-                                        fontSize = 12.sp,
-                                    )
+
+                                    // Control buttons
+                                    DisableSelection {
+                                        profileControls(
+                                            isEditMode = isEditMode,
+                                            modProfileIdShowingDeleteConfirmation = modProfileIdShowingDeleteConfirmation,
+                                            modProfile = modProfile,
+                                            isActiveProfile = isActiveProfile,
+                                            modVariants = modVariants
+                                        )
+                                    }
                                 }
 
-                                // Control buttons
-                                DisableSelection {
-                                    profileControls(
-                                        isEditMode,
-                                        modProfileIdShowingDeleteConfirmation,
-                                        modProfile,
-                                        isActiveProfile,
-                                        modVariants
-                                    )
-                                }
+                                Text(
+//                                    modifier = Modifier.align(Alignment.CenterVertically),
+                                    text = "${modProfile.enabledModVariants.count()} mods",
+                                    fontFamily = SmolTheme.fireCodeFont,
+                                    fontSize = 12.sp,
+                                )
 
                                 // Mod list
                                 Box {
+                                    val modNameLength = 28
                                     Text(
-                                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp).align(Alignment.Center),
+                                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+                                            .align(Alignment.TopStart),
                                         fontFamily = SmolTheme.fireCodeFont,
+                                        softWrap = false,
                                         fontWeight = FontWeight.Light,
                                         fontSize = 14.sp,
                                         text = modProfile.enabledModVariants.joinToString(separator = "\n") {
                                             val modVariant = modVariants.value[it.smolVariantId]
-                                            "${modVariant?.modInfo?.name?.ellipsizeAfter(28)}: "
+                                            modVariant?.modInfo?.name?.ellipsizeAfter(modNameLength)?.plus(": ")
+                                                ?: "${it.modId} (missing)\n    ${it.smolVariantId}"
                                         })
                                     Text(
-                                        modifier = Modifier.padding(top = 16.dp).align(Alignment.CenterEnd),
+                                        modifier = Modifier.padding(top = 16.dp).align(Alignment.TopEnd),
                                         fontFamily = SmolTheme.fireCodeFont,
+                                        softWrap = false,
                                         fontWeight = FontWeight.Light,
                                         fontSize = 14.sp,
                                         text = modProfile.enabledModVariants.joinToString(separator = "\n") {
                                             val modVariant = modVariants.value[it.smolVariantId]
-                                            modVariant?.modInfo?.version.toString()
+                                            modVariant?.modInfo?.version?.toString() ?: ""
                                         })
                                 }
                             }
@@ -247,17 +254,18 @@ fun AppState.ProfilesView(
 fun profileControlsPreview() = previewTheme {
     Column {
         profileControls(
-            mutableStateOf(false),
-            mutableStateOf(null),
-            UserManager.defaultModProfile,
+            isEditMode = mutableStateOf(false),
+            modProfileIdShowingDeleteConfirmation = mutableStateOf(null),
+            modProfile = UserManager.defaultModProfile,
             isActiveProfile = false,
-            mutableStateOf(emptyMap())
+            modVariants = mutableStateOf(emptyMap())
         )
     }
 }
 
 @Composable
-private fun ColumnScope.profileControls(
+private fun profileControls(
+    modifier: Modifier = Modifier,
     isEditMode: MutableState<Boolean>,
     modProfileIdShowingDeleteConfirmation: MutableState<Int?>,
     modProfile: UserProfile.ModProfile,
@@ -265,8 +273,7 @@ private fun ColumnScope.profileControls(
     modVariants: MutableState<Map<SmolId, ModVariant>>
 ) {
     Row(
-        modifier = Modifier.align(Alignment.Start)
-            .padding(top = 16.dp)
+        modifier = modifier
     ) {
         IconToggleButton(
             modifier = Modifier
@@ -274,7 +281,7 @@ private fun ColumnScope.profileControls(
                 .align(Alignment.CenterVertically)
                 .background(
                     shape = SmolTheme.smolNormalButtonShape(),
-                    color = MaterialTheme.colors.primary
+                    color = SmolTheme.grey()
                 )
                 .run {
                     if (isEditMode.value) this.border(
@@ -291,7 +298,7 @@ private fun ColumnScope.profileControls(
             Icon(
                 painter = painterResource("pencil-outline.svg"),
                 contentDescription = null,
-                tint = MaterialTheme.colors.onPrimary
+                tint = MaterialTheme.colors.onSurface
             )
         }
         IconButton(
@@ -299,7 +306,7 @@ private fun ColumnScope.profileControls(
                 .padding(start = 8.dp)
                 .background(
                     shape = SmolTheme.smolNormalButtonShape(),
-                    color = MaterialTheme.colors.primary
+                    color = SmolTheme.grey()
                 )
                 .align(Alignment.CenterVertically)
                 .height(SmolTheme.iconHeightWidth())
@@ -311,13 +318,13 @@ private fun ColumnScope.profileControls(
             Icon(
                 painter = painterResource("trash-can-outline.svg"),
                 contentDescription = null,
-                tint = MaterialTheme.colors.onPrimary
+                tint = MaterialTheme.colors.onSurface
             )
         }
 
         if (!isActiveProfile) {
             SmolButton(
-                modifier = Modifier.padding(start = 16.dp).align(Alignment.CenterVertically),
+                modifier = Modifier.padding(start = 8.dp).align(Alignment.CenterVertically),
                 enabled = !isActiveProfile,
                 onClick = {
                     if (!isActiveProfile) {

@@ -46,6 +46,9 @@ object SmolTheme {
     fun dimmedTextColor() = LocalContentColor.current.copy(alpha = .65f)
 
     @Composable
+    fun grey() = if (MaterialTheme.colors.isLight) "#DDDDDD".hexToColor()!! else "#333333".hexToColor()!!
+
+    @Composable
     fun Color.highlight(): Color = if (MaterialTheme.colors.isLight) this.darken() else this.lighten()
 
     fun iconHeightWidth() = ButtonDefaults.MinHeight
