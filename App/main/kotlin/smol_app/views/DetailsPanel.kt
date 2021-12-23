@@ -9,6 +9,8 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
@@ -39,7 +41,7 @@ import smol_app.util.openModThread
 @Preview
 fun detailsPanelPreview() {
     Box {
-        detailsPanel(selectedRow = ModRow(Mod.mock), mods = listOf(Mod.mock), closePanel = {})
+        detailsPanel(selectedRow = mutableStateOf(ModRow(Mod.mock)), mods = listOf(Mod.mock))
     }
 }
 
@@ -50,8 +52,7 @@ fun detailsPanelPreview() {
 @Composable
 fun BoxScope.detailsPanel(
     modifier: Modifier = Modifier,
-    selectedRow: ModRow?,
-    closePanel: () -> Unit,
+    selectedRow: MutableState<ModRow?>,
     mods: List<Mod>
 ) {
     val row = selectedRow ?: return
@@ -99,7 +100,7 @@ fun BoxScope.detailsPanel(
                 Column(
                     Modifier.padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 24.dp).verticalScroll(state)
                 ) {
-                    val modVariant = row.mod.findFirstEnabled ?: row.mod.findHighestVersion
+                    val modVariant = row.value?.mod?.findFirstEnabled ?: row.value?.mod?.findHighestVersion
                     val modInfo = modVariant?.modInfo
                     Text(
                         modInfo?.name ?: "VNSector",
@@ -141,7 +142,7 @@ fun BoxScope.detailsPanel(
                         )
                     }
 
-                    val versionCheckerInfo = row.mod.findHighestVersion?.versionCheckerInfo
+                    val versionCheckerInfo = row.value?.mod?.findHighestVersion?.versionCheckerInfo
                     if (versionCheckerInfo?.modThreadId != null) {
                         DisableSelection {
                             SmolLinkText(
@@ -159,7 +160,7 @@ fun BoxScope.detailsPanel(
             }
 
             IconButton(
-                onClick = { closePanel.invoke() },
+                onClick = { selectedRow.value = null },
                 modifier = Modifier
                     .padding(start = 8.dp, end = 8.dp, top = 8.dp)
                     .align(Alignment.TopEnd)

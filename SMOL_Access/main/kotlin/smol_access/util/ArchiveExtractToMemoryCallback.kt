@@ -19,6 +19,8 @@ class ArchiveExtractToMemoryCallback(
     private var total = -1L
     private val results = mutableMapOf<Int, String>()
 
+    private var itemLeftToExtract = itemsToExtract.size
+
     override fun getStream(
         index: Int,
         extractAskMode: ExtractAskMode?
@@ -57,6 +59,7 @@ class ArchiveExtractToMemoryCallback(
     override fun setOperationResult(extractOperationResult: ExtractOperationResult?) {
         if (skipExtraction) return
 
+        itemLeftToExtract--
         if (extractOperationResult != ExtractOperationResult.OK) {
             System.err.println("Extraction error");
         } else {
@@ -65,6 +68,10 @@ class ArchiveExtractToMemoryCallback(
             Timber.v { String.format("Extracted %10sb | %s", size, filePath) }
 
             results[index] = bytes.decodeToString()
+
+            if (itemLeftToExtract <= 0) {
+                onComplete(results)
+            }
 
             hash = 0
             size = 0

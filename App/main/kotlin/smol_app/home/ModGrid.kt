@@ -27,11 +27,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -66,7 +63,7 @@ fun AppState.ModGridView(
     val contentPadding = 16.dp
     val favoritesWidth = 40.dp
     val checkboxesWidth = 40.dp
-    var selectedRow: ModRow? by remember { mutableStateOf(null) }
+    var selectedRow = remember { mutableStateOf<ModRow?>(null) }
     val checkedRows = remember { mutableStateListOf<ModId>() }
     var modInDebugDialog: Mod? by remember { mutableStateOf(null) }
     val largestVramUsage = SL.vramChecker.vramUsage.value?.values?.maxOf { it.bytesForMod }
@@ -244,15 +241,15 @@ fun AppState.ModGridView(
                                                         checkedRows.remove(mod.id)
                                                     }
                                                 } else {
-                                                    selectedRow =
-                                                        (if (selectedRow === modRow) null else modRow)
+                                                    selectedRow.value =
+                                                        (if (selectedRow.value == modRow) null else modRow)
                                                 }
                                             } else if (this.buttons.isSecondaryPressed) {
                                                 showContextMenu = !showContextMenu
                                             }
                                         }
                                         .background(
-                                            color = if (isRowHighlighted || selectedRow?.mod?.id == mod.id)
+                                            color = if (isRowHighlighted || selectedRow.value?.mod?.id == mod.id)
                                                 Color.Black.copy(alpha = .1f)
                                             else Color.Transparent
                                         )
@@ -552,12 +549,11 @@ fun AppState.ModGridView(
             }
         }
 
-        if (selectedRow != null) {
+        if (selectedRow.value != null) {
             detailsPanel(
                 modifier = Modifier.padding(bottom = contentPadding),
                 selectedRow = selectedRow,
-                mods = SL.access.mods.value ?: emptyList(),
-                closePanel = { selectedRow = null }
+                mods = SL.access.mods.value ?: emptyList()
             )
         }
 
