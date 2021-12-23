@@ -13,7 +13,7 @@ import timber.ktx.Timber
 class UserManager internal constructor(
     private val appConfig: AppConfig,
 ) {
-    private val activeProfileInner = MutableStateFlow(appConfig.userProfile ?: kotlin.run {
+    companion object {
         val defaultModProfile = UserProfile.ModProfile(
             id = 0,
             name = "default",
@@ -22,7 +22,7 @@ class UserManager internal constructor(
             enabledModVariants = emptyList()
         )
 
-        return@run UserProfile(
+        val defaultProfile = UserProfile(
             id = 0,
             username = "default",
             activeModProfileId = defaultModProfile.id,
@@ -33,7 +33,9 @@ class UserManager internal constructor(
             favoriteMods = emptyList(),
             modGridPrefs = UserProfile.ModGridPrefs(sortField = null, isSortDescending = true)
         )
-    })
+    }
+
+    private val activeProfileInner = MutableStateFlow(appConfig.userProfile ?: defaultProfile)
 
     val activeProfile = activeProfileInner.asStateFlow()
 
