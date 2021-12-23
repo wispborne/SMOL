@@ -26,7 +26,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.WindowPosition.PlatformDefault.y
 import com.arkivanov.decompose.push
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -39,7 +38,7 @@ import smol_access.business.asWatchChannel
 import smol_access.config.Platform
 import smol_access.model.Mod
 import smol_access.util.IOLock
-import smol_app.*
+import smol_app.Logging
 import smol_app.cli.SmolCLI
 import smol_app.composables.*
 import smol_app.navigation.Screen
@@ -72,7 +71,7 @@ fun AppState.homeView(
     modifier: Modifier = Modifier
 ) {
     var isRefreshingMods = false
-    var refreshTrigger by remember { mutableStateOf(Unit) }
+    val refreshTrigger by remember { mutableStateOf(Unit) }
     val mods: SnapshotStateList<Mod> = remember { mutableStateListOf() }
     val shownMods: SnapshotStateList<Mod?> = mods.toMutableStateList()
     val onRefreshingMods = { refreshing: Boolean -> isRefreshingMods = refreshing }
@@ -187,7 +186,7 @@ fun AppState.homeView(
             }
 
             if (showLogPanel) {
-                logPanel(bottomBarHeight, scope) { showLogPanel = false }
+                logPanel() { showLogPanel = false }
             }
         },
         bottomBar = {
@@ -228,16 +227,15 @@ fun AppState.homeView(
 
 @Composable
 private fun AppState.logPanel(
-    bottomBarHeight: Dp,
-    scope: CoroutineScope,
+    modifier: Modifier = Modifier,
     onHideModPanel: () -> Unit
 ) {
     val horzScrollState = rememberScrollState()
     Card(
-        modifier = Modifier
+        modifier = modifier
             .width((window.width / 2).dp)
             .fillMaxHeight()
-            .padding(bottom = bottomBarHeight, top = 8.dp, start = 8.dp, end = 8.dp),
+            .padding(bottom = SmolTheme.bottomBarHeight, top = 8.dp, start = 8.dp, end = 8.dp),
         shape = RectangleShape
     ) {
         val linesToShow = 200
@@ -245,12 +243,10 @@ private fun AppState.logPanel(
         var text by remember { mutableStateOf("") }
 
         LaunchedEffect(Unit) {
-            scope.launch {
-                Logging.logFlow.collect {
-                    if (log.size >= linesToShow) log.removeFirstOrNull()
-                    log.add(it)
-                    text = log.joinToString(separator = "\n")
-                }
+            Logging.logFlow.collect {
+                if (log.size >= linesToShow) log.removeFirstOrNull()
+                log.add(it)
+                text = log.joinToString(separator = "\n")
             }
         }
 

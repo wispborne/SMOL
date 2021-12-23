@@ -136,6 +136,7 @@ fun AppState.ModBrowserView(
                                         )
                                     }
                                 }
+                                Spacer(Modifier.weight(1f))
                                 SmolSecondaryButton(
                                     modifier = Modifier.padding(start = 8.dp).align(Alignment.CenterVertically),
                                     onClick = { linkLoader.value?.invoke(Constants.FORUM_MOD_INDEX_URL) }
