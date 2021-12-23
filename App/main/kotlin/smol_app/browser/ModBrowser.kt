@@ -3,10 +3,16 @@ package smol_app.browser
 import AppState
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.ScrollbarAdapter
+import androidx.compose.foundation.VerticalScrollbar
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.GridCells
 import androidx.compose.foundation.lazy.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.mouseClickable
 import androidx.compose.material.*
 import androidx.compose.runtime.*
@@ -88,14 +94,16 @@ fun AppState.ModBrowserView(
         }
     }, content = {
         Column(modifier.padding(bottom = SmolTheme.bottomBarHeight - 16.dp)) {
-            Row(modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp, top = 8.dp)) {
-                Column {
+            Row(modifier = Modifier.padding(start = 16.dp, bottom = 16.dp, top = 8.dp)) {
+                Column(modifier = Modifier
+                    .draggable(state = rememberDraggableState { }, orientation = Orientation.Vertical)
+                ) {
                     smolSearchField(
                         modifier = Modifier
                             .focusRequester(searchFocusRequester())
                             .widthIn(max = 320.dp)
                             .align(Alignment.CenterHorizontally)
-                            .padding(bottom = 16.dp),
+                            .padding(bottom = 16.dp, end = 16.dp),
                         tooltipText = "Hotkey: Ctrl-F",
                         label = "Filter"
                     ) { query ->
@@ -117,17 +125,26 @@ fun AppState.ModBrowserView(
                         }
                     }
 
-                    LazyVerticalGrid(
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                        cells = GridCells.Adaptive(200.dp),
-                        modifier = Modifier.widthIn(min = 200.dp, max = 600.dp)
-                    ) {
-                        this.items(
-                            items = (shownIndexMods + shownModdingSubforumMods)
-                                .filterNotNull()
-                                .sortedWith(compareByDescending { it.name })
-                        ) { mod -> scrapedModCard(mod, linkLoader) }
+                    val scrollState = rememberLazyListState()
+                    Row {
+                        LazyVerticalGrid(
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            cells = GridCells.Adaptive(200.dp),
+                            state = scrollState,
+                            modifier = Modifier
+                                .widthIn(min = 200.dp, max = 600.dp)
+                        ) {
+                            this.items(
+                                items = (shownIndexMods + shownModdingSubforumMods)
+                                    .filterNotNull()
+                                    .sortedWith(compareByDescending { it.name })
+                            ) { mod -> scrapedModCard(mod, linkLoader) }
+                        }
+                        VerticalScrollbar(
+                            adapter = ScrollbarAdapter(scrollState),
+                            modifier = Modifier.padding(start = 4.dp, end = 8.dp)
+                        )
                     }
                 }
 

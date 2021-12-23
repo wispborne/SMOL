@@ -52,7 +52,7 @@ internal fun scrapeModIndexLinks(): List<ScrapedMod> {
                     authors = modElement.select("em strong").text(),
                     forumPostLink = link.attr("href").ifBlank { null }?.let { URI.create(it) },
                     source = ModSource.Index,
-                    category = category
+                    categories = listOf(category)
                 )
             }
         }
@@ -80,7 +80,7 @@ internal fun scrapeModdingForumLinks(): List<ScrapedMod> {
                         authors = authorLinkElement.text(),
                         forumPostLink = titleLinkElement.attr("href").ifBlank { null }?.let { URI.create(it) },
                         source = ModSource.ModdingSubforum,
-                        category = null
+                        categories = emptyList()
                     )
                 }
                 .filter { it.gameVersionReq.isNotEmpty() }

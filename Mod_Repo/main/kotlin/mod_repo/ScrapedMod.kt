@@ -8,7 +8,7 @@ data class ScrapedMod(
     val authors: String,
     val forumPostLink: URI?,
     val source: ModSource,
-    val category: String?
+    val categories: List<String>
 )
 
 enum class ModSource {
