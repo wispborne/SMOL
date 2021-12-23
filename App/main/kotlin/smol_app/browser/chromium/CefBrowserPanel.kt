@@ -113,11 +113,11 @@ class CefBrowserPanel
 
     companion object {
         private val serialVersionUID = -5570653778104813836L
-        var address: JTextField? = null
-        var cefApp: CefApp? = null
-        var client: CefClient? = null
-        var browser: CefBrowser? = null
-        var browserUI: Component? = null
+        private var address: JTextField? = null
+        private var cefApp: CefApp? = null
+        private var client: CefClient? = null
+        private var browser: CefBrowser? = null
+        private var browserUI: Component? = null
     }
 
     init {
@@ -210,6 +210,14 @@ class CefBrowserPanel
 
     override fun loadUrl(url: String) {
         browser?.loadURL(url)
+    }
+
+    override fun goBack() {
+        browser?.goBack()
+    }
+
+    override fun goForward() {
+        browser?.goForward()
     }
 
     fun cefDownloadHandler() = object : CefDownloadHandler {

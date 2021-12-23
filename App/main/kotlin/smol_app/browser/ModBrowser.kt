@@ -5,9 +5,6 @@ import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollbarAdapter
 import androidx.compose.foundation.VerticalScrollbar
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.draggable
-import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.GridCells
 import androidx.compose.foundation.lazy.LazyVerticalGrid
@@ -15,6 +12,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.mouseClickable
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -30,7 +30,6 @@ import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.pop
 import javafx.embed.swing.JFXPanel
 import javafx.scene.web.WebView
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import mod_repo.ScrapedMod
 import org.tinylog.kotlin.Logger
@@ -57,6 +56,8 @@ object WebViewHolder {
     var webView: WebView? = null
 }
 
+private val modListMinWidthDp = 600.dp
+
 @OptIn(
     ExperimentalMaterialApi::class,
     ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class
@@ -74,9 +75,8 @@ fun AppState.ModBrowserView(
         remember { mutableStateListOf<ScrapedMod?>(elements = moddingSubforumMods.toTypedArray()) }
 
     val jfxpanel: JFXPanel = remember { JFXPanel() }
-    var browser = remember { mutableStateOf<ChromiumBrowser?>(null) }
-    var linkLoader = remember { mutableStateOf<((String) -> Unit)?>(null) }
-    val scope = rememberCoroutineScope { Dispatchers.Default }
+    val browser = remember { mutableStateOf<ChromiumBrowser?>(null) }
+    val linkLoader = remember { mutableStateOf<((String) -> Unit)?>(null) }
     var alertDialogMessage: String? by remember { mutableStateOf(null) }
 
     Scaffold(topBar = {
@@ -97,45 +97,61 @@ fun AppState.ModBrowserView(
             Row(modifier = Modifier.padding(start = 16.dp, bottom = 16.dp, top = 8.dp)) {
                 var listingWidth by remember {
                     mutableStateOf(
-                        SL.UI.uiConfig.modBrowserState?.modListWidthDp?.dp ?: 600.dp
+                        SL.UI.uiConfig.modBrowserState?.modListWidthDp?.dp ?: modListMinWidthDp
                     )
                 }
                 val splitterState = remember { SplitterState() }
                 VerticalSplittable(splitterState = splitterState, onResize = {
-                    listingWidth += it
+                    listingWidth = listingWidth.plus(it).coerceAtLeast(modListMinWidthDp)
                     SL.UI.uiConfig.modBrowserState =
                         SL.UI.uiConfig.modBrowserState?.copy(modListWidthDp = listingWidth.value)
                             ?: ModBrowserState(modListWidthDp = listingWidth.value)
                 }) {
                     Column(
-                        modifier = Modifier
-                            .draggable(state = rememberDraggableState { }, orientation = Orientation.Vertical)
+                        modifier = Modifier.width(listingWidth)
                     ) {
-                        smolSearchField(
-                            modifier = Modifier
-                                .focusRequester(searchFocusRequester())
-                                .widthIn(max = 320.dp)
-                                .align(Alignment.CenterHorizontally)
-                                .padding(bottom = 16.dp, end = 16.dp),
-                            tooltipText = "Hotkey: Ctrl-F",
-                            label = "Filter"
-                        ) { query ->
-                            if (query.isBlank()) {
-                                shownIndexMods.replaceAllUsingDifference(indexMods, doesOrderMatter = false)
-                                shownModdingSubforumMods.replaceAllUsingDifference(
-                                    moddingSubforumMods,
-                                    doesOrderMatter = false
-                                )
-                            } else {
-                                shownIndexMods.replaceAllUsingDifference(
-                                    filterModPosts(query, indexMods).ifEmpty { listOf(null) },
-                                    doesOrderMatter = true
-                                )
-                                shownModdingSubforumMods.replaceAllUsingDifference(
-                                    filterModPosts(query, moddingSubforumMods).ifEmpty { listOf(null) },
-                                    doesOrderMatter = true
-                                )
+                        Row {
+                            smolSearchField(
+                                modifier = Modifier
+                                    .focusRequester(searchFocusRequester())
+                                    .widthIn(max = 320.dp)
+                                    .padding(bottom = 16.dp, end = 16.dp),
+                                tooltipText = "Hotkey: Ctrl-F",
+                                label = "Filter"
+                            ) { query ->
+                                if (query.isBlank()) {
+                                    shownIndexMods.replaceAllUsingDifference(indexMods, doesOrderMatter = false)
+                                    shownModdingSubforumMods.replaceAllUsingDifference(
+                                        moddingSubforumMods,
+                                        doesOrderMatter = false
+                                    )
+                                } else {
+                                    shownIndexMods.replaceAllUsingDifference(
+                                        filterModPosts(query, indexMods).ifEmpty { listOf(null) },
+                                        doesOrderMatter = true
+                                    )
+                                    shownModdingSubforumMods.replaceAllUsingDifference(
+                                        filterModPosts(query, moddingSubforumMods).ifEmpty { listOf(null) },
+                                        doesOrderMatter = true
+                                    )
+                                }
                             }
+                            SmolSecondaryButton(
+                                modifier = Modifier.padding(start = 8.dp).align(Alignment.CenterVertically),
+                                onClick = { linkLoader.value?.invoke(Constants.FORUM_MOD_INDEX_URL) }
+                            ) { Text("Index") }
+                            SmolSecondaryButton(
+                                modifier = Modifier.padding(start = 8.dp).align(Alignment.CenterVertically),
+                                onClick = { linkLoader.value?.invoke(Constants.FORUM_MODDING_SUBFORUM_URL) }
+                            ) { Text("Modding") }
+                            IconButton(
+                                modifier = Modifier.padding(start = 8.dp).align(Alignment.CenterVertically),
+                                onClick = { browser.value?.goBack() }
+                            ) { Icon(imageVector = Icons.Default.ArrowBack, contentDescription = null) }
+                            IconButton(
+                                modifier = Modifier.padding(start = 8.dp).align(Alignment.CenterVertically),
+                                onClick = { browser.value?.goForward() }
+                            ) { Icon(imageVector = Icons.Default.ArrowForward, contentDescription = null) }
                         }
 
                         val scrollState = rememberLazyListState()
@@ -145,8 +161,6 @@ fun AppState.ModBrowserView(
                                 verticalArrangement = Arrangement.spacedBy(16.dp),
                                 cells = GridCells.Adaptive(200.dp),
                                 state = scrollState,
-                                modifier = Modifier
-                                    .widthIn(min = 200.dp, max = listingWidth)
                             ) {
                                 this.items(
                                     items = (shownIndexMods + shownModdingSubforumMods)

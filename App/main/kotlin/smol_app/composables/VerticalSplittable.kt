@@ -30,10 +30,10 @@ fun VerticalSplittable(
     splitterState: SplitterState,
     onResize: (delta: Dp) -> Unit,
     children: @Composable () -> Unit
-) = Layout({
+) = Layout(content = {
     children()
     VerticalSplitter(splitterState, onResize)
-}, modifier, measurePolicy = { measurables, constraints ->
+}, modifier = modifier, measurePolicy = { measurables, constraints ->
     require(measurables.size == 3)
 
     val firstPlaceable = measurables[0].measure(constraints.copy(minWidth = 0))

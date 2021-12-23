@@ -87,7 +87,7 @@ class CefBrowserWindow//                XDataViewer.dispose(null)// calling Syst
     private val address_: JTextField
     private val cefApp_: CefApp
     private val client_: CefClient
-    val browser_: CefBrowser
+    val browser: CefBrowser
     private val browserUI_: Component
 
 
@@ -106,10 +106,10 @@ class CefBrowserWindow//                XDataViewer.dispose(null)// calling Syst
         settings.windowless_rendering_enabled = useOSR
         cefApp_ = CefApp.getInstance(settings)
         client_ = cefApp_.createClient()
-        browser_ = client_.createBrowser(startURL, useOSR, isTransparent)
-        browserUI_ = browser_.uiComponent
+        browser = client_.createBrowser(startURL, useOSR, isTransparent)
+        browserUI_ = browser.uiComponent
         address_ = JTextField(startURL, 100)
-        address_.addActionListener { browser_.loadURL(address_.text) }
+        address_.addActionListener { browser.loadURL(address_.text) }
         client_.addDownloadHandler(cefDownloadHandler())
         contentPane.add(address_, BorderLayout.NORTH)
         contentPane.add(browserUI_, BorderLayout.CENTER)
@@ -125,7 +125,15 @@ class CefBrowserWindow//                XDataViewer.dispose(null)// calling Syst
     }
 
     override fun loadUrl(url: String) {
-        CefBrowserPanel.browser?.loadURL(url)
+        browser.loadURL(url)
+    }
+
+    override fun goBack() {
+        browser.goBack()
+    }
+
+    override fun goForward() {
+        browser.goForward()
     }
 
     fun cefDownloadHandler() = object : CefDownloadHandler {
