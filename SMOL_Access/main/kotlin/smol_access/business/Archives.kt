@@ -49,7 +49,10 @@ class Archives internal constructor(
     fun getArchivesManifest(): ArchivesManifest? =
         kotlin.runCatching {
 //            moshi.adapter<ArchivesManifest>().fromJson(File(config.archivesPath!!, ARCHIVES_FILENAME).readText())
-            gson.fromJson<ArchivesManifest>(File(config.archivesPath!!, ARCHIVE_MANIFEST_FILENAME).readText())
+            gson.fromJson<ArchivesManifest>(
+                json = File(config.archivesPath!!, ARCHIVE_MANIFEST_FILENAME).readText(),
+                shouldStripComments = false
+            )
         }
             .onFailure { Timber.w(it) }
             .recover {

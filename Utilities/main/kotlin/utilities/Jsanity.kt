@@ -17,13 +17,13 @@ class Jsanity(
     private val jackson: ObjectMapper
 ) {
     @Throws(JsonSyntaxException::class)
-    fun <T> fromJson(json: String, typeOfT: Type): T {
-        return fromJsonString(json, typeOfT)
+    fun <T> fromJson(json: String, typeOfT: Type, shouldStripComments: Boolean): T {
+        return fromJsonString(json, typeOfT, shouldStripComments)
     }
 
     @Throws(JsonSyntaxException::class)
-    fun <T> fromJson(json: String, classOfT: Class<T>): T {
-        return fromJson(json, classOfT as Type)
+    fun <T> fromJson(json: String, classOfT: Class<T>, shouldStripComments: Boolean): T {
+        return fromJson(json, classOfT as Type, shouldStripComments)
     }
 
     @Throws(JsonSyntaxException::class)
@@ -32,13 +32,15 @@ class Jsanity(
     }
 
     @Throws(JsonSyntaxException::class)
-    fun <T> fromJson(json: JsonElement, typeOfT: Type): T = gson.fromJson(json, typeOfT)
+    fun <T> fromJson(json: JsonElement, typeOfT: Type): T =
+        gson.fromJson(json, typeOfT)
 
 //    fun <T> fromJson(json: Reader, typeToken: Type): T = gson.fromJson(json, typeToken)
 
 //    fun <T> fromJson(json: JsonReader, typeToken: Type): T = gson.fromJson(json, typeToken)
 
-    inline fun <reified T : Any> fromJson(json: String): T = fromJson(json, typeToken<T>())
+    inline fun <reified T : Any> fromJson(json: String, shouldStripComments: Boolean): T =
+        fromJson(json, typeToken<T>(), shouldStripComments)
 
 //    inline fun <reified T : Any> fromJson(json: Reader): T = fromJson(json, typeToken<T>())
 
@@ -46,10 +48,14 @@ class Jsanity(
 
 //    inline fun <reified T : Any> fromJson(json: JsonElement): T = fromJson(json, typeToken<T>())
 
-    private fun <T> fromJsonString(json: String, typeOfT: Type): T {
-        val strippedJson = stripJsonComments(json)
+    private fun <T> fromJsonString(json: String, typeOfT: Type, shouldStripComments: Boolean): T {
+        val strippedJson = if (shouldStripComments) stripJsonComments(json) else json
         // HJson
-        val hjson = JsonValue.readHjson(strippedJson).toString(Stringify.FORMATTED)
+        val hjson = kotlin.runCatching {
+            JsonValue.readHjson(strippedJson).toString(Stringify.FORMATTED)
+        }
+            .onFailure { Timber.w(it) { "HJson error parsing: \n$strippedJson" } }
+            .getOrThrow()
 
         // Jackson
 //        val jacksonJson = kotlin.runCatching {

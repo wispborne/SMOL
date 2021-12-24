@@ -103,13 +103,13 @@ fun BoxScope.detailsPanel(
                     val modVariant = row.value?.mod?.findFirstEnabled ?: row.value?.mod?.findHighestVersion
                     val modInfo = modVariant?.modInfo
                     Text(
-                        modInfo?.name ?: "VNSector",
+                        modInfo?.name ?: "(Unknown Mod)",
                         fontWeight = FontWeight.ExtraBold,
                         fontFamily = SmolTheme.orbitronSpaceFont,
                         fontSize = TextUnit(18f, TextUnitType.Sp)
                     )
                     Text(
-                        "${modInfo?.id ?: "vnsector"} ${modInfo?.version?.toString() ?: "no version"}",
+                        "${modInfo?.id ?: "(modid)"} ${modInfo?.version?.toString() ?: "no version"}",
                         modifier = Modifier.padding(top = 4.dp),
                         fontSize = TextUnit(12f, TextUnitType.Sp),
                         fontFamily = SmolTheme.fireCodeFont
@@ -117,6 +117,14 @@ fun BoxScope.detailsPanel(
                     if (!modInfo?.gameVersion.isNullOrBlank()) {
                         Text(
                             "Starsector ${modInfo?.gameVersion}",
+                            modifier = Modifier.padding(top = 8.dp),
+                            fontSize = TextUnit(12f, TextUnitType.Sp),
+                            fontFamily = SmolTheme.fireCodeFont
+                        )
+                    }
+                    if (!modInfo?.requiredMemoryMB.isNullOrBlank()) {
+                        Text(
+                            "Required RAM: ${modInfo?.requiredMemoryMB} MB",
                             modifier = Modifier.padding(top = 8.dp),
                             fontSize = TextUnit(12f, TextUnitType.Sp),
                             fontFamily = SmolTheme.fireCodeFont

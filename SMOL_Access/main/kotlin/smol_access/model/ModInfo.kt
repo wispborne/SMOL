@@ -10,6 +10,7 @@ sealed class ModInfo(
     @Json(name = "author") val author: String = "",
     @Json(name = "utility") val utilityString: String = "false",
     @Json(name = "description") val description: String = "",
+    @Json(name = "requiredMemoryMB") val requiredMemoryMB: String? = null,
     @Json(name = "gameVersion") val gameVersion: String,
     @Json(name = "jars") val jars: List<String> = emptyList(),
     @Json(name = "modPlugin") val modPlugin: String = "",

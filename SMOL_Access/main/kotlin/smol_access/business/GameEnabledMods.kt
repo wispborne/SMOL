@@ -33,7 +33,10 @@ class GameEnabledMods(
                 }
 
                 enabledModsFile.reader().use { inStream ->
-                    gson.fromJson<EnabledMods>(JsonObject.readHjson(inStream).toString())
+                    gson.fromJson<EnabledMods>(
+                        json = JsonObject.readHjson(inStream).toString(),
+                        shouldStripComments = true
+                    )
                 }
             }
         }

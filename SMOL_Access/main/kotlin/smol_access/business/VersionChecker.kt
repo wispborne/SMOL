@@ -64,7 +64,12 @@ class VersionChecker(
                                     client.get<HttpResponse>(modVariant.versionCheckerInfo!!.masterVersionFile!!)
                                         .receive<String>()
                                         .let { JsonValue.readHjson(it) } // Parse first using HJson
-                                        .let { modVariant.mod(modLoader) to gson.fromJson<VersionCheckerInfo>(it.toString()).modVersion!! }
+                                        .let {
+                                            modVariant.mod(modLoader) to gson.fromJson<VersionCheckerInfo>(
+                                                json = it.toString(),
+                                                shouldStripComments = true
+                                            ).modVersion!!
+                                        }
                                 }
                                     .onFailure {
                                         fun message(error: String?) =

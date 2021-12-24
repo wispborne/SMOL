@@ -3,7 +3,6 @@ package smol_access.business
 import com.squareup.moshi.Moshi
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
-import org.hjson.JsonValue
 import smol_access.Constants
 import smol_access.model.ModInfo
 import smol_access.model.VersionCheckerInfo
@@ -89,7 +88,7 @@ class ModInfoLoader(
     @OptIn(ExperimentalStdlibApi::class)
     fun deserializeModInfoFile(modInfoJson: String): ModInfo {
         try {
-            return gson.fromJson(modInfoJson, ModInfo::class.java)
+            return gson.fromJson(json = modInfoJson, classOfT = ModInfo::class.java, shouldStripComments = true)
 //            val json = JsonValue.readHjson(modInfoJson)
 //            val jsonStr = json.toString()
 //                .also { Timber.v { it } }
@@ -105,7 +104,7 @@ class ModInfoLoader(
     @OptIn(ExperimentalStdlibApi::class)
     fun deserializeVersionCheckerFile(vcJson: String): VersionCheckerInfo {
         try {
-            return gson.fromJson(vcJson, VersionCheckerInfo::class.java)
+            return gson.fromJson(json = vcJson, classOfT = VersionCheckerInfo::class.java, shouldStripComments = true)
 //            val json = JsonValue.readHjson(vcJson)
 //            val jsonStr = json.toString()
 //                .also { Timber.v { it } }
