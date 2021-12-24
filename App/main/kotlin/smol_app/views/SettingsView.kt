@@ -254,7 +254,7 @@ private fun AppState.themeDropdown(modifier: Modifier = Modifier): String {
                             themeName = entry.key
                             SL.themeManager.setActiveTheme(entry.key)
                         },
-                        customItemContent = { _, isMenuButton ->
+                        customItemContent = { isMenuButton ->
                             val height = 24.dp
                             Text(
                                 text = entry.key,
@@ -281,7 +281,8 @@ private fun AppState.themeDropdown(modifier: Modifier = Modifier): String {
                         }
                     )
                 },
-            initiallySelectedIndex = themes.keys.indexOf(themeName).coerceAtLeast(0)
+            initiallySelectedIndex = themes.keys.indexOf(themeName).coerceAtLeast(0),
+            canSelectItems = true
         )
         SmolLinkText(
             modifier = Modifier

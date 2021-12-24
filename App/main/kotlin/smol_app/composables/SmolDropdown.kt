@@ -34,7 +34,7 @@ class SmolDropdownMenuItemTemplate(
 class SmolDropdownMenuItemCustom(
     onClick: () -> Unit,
     backgroundColor: Color? = null,
-    val customItemContent: @Composable RowScope.(item: SmolDropdownMenuItemCustom, isMenuButton: Boolean) -> Unit
+    val customItemContent: @Composable RowScope.(isMenuButton: Boolean) -> Unit
 ) : SmolDropdownMenuItem(onClick, backgroundColor)
 
 @Composable
@@ -92,7 +92,7 @@ fun SmolDropdownWithButton(
                         color = selectedItem.contentColor ?: contentColorFor(backgroundColor)
                     )
                 } else if (selectedItem is SmolDropdownMenuItemCustom) {
-                    selectedItem.customItemContent.invoke(this, selectedItem, true)
+                    selectedItem.customItemContent.invoke(this, true)
                 }
                 SmolDropdownArrow(
                     Modifier
@@ -125,7 +125,7 @@ fun SmolDropdownWithButton(
                         }) {
                         Row(Modifier.height(IntrinsicSize.Min)) {
                             if (item is SmolDropdownMenuItemCustom) {
-                                item.customItemContent.invoke(this, item, false)
+                                item.customItemContent.invoke(this, false)
                             } else if (item is SmolDropdownMenuItemTemplate) {
                                 Text(
                                     text = item.text,

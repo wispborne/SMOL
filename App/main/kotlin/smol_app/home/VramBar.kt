@@ -28,7 +28,7 @@ fun RowScope.vramBar(mod: Mod, largestVramUsage: Long?) {
             text = when {
                 vramResult?.bytesForMod?.bytesAsReadableMiB != null -> {
                     buildString {
-                        appendLine("Version: ${vramResult.version}")
+                        appendLine("Version: ${vramResult.version}\n")
                         appendLine(vramResult.bytesForMod.bytesAsReadableMiB
                             .let { if (vramResult.bytesForMod == 0L) "No impact" else it })
                         append("${vramResult.imageCount} images")

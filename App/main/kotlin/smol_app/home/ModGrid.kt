@@ -453,15 +453,14 @@ fun AppState.ModGridView(
                                                     SmolTooltipArea(tooltip = {
                                                         SmolTooltipText(
                                                             text = buildString {
-                                                                append("Newer version available: $onlineVersion")
-                                                                if (ddUrl == null) append("This mod does not support direct download and should be downloaded manually.")
+                                                                append("Newer version available: $onlineVersion.")
+                                                                if (ddUrl == null) append("\nThis mod does not support direct download and should be downloaded manually.")
                                                                 append("\n\nClick to open ${modThreadId?.getModThreadUrl()}.")
                                                             }
                                                         )
                                                     }, modifier = Modifier.mouseClickable {
                                                         if (this.buttons.isPrimaryPressed) {
                                                             router.push(Screen.ModBrowser(modThreadId?.getModThreadUrl()))
-//                                                            modThreadId?.openModThread()
                                                         }
                                                     }
                                                         .align(Alignment.CenterVertically)) {
