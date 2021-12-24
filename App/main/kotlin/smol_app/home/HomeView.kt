@@ -280,7 +280,7 @@ private fun AppState.modBrowserButton() {
         delayMillis = SmolTooltipArea.delay
     ) {
         SmolButton(
-            onClick = { router.push(Screen.ModBrowser) },
+            onClick = { router.push(Screen.ModBrowser()) },
             modifier = Modifier.padding(start = 16.dp)
         ) {
             Text("Mod Browser")

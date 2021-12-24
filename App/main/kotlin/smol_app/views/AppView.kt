@@ -48,11 +48,12 @@ fun WindowState.appView() {
         Box(Modifier.background(MaterialTheme.colors.background)) {
             Children(router.state, animation = crossfade()) { screen ->
                 Box {
-                    when (screen.configuration) {
+                    val configuration = screen.configuration
+                    when (configuration) {
                         is Screen.Home -> appState.homeView()
                         is Screen.Settings -> appState.settingsView()
                         is Screen.Profiles -> appState.ProfilesView()
-                        is Screen.ModBrowser -> appState.ModBrowserView()
+                        is Screen.ModBrowser -> appState.ModBrowserView(defaultUrl = configuration.defaultUri)
                     }.run { }
                     appState.FileDropper()
 

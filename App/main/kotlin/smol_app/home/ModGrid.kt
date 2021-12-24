@@ -32,9 +32,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.arkivanov.decompose.push
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import smol_access.Constants
 import smol_access.SL
 import smol_access.model.Mod
 import smol_access.model.ModId
@@ -42,6 +44,7 @@ import smol_access.model.UserProfile
 import smol_app.UI
 import smol_app.WindowState
 import smol_app.composables.*
+import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
 import smol_app.util.*
 import smol_app.views.detailsPanel
@@ -457,7 +460,8 @@ fun AppState.ModGridView(
                                                         )
                                                     }, modifier = Modifier.mouseClickable {
                                                         if (this.buttons.isPrimaryPressed) {
-                                                            modThreadId?.openModThread()
+                                                            router.push(Screen.ModBrowser(modThreadId?.getModThreadUrl()))
+//                                                            modThreadId?.openModThread()
                                                         }
                                                     }
                                                         .align(Alignment.CenterVertically)) {

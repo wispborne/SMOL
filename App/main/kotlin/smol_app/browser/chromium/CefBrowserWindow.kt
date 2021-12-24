@@ -124,6 +124,9 @@ class CefBrowserWindow//                XDataViewer.dispose(null)// calling Syst
         })
     }
 
+    override val currentUrl: String?
+        get() = browser.url
+
     override fun loadUrl(url: String) {
         browser.loadURL(url)
     }

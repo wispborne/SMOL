@@ -208,6 +208,9 @@ class CefBrowserPanel
         })
     }
 
+    override val currentUrl: String?
+        get() = browser?.url
+
     override fun loadUrl(url: String) {
         browser?.loadURL(url)
     }

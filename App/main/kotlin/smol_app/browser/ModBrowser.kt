@@ -68,7 +68,8 @@ private val modListMinWidthDp = 600.dp
 @Composable
 @Preview
 fun AppState.ModBrowserView(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    defaultUrl: String? = null
 ) {
     val indexMods = remember { mutableStateListOf(elements = SL.modRepo.getModIndexItems().toTypedArray()) }
     val moddingSubforumMods =
@@ -94,6 +95,28 @@ fun AppState.ModBrowserView(
                 fontWeight = FontWeight.Bold
             )
             Spacer(Modifier.weight(1f))
+
+            SmolTooltipArea(
+                modifier = modifier,
+                tooltip = { SmolTooltipText(text = "Open in a browser") }) {
+                Icon(
+                    painter = painterResource("web.svg"),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .width(24.dp)
+                        .height(24.dp)
+                        .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)))
+                        .mouseClickable {
+                            if (this.buttons.isPrimaryPressed) {
+                                runCatching {
+                                    browser.value?.currentUrl?.openAsUriInBrowser()
+                                }
+                                    .onFailure { Logger.warn(it) }
+                            }
+                        },
+                    tint = SmolTheme.dimmedIconColor()
+                )
+            }
             Spacer(modifier = Modifier.width(16.dp))
         }
     }, content = {
@@ -180,7 +203,7 @@ fun AppState.ModBrowserView(
                     }
 
                     second {
-                        embeddedBrowser(browser, linkLoader, jfxpanel)
+                        embeddedBrowser(browser, linkLoader, jfxpanel, defaultUrl ?: Constants.FORUM_MOD_INDEX_URL)
                     }
                 }
             }
@@ -205,13 +228,21 @@ fun AppState.ModBrowserView(
             text = { Text(text = alertDialogMessage ?: "") }
         )
     }
+
+    LaunchedEffect(defaultUrl) {
+        if (defaultUrl != null) {
+            Timber.i { "Loading Mod Browser with default url $defaultUrl." }
+            browser.value?.loadUrl(defaultUrl)
+        }
+    }
 }
 
 @Composable
 private fun AppState.embeddedBrowser(
     browser: MutableState<ChromiumBrowser?>,
     linkLoader: MutableState<((String) -> Unit)?>,
-    jfxpanel: JFXPanel
+    jfxpanel: JFXPanel,
+    startUrl: String
 ) {
     val background = MaterialTheme.colors.background
     val useCEF = true
@@ -226,7 +257,7 @@ private fun AppState.embeddedBrowser(
                 .sizeIn(minWidth = 200.dp),
             factory = {
                 CefBrowserPanel(
-                    startURL = Constants.FORUM_MOD_INDEX_URL,
+                    startURL = startUrl,
                     useOSR = Platform.Linux == currentPlatform,
                     isTransparent = false,
                     downloadHandler = object : DownloadHander {
