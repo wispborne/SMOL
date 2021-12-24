@@ -97,18 +97,24 @@ fun AppState.ModGridView(
                         Text("Author", fontWeight = FontWeight.Bold)
                     }
 
-                    SmolTooltipArea(modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
-                        tooltip = { SmolTooltipText(text = "The version(s) tracked by SMOL.") }) {
+                    SmolTooltipArea(
+                        modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
+                        tooltip = { SmolTooltipText(text = "The version(s) tracked by SMOL.") },
+                        delayMillis = SmolTooltipArea.delay
+                    ) {
                         Text(text = "Version(s)", fontWeight = FontWeight.Bold)
                     }
 
-                    SmolTooltipArea(modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
+                    SmolTooltipArea(
+                        modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
                         tooltip = {
                             SmolTooltipText(
                                 text = "An estimate of how much VRAM the mod will use." +
                                         "\nAll images are counted, even if not used by the game."
                             )
-                        }) {
+                        },
+                        delayMillis = SmolTooltipArea.delay
+                    ) {
                         SortableHeader(
                             modifier = Modifier.weight(1f),
                             columnSortField = ModGridSortField.VramImpact,

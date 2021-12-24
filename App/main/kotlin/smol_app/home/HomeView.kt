@@ -275,11 +275,16 @@ private fun AppState.settingsButton() {
 
 @Composable
 private fun AppState.modBrowserButton() {
-    SmolButton(
-        onClick = { router.push(Screen.ModBrowser) },
-        modifier = Modifier.padding(start = 16.dp)
+    SmolTooltipArea(
+        tooltip = { SmolTooltipText("View and install mods from the internet.") },
+        delayMillis = SmolTooltipArea.delay
     ) {
-        Text("Mod Browser")
+        SmolButton(
+            onClick = { router.push(Screen.ModBrowser) },
+            modifier = Modifier.padding(start = 16.dp)
+        ) {
+            Text("Mod Browser")
+        }
     }
 }
 
@@ -289,7 +294,8 @@ private fun AppState.refreshButton() {
     val refreshScope by remember { mutableStateOf(CoroutineScope(Job())) }
 
     SmolTooltipArea(
-        tooltip = { SmolTooltipText(text = "Refresh modlist & VRAM impact") }
+        tooltip = { SmolTooltipText(text = "Refresh modlist & VRAM impact") },
+        delayMillis = SmolTooltipArea.delay
     ) {
         SmolButton(
             onClick = {
@@ -310,54 +316,73 @@ private fun AppState.refreshButton() {
 
 @Composable
 private fun AppState.profilesButton() {
-    SmolButton(
-        onClick = { router.push(Screen.Profiles) },
-        modifier = Modifier.padding(start = 16.dp)
+    SmolTooltipArea(
+        tooltip = { SmolTooltipText("Create and swap between enabled mods.") },
+        delayMillis = SmolTooltipArea.delay
     ) {
-        Text("Profiles")
+        SmolButton(
+            onClick = { router.push(Screen.Profiles) },
+            modifier = Modifier.padding(start = 16.dp)
+        ) {
+            Text("Profiles")
+        }
     }
 }
 
 @Composable
 private fun AppState.launchButton() {
-    SmolButton(
-        onClick = {
-            val gameLauncher = SL.appConfig.gamePath.toPathOrNull()?.resolve("starsector.exe")
-            val commands = when (currentPlatform) {
-                Platform.Windows -> arrayOf("cmd.exe", "/C")
-                else -> arrayOf("open")
-            }
-            Logger.info { "Launching ${gameLauncher?.absolutePathString()} with working dir ${SL.appConfig.gamePath}." }
-            Runtime.getRuntime()
-                .exec(
-                    arrayOf(*commands, gameLauncher?.absolutePathString() ?: "missing"),
-                    null,
-                    SL.appConfig.gamePath.toFileOrNull()
-                )
-        },
-        colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.primary),
-        modifier = Modifier
-            .padding(start = 16.dp)
-            .border(
-                8.dp,
-                MaterialTheme.colors.primary.withAdjustedBrightness(-35),
-                shape = SmolTheme.smolFullyClippedButtonShape()
-            ),
-        shape = SmolTheme.smolFullyClippedButtonShape(),
-        elevation = ButtonDefaults.elevation(defaultElevation = 4.dp, hoveredElevation = 8.dp, pressedElevation = 16.dp)
+    SmolTooltipArea(
+        tooltip = { SmolTooltipText("Engage") },
+        delayMillis = SmolTooltipArea.delay
     ) {
-        Text(text = "Launch", fontWeight = FontWeight.SemiBold)
+        SmolButton(
+            onClick = {
+                val gameLauncher = SL.appConfig.gamePath.toPathOrNull()?.resolve("starsector.exe")
+                val commands = when (currentPlatform) {
+                    Platform.Windows -> arrayOf("cmd.exe", "/C")
+                    else -> arrayOf("open")
+                }
+                Logger.info { "Launching ${gameLauncher?.absolutePathString()} with working dir ${SL.appConfig.gamePath}." }
+                Runtime.getRuntime()
+                    .exec(
+                        arrayOf(*commands, gameLauncher?.absolutePathString() ?: "missing"),
+                        null,
+                        SL.appConfig.gamePath.toFileOrNull()
+                    )
+            },
+            colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.primary),
+            modifier = Modifier
+                .padding(start = 16.dp)
+                .border(
+                    8.dp,
+                    MaterialTheme.colors.primary.withAdjustedBrightness(-35),
+                    shape = SmolTheme.smolFullyClippedButtonShape()
+                ),
+            shape = SmolTheme.smolFullyClippedButtonShape(),
+            elevation = ButtonDefaults.elevation(
+                defaultElevation = 4.dp,
+                hoveredElevation = 8.dp,
+                pressedElevation = 16.dp
+            )
+        ) {
+            Text(text = "Launch", fontWeight = FontWeight.SemiBold)
+        }
     }
 }
 
 @Composable
 private fun AppState.ramButton(modifier: Modifier = Modifier) {
     var showVmParamsMenu by remember { mutableStateOf(false) }
-    SmolButton(
-        onClick = { showVmParamsMenu = true },
-        modifier = modifier.padding(start = 16.dp)
+    SmolTooltipArea(
+        tooltip = { SmolTooltipText("Adjust the RAM allocated to the game. Modifies vmparams.") },
+        delayMillis = SmolTooltipArea.delay
     ) {
-        Text(text = "RAM")
+        SmolButton(
+            onClick = { showVmParamsMenu = true },
+            modifier = modifier.padding(start = 16.dp)
+        ) {
+            Text(text = "RAM")
+        }
     }
     vmParamsContextMenu(showVmParamsMenu) { showVmParamsMenu = it }
 }
@@ -365,7 +390,8 @@ private fun AppState.ramButton(modifier: Modifier = Modifier) {
 @Composable
 private fun AppState.installModsButton(modifier: Modifier = Modifier) {
     SmolTooltipArea(
-        tooltip = { SmolTooltipText(text = "Install mod(s)") }
+        tooltip = { SmolTooltipText(text = "Install mod(s)") },
+        delayMillis = SmolTooltipArea.delay
     ) {
         SmolButton(
             onClick = {

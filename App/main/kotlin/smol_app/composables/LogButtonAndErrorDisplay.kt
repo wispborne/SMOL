@@ -27,7 +27,10 @@ private fun logButtonAndErrorDisplayPreview() = previewTheme {
 @Composable
 fun logButtonAndErrorDisplay(showLogPanel: MutableState<Boolean>) {
     Row {
-        SmolTooltipArea(tooltip = { SmolTooltipText(text = "Show/Hide Logs") }) {
+        SmolTooltipArea(
+            tooltip = { SmolTooltipText(text = "Show/Hide Logs") },
+            delayMillis = SmolTooltipArea.delay
+        ) {
             IconToggleButton(
                 checked = showLogPanel.value,
                 modifier = Modifier.padding(start = 8.dp),

@@ -27,3 +27,7 @@ fun SmolTooltipArea(
         content = content
     )
 }
+
+object SmolTooltipArea {
+    const val delay = 300
+}

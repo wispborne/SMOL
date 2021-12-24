@@ -68,9 +68,9 @@ fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
             }
 
             // If the enabled variant has an archive, they can reset the state back to the archived state.
-            if (firstEnabledVariant?.archiveInfo != null) {
-                this.add(DropdownAction.ResetToArchive(firstEnabledVariant))
-            }
+//            if (firstEnabledVariant?.archiveInfo != null) {
+//                this.add(DropdownAction.ResetToArchive(firstEnabledVariant))
+//            }
 
             this
         }
