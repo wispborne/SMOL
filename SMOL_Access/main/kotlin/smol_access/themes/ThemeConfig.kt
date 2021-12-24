@@ -1,12 +1,12 @@
 package smol_access.themes
 
-import com.google.gson.Gson
 import smol_access.Constants
+import utilities.Jsanity
 import utilities.Config
 import utilities.InMemoryPrefStorage
 import utilities.JsonFilePrefStorage
 
-class ThemeConfig(gson: Gson) :
+class ThemeConfig(gson: Jsanity) :
     Config(
         InMemoryPrefStorage(
             JsonFilePrefStorage(

@@ -14,7 +14,7 @@ import kotlin.io.path.*
 class VramChecker(
     val enabledModIds: List<String>?,
     val modIdsToCheck: List<String>?,
-    val gameModsFolder: Path,
+    val foldersToCheck: List<Path>,
     val showGfxLibDebugOutput: Boolean,
     val showPerformance: Boolean,
     val showSkippedFiles: Boolean,
@@ -68,8 +68,8 @@ class VramChecker(
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             .build()
 
-        if (!gameModsFolder.exists()) {
-            throw RuntimeException("This doesn't exist! ${gameModsFolder.absolutePathString()}")
+        if (foldersToCheck.none { it.exists() }) {
+            throw RuntimeException("This doesn't exist! ${foldersToCheck.joinToString { it.absolutePathString() }}")
         }
 
         if (enabledModIds != null) progressText.appendAndPrint(
@@ -77,20 +77,25 @@ class VramChecker(
             traceOut = traceOut
         )
 
-        progressText.appendAndPrint("Mods folder: ${gameModsFolder.absolutePathString()}", traceOut)
+        progressText.appendAndPrint(
+            "Mods folders: ${foldersToCheck.joinToString { it.absolutePathString() }}",
+            traceOut
+        )
 
-        val mods = gameModsFolder.listDirectoryEntries()
+        val mods = foldersToCheck
+            .filter { it.exists() }
+            .flatMap { it.listDirectoryEntries() }
             .filter { it.isDirectory() }
             .mapNotNull {
                 getModInfo(jsonMapper = jsonMapper, modFolder = it, progressText = progressText)
             }
-            .filter { if (modIdsToCheck != null) it.id in modIdsToCheck else true }
+            .filter { if (modIdsToCheck == null) true else it.id in modIdsToCheck }
             .map { modInfo ->
                 progressText.appendAndPrint("\nFolder: ${modInfo.name}", traceOut)
                 val startTimeForMod = Date().time
 
                 val filesInMod =
-                    modInfo.folder.walk()
+                    modInfo.modFolder.walk()
                         .filter { it.isRegularFile() }
                         .toList()
 
@@ -118,7 +123,7 @@ class VramChecker(
                         } catch (e: Exception) {
                             if (showSkippedFiles)
                                 progressText.appendAndPrint(
-                                    "Skipped non-image ${file.relativePath} (${e.message})",
+                                    "Skipped non-image ${file.relativePath(modInfo.modFolder)} (${e.message})",
                                     traceOut
                                 )
                             return@parallelMap null
@@ -130,8 +135,8 @@ class VramChecker(
                             textureWidth = if (image.height == 1) 1 else Integer.highestOneBit(image.height - 1) * 2,
                             bitsInAllChannels = image.colorModel.componentSize.toList(),
                             imageType = when {
-                                file.relativePath.contains(BACKGROUND_FOLDER_NAME) -> ModImage.ImageType.Background
-                                UNUSED_INDICATOR.any { suffix -> file.relativePath.contains(suffix) } -> ModImage.ImageType.Unused
+                                file.relativePath(modInfo.modFolder).contains(BACKGROUND_FOLDER_NAME) -> ModImage.ImageType.Background
+                                UNUSED_INDICATOR.any { suffix -> file.relativePath(modInfo.modFolder).contains(suffix) } -> ModImage.ImageType.Unused
                                 else -> ModImage.ImageType.Texture
                             }
                         )
@@ -154,7 +159,7 @@ class VramChecker(
                             traceOut
                         )
                     }
-                    .onEach { progressText.appendAndPrint("  ${it.file.relativePath}", traceOut) }
+                    .onEach { progressText.appendAndPrint("  ${it.file.relativePath(modInfo.modFolder)}", traceOut) }
                 )
 
 
@@ -172,12 +177,12 @@ class VramChecker(
                                     traceOut
                                 )
                         }
-                        .onEach { progressText.appendAndPrint("   ${it.file.relativePath}", traceOut) }
+                        .onEach { progressText.appendAndPrint("   ${it.file.relativePath(modInfo.modFolder)}", traceOut) }
                 )
 
                 imagesToSumUp.forEach { image ->
                     if (showCountedFiles) progressText.appendAndPrint(
-                        "${image.file.relativePath} - TexHeight: ${image.textureHeight}, " +
+                        "${image.file.relativePath(modInfo.modFolder)} - TexHeight: ${image.textureHeight}, " +
                                 "TexWidth: ${image.textureWidth}, " +
                                 "Channels: ${image.bitsInAllChannels}, " +
                                 "Mult: ${image.multiplier}\n" +
@@ -189,7 +194,7 @@ class VramChecker(
                 val imagesWithoutExcludedGfxLibMaps =
                     if (graphicsLibFilesToExcludeForMod != null)
                         imagesToSumUp.filterNot { image ->
-                            image.file.relativeTo(modInfo.folder) in graphicsLibFilesToExcludeForMod
+                            image.file.relativeTo(modInfo.modFolder) in graphicsLibFilesToExcludeForMod
                                 .map { Path.of(it.relativeFilePath) }
                         }
                     else imagesToSumUp
@@ -286,7 +291,7 @@ class VramChecker(
 
                         ModInfo(
                             id = model.id,
-                            folder = modFolder,
+                            modFolder = modFolder,
                             name = model.name,
                             version = "${model.version.major}.${model.version.minor}.${model.version.patch}"
                         )
@@ -297,7 +302,7 @@ class VramChecker(
 
                             ModInfo(
                                 id = model.id,
-                                folder = modFolder,
+                                modFolder = modFolder,
                                 name = model.name,
                                 version = model.version
                             )
@@ -314,7 +319,7 @@ class VramChecker(
     }
 
     private fun List<Mod>.getBytesUsedByDedupedImages(): Long = this
-        .flatMap { mod -> mod.images.map { img -> mod.info.folder to img } }
+        .flatMap { mod -> mod.images.map { img -> mod.info.modFolder to img } }
         .distinctBy { (modFolder: Path, image: ModImage) -> image.file.relativeTo(modFolder).pathString + image.file.name }
         .sumOf { it.second.bytesUsed }
 
@@ -330,7 +335,7 @@ class VramChecker(
             .mapNotNull { file ->
                 runCatching { csvReader.build(file.reader()) }
                     .recover {
-                        progressText.appendAndPrint("Unable to read ${file.relativePath}: ${it.message}", traceOut)
+                        progressText.appendAndPrint("Unable to read ${file.pathString}: ${it.message}", traceOut)
                         null
                     }
                     .getOrNull()
@@ -384,6 +389,5 @@ class VramChecker(
         this.appendLine(line)
     }
 
-    private val Path.relativePath: String
-        get() = this.relativeTo(gameModsFolder).pathString
+    private fun Path.relativePath(modFolder: Path): String = this.relativeTo(modFolder).pathString
 }

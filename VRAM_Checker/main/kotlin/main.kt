@@ -81,7 +81,7 @@ suspend fun main(args: Array<String>) {
             showSkippedFiles = showSkippedFiles,
             showCountedFiles = showCountedFiles,
             graphicsLibConfig = graphicsLibConfig,
-            gameModsFolder = gameModsFolder.toPath(),
+            foldersToCheck = gameModsFolder.toPath().toList(),
             traceOut = { println(it) },
             debugOut = { println(it) }
         )

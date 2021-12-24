@@ -1,13 +1,12 @@
 package smol_access.business
 
-import com.github.salomonbrys.kotson.fromJson
-import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import org.hjson.JsonObject
 import smol_access.config.GamePath
 import smol_access.model.ModInfo
 import smol_access.util.IOLock
 import timber.ktx.Timber
+import utilities.Jsanity
 import java.nio.file.Path
 import kotlin.io.path.copyTo
 import kotlin.io.path.exists
@@ -15,7 +14,7 @@ import kotlin.io.path.reader
 import kotlin.io.path.writer
 
 class GameEnabledMods(
-    private val gson: Gson,
+    private val gson: Jsanity,
     private val gamePath: GamePath
 ) {
     companion object {

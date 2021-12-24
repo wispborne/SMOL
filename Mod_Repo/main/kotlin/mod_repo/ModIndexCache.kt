@@ -1,11 +1,11 @@
 package mod_repo
 
-import com.google.gson.Gson
 import utilities.Config
 import utilities.InMemoryPrefStorage
+import utilities.Jsanity
 import utilities.JsonFilePrefStorage
 
-class ModIndexCache(gson: Gson = Gson()) : Config(
+class ModIndexCache(gson: Jsanity) : Config(
     prefStorage = InMemoryPrefStorage(
         JsonFilePrefStorage(
             gson = gson,

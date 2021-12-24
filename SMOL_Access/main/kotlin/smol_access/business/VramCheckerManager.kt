@@ -4,6 +4,7 @@ import GraphicsLibConfig
 import VramChecker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import smol_access.Constants
 import smol_access.config.GamePath
 import smol_access.config.VramCheckerCache
 import smol_access.model.Mod
@@ -30,7 +31,7 @@ class VramCheckerManager(
         val results = VramChecker(
             enabledModIds = mods.filter { it.hasEnabledVariant }.map { it.id },
             modIdsToCheck = modIdsToUpdate,
-            gameModsFolder = gamePath.getModsPath(),
+            foldersToCheck = listOf(gamePath.getModsPath(), Constants.STAGING_FOLDER_DEFAULT),
             showGfxLibDebugOutput = false,
             showPerformance = false,
             showSkippedFiles = false,

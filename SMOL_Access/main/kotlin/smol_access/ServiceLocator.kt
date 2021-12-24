@@ -1,7 +1,11 @@
 package smol_access
 
+import com.fasterxml.jackson.core.json.JsonReadFeature
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.json.JsonMapper
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.github.salomonbrys.kotson.*
-import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
 import com.squareup.moshi.FromJson
@@ -19,6 +23,7 @@ import smol_access.model.ModInfo
 import smol_access.themes.ThemeConfig
 import smol_access.themes.ThemeManager
 import smol_access.util.ManualReloadTrigger
+import utilities.Jsanity
 
 var SL = ServiceLocator()
 private val basicMoshi = Moshi.Builder()
@@ -32,25 +37,24 @@ class ServiceLocator internal constructor(
         .add(ModInfoAdapter())
         .addLast(KotlinJsonAdapterFactory())
         .build(),
-    val gson: Gson = buildGson(),
-    internal val themeConfig: ThemeConfig = ThemeConfig(gson = gson),
-    internal val versionCheckerCache: VersionCheckerCache = VersionCheckerCache(gson = gson),
-    val appConfig: AppConfig = AppConfig(gson = gson),
+    val jsanity: Jsanity = Jsanity(gson = buildGson(), jackson = buildJackson()),
+    internal val themeConfig: ThemeConfig = ThemeConfig(gson = jsanity),
+    internal val versionCheckerCache: VersionCheckerCache = VersionCheckerCache(gson = jsanity),
+    val appConfig: AppConfig = AppConfig(gson = jsanity),
     val userManager: UserManager = UserManager(
         appConfig = appConfig
     ),
-    internal val modInfoLoader: ModInfoLoader = ModInfoLoader(moshi = moshi, gson = gson),
+    internal val modInfoLoader: ModInfoLoader = ModInfoLoader(moshi = moshi, gson = jsanity),
     val gamePath: GamePath = GamePath(appConfig = appConfig),
     val vramChecker: VramCheckerManager = VramCheckerManager(
         gamePath = gamePath,
-        vramCheckerCache = VramCheckerCache(gson = gson)
+        vramCheckerCache = VramCheckerCache(gson = jsanity)
     ),
-    internal val gameEnabledMods: GameEnabledMods = GameEnabledMods(gson, gamePath),
+    internal val gameEnabledMods: GameEnabledMods = GameEnabledMods(jsanity, gamePath),
     val archives: Archives = Archives(
         config = appConfig,
         gamePath = gamePath,
-        gson = gson,
-        moshi = moshi,
+        gson = jsanity,
         modInfoLoader = modInfoLoader
     ),
     internal val modLoader: ModLoader = ModLoader(
@@ -62,7 +66,7 @@ class ServiceLocator internal constructor(
     ),
     val dependencies: Dependencies = Dependencies(modLoader = modLoader),
     val versionChecker: VersionChecker = VersionChecker(
-        gson = gson,
+        gson = jsanity,
         versionCheckerCache = versionCheckerCache,
         userManager = userManager,
         modLoader = modLoader
@@ -80,7 +84,7 @@ class ServiceLocator internal constructor(
         userManager = userManager, access = access, modLoader = modLoader
     ),
     val themeManager: ThemeManager = ThemeManager(userManager = userManager, themeConfig = themeConfig),
-    val modRepo: ModRepo = ModRepo()
+    val modRepo: ModRepo = ModRepo(jsanity = jsanity)
 )
 
 private fun buildGson() = GsonBuilder()
@@ -108,6 +112,20 @@ private fun buildGson() = GsonBuilder()
         }
     }
     .create()
+
+private fun buildJackson(): ObjectMapper =
+    JsonMapper.builder().defaultLeniency(true)
+        .enable(
+            JsonReadFeature.ALLOW_JAVA_COMMENTS, JsonReadFeature.ALLOW_SINGLE_QUOTES,
+            JsonReadFeature.ALLOW_YAML_COMMENTS, JsonReadFeature.ALLOW_MISSING_VALUES,
+            JsonReadFeature.ALLOW_TRAILING_COMMA, JsonReadFeature.ALLOW_UNQUOTED_FIELD_NAMES,
+            JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS,
+            JsonReadFeature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER,
+            JsonReadFeature.ALLOW_LEADING_DECIMAL_POINT_FOR_NUMBERS
+        )
+        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+        .build()
+        .registerKotlinModule()
 
 @ExperimentalStdlibApi
 class ModInfoAdapter {

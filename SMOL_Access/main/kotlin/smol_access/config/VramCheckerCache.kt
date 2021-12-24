@@ -1,14 +1,14 @@
 package smol_access.config
 
-import com.google.gson.Gson
 import smol_access.Constants
 import smol_access.model.ModId
 import smol_access.model.SmolId
 import utilities.Config
 import utilities.InMemoryPrefStorage
+import utilities.Jsanity
 import utilities.JsonFilePrefStorage
 
-class VramCheckerCache(gson: Gson) :
+class VramCheckerCache(gson: Jsanity) :
     Config(
         InMemoryPrefStorage(
             JsonFilePrefStorage(

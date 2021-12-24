@@ -1,6 +1,5 @@
 package smol_access.business
 
-import com.google.gson.Gson
 import com.squareup.moshi.Moshi
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
@@ -10,6 +9,7 @@ import smol_access.model.ModInfo
 import smol_access.model.VersionCheckerInfo
 import smol_access.util.IOLock
 import timber.ktx.Timber
+import utilities.Jsanity
 import utilities.walk
 import java.nio.file.FileVisitOption
 import java.nio.file.Path
@@ -17,7 +17,7 @@ import kotlin.io.path.*
 
 class ModInfoLoader(
     private val moshi: Moshi,
-    private val gson: Gson
+    private val gson: Jsanity
 ) {
 
     @OptIn(ExperimentalStdlibApi::class)
@@ -89,11 +89,12 @@ class ModInfoLoader(
     @OptIn(ExperimentalStdlibApi::class)
     fun deserializeModInfoFile(modInfoJson: String): ModInfo {
         try {
-            val json = JsonValue.readHjson(modInfoJson)
-            val jsonStr = json.toString()
-                .also { Timber.v { it } }
-
-            return gson.fromJson(jsonStr, ModInfo::class.java)
+            return gson.fromJson(modInfoJson, ModInfo::class.java)
+//            val json = JsonValue.readHjson(modInfoJson)
+//            val jsonStr = json.toString()
+//                .also { Timber.v { it } }
+//
+//            return gson.fromJson(jsonStr, ModInfo::class.java)
 //            return moshi.adapter<ModInfo>().fromJson(jsonStr)!!
         } catch (ex: Exception) {
             Timber.w(ex) { "Error reading mod_info.json: $modInfoJson" }
@@ -104,11 +105,12 @@ class ModInfoLoader(
     @OptIn(ExperimentalStdlibApi::class)
     fun deserializeVersionCheckerFile(vcJson: String): VersionCheckerInfo {
         try {
-            val json = JsonValue.readHjson(vcJson)
-            val jsonStr = json.toString()
-                .also { Timber.v { it } }
-
-            return gson.fromJson(jsonStr, VersionCheckerInfo::class.java)
+            return gson.fromJson(vcJson, VersionCheckerInfo::class.java)
+//            val json = JsonValue.readHjson(vcJson)
+//            val jsonStr = json.toString()
+//                .also { Timber.v { it } }
+//
+//            return gson.fromJson(jsonStr, VersionCheckerInfo::class.java)
         } catch (ex: Exception) {
             Timber.w(ex) { "Error reading version checker file: $vcJson" }
             throw ex

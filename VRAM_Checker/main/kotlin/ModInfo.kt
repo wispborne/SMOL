@@ -2,7 +2,7 @@ import java.nio.file.Path
 
 data class ModInfo(
     val id: String,
-    val folder: Path,
+    val modFolder: Path,
     val name: String,
     val version: String
 ) {

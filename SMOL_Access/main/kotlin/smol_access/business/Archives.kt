@@ -1,8 +1,5 @@
 package smol_access.business
 
-import com.github.salomonbrys.kotson.fromJson
-import com.google.gson.Gson
-import com.squareup.moshi.Moshi
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import net.sf.sevenzipjbinding.*
@@ -38,8 +35,7 @@ import kotlin.io.path.*
 class Archives internal constructor(
     private val config: AppConfig,
     private val gamePath: GamePath,
-    private val gson: Gson,
-    private val moshi: Moshi,
+    private val gson: Jsanity,
     private val modInfoLoader: ModInfoLoader
 ) {
     companion object {

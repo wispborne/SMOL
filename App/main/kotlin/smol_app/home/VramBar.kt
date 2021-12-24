@@ -20,21 +20,25 @@ import smol_app.util.bytesAsReadableMiB
 
 @Composable
 fun RowScope.vramBar(mod: Mod, largestVramUsage: Long?) {
+    val variant = mod.findFirstEnabledOrHighestVersion
     val vramResult =
-        SL.vramChecker.vramUsage.value?.get(mod.findHighestVersion?.smolId)
+        SL.vramChecker.vramUsage.value?.get(variant?.smolId)
     SmolTooltipArea(tooltip = {
-        if (vramResult != null) {
-            val impactText =
-                vramResult.bytesForMod.bytesAsReadableMiB
-                    .let { if (vramResult.bytesForMod == 0L) "No impact" else it }
-            SmolTooltipText(
-                text = buildString {
-                    appendLine("Version: ${vramResult.version}")
-                    appendLine(impactText)
-                    append("${vramResult.imageCount} images")
+        SmolTooltipText(
+            text = when {
+                vramResult?.bytesForMod?.bytesAsReadableMiB != null -> {
+                    buildString {
+                        appendLine("Version: ${vramResult.version}")
+                        appendLine(vramResult.bytesForMod.bytesAsReadableMiB
+                            .let { if (vramResult.bytesForMod == 0L) "No impact" else it })
+                        append("${vramResult.imageCount} images")
+                    }
                 }
-            )
-        }
+                variant?.stagingInfo == null && variant?.modsFolderInfo == null ->
+                    "Install mod before checking VRAM.\nUnable to scan a compressed archive."
+                else -> "Not yet scanned."
+            }
+        )
     }) {
         // VRAM relative size bar
         if (vramResult?.bytesForMod != null && vramResult.bytesForMod > 0 && largestVramUsage != null) {

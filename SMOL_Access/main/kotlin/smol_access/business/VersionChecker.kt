@@ -1,7 +1,5 @@
 package smol_access.business
 
-import com.github.salomonbrys.kotson.fromJson
-import com.google.gson.Gson
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
@@ -19,12 +17,13 @@ import smol_access.model.ModId
 import smol_access.model.VersionCheckerInfo
 import timber.ktx.Timber
 import timber.ktx.i
+import utilities.Jsanity
 import utilities.parallelMap
 import utilities.trace
 import java.time.Instant
 
 class VersionChecker(
-    private val gson: Gson,
+    private val gson: Jsanity,
     private val versionCheckerCache: VersionCheckerCache,
     private val userManager: UserManager,
     private val modLoader: ModLoader

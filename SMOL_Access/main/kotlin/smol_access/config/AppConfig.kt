@@ -1,13 +1,13 @@
 package smol_access.config
 
-import com.google.gson.Gson
 import smol_access.Constants
 import smol_access.model.UserProfile
 import utilities.Config
 import utilities.InMemoryPrefStorage
+import utilities.Jsanity
 import utilities.JsonFilePrefStorage
 
-class AppConfig(gson: Gson) :
+class AppConfig(gson: Jsanity) :
     Config(
         InMemoryPrefStorage(
             JsonFilePrefStorage(

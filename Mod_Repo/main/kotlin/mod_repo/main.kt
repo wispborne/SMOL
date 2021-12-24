@@ -1,15 +1,19 @@
 package mod_repo
 
+import com.fasterxml.jackson.databind.json.JsonMapper
+import com.google.gson.Gson
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.select.Elements
+import utilities.Jsanity
 import java.net.URI
 import java.nio.file.Path
 
 internal val CONFIG_FOLDER_DEFAULT = Path.of(System.getProperty("user.home"), "SMOL/")
 
 fun main(args: Array<String>) {
-    val modIndexCache = ModIndexCache()
+    val jsanity = Jsanity(Gson(), JsonMapper())
+    val modIndexCache = ModIndexCache(jsanity)
 
     // Mod Index
     scrapeModIndexLinks()
@@ -20,7 +24,7 @@ fun main(args: Array<String>) {
         }
 
     // Modding Subforum
-    val moddingSubforumCache = ModdingSubforumCache()
+    val moddingSubforumCache = ModdingSubforumCache(jsanity)
     scrapeModdingForumLinks()
         .onEach { println(it) }
         .run {

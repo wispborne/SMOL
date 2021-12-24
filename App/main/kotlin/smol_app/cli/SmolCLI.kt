@@ -14,6 +14,7 @@ import com.github.ajalt.clikt.parameters.types.int
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import smol_access.Access
+import smol_access.Constants
 import smol_access.business.UserManager
 import smol_access.business.UserModProfileManager
 import smol_access.business.VmParamsManager
@@ -122,7 +123,7 @@ class SmolCLI(
                 VramChecker(
                     enabledModIds = access.reload()?.filter { it.hasEnabledVariant }?.map { it.id },
                     modIdsToCheck = null,
-                    gameModsFolder = gamePath.getModsPath(),
+                    foldersToCheck = listOf(gamePath.getModsPath(), Constants.STAGING_FOLDER_DEFAULT),
                     showGfxLibDebugOutput = false,
                     showPerformance = false,
                     showSkippedFiles = false,

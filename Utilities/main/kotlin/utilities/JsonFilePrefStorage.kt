@@ -1,6 +1,5 @@
 package utilities
 
-import com.google.gson.Gson
 import com.google.gson.JsonElement
 import smol_access.util.IOLock
 import timber.ktx.Timber
@@ -11,7 +10,7 @@ import kotlin.reflect.KProperty
 import kotlin.reflect.javaType
 import kotlin.reflect.typeOf
 
-class JsonFilePrefStorage(private val gson: Gson, private val file: Path) : Config.PrefStorage {
+class JsonFilePrefStorage(private val gson: Jsanity, private val file: Path) : Config.PrefStorage {
     init {
         if (!file.exists()) {
             file.parent?.createDirectories()
