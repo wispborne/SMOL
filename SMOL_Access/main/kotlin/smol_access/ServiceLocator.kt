@@ -13,6 +13,9 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.ToJson
 import com.squareup.moshi.adapter
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import io.ktor.client.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.features.logging.*
 import org.hjson.JsonValue
 import smol_access.business.*
 import smol_access.config.AppConfig
@@ -30,9 +33,17 @@ private val basicMoshi = Moshi.Builder()
     .addLast(KotlinJsonAdapterFactory()).build()
 private val basicGson = GsonBuilder().create()
 
+typealias HttpClientBuilder = () -> HttpClient
+
 @OptIn(ExperimentalStdlibApi::class)
 class ServiceLocator internal constructor(
     val manualReloadTrigger: ManualReloadTrigger = ManualReloadTrigger(),
+    val httpClientBuilder: HttpClientBuilder = {
+        HttpClient(CIO) {
+            install(Logging)
+            this.followRedirects = true
+        }
+    },
     val moshi: Moshi = Moshi.Builder()
         .add(ModInfoAdapter())
         .addLast(KotlinJsonAdapterFactory())
@@ -69,7 +80,8 @@ class ServiceLocator internal constructor(
         gson = jsanity,
         versionCheckerCache = versionCheckerCache,
         userManager = userManager,
-        modLoader = modLoader
+        modLoader = modLoader,
+        httpClientBuilder = httpClientBuilder
     ),
     internal val staging: Staging = Staging(
         config = appConfig,
@@ -84,7 +96,7 @@ class ServiceLocator internal constructor(
         userManager = userManager, access = access, modLoader = modLoader
     ),
     val themeManager: ThemeManager = ThemeManager(userManager = userManager, themeConfig = themeConfig),
-    val modRepo: ModRepo = ModRepo(jsanity = jsanity)
+    val modRepo: ModRepo = ModRepo(jsanity = jsanity, httpClientBuilder = httpClientBuilder)
 )
 
 private fun buildGson() = GsonBuilder()

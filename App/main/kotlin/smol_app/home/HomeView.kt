@@ -141,13 +141,16 @@ fun AppState.homeView(
                         }
                     }
 
-                    consoleTextField(
-                        modifier = Modifier
-                            .widthIn(max = 300.dp)
-                            .padding(end = 16.dp)
-                            .offset(y = (-3).dp)
-                            .align(Alignment.CenterVertically)
-                    )
+                    // Hide console for now, it's not useful
+                    if (false) {
+                        consoleTextField(
+                            modifier = Modifier
+                                .widthIn(max = 300.dp)
+                                .padding(end = 16.dp)
+                                .offset(y = (-3).dp)
+                                .align(Alignment.CenterVertically)
+                        )
+                    }
                 }
             }
         }, content = {

@@ -15,6 +15,7 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -46,10 +47,7 @@ import smol_app.browser.chromium.ChromiumBrowser
 import smol_app.browser.javafx.javaFxBrowser
 import smol_app.composables.*
 import smol_app.themes.SmolTheme
-import smol_app.util.currentPlatform
-import smol_app.util.filterModPosts
-import smol_app.util.openAsUriInBrowser
-import smol_app.util.replaceAllUsingDifference
+import smol_app.util.*
 import timber.ktx.Timber
 import java.awt.Cursor
 import java.nio.file.Path
@@ -84,135 +82,174 @@ fun AppState.ModBrowserView(
     var alertDialogMessage: String? by remember { mutableStateOf(null) }
     val showLogPanel = remember { mutableStateOf(false) }
 
-    Scaffold(topBar = {
-        TopAppBar {
-            SmolButton(onClick = router::pop, modifier = Modifier.padding(start = 16.dp)) {
-                Text("Back")
-            }
-            Text(
-                modifier = Modifier.padding(8.dp).padding(start = 16.dp),
-                text = "Mod Browser",
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(Modifier.weight(1f))
-
-            SmolTooltipArea(
-                modifier = modifier,
-                tooltip = { SmolTooltipText(text = "Open in a browser") }) {
-                Icon(
-                    painter = painterResource("web.svg"),
-                    contentDescription = null,
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            TopAppBar {
+                SmolButton(onClick = router::pop, modifier = Modifier.padding(start = 16.dp)) {
+                    Text("Back")
+                }
+                Text(
+                    modifier = Modifier.padding(8.dp).padding(start = 16.dp),
+                    text = "Mod Browser",
+                    fontWeight = FontWeight.Bold
+                )
+                SmolTooltipArea(
                     modifier = Modifier
-                        .width(24.dp)
-                        .height(24.dp)
-                        .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)))
-                        .mouseClickable {
-                            if (this.buttons.isPrimaryPressed) {
-                                runCatching {
-                                    browser.value?.currentUrl?.openAsUriInBrowser()
+                        .padding(start = 16.dp),
+                    tooltip = {
+                        SmolTooltipText(text = buildString {
+                            appendLine("The Mod Browser lists mods scraped from the official forum.")
+                            appendLine("The list is <b>not</b> live; it is fetched from an online cache, which is updated periodically so as to avoid excessive load on the forum.")
+                            append("If a mod has been added to the forum but doesn't yet show up in the list, simply navigate to it using the browser and download it.")
+                        }.parseHtml())
+                    }) {
+                    Icon(
+                        painter = painterResource("icon-help-circled.svg"),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .width(24.dp)
+                            .height(24.dp),
+                        tint = SmolTheme.dimmedIconColor()
+                    )
+                }
+                Spacer(Modifier.weight(1f))
+
+                SmolTooltipArea(
+                    modifier = Modifier
+                        .padding(end = 16.dp),
+                    tooltip = { SmolTooltipText(text = "Fetch latest mod cache.") }) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .width(24.dp)
+                            .height(24.dp)
+                            .mouseClickable {
+                                if (this.buttons.isPrimaryPressed) {
+                                    SL.modRepo.refreshFromInternet()
                                 }
-                                    .onFailure { Logger.warn(it) }
-                            }
-                        },
-                    tint = SmolTheme.dimmedIconColor()
-                )
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-        }
-    }, content = {
-        Column(modifier.padding(bottom = SmolTheme.bottomBarHeight - 16.dp)) {
-            Row(modifier = Modifier.padding(start = 16.dp, bottom = 16.dp, top = 8.dp)) {
-                val splitterState = rememberSplitPaneState(
-                    initialPositionPercentage = SL.UI.uiConfig.modBrowserState?.modListWidthPercent ?: 0f
-                )
-                HorizontalSplitPane(splitPaneState = splitterState) {
-                    first(modListMinWidthDp) {
-                        LaunchedEffect(splitterState.positionPercentage) {
-                            // Update config file on recompose
-                            SL.UI.uiConfig.modBrowserState =
-                                SL.UI.uiConfig.modBrowserState?.copy(modListWidthPercent = splitterState.positionPercentage)
-                                    ?: ModBrowserState(modListWidthPercent = splitterState.positionPercentage)
-                        }
-                        Column {
-                            Row {
-                                smolSearchField(
-                                    modifier = Modifier
-                                        .focusRequester(searchFocusRequester())
-                                        .widthIn(max = 320.dp)
-                                        .padding(bottom = 16.dp, end = 16.dp),
-                                    tooltipText = "Hotkey: Ctrl-F",
-                                    label = "Filter"
-                                ) { query ->
-                                    if (query.isBlank()) {
-                                        shownIndexMods.replaceAllUsingDifference(indexMods, doesOrderMatter = false)
-                                        shownModdingSubforumMods.replaceAllUsingDifference(
-                                            moddingSubforumMods,
-                                            doesOrderMatter = false
-                                        )
-                                    } else {
-                                        shownIndexMods.replaceAllUsingDifference(
-                                            filterModPosts(query, indexMods).ifEmpty { listOf(null) },
-                                            doesOrderMatter = true
-                                        )
-                                        shownModdingSubforumMods.replaceAllUsingDifference(
-                                            filterModPosts(query, moddingSubforumMods).ifEmpty { listOf(null) },
-                                            doesOrderMatter = true
-                                        )
+                            },
+                        tint = SmolTheme.dimmedIconColor()
+                    )
+                }
+                SmolTooltipArea(
+                    modifier = Modifier,
+                    tooltip = { SmolTooltipText(text = "Open in a browser") }) {
+                    Icon(
+                        painter = painterResource("web.svg"),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .width(24.dp)
+                            .height(24.dp)
+                            .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)))
+                            .mouseClickable {
+                                if (this.buttons.isPrimaryPressed) {
+                                    runCatching {
+                                        browser.value?.currentUrl?.openAsUriInBrowser()
                                     }
+                                        .onFailure { Logger.warn(it) }
                                 }
-                                Spacer(Modifier.weight(1f))
-                                SmolSecondaryButton(
-                                    modifier = Modifier.padding(start = 8.dp).align(Alignment.CenterVertically),
-                                    onClick = { linkLoader.value?.invoke(Constants.FORUM_MOD_INDEX_URL) }
-                                ) { Text("Index") }
-                                SmolSecondaryButton(
-                                    modifier = Modifier.padding(start = 8.dp).align(Alignment.CenterVertically),
-                                    onClick = { linkLoader.value?.invoke(Constants.FORUM_MODDING_SUBFORUM_URL) }
-                                ) { Text("Modding") }
-                                IconButton(
-                                    modifier = Modifier.padding(start = 8.dp).align(Alignment.CenterVertically),
-                                    onClick = { browser.value?.goBack() }
-                                ) { Icon(imageVector = Icons.Default.ArrowBack, contentDescription = null) }
-                                IconButton(
-                                    modifier = Modifier.padding(start = 8.dp).align(Alignment.CenterVertically),
-                                    onClick = { browser.value?.goForward() }
-                                ) { Icon(imageVector = Icons.Default.ArrowForward, contentDescription = null) }
+                            },
+                        tint = SmolTheme.dimmedIconColor()
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+            }
+        }, content = {
+            Column(Modifier.padding(bottom = SmolTheme.bottomBarHeight - 16.dp)) {
+                Row(modifier = Modifier.padding(start = 16.dp, bottom = 16.dp, top = 8.dp)) {
+                    val splitterState = rememberSplitPaneState(
+                        initialPositionPercentage = SL.UI.uiConfig.modBrowserState?.modListWidthPercent ?: 0f
+                    )
+                    HorizontalSplitPane(splitPaneState = splitterState) {
+                        first(modListMinWidthDp) {
+                            LaunchedEffect(splitterState.positionPercentage) {
+                                // Update config file on recompose
+                                SL.UI.uiConfig.modBrowserState =
+                                    SL.UI.uiConfig.modBrowserState?.copy(modListWidthPercent = splitterState.positionPercentage)
+                                        ?: ModBrowserState(modListWidthPercent = splitterState.positionPercentage)
                             }
-
-                            val scrollState = rememberLazyListState()
-                            Row {
-                                LazyVerticalGrid(
-                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                                    cells = GridCells.Adaptive(200.dp),
-                                    state = scrollState,
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    this.items(
-                                        items = (shownIndexMods + shownModdingSubforumMods)
-                                            .filterNotNull()
-                                            .sortedWith(compareByDescending { it.name })
-                                    ) { mod -> scrapedModCard(mod, linkLoader) }
+                            Column {
+                                Row {
+                                    smolSearchField(
+                                        modifier = Modifier
+                                            .focusRequester(searchFocusRequester())
+                                            .widthIn(max = 320.dp)
+                                            .padding(bottom = 16.dp, end = 16.dp),
+                                        tooltipText = "Hotkey: Ctrl-F",
+                                        label = "Filter"
+                                    ) { query ->
+                                        if (query.isBlank()) {
+                                            shownIndexMods.replaceAllUsingDifference(indexMods, doesOrderMatter = false)
+                                            shownModdingSubforumMods.replaceAllUsingDifference(
+                                                moddingSubforumMods,
+                                                doesOrderMatter = false
+                                            )
+                                        } else {
+                                            shownIndexMods.replaceAllUsingDifference(
+                                                filterModPosts(query, indexMods).ifEmpty { listOf(null) },
+                                                doesOrderMatter = true
+                                            )
+                                            shownModdingSubforumMods.replaceAllUsingDifference(
+                                                filterModPosts(query, moddingSubforumMods).ifEmpty { listOf(null) },
+                                                doesOrderMatter = true
+                                            )
+                                        }
+                                    }
+                                    Spacer(Modifier.weight(1f))
+                                    SmolSecondaryButton(
+                                        modifier = Modifier.padding(start = 8.dp).align(Alignment.CenterVertically),
+                                        onClick = { linkLoader.value?.invoke(Constants.FORUM_MOD_INDEX_URL) }
+                                    ) { Text("Index") }
+                                    SmolSecondaryButton(
+                                        modifier = Modifier.padding(start = 8.dp).align(Alignment.CenterVertically),
+                                        onClick = { linkLoader.value?.invoke(Constants.FORUM_MODDING_SUBFORUM_URL) }
+                                    ) { Text("Modding") }
+                                    IconButton(
+                                        modifier = Modifier.padding(start = 8.dp).align(Alignment.CenterVertically),
+                                        onClick = { browser.value?.goBack() }
+                                    ) { Icon(imageVector = Icons.Default.ArrowBack, contentDescription = null) }
+                                    IconButton(
+                                        modifier = Modifier.padding(start = 8.dp).align(Alignment.CenterVertically),
+                                        onClick = { browser.value?.goForward() }
+                                    ) { Icon(imageVector = Icons.Default.ArrowForward, contentDescription = null) }
                                 }
-                                VerticalScrollbar(
-                                    adapter = ScrollbarAdapter(scrollState),
-                                    modifier = Modifier.padding(start = 4.dp, end = 8.dp)
-                                )
+
+                                val scrollState = rememberLazyListState()
+                                Row {
+                                    LazyVerticalGrid(
+                                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                                        cells = GridCells.Adaptive(200.dp),
+                                        state = scrollState,
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        this.items(
+                                            items = (shownIndexMods + shownModdingSubforumMods)
+                                                .filterNotNull()
+                                                .sortedWith(compareByDescending { it.name })
+                                        ) { mod -> scrapedModCard(mod, linkLoader) }
+                                    }
+                                    VerticalScrollbar(
+                                        adapter = ScrollbarAdapter(scrollState),
+                                        modifier = Modifier.padding(start = 4.dp, end = 8.dp)
+                                    )
+                                }
                             }
                         }
-                    }
 
-                    second {
-                        embeddedBrowser(browser, linkLoader, jfxpanel, defaultUrl ?: Constants.FORUM_MOD_INDEX_URL)
+                        second {
+                            embeddedBrowser(browser, linkLoader, jfxpanel, defaultUrl ?: Constants.FORUM_MOD_INDEX_URL)
+                        }
                     }
                 }
             }
-        }
 
-        if (showLogPanel.value) {
-            logPanel { showLogPanel.value = false }
-        }
-    },
+            if (showLogPanel.value) {
+                logPanel { showLogPanel.value = false }
+            }
+        },
         bottomBar = {
             BottomAppBar(
                 modifier = Modifier.fillMaxWidth()

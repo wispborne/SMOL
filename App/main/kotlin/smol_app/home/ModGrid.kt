@@ -36,7 +36,6 @@ import com.arkivanov.decompose.push
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import smol_access.Constants
 import smol_access.SL
 import smol_access.model.Mod
 import smol_access.model.ModId
@@ -125,12 +124,6 @@ fun AppState.ModGridView(
                             profile = profile
                         ) {
                             Text(text = "VRAM Impact", fontWeight = FontWeight.Bold)
-                            Icon(
-                                modifier = Modifier.padding(start = 8.dp).width(12.dp).height(12.dp)
-                                    .align(Alignment.Top),
-                                painter = painterResource("more_info.png"),
-                                contentDescription = null
-                            )
                         }
                     }
 

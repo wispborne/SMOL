@@ -72,7 +72,9 @@ class Jsanity(
             .also { Timber.v { it } }
 
         // Gson
-        return gson.fromJson(jsonStr, typeOfT)
+        return kotlin.runCatching { gson.fromJson<T>(jsonStr, typeOfT) }
+            .onFailure { Timber.e(it) { "Gson failed to parse:\n$jsonStr" } }
+            .getOrThrow()
     }
 
     fun toJson(obj: Any?): String {

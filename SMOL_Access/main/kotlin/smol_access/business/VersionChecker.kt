@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.hjson.JsonValue
 import smol_access.Constants
+import smol_access.HttpClientBuilder
 import smol_access.config.VersionCheckerCache
 import smol_access.model.Mod
 import smol_access.model.ModId
@@ -26,7 +27,8 @@ class VersionChecker(
     private val gson: Jsanity,
     private val versionCheckerCache: VersionCheckerCache,
     private val userManager: UserManager,
-    private val modLoader: ModLoader
+    private val modLoader: ModLoader,
+    private val httpClientBuilder: HttpClientBuilder
 ) {
     companion object {
         const val DEFAULT_CHECK_INTERVAL_MILLIS: Long = 1000 * 60 * 5 // 5 mins
@@ -47,10 +49,7 @@ class VersionChecker(
         }
 
         withContext(Dispatchers.IO) {
-            HttpClient(CIO) {
-                install(Logging)
-                this.followRedirects = true
-            }.use { client ->
+            httpClientBuilder.invoke().use { client ->
                 val results =
                     trace({ _, millis ->
                         Timber.tag(Constants.TAG_TRACE).i { "Version checked ${mods.count()} mods in ${millis}ms" }

@@ -71,6 +71,8 @@ fun main() = application {
             }
     }
 
+    SL.modRepo.refreshFromInternet()
+
     val onKeyEventHandlers = mutableListOf<(KeyEvent) -> Boolean>()
 
     Window(
