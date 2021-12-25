@@ -28,9 +28,13 @@ import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.arkivanov.decompose.pop
 import javafx.embed.swing.JFXPanel
 import javafx.scene.web.WebView
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import mod_repo.ScrapedMod
 import org.jetbrains.compose.splitpane.ExperimentalSplitPaneApi
@@ -41,6 +45,8 @@ import smol_access.Constants
 import smol_access.SL
 import smol_access.config.Platform
 import smol_app.ModBrowserState
+import smol_app.Toast
+import smol_app.ToasterState
 import smol_app.UI
 import smol_app.browser.chromium.CefBrowserPanel
 import smol_app.browser.chromium.ChromiumBrowser
@@ -52,6 +58,7 @@ import timber.ktx.Timber
 import java.awt.Cursor
 import java.nio.file.Path
 import java.util.*
+import kotlin.io.path.name
 
 object WebViewHolder {
     var webView: WebView? = null
@@ -359,6 +366,24 @@ private fun AppState.embeddedBrowser(
                                         if (download.totalBytes.value != null)
                                             download.progress.emit(download.totalBytes.value ?: 0)
                                         download.status.emit(DownloadItem.Status.Completed)
+
+                                    }
+
+                                    if (download.path.value != null) {
+                                        GlobalScope.launch(Dispatchers.IO) {
+                                            SL.access.installFromUnknownSource(
+                                                inputFile = download.path.value!!,
+                                                shouldCompressModFolder = true
+                                            )
+                                            val toaster = SL.UI.toaster
+                                            val toastId = UUID.randomUUID().toString()
+                                            toaster.items.value += Toast(
+                                                id = toastId,
+                                                timeoutMillis = ToasterState.defaultTimeoutMillis
+                                            ) {
+                                                toastInstalledCard(download)
+                                            }
+                                        }
                                     }
                                 }
                         }
@@ -379,6 +404,28 @@ private fun AppState.embeddedBrowser(
     } else {
         javaFxBrowser(jfxpanel, background, linkLoader)
     }
+}
+
+@Composable
+fun toastInstalledCard(download: DownloadItem) {
+    Card(
+        modifier = Modifier,
+        backgroundColor = MaterialTheme.colors.background
+    ) {
+        Box(modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 8.dp)) {
+            Text(
+                modifier = Modifier.align(Alignment.Center),
+                text = "${download.path.value?.name} installed.",
+                fontSize = 12.sp
+            )
+        }
+    }
+}
+
+@Preview
+@Composable
+fun toastInstalledCardPreview() {
+    toastInstalledCard(DownloadItem.MOCK)
 }
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)

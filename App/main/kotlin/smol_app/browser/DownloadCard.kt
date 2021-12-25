@@ -140,14 +140,7 @@ fun downloadCard(
 fun downloadCardPreview() =
     previewTheme {
         downloadCard(
-            download = DownloadItem(id = "")
-                .apply {
-                    this.path.value = Path.of("C:/temp/perseanchronicles.7z")
-                    this.totalBytes.value = 1000
-                    this.progress.value = 750
-                    this.bitsPerSecond.value = 512000
-                    this.status.value = DownloadItem.Status.Downloading
-                },
+            download = DownloadItem.MOCK,
             requestToastDismissal = {}
         )
     }

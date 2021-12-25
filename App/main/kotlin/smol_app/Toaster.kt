@@ -4,33 +4,66 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.currentRecomposeScope
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import smol_app.Toaster.defaultTimeoutMillis
+import smol_access.SL
+import smol_app.browser.DownloadManager
+import smol_app.browser.downloadCard
 
-object Toaster {
-    val defaultTimeoutMillis = 10000L
+class ToasterState(
+    private val downloadManager: DownloadManager
+) {
+    companion object {
+        const val defaultTimeoutMillis = 10000L
+    }
+
+    val items: MutableStateFlow<List<Toast>> = MutableStateFlow(emptyList())
+    val timersByToastId = mutableMapOf<String, Long>()
+    private val scope = CoroutineScope(Job())
+
+    init {
+        scope.launch {
+            downloadManager.downloads.collect { downloads ->
+                downloads
+                    .filter { it.id !in items.value.map { it.id } }
+                    .map {
+                        Toast(id = it.id, timeoutMillis = null) {
+                            downloadCard(download = it,
+                                requestToastDismissal = {
+                                    if (!SL.UI.toaster.timersByToastId.containsKey(it.id)) {
+                                        SL.UI.toaster.timersByToastId[it.id] = 0
+                                    }
+                                })
+                        }
+                    }
+                    .also {
+                        items.value += it
+                    }
+            }
+        }
+    }
 }
 
 @Composable
 fun toaster(
     modifier: Modifier = Modifier,
-    toasterState: ToasterState,
-    items: List<Toast>,
     verticalArrangement: Arrangement.Vertical? = Arrangement.Top,
     horizontalArrangement: Arrangement.Horizontal? = null
 ) {
     val scope = rememberCoroutineScope()
     val recomposeScope = currentRecomposeScope
-    toasterState.items = items
+    val toasterState = SL.UI.toaster
+    val items = toasterState.items.collectAsState()
+    toasterState.items.value = items.value
         .filter { (toasterState.timersByToastId[it.id] ?: 1) > 0 }
         .toMutableList()
-    toasterState.items.forEach {
+    items.value.forEach {
         if (it.timeoutMillis != null && !toasterState.timersByToastId.containsKey(it.id)) {
             toasterState.timersByToastId[it.id] = it.timeoutMillis
         }
@@ -39,16 +72,17 @@ fun toaster(
     LaunchedEffect(Unit) {
         scope.launch {
             while (true) {
-                toasterState.items.toList().forEach {
+                items.value.toList().forEach {
                     if (toasterState.timersByToastId.containsKey(it.id)) {
                         toasterState.timersByToastId[it.id] = toasterState.timersByToastId[it.id]!! - 100
                     }
                 }
 
-                val preFilterSize = toasterState.items.size
-                toasterState.items = toasterState.items.filter { (toasterState.timersByToastId[it.id] ?: 1) > 0 }
+                val preFilterSize = items.value.size
+                toasterState.items.value =
+                    items.value.filter { (toasterState.timersByToastId[it.id] ?: 1) > 0 }
 
-                if (preFilterSize != toasterState.items.size) {
+                if (preFilterSize != items.value.size) {
                     recomposeScope.invalidate()
                 }
 
@@ -59,7 +93,7 @@ fun toaster(
 
     if (horizontalArrangement != null) {
         LazyRow(modifier, horizontalArrangement = horizontalArrangement) {
-            items(toasterState.items) {
+            items(items.value) {
                 if ((it.timeoutMillis ?: 1) > 0) {
                     it.content()
                 }
@@ -67,7 +101,7 @@ fun toaster(
         }
     } else if (verticalArrangement != null) {
         LazyColumn(modifier, verticalArrangement = verticalArrangement) {
-            items(toasterState.items) {
+            items(items.value) {
                 if ((it.timeoutMillis ?: 1) > 0) {
                     it.content()
                 }
@@ -76,13 +110,8 @@ fun toaster(
     }
 }
 
-class ToasterState {
-    var items: List<Toast> = emptyList()
-    val timersByToastId = mutableMapOf<String, Long>()
-}
-
 data class Toast(
     val id: String,
-    val timeoutMillis: Long? = defaultTimeoutMillis,
+    val timeoutMillis: Long? = ToasterState.defaultTimeoutMillis,
     val content: @Composable () -> Unit
 )

@@ -14,13 +14,14 @@ import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.jetbrains.Children
 import com.arkivanov.decompose.extensions.compose.jetbrains.animation.child.crossfade
 import smol_access.SL
-import smol_app.*
+import smol_app.IWindowState
+import smol_app.WindowState
 import smol_app.browser.ModBrowserView
-import smol_app.browser.downloadCard
 import smol_app.home.homeView
 import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.toColors
+import smol_app.toaster
 import smol_app.views.FileDropper
 import smol_app.views.ProfilesView
 import smol_app.views.settingsView
@@ -30,7 +31,6 @@ import smol_app.views.settingsView
 @Preview
 fun WindowState.appView() {
     val theme = SL.themeManager.activeTheme.collectAsState()
-    val toasterState = remember { ToasterState() }
 
     var alertDialogBuilder: @Composable (() -> Unit)? by remember { mutableStateOf(null) }
     val appState by remember {
@@ -57,21 +57,9 @@ fun WindowState.appView() {
                     }.run { }
                     appState.FileDropper()
 
-                    // Downloads
-                    val downloads = SL.UI.downloadManager.downloads.collectAsState().value
+                    // Toasts
                     toaster(
                         modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp),
-                        toasterState = toasterState,
-                        items = downloads.map {
-                            Toast(id = it.id, timeoutMillis = null) {
-                                downloadCard(download = it,
-                                    requestToastDismissal = {
-                                        if (!toasterState.timersByToastId.containsKey(it.id)) {
-                                            toasterState.timersByToastId[it.id] = 0
-                                        }
-                                    })
-                            }
-                        },
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     )
 

@@ -20,4 +20,19 @@ data class DownloadItem(
 
         data class Failed(val error: Throwable) : Status()
     }
+
+    override fun toString(): String {
+        return "DownloadItem(id='$id', path=${path.value}, totalBytes=${totalBytes.value}, progress=${progress.value}, bitsPerSecond=${bitsPerSecond.value}, status=${status.value})"
+    }
+
+    companion object {
+        val MOCK = DownloadItem(id = "")
+            .apply {
+                this.path.value = Path.of("C:/temp/perseanchronicles.7z")
+                this.totalBytes.value = 1000
+                this.progress.value = 750
+                this.bitsPerSecond.value = 512000
+                this.status.value = DownloadItem.Status.Downloading
+            }
+    }
 }
