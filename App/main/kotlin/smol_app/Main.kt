@@ -1,6 +1,5 @@
 package smol_app
 
-import AppState
 import androidx.compose.runtime.*
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.input.key.KeyEvent
@@ -14,6 +13,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import net.sf.sevenzipjbinding.SevenZip
 import org.tinylog.Logger
+import org.update4j.Configuration
 import smol_access.Constants
 import smol_access.SL
 import smol_app.navigation.Screen
@@ -30,13 +30,16 @@ var safeMode = false
 fun main() = application {
     // Logger
     kotlin.runCatching {
-        Logging.logLevel = if (safeMode) LogLevel.VERBOSE
-        else LogLevel.DEBUG
+        Logging.logLevel =
+            if (safeMode) LogLevel.VERBOSE
+            else LogLevel.DEBUG
         Logging.setup()
     }
         .onFailure { println(it) }
 
-    var newState = rememberWindowState()
+    doUpdateStuff()
+
+    var appWindowState = rememberWindowState()
 
     val uiConfig = SL.UI.uiConfig
     val access = SL.access
@@ -63,21 +66,23 @@ fun main() = application {
                 size = DpSize(savedState.size.first.dp, savedState.size.second.dp)
             )
         }
-            .onSuccess { newState = it }
+            .onSuccess { appWindowState = it }
             .onFailure {
                 uiConfig.windowState = SmolWindowState(
                     "", false, SmolPair(0f, 0f), SmolPair(0f, 0f)
                 )
             }
+
+
+        SL.modRepo.refreshFromInternet()
     }
 
-    SL.modRepo.refreshFromInternet()
 
-    val onKeyEventHandlers = mutableListOf<(KeyEvent) -> Boolean>()
+    val onKeyEventHandlers = remember { mutableListOf<(KeyEvent) -> Boolean>() }
 
     Window(
         onCloseRequest = ::exitApplication,
-        state = newState,
+        state = appWindowState,
         title = Constants.APP_NAME,
         icon = painterResource("kotlin-icon.svg"),
         onPreviewKeyEvent = { event -> onKeyEventHandlers.any { it(event) } }
@@ -87,7 +92,7 @@ fun main() = application {
             handleBackButton = true
         )
 
-        val windowState by remember {
+        val smolWindowState by remember {
             mutableStateOf(WindowState().apply {
                 this.router = router
                 this.window = this@Window.window
@@ -95,41 +100,52 @@ fun main() = application {
             })
         }
 
-        LaunchedEffect(newState) {
-            snapshotFlow { newState.size }
-                .onEach {
-                    uiConfig.windowState = uiConfig.windowState?.copy(
-                        size = SmolPair(it.width.value.makeFinite(), it.height.value.makeFinite())
-                    )
-                }
-                .launchIn(this)
+        saveWindowParamsOnChange(appWindowState, uiConfig)
 
-            snapshotFlow { newState.isMinimized }
-                .onEach {
-                    uiConfig.windowState = uiConfig.windowState?.copy(
-                        isMinimized = it
-                    )
-                }
-                .launchIn(this)
+        smolWindowState.appView()
+    }
+}
 
-            snapshotFlow { newState.placement }
-                .onEach {
-                    uiConfig.windowState = uiConfig.windowState?.copy(
-                        placement = it.name
-                    )
-                }
-                .launchIn(this)
+fun doUpdateStuff() {
+}
 
-            snapshotFlow { newState.position }
-                .onEach {
-                    uiConfig.windowState = uiConfig.windowState?.copy(
-                        position = SmolPair(it.x.value.makeFinite(), it.y.value.makeFinite()),
-                    )
-                }
-                .launchIn(this)
-        }
+@Composable
+private fun saveWindowParamsOnChange(
+    appWindowState: androidx.compose.ui.window.WindowState,
+    uiConfig: UIConfig
+) {
+    LaunchedEffect(appWindowState) {
+        snapshotFlow { appWindowState.size }
+            .onEach {
+                uiConfig.windowState = uiConfig.windowState?.copy(
+                    size = SmolPair(it.width.value.makeFinite(), it.height.value.makeFinite())
+                )
+            }
+            .launchIn(this)
 
-        windowState.appView()
+        snapshotFlow { appWindowState.isMinimized }
+            .onEach {
+                uiConfig.windowState = uiConfig.windowState?.copy(
+                    isMinimized = it
+                )
+            }
+            .launchIn(this)
+
+        snapshotFlow { appWindowState.placement }
+            .onEach {
+                uiConfig.windowState = uiConfig.windowState?.copy(
+                    placement = it.name
+                )
+            }
+            .launchIn(this)
+
+        snapshotFlow { appWindowState.position }
+            .onEach {
+                uiConfig.windowState = uiConfig.windowState?.copy(
+                    position = SmolPair(it.x.value.makeFinite(), it.y.value.makeFinite()),
+                )
+            }
+            .launchIn(this)
     }
 }
 

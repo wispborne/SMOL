@@ -14,12 +14,6 @@ import timber.ktx.Timber
 import utilities.Jsanity
 
 class ModRepo internal constructor(private val jsanity: Jsanity, private val httpClientBuilder: HttpClientBuilder) {
-    companion object {
-        const val indexUrl = "https://raw.githubusercontent.com/davidwhitman/StarsectorModRepo/main/modIndex.json"
-        const val moddingForumUrl =
-            "https://raw.githubusercontent.com/davidwhitman/StarsectorModRepo/main/moddingSubforum.json"
-    }
-
     private val modIndexCache = ModIndexCache(jsanity)
     private val moddingSubforumCache = ModdingSubforumCache(jsanity)
     private val scope = CoroutineScope(Job())
@@ -32,12 +26,12 @@ class ModRepo internal constructor(private val jsanity: Jsanity, private val htt
         scope.launch(Dispatchers.IO) {
             httpClientBuilder.invoke().use { client ->
                 val freshIndexMods = kotlin.runCatching {
-                    client.get<HttpResponse>(indexUrl)
+                    client.get<HttpResponse>(Constants.indexUrl)
                         .receive<String>()
                         .let { jsanity.fromJson<ScrapedModsRepo>(json = it, shouldStripComments = false) }
                 }
                     .onFailure {
-                        Timber.w(it) { "Unable to fetch Mod Index mods from $indexUrl." }
+                        Timber.w(it) { "Unable to fetch Mod Index mods from ${Constants.indexUrl}." }
                     }
                     .getOrNull()
 
@@ -51,12 +45,12 @@ class ModRepo internal constructor(private val jsanity: Jsanity, private val htt
         scope.launch(Dispatchers.IO) {
             httpClientBuilder.invoke().use { client ->
                 val freshModdingMods = kotlin.runCatching {
-                    client.get<HttpResponse>(moddingForumUrl)
+                    client.get<HttpResponse>(Constants.moddingForumUrl)
                         .receive<String>()
                         .let { jsanity.fromJson<ScrapedModsRepo>(json = it, shouldStripComments = false) }
                 }
                     .onFailure {
-                        Timber.w(it) { "Unable to fetch Modding Forum mods from $moddingForumUrl." }
+                        Timber.w(it) { "Unable to fetch Modding Forum mods from ${Constants.moddingForumUrl}." }
                     }
                     .getOrNull()
 

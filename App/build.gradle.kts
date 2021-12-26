@@ -47,6 +47,9 @@ dependencies {
     // List diffing
     implementation("dev.andrewbailey.difference:difference:1.0.0")
 
+    // Auto-update
+    implementation("org.update4j:update4j:1.5.8")
+
     // Navigation
     val decomposeVer = "0.3.1"
     api("com.arkivanov.decompose:decompose:$decomposeVer")

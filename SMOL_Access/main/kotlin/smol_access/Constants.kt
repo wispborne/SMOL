@@ -26,6 +26,16 @@ object Constants {
     val VERCHECK_CACHE_PATH: Path = APP_FOLDER_DEFAULT.resolve("SMOL_VerCheckCache.json")
     val VRAM_CHECKER_RESULTS_PATH: Path = APP_FOLDER_DEFAULT.resolve("SMOL_VRAMCheckResults.json")
 
+    // Mod Repo
+    const val indexUrl = "https://raw.githubusercontent.com/davidwhitman/StarsectorModRepo/main/modIndex.json"
+    const val moddingForumUrl =
+        "https://raw.githubusercontent.com/davidwhitman/StarsectorModRepo/main/moddingSubforum.json"
+
+    // Updater
+    val baseUpdateUrl = "https://raw.githubusercontent.com/davidwhitman/SMOLDist/"
+    val unstableUpdateUrl = "$baseUpdateUrl/unstable/"
+    val stableUpdateUrl = "$baseUpdateUrl/main/"
+
     val TEMP_DIR = System.getProperty("java.io.tmpdir")?.let { Path.of(it) } ?: APP_FOLDER_DEFAULT
 
     const val TAG_TRACE = "trace"
