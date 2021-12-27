@@ -22,6 +22,7 @@ import com.arkivanov.decompose.push
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import org.tinylog.Logger
+import smol_access.Constants
 import smol_access.SL
 import smol_access.business.Archives
 import smol_access.business.GameEnabledMods.Companion.ENABLED_MODS_FILENAME
@@ -35,10 +36,7 @@ import smol_app.composables.*
 import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.withAdjustedBrightness
-import smol_app.util.currentPlatform
-import smol_app.util.filterModGrid
-import smol_app.util.replaceAllUsingDifference
-import smol_app.util.vmParamsManager
+import smol_app.util.*
 import smol_app.views.vmParamsContextMenu
 import timber.ktx.Timber
 import utilities.equalsAny
@@ -278,11 +276,18 @@ private fun AppState.settingsButton() {
 
 @Composable
 private fun AppState.modBrowserButton() {
+    val isEnabled = Constants.isJCEFEnabled()
     SmolTooltipArea(
-        tooltip = { SmolTooltipText("View and install mods from the internet.") },
+        tooltip = {
+            SmolTooltipText(
+                if (isEnabled) "View and install mods from the internet."
+                else "JCEF not found; add to /libs to enable the Mod Browser."
+            )
+        },
         delayMillis = SmolTooltipArea.delay
     ) {
         SmolButton(
+            enabled = isEnabled,
             onClick = { router.push(Screen.ModBrowser()) },
             modifier = Modifier.padding(start = 16.dp)
         ) {

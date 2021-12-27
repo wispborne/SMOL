@@ -22,9 +22,12 @@ import smol_access.model.Mod
 import smol_access.themes.ThemeManager
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.toColors
+import timber.ktx.Timber
 import java.awt.Desktop
 import java.net.URI
 import java.nio.file.Path
+import kotlin.io.path.listDirectoryEntries
+import kotlin.io.path.name
 import kotlin.math.ceil
 
 
@@ -163,3 +166,10 @@ fun smolPreview(modifier: Modifier = Modifier, content: @Composable () -> Unit) 
         }
     }
 }
+
+fun Constants.isJCEFEnabled() =
+    kotlin.runCatching {
+        Path.of("libs").listDirectoryEntries().any { it.name.startsWith("jcef") }
+    }
+        .onFailure { Timber.w(it) }
+        .getOrElse { false }

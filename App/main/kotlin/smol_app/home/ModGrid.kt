@@ -36,6 +36,7 @@ import com.arkivanov.decompose.push
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import smol_access.Constants
 import smol_access.SL
 import smol_access.model.Mod
 import smol_access.model.ModId
@@ -47,6 +48,7 @@ import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
 import smol_app.util.*
 import smol_app.views.detailsPanel
+import timber.ktx.Timber
 import utilities.parallelMap
 import java.awt.Cursor
 
@@ -453,7 +455,14 @@ fun AppState.ModGridView(
                                                         )
                                                     }, modifier = Modifier.mouseClickable {
                                                         if (this.buttons.isPrimaryPressed) {
-                                                            router.push(Screen.ModBrowser(modThreadId?.getModThreadUrl()))
+                                                            if (Constants.isJCEFEnabled()) {
+                                                                router.push(Screen.ModBrowser(modThreadId?.getModThreadUrl()))
+                                                            } else {
+                                                                kotlin.runCatching {
+                                                                    modThreadId?.getModThreadUrl()?.openAsUriInBrowser()
+                                                                }
+                                                                    .onFailure { Timber.w(it) }
+                                                            }
                                                         }
                                                     }
                                                         .align(Alignment.CenterVertically)) {
