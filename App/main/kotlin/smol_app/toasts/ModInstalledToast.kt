@@ -37,8 +37,11 @@ fun toastInstalledCard(
 
             if (!modVariant.mod(SL.access).isEnabled(modVariant)) {
                 SmolButton(
+                    modifier = Modifier
+                        .padding(top = 8.dp),
                     onClick = {
                         GlobalScope.launch { SL.access.enableModVariant(modVariant) }
+                        requestToastDismissal.invoke()
                     }
                 ) {
                     Text("Enable")
@@ -52,7 +55,7 @@ fun toastInstalledCard(
                 .align(Alignment.CenterVertically)
                 .size(16.dp),
             onClick = {
-                requestToastDismissal()
+                requestToastDismissal.invoke()
             }
         ) {
             Icon(imageVector = Icons.Default.Close, contentDescription = null)

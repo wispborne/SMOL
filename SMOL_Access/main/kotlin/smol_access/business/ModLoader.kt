@@ -48,6 +48,7 @@ class ModLoader internal constructor(
         Timber.i { "Refreshing mod info files: ${modIds ?: "all"}." }
 
         val previousMods = mods.value
+        val previousModVariants = (previousMods?.mods?.flatMap { it.variants } ?: emptyList())
 
         return try {
             isReloadingMutable.emit(true)
@@ -186,12 +187,11 @@ class ModLoader internal constructor(
                         }
 
                     val update = if (modIds == null) {
+                        val newModVariants = result.flatMap { it.variants }
                         ModListUpdate(
                             mods = result,
-                            added = result.flatMap { it.variants } - (previousMods?.mods?.flatMap { it.variants }
-                                ?: emptyList()),
-                            removed = (previousMods?.mods?.flatMap { it.variants }
-                                ?: emptyList()) - result.flatMap { it.variants }
+                            added = newModVariants.filter { it.smolId !in previousModVariants.map { it.smolId } },
+                            removed = previousModVariants.filter { it.smolId !in newModVariants.map { it.smolId } }
                         )
                     } else {
                         // If this was an update of only some mods, update only those.
@@ -201,13 +201,12 @@ class ModLoader internal constructor(
                                 this?.add(selectedMod)
                             }
                         } ?: emptyList()
+                        val updatedListVariants = updatedList.flatMap { it.variants }
 
                         ModListUpdate(
                             mods = updatedList,
-                            added = updatedList.flatMap { it.variants } - (previousMods?.mods?.flatMap { it.variants }
-                                ?: emptyList()),
-                            removed = (previousMods?.mods?.flatMap { it.variants }
-                                ?: emptyList()) - updatedList.flatMap { it.variants }
+                            added = updatedListVariants.filter { it.smolId !in  previousModVariants.map { it.smolId } },
+                            removed = previousModVariants.filter { it.smolId !in updatedListVariants.map { it.smolId } }
                         )
                     }
                     modsMutable.emit(update)

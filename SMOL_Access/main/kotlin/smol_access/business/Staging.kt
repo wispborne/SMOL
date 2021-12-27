@@ -8,7 +8,6 @@ import smol_access.model.ModVariant
 import smol_access.util.IOLock
 import smol_access.util.ManualReloadTrigger
 import timber.Timber
-import timber.ktx.d
 import timber.ktx.i
 import timber.ktx.v
 import timber.ktx.w
@@ -110,10 +109,17 @@ internal class Staging(
 
     suspend fun enableModVariant(modVariant: ModVariant): Result<Unit> {
         Timber.i { "Enabling mod variant ${modVariant.smolId}." }
-        if (modVariant.mod(modLoader).isEnabled(modVariant)) {
-            Timber.i { "Already enabled!: $modVariant" }
-            return Result.success(Unit)
+
+        kotlin.runCatching {
+            if (modVariant.mod(modLoader).isEnabled(modVariant)) {
+                Timber.i { "Already enabled!: $modVariant" }
+                return Result.success(Unit)
+            }
         }
+            .onFailure {
+                Timber.w(it)
+                return Result.failure(it)
+            }
 
         if (modVariant.modsFolderInfo == null) {
             val result = linkFromStagingToGameMods(modVariant)

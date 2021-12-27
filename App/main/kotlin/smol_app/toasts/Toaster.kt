@@ -12,12 +12,16 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import smol_access.SL
 import smol_app.UI
 import smol_app.themes.SmolTheme.lighten
+import utilities.asList
 
 class ToasterState {
     companion object {
@@ -26,7 +30,39 @@ class ToasterState {
 
     val items: MutableStateFlow<List<Toast>> = MutableStateFlow(emptyList())
     val timersByToastId = mutableMapOf<String, Long>()
+    private val scope = CoroutineScope(Job())
 
+    init {
+        scope.launch {
+            items.collect {
+                items.value = items.value
+                    .filter { (timersByToastId[it.id] ?: 1) > 0 }
+                    .distinctBy { it.id }
+                    .toMutableList()
+
+                items.value.forEach {
+                    if (it.timeoutMillis != null && !timersByToastId.containsKey(it.id)) {
+                        timersByToastId[it.id] = it.timeoutMillis
+                    }
+                }
+
+                timersByToastId.keys.forEach { toastId ->
+                    if (toastId !in items.value.map { it.id }) {
+                        timersByToastId.remove(toastId)
+                    }
+                }
+            }
+        }
+    }
+
+    fun addItems(toasts: List<Toast>) =
+        toasts
+            .filter { toast -> toast.id !in items.value.map { it.id } }
+            .run {
+                items.value += this
+            }
+
+    fun addItem(toast: Toast) = addItems(toast.asList())
 }
 
 @Composable
@@ -39,14 +75,6 @@ fun toaster(
     val recomposeScope = currentRecomposeScope
     val toasterState = SL.UI.toaster
     val items = toasterState.items.collectAsState()
-    toasterState.items.value = items.value
-        .filter { (toasterState.timersByToastId[it.id] ?: 1) > 0 }
-        .toMutableList()
-    items.value.forEach {
-        if (it.timeoutMillis != null && !toasterState.timersByToastId.containsKey(it.id)) {
-            toasterState.timersByToastId[it.id] = it.timeoutMillis
-        }
-    }
 
     LaunchedEffect(Unit) {
         scope.launch {

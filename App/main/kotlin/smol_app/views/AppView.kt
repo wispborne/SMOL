@@ -90,7 +90,7 @@ fun WindowState.appView() {
                             addedModVariants
                                 .forEach { newModVariant ->
                                     val id = "new-" + newModVariant.smolId
-                                    SL.UI.toaster.items.value += Toast(
+                                    SL.UI.toaster.addItem(Toast(
                                         id = id,
                                         timeoutMillis = null,
                                         useStandardToastFrame = true
@@ -101,8 +101,9 @@ fun WindowState.appView() {
                                                 if (!SL.UI.toaster.timersByToastId.containsKey(id)) {
                                                     SL.UI.toaster.timersByToastId[id] = 0
                                                 }
-                                            })
-                                    }
+                                            }
+                                        )
+                                    })
                                 }
                         }
 
@@ -125,7 +126,7 @@ fun WindowState.appView() {
                                     }
                                 }
                                 .also {
-                                    items.value += it
+                                    SL.UI.toaster.addItems(it)
                                 }
                         }
                     }
