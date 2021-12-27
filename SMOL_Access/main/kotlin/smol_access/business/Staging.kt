@@ -177,7 +177,7 @@ internal class Staging(
             Timber.i { "Variant '${modToEnable.smolId}' was not staged, staging it first (from the archive)." }
             stageInternal(mod)
             // Then reload, to get the new staging path.
-            mod = (modLoader.reload() ?: emptyList())
+            mod = (modLoader.reload()?.mods ?: emptyList())
                 .asSequence()
                 .flatMap { it.variants }
                 .firstOrNull { modV -> modV.smolId == modToEnable.smolId }

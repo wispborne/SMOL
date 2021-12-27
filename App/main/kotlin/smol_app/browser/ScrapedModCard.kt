@@ -25,7 +25,7 @@ import mod_repo.ModSource
 import mod_repo.ScrapedMod
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.lighten
-import smol_app.util.previewTheme
+import smol_app.util.smolPreview
 import java.net.URI
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
@@ -88,7 +88,7 @@ fun scrapedModCard(mod: ScrapedMod, linkLoader: MutableState<((String) -> Unit)?
 
 @Preview
 @Composable
-fun scrapedModCardPreview() = previewTheme {
+fun scrapedModCardPreview() = smolPreview {
     scrapedModCard(
         ScrapedMod(
             name = "Archean Order",

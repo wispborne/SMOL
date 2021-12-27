@@ -151,7 +151,7 @@ val ServiceLocator.vmParamsManager: VmParamsManager
     get() = VmParamsManager(gamePath, currentPlatform)
 
 @Composable
-fun previewTheme(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+fun smolPreview(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     MaterialTheme(
         colors = ThemeManager.defaultTheme.second.toColors(),
         typography = Typography(

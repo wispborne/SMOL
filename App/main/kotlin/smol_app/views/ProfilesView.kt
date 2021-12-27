@@ -32,7 +32,7 @@ import smol_app.composables.*
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.lighten
 import smol_app.util.ellipsizeAfter
-import smol_app.util.previewTheme
+import smol_app.util.smolPreview
 
 @OptIn(
     ExperimentalMaterialApi::class,
@@ -62,7 +62,7 @@ fun AppState.ProfilesView(
         }, content = {
             Box(modifier.padding(16.dp)) {
                 val modVariants = remember {
-                    mutableStateOf(SL.access.mods.value?.flatMap { it.variants }?.associateBy { it.smolId }
+                    mutableStateOf(SL.access.mods.value?.mods?.flatMap { it.variants }?.associateBy { it.smolId }
                         ?: emptyMap())
                 }
 
@@ -263,7 +263,7 @@ fun AppState.ProfilesView(
 
 @Preview
 @Composable
-fun profileControlsPreview() = previewTheme {
+fun profileControlsPreview() = smolPreview {
     Column {
         profileControls(
             isEditMode = mutableStateOf(false),
@@ -345,7 +345,7 @@ private fun profileControls(
                             withContext(Dispatchers.Main) {
 //                                                            userProfile = SL.userManager.activeProfile.value
                                 modVariants.value =
-                                    (SL.access.mods.value ?: emptyList())
+                                    (SL.access.mods.value?.mods ?: emptyList())
                                         .flatMap { it.variants }
                                         .associateBy { it.smolId }
                             }

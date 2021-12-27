@@ -564,7 +564,7 @@ fun AppState.ModGridView(
             detailsPanel(
                 modifier = Modifier.padding(bottom = contentPadding),
                 selectedRow = selectedRow,
-                mods = SL.access.mods.value ?: emptyList()
+                mods = SL.access.mods.value?.mods ?: emptyList()
             )
         }
 
@@ -585,7 +585,7 @@ private fun modGridBulkActionMenu(modifier: Modifier = Modifier, checkedRows: Sn
             onClick = {
                 GlobalScope.launch(Dispatchers.IO) {
                     checkedRows
-                        .mapNotNull { modId -> SL.access.mods.value?.firstOrNull { it.id == modId } }
+                        .mapNotNull { modId -> SL.access.mods.value?.mods?.firstOrNull { it.id == modId } }
                         .parallelMap { SL.access.disableMod(it) }
                 }
             }

@@ -2,6 +2,7 @@ package smol_access
 
 import kotlinx.coroutines.flow.StateFlow
 import smol_access.business.Archives
+import smol_access.business.ModListUpdate
 import smol_access.business.ModLoader
 import smol_access.business.Staging
 import smol_access.config.AppConfig
@@ -77,7 +78,7 @@ class Access internal constructor(
         }
     }
 
-    val mods: StateFlow<List<Mod>?>
+    val mods: StateFlow<ModListUpdate?>
         get() = modLoader.mods
     val areModsLoading = modLoader.isLoading
 
@@ -106,7 +107,7 @@ class Access internal constructor(
         try {
             val modVariantParent = modVariant?.mod(modLoader)
             if (modVariantParent != null && mod != modVariantParent) {
-                val err = "Variant and mod were different! ${mod.id}, ${modVariant.smolId}"
+                val err = "Variant and mod were different! ${mod.id}, ${modVariant!!.smolId}"
                 Timber.i { err }
                 return Result.failure(RuntimeException(err))
             }
@@ -138,7 +139,7 @@ class Access internal constructor(
                 // Enable the one we want.
                 // Slower: Reload, since we just disabled it
                 val freshModVariant =
-                    modLoader.reload(listOf(mod.id))?.flatMap { it.variants }?.first { it.smolId == modVariant.smolId }
+                    modLoader.reload(listOf(mod.id))?.mods?.flatMap { it.variants }?.first { it.smolId == modVariant.smolId }
                         ?: kotlin.run {
                             val error = "After disabling, couldn't find mod variant ${modVariant.smolId}."
                             Timber.w { error }

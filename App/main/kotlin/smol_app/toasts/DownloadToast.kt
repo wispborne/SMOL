@@ -1,4 +1,4 @@
-package smol_app.browser
+package smol_app.toasts
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -21,21 +21,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import smol_access.SL
 import smol_app.UI
+import smol_app.browser.DownloadItem
 import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
 import smol_app.util.bitsToMiB
 import smol_app.util.bytesAsShortReadableMiB
 import smol_app.util.openInDesktop
-import smol_app.util.previewTheme
+import smol_app.util.smolPreview
 import timber.ktx.Timber
 import java.awt.Cursor
-import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.name
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
-fun downloadCard(
+fun downloadToast(
     modifier: Modifier = Modifier,
     download: DownloadItem,
     requestToastDismissal: () -> Unit
@@ -75,61 +75,56 @@ fun downloadCard(
             )
         }
     ) {
-        Card(
-            modifier = Modifier,
-            backgroundColor = MaterialTheme.colors.background
-        ) {
-            Row(modifier = Modifier.padding(start = 8.dp, end = 8.dp)) {
-                Column(
-                    modifier = Modifier
-                        .padding(start = 4.dp, top = 4.dp, bottom = 4.dp, end = 8.dp)
-                        .mouseClickable {
-                            kotlin.runCatching { download.path.value?.parent?.openInDesktop() }
-                                .onFailure { Timber.e(it) }
-                        }
-                        .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)))
-                ) {
-                    Text(
-                        modifier = Modifier,
-                        text = download.path.value?.name ?: "",
-                        fontSize = 12.sp
-                    )
-                    Text(
-                        modifier = Modifier.padding(top = 4.dp),
-                        text = statusText,
-                        fontSize = 12.sp
-                    )
-                }
+        Row(modifier = Modifier.padding(start = 8.dp, end = 8.dp)) {
+            Column(
+                modifier = Modifier
+                    .padding(start = 4.dp, top = 4.dp, bottom = 4.dp, end = 8.dp)
+                    .mouseClickable {
+                        kotlin.runCatching { download.path.value?.parent?.openInDesktop() }
+                            .onFailure { Timber.e(it) }
+                    }
+                    .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)))
+            ) {
+                Text(
+                    modifier = Modifier,
+                    text = download.path.value?.name ?: "",
+                    fontSize = 12.sp
+                )
+                Text(
+                    modifier = Modifier.padding(top = 4.dp),
+                    text = statusText,
+                    fontSize = 12.sp
+                )
+            }
 
-                when (download.status.value) {
-                    DownloadItem.Status.Downloading -> {
-                        if (download.totalBytes.value != null) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp).align(Alignment.CenterVertically),
-                                progress = progressPercent,
-                                color = MaterialTheme.colors.onSurface
-                            )
-                        } else {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp).align(Alignment.CenterVertically),
-                                color = MaterialTheme.colors.onSurface
-                            )
-                        }
+            when (download.status.value) {
+                DownloadItem.Status.Downloading -> {
+                    if (download.totalBytes.value != null) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp).align(Alignment.CenterVertically),
+                            progress = progressPercent,
+                            color = MaterialTheme.colors.onSurface
+                        )
+                    } else {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp).align(Alignment.CenterVertically),
+                            color = MaterialTheme.colors.onSurface
+                        )
                     }
                 }
+            }
 
-                IconButton(
-                    modifier = Modifier
-                        .padding(start = 8.dp)
-                        .align(Alignment.CenterVertically)
-                        .size(16.dp),
-                    onClick = {
-                        SL.UI.downloadManager.activeDownloads[download.id]?.cancel()
-                        requestToastDismissal()
-                    }
-                ) {
-                    Icon(imageVector = Icons.Default.Close, contentDescription = null)
+            IconButton(
+                modifier = Modifier
+                    .padding(start = 8.dp)
+                    .align(Alignment.CenterVertically)
+                    .size(16.dp),
+                onClick = {
+                    SL.UI.downloadManager.activeDownloads[download.id]?.cancel()
+                    requestToastDismissal()
                 }
+            ) {
+                Icon(imageVector = Icons.Default.Close, contentDescription = null)
             }
         }
     }
@@ -138,8 +133,8 @@ fun downloadCard(
 @Preview
 @Composable
 fun downloadCardPreview() =
-    previewTheme {
-        downloadCard(
+    smolPreview {
+        downloadToast(
             download = DownloadItem.MOCK,
             requestToastDismissal = {}
         )

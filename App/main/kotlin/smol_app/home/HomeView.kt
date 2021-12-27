@@ -79,7 +79,7 @@ fun AppState.homeView(
             SL.access.mods.collectLatest { freshMods ->
                 if (freshMods != null) {
                     withContext(Dispatchers.Main) {
-                        mods.replaceAllUsingDifference(freshMods, doesOrderMatter = true)
+                        mods.replaceAllUsingDifference(freshMods.mods, doesOrderMatter = true)
                     }
                 }
             }
@@ -241,7 +241,7 @@ private suspend fun reloadMods() {
             trace(onFinished = { _, millis -> Timber.i { "Finished reloading everything in ${millis}ms (this is not how long it took to reload just the mods)." } }) {
                 Timber.d { "Reloading mods." }
                 SL.access.reload()
-                val mods = SL.access.mods.value ?: emptyList()
+                val mods = SL.access.mods.value?.mods ?: emptyList()
 
                 listOf(
                     async {

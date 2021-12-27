@@ -1,53 +1,32 @@
-package smol_app
+package smol_app.toasts
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.Card
+import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
+import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import smol_access.SL
-import smol_app.browser.DownloadManager
-import smol_app.browser.downloadCard
+import smol_app.UI
+import smol_app.themes.SmolTheme.lighten
 
-class ToasterState(
-    private val downloadManager: DownloadManager
-) {
+class ToasterState {
     companion object {
         const val defaultTimeoutMillis = 10000L
     }
 
     val items: MutableStateFlow<List<Toast>> = MutableStateFlow(emptyList())
     val timersByToastId = mutableMapOf<String, Long>()
-    private val scope = CoroutineScope(Job())
 
-    init {
-        scope.launch {
-            downloadManager.downloads.collect { downloads ->
-                downloads
-                    .filter { it.id !in items.value.map { it.id } }
-                    .map {
-                        Toast(id = it.id, timeoutMillis = null) {
-                            downloadCard(download = it,
-                                requestToastDismissal = {
-                                    if (!SL.UI.toaster.timersByToastId.containsKey(it.id)) {
-                                        SL.UI.toaster.timersByToastId[it.id] = 0
-                                    }
-                                })
-                        }
-                    }
-                    .also {
-                        items.value += it
-                    }
-            }
-        }
-    }
 }
 
 @Composable
@@ -94,18 +73,34 @@ fun toaster(
     if (horizontalArrangement != null) {
         LazyRow(modifier, horizontalArrangement = horizontalArrangement) {
             items(items.value) {
-                if ((it.timeoutMillis ?: 1) > 0) {
-                    it.content()
-                }
+                renderToast(it)
             }
         }
     } else if (verticalArrangement != null) {
         LazyColumn(modifier, verticalArrangement = verticalArrangement) {
             items(items.value) {
-                if ((it.timeoutMillis ?: 1) > 0) {
-                    it.content()
+                renderToast(it)
+            }
+        }
+    }
+}
+
+@Composable
+private fun renderToast(toast: Toast) {
+    if ((toast.timeoutMillis ?: 1) > 0) {
+        if (toast.useStandardToastFrame) {
+            Card(
+                modifier = Modifier
+                    .border(1.dp, MaterialTheme.colors.background.lighten(), shape = MaterialTheme.shapes.medium),
+                backgroundColor = MaterialTheme.colors.background,
+                elevation = 4.dp
+            ) {
+                Box(Modifier.padding(16.dp)) {
+                    toast.content()
                 }
             }
+        } else {
+            toast.content()
         }
     }
 }
@@ -113,5 +108,6 @@ fun toaster(
 data class Toast(
     val id: String,
     val timeoutMillis: Long? = ToasterState.defaultTimeoutMillis,
+    val useStandardToastFrame: Boolean = true,
     val content: @Composable () -> Unit
 )

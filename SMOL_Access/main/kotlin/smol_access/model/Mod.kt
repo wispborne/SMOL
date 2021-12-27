@@ -44,7 +44,7 @@ data class Mod(
         get() = findFirstEnabled != null
 
     companion object {
-        val mock = Mod(
+        val MOCK = Mod(
             id = "mock",
             isEnabledInGame = true,
             variants = listOf(
@@ -105,14 +105,13 @@ data class ModVariant(
             }
 
         fun createSmolId(modInfo: ModInfo) = createSmolId(modInfo.id, modInfo.version)
+
+        val MOCK: ModVariant
+            get() = Mod.MOCK.variants.first()
     }
 
-    // incredibly inelegant way of doing a parent-child relationship
-//    @Transient
-//    lateinit var mod: Mod
-
-    fun mod(modLoader: ModLoader) = modLoader.mods.value!!.first { it.id == modInfo.id }
-    fun mod(access: Access) = access.mods.value!!.first { it.id == modInfo.id }
+    fun mod(modLoader: ModLoader) = modLoader.mods.value?.mods!!.first { it.id == modInfo.id }
+    fun mod(access: Access) = access.mods.value?.mods!!.first { it.id == modInfo.id }
 
     val exists: Boolean
         get() = (stagingInfo != null && stagingInfo.folder.exists())

@@ -16,11 +16,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.collectLatest
 import smol_app.Logging
-import smol_app.util.previewTheme
+import smol_app.util.smolPreview
 
 @Composable
 @Preview
-private fun logButtonAndErrorDisplayPreview() = previewTheme {
+private fun logButtonAndErrorDisplayPreview() = smolPreview {
     logButtonAndErrorDisplay(mutableStateOf(true))
 }
 

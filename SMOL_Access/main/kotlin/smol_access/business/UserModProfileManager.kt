@@ -30,7 +30,7 @@ class UserModProfileManager internal constructor(
                         modProfiles = oldProfile.modProfiles
                             .map { profile ->
                                 if (profile.id == oldProfile.activeModProfileId) {
-                                    profile.copy(enabledModVariants = newMods
+                                    profile.copy(enabledModVariants = newMods.mods
                                         .flatMap { it.enabledVariants }
                                         .map { UserProfile.ModProfile.EnabledModVariant(it.mod(modLoader).id, it.smolId) })
                                 } else
@@ -55,7 +55,7 @@ class UserModProfileManager internal constructor(
                 Timber.d { "Mod profile diff for switching: $diff." }
                 val variantsToDisable = diff.removed
                 val variantsToEnable = diff.added
-                val allKnownVariants = modLoader.mods.value?.flatMap { it.variants } ?: emptyList()
+                val allKnownVariants = modLoader.mods.value?.mods?.flatMap { it.variants } ?: emptyList()
 
                 variantsToDisable
                     .mapNotNull { varToDisable ->

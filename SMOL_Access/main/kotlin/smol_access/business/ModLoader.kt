@@ -28,18 +28,18 @@ class ModLoader internal constructor(
     private val modInfoLoader: ModInfoLoader,
     private val gameEnabledMods: GameEnabledMods
 ) {
-    private val onModsReloadedEmitter = MutableStateFlow<List<Mod>?>(null)
-    val mods = onModsReloadedEmitter.asStateFlow()
-        .also { GlobalScope.launch(Dispatchers.Default) { it.collect { Timber.d { "Mod list updated: ${it?.size} mods." } } } }
+    private val modsMutable = MutableStateFlow<ModListUpdate?>(null)
+    val mods = modsMutable.asStateFlow()
+        .also { GlobalScope.launch(Dispatchers.Default) { it.collect { Timber.d { "Mod list updated: ${it?.mods?.size} mods." } } } }
 
     private var isReloadingMutable = MutableStateFlow(false)
     val isLoading = isReloadingMutable.asStateFlow()
 
     /**
-     * Reads all mods from /mods, staging, and archive folders.
+     * Reads all or specific mods from /mods, staging, and archive folders.
      */
     @OptIn(ExperimentalStdlibApi::class)
-    suspend fun reload(modIds: List<ModId>? = null): List<Mod>? {
+    suspend fun reload(modIds: List<ModId>? = null): ModListUpdate? {
         if (isLoading.value) {
             Timber.i { "Mod reload requested, but declined; already reloading." }
             return mods.value
@@ -47,10 +47,13 @@ class ModLoader internal constructor(
 
         Timber.i { "Refreshing mod info files: ${modIds ?: "all"}." }
 
+        val previousMods = mods.value
+
         return try {
             isReloadingMutable.emit(true)
             trace({ mods, time ->
-                Timber.tag(Constants.TAG_TRACE).i { "Time to load and merge all ${mods.count()} mod info files: ${time}ms" }
+                Timber.tag(Constants.TAG_TRACE)
+                    .i { "Time to load and merge all ${mods.mods.count()} mod info files: ${time}ms" }
             }) {
                 withContext(Dispatchers.IO) {
                     val enabledModIds = gameEnabledMods.getEnabledMods().enabledMods
@@ -85,7 +88,9 @@ class ModLoader internal constructor(
                             folderWithMods = stagingMods,
                             desiredFiles = listOf(ModInfoLoader.DataFile.VERSION_CHECKER)
                         )
-                            .filter { modIds?.contains(it.second.modInfo.id) ?: true } // Filter to the selected mods, if not null
+                            .filter {
+                                modIds?.contains(it.second.modInfo.id) ?: true
+                            } // Filter to the selected mods, if not null
                             .map { (modFolder, dataFiles) ->
                                 val modInfo = dataFiles.modInfo
                                 val modVariant = ModVariant(
@@ -111,7 +116,9 @@ class ModLoader internal constructor(
                             modsFolder,
                             listOf(ModInfoLoader.DataFile.VERSION_CHECKER)
                         )
-                            .filter { modIds?.contains(it.second.modInfo.id) ?: true } // Filter to the selected mods, if not null
+                            .filter {
+                                modIds?.contains(it.second.modInfo.id) ?: true
+                            } // Filter to the selected mods, if not null
                             .map { (modFolder, dataFiles) ->
                                 val modInfo = dataFiles.modInfo
                                 val modVariant = ModVariant(
@@ -178,25 +185,47 @@ class ModLoader internal constructor(
                             }
                         }
 
-                    if (modIds == null) {
-                        onModsReloadedEmitter.emit(result)
+                    val update = if (modIds == null) {
+                        ModListUpdate(
+                            mods = result,
+                            added = result.flatMap { it.variants } - (previousMods?.mods?.flatMap { it.variants }
+                                ?: emptyList()),
+                            removed = (previousMods?.mods?.flatMap { it.variants }
+                                ?: emptyList()) - result.flatMap { it.variants }
+                        )
                     } else {
                         // If this was an update of only some mods, update only those.
-                        onModsReloadedEmitter.emit(onModsReloadedEmitter.value?.toMutableList().apply {
+                        val updatedList = modsMutable.value?.mods?.toMutableList().apply {
                             result.forEach { selectedMod ->
                                 this?.removeIf { it.id == selectedMod.id }
                                 this?.add(selectedMod)
                             }
-                        })
+                        } ?: emptyList()
+
+                        ModListUpdate(
+                            mods = updatedList,
+                            added = updatedList.flatMap { it.variants } - (previousMods?.mods?.flatMap { it.variants }
+                                ?: emptyList()),
+                            removed = (previousMods?.mods?.flatMap { it.variants }
+                                ?: emptyList()) - updatedList.flatMap { it.variants }
+                        )
                     }
-                    return@withContext result
+                    modsMutable.emit(update)
+
+                    return@withContext update
                 }
             }
         } catch (e: Exception) {
             Timber.e(e)
-            return emptyList()
+            return null
         } finally {
             isReloadingMutable.emit(false)
         }
     }
 }
+
+data class ModListUpdate(
+    val mods: List<Mod>,
+    val added: List<ModVariant>,
+    val removed: List<ModVariant>
+)

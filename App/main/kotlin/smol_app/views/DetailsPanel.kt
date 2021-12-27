@@ -41,7 +41,7 @@ import smol_app.util.openModThread
 @Preview
 fun detailsPanelPreview() {
     Box {
-        detailsPanel(selectedRow = mutableStateOf(ModRow(Mod.mock)), mods = listOf(Mod.mock))
+        detailsPanel(selectedRow = mutableStateOf(ModRow(Mod.MOCK)), mods = listOf(Mod.MOCK))
     }
 }
 
@@ -189,7 +189,7 @@ fun BoxScope.detailsPanelGameStyled(
     selectedRow: ModRow?
 ) {
     val row = selectedRow ?: return
-    val allMods = SL.access.mods.value ?: emptyList()
+    val allMods = SL.access.mods.value?.mods ?: emptyList()
 
     Box(
         modifier.width(400.dp)

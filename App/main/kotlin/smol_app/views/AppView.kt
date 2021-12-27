@@ -13,18 +13,24 @@ import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.jetbrains.Children
 import com.arkivanov.decompose.extensions.compose.jetbrains.animation.child.crossfade
+import kotlinx.coroutines.flow.collect
 import smol_access.SL
 import smol_app.IWindowState
+import smol_app.UI
 import smol_app.WindowState
 import smol_app.browser.ModBrowserView
 import smol_app.home.homeView
 import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.toColors
-import smol_app.toaster
+import smol_app.toasts.Toast
+import smol_app.toasts.downloadToast
+import smol_app.toasts.toastInstalledCard
+import smol_app.toasts.toaster
 import smol_app.views.FileDropper
 import smol_app.views.ProfilesView
 import smol_app.views.settingsView
+import timber.ktx.Timber
 
 @OptIn(ExperimentalStdlibApi::class, ExperimentalDecomposeApi::class)
 @Composable
@@ -71,6 +77,58 @@ fun WindowState.appView() {
 //                            toasterState.timersByToastId[item.id] = Toaster.defaultTimeoutMillis
 //                        }
 //                    }
+
+                    LaunchedEffect(Unit) {
+                        SL.access.mods.collect { modListUpdate ->
+                            val addedModVariants = modListUpdate?.added ?: return@collect
+
+                            if (addedModVariants == modListUpdate.mods.flatMap { it.variants }) {
+                                Timber.d { "Added mods are the same as existing mods, this is probably startup. Not adding 'mod found' toasts." }
+                                return@collect
+                            }
+
+                            addedModVariants
+                                .forEach { newModVariant ->
+                                    val id = "new-" + newModVariant.smolId
+                                    SL.UI.toaster.items.value += Toast(
+                                        id = id,
+                                        timeoutMillis = null,
+                                        useStandardToastFrame = true
+                                    ) {
+                                        toastInstalledCard(
+                                            modVariant = newModVariant,
+                                            requestToastDismissal = {
+                                                if (!SL.UI.toaster.timersByToastId.containsKey(id)) {
+                                                    SL.UI.toaster.timersByToastId[id] = 0
+                                                }
+                                            })
+                                    }
+                                }
+                        }
+
+                    }
+
+                    LaunchedEffect(Unit) {
+                        val items = SL.UI.toaster.items
+                        SL.UI.downloadManager.downloads.collect { downloads ->
+                            downloads
+                                .filter { it.id !in items.value.map { it.id } }
+                                .map {
+                                    Toast(id = it.id, timeoutMillis = null, useStandardToastFrame = true) {
+                                        downloadToast(
+                                            download = it,
+                                            requestToastDismissal = {
+                                                if (!SL.UI.toaster.timersByToastId.containsKey(it.id)) {
+                                                    SL.UI.toaster.timersByToastId[it.id] = 0
+                                                }
+                                            })
+                                    }
+                                }
+                                .also {
+                                    items.value += it
+                                }
+                        }
+                    }
                 }
             }
 
