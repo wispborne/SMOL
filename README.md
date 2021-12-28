@@ -51,3 +51,11 @@ Symlinks require administrator permission to create in Windows, which is why the
 
 1. Unzip `./App/libs/jcef-v1.0.10-92.0.25.7z` to `./App/libs/jcef-v1.0.10-92.0.25`.
 2. Run `./gradlew run`.
+
+## Credits
+
+Fractal Softworks for making Starsector.
+MesoTroniK for consulting and brainstorming the whole way through.
+rubi for feedback and morality support.
+Soren for feedback.
+AtlanticAccent for open-sourcing his Mod Manager, allowing me to peek under the hood (I copied almost nothing, I swear!) and being a great competitor ;)
