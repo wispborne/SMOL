@@ -2,7 +2,7 @@
 
 Starsector Mod Organizer & Launcher
 
-## Features
+## Main Features
 
 * Quickly **switch between mod versions**.
 * **Mod Browser** to view and install mods from the Forums without leaving SMOL.
@@ -17,6 +17,12 @@ Starsector Mod Organizer & Launcher
 * Warns and provides fixes for missing mod **dependencies**.
   * eg. if LazyLib is disabled, a button is shown to enable it. If it is not found, a button appears to search for it online.
 * Works alongside manual mod management; you are **not locked into using SMOL**.
+
+## Smoller Features
+
+* Built-in and easily configurable **themes**.
+* **Like** a mod to pin it to the top.
+* In-app **log viewer** with selectable logging level.
 
 ## Under the Hood
 
