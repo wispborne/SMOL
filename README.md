@@ -54,8 +54,8 @@ Symlinks require administrator permission to create in Windows, which is why the
 
 ## Credits
 
-Fractal Softworks for making Starsector.
-MesoTroniK for consulting and brainstorming the whole way through.
-rubi for feedback and morality support.
-Soren for feedback.
-AtlanticAccent for open-sourcing his Mod Manager, allowing me to peek under the hood (I copied almost nothing, I swear!) and being a great competitor ;)
+* Fractal Softworks for making Starsector.
+* MesoTroniK for consulting and brainstorming the whole way through.
+* AtlanticAccent for open-sourcing his Mod Manager, allowing me to peek under the hood (I copied almost nothing, I swear!) and being a great competitor ;)
+* rubi/CeruleanPancake for feedback and morality support.
+* Soren/Harmful Mechanic for feedback.
