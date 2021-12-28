@@ -1,6 +1,5 @@
 package smol_access.business
 
-import com.squareup.moshi.Moshi
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import smol_access.Constants
@@ -15,7 +14,6 @@ import java.nio.file.Path
 import kotlin.io.path.*
 
 class ModInfoLoader(
-    private val moshi: Moshi,
     private val gson: Jsanity
 ) {
 

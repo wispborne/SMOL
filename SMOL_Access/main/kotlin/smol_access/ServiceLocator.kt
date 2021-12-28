@@ -8,15 +8,9 @@ import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.github.salomonbrys.kotson.*
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
-import com.squareup.moshi.FromJson
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.ToJson
-import com.squareup.moshi.adapter
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.features.logging.*
-import org.hjson.JsonValue
 import smol_access.business.*
 import smol_access.config.AppConfig
 import smol_access.config.GamePath
@@ -29,8 +23,8 @@ import smol_access.util.ManualReloadTrigger
 import utilities.Jsanity
 
 var SL = ServiceLocator()
-private val basicMoshi = Moshi.Builder()
-    .addLast(KotlinJsonAdapterFactory()).build()
+//private val basicMoshi = Moshi.Builder()
+//    .addLast(KotlinJsonAdapterFactory()).build()
 private val basicGson = GsonBuilder().create()
 
 typealias HttpClientBuilder = () -> HttpClient
@@ -44,10 +38,10 @@ class ServiceLocator internal constructor(
             this.followRedirects = true
         }
     },
-    val moshi: Moshi = Moshi.Builder()
-        .add(ModInfoAdapter())
-        .addLast(KotlinJsonAdapterFactory())
-        .build(),
+//    val moshi: Moshi = Moshi.Builder()
+//        .add(ModInfoAdapter())
+//        .addLast(KotlinJsonAdapterFactory())
+//        .build(),
     val jsanity: Jsanity = Jsanity(gson = buildGson(), jackson = buildJackson()),
     internal val themeConfig: ThemeConfig = ThemeConfig(gson = jsanity),
     internal val versionCheckerCache: VersionCheckerCache = VersionCheckerCache(gson = jsanity),
@@ -55,7 +49,7 @@ class ServiceLocator internal constructor(
     val userManager: UserManager = UserManager(
         appConfig = appConfig
     ),
-    internal val modInfoLoader: ModInfoLoader = ModInfoLoader(moshi = moshi, gson = jsanity),
+    internal val modInfoLoader: ModInfoLoader = ModInfoLoader(gson = jsanity),
     val gamePath: GamePath = GamePath(appConfig = appConfig),
     val vramChecker: VramCheckerManager = VramCheckerManager(
         gamePath = gamePath,
@@ -139,22 +133,22 @@ private fun buildJackson(): ObjectMapper =
         .build()
         .registerKotlinModule()
 
-@ExperimentalStdlibApi
-class ModInfoAdapter {
-    @ToJson
-    fun toJson(obj: ModInfo): String {
-        return when (obj) {
-            is ModInfo.v091 -> basicMoshi.adapter<ModInfo.v091>().toJson(obj)
-            is ModInfo.v095 -> basicMoshi.adapter<ModInfo.v095>().toJson(obj)
-        }
-    }
-
-    @FromJson
-    fun fromJson(jsonAsMap: Map<String, String>): ModInfo {
-        val json = JsonValue.readHjson(basicMoshi.adapter<Map<String, String>>().toJson(jsonAsMap))
-        return basicMoshi.modInfoJsonAdapter(json).fromJson(json.toString())!!
-    }
-}
+//@ExperimentalStdlibApi
+//class ModInfoAdapter {
+//    @ToJson
+//    fun toJson(obj: ModInfo): String {
+//        return when (obj) {
+//            is ModInfo.v091 -> basicMoshi.adapter<ModInfo.v091>().toJson(obj)
+//            is ModInfo.v095 -> basicMoshi.adapter<ModInfo.v095>().toJson(obj)
+//        }
+//    }
+//
+//    @FromJson
+//    fun fromJson(jsonAsMap: Map<String, String>): ModInfo {
+//        val json = JsonValue.readHjson(basicMoshi.adapter<Map<String, String>>().toJson(jsonAsMap))
+//        return basicMoshi.modInfoJsonAdapter(json).fromJson(json.toString())!!
+//    }
+//}
 
 //class ModInfoJsonAdapter2 : JsonAdapter<ModInfo>() {
 //    override fun fromJson(reader: JsonReader): ModInfo? {
@@ -171,11 +165,11 @@ class ModInfoAdapter {
 //    }
 //}
 
-@OptIn(ExperimentalStdlibApi::class)
-fun Moshi.modInfoJsonAdapter(json: JsonValue) =
-    // Check for 0.95 format
-    if (json.asObject().get("version").isObject) {
-        this.adapter<ModInfo.v095>()
-    } else {
-        this.adapter<ModInfo.v091>()
-    }
+//@OptIn(ExperimentalStdlibApi::class)
+//fun Moshi.modInfoJsonAdapter(json: JsonValue) =
+//    // Check for 0.95 format
+//    if (json.asObject().get("version").isObject) {
+//        this.adapter<ModInfo.v095>()
+//    } else {
+//        this.adapter<ModInfo.v091>()
+//    }

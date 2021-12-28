@@ -1,15 +1,11 @@
 package smol_access.business
 
-import io.ktor.client.*
 import io.ktor.client.call.*
-import io.ktor.client.engine.cio.*
 import io.ktor.client.features.*
-import io.ktor.client.features.logging.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.hjson.JsonValue
 import smol_access.Constants
 import smol_access.HttpClientBuilder
 import smol_access.config.VersionCheckerCache
@@ -62,10 +58,9 @@ class VersionChecker(
                                 kotlin.runCatching {
                                     client.get<HttpResponse>(modVariant.versionCheckerInfo!!.masterVersionFile!!)
                                         .receive<String>()
-                                        .let { JsonValue.readHjson(it) } // Parse first using HJson
                                         .let {
                                             modVariant.mod(modLoader) to gson.fromJson<VersionCheckerInfo>(
-                                                json = it.toString(),
+                                                json = it,
                                                 shouldStripComments = true
                                             ).modVersion!!
                                         }
