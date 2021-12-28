@@ -15,6 +15,7 @@ dependencies {
     implementation(fileTree("../libs") {
         include("**/HJson/*.jar")
     })
+    api("org.jetbrains:annotations:20.1.0")
 
     // https://mvnrepository.com/artifact/commons-io/commons-io
     implementation("commons-io:commons-io:2.11.0")
