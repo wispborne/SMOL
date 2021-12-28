@@ -21,7 +21,7 @@ Starsector Mod Organizer & Launcher
 ## Smoller Features
 
 * Built-in and easily configurable **themes**.
-* **Like** a mod to pin it to the top.
+* **Favorite** a mod to pin it to the top.
 * In-app **log viewer** with selectable logging level.
 
 ## Under the Hood
