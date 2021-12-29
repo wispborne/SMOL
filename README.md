@@ -2,19 +2,27 @@
 
 Starsector Mod Organizer & Launcher
 
-## Features
+## Main Features
 
-* Quickly **enable/disable** different mod versions.
+* Quickly **switch between mod versions**.
+* **Mod Browser** to view and install mods from the Forums without leaving SMOL.
+* **Mod Profiles** allow swapping between different groups of mods/versions easily.
+  * Make a new profile for a new save, or keep a barebones profile for mod development.
+* **VRAM impact** estimates for each mod.
+* **Version checker** support.
+  * Supports Direct Download, for mods that have added it.
+* Drag'n'drop or file browser **mod installation**.
+  * Detects and fixes incorrect mod folder nesting.
 * Easily assign more (or less) **RAM** to the game.
 * Warns and provides fixes for missing mod **dependencies**.
   * eg. if LazyLib is disabled, a button is shown to enable it. If it is not found, a button appears to search for it online.
-* **VRAM impact** estimates for each mod.
-* **Mod Profiles** allow swapping between different groups of mods/versions easily.
-  * Make a new profile for a new save, or keep a barebones profile for mod development.
-* **Version checker** support.
-* Drag'n'drop or file browser **mod installation**.
-  * Detects and fixes incorrect mod folder nesting.
 * Works alongside manual mod management; you are **not locked into using SMOL**.
+
+## Smoller Features
+
+* Built-in and easily configurable **themes**.
+* **Favorite** a mod to pin it to the top.
+* In-app **log viewer** with selectable logging level.
 
 ## Under the Hood
 
@@ -43,3 +51,11 @@ Symlinks require administrator permission to create in Windows, which is why the
 
 1. Unzip `./App/libs/jcef-v1.0.10-92.0.25.7z` to `./App/libs/jcef-v1.0.10-92.0.25`.
 2. Run `./gradlew run`.
+
+## Credits
+
+* **Fractal Softworks** for making Starsector.
+* **MesoTroniK** for consulting and brainstorming the whole way through.
+* **AtlanticAccent** for open-sourcing his Mod Manager, allowing me to peek under the hood (I copied almost nothing, I swear!) and being a great competitor ;)
+* **rubi/CeruleanPancake** for feedback and morality support.
+* **Soren/Harmful Mechanic** for feedback.
