@@ -3,6 +3,7 @@ package utilities
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.withContext
 import timber.ktx.Timber
 import timber.ktx.d
 import java.util.concurrent.TimeUnit
@@ -104,14 +105,17 @@ class ObservableReentrantReadWriteLock() {
      * @return the return value of the action.
      */
     inline fun <T> write(lockContext: LockContext = IOLocks.defaultLock, action: () -> T): T {
+
+        val finalLock = lockContext.locks.last()
         lockContext.locks.forEach { lock ->
-            if (lock === lockContext.locks.last()) {
+            if (lock === finalLock) {
                 val result = try {
                     lock.write {
                         Timber.tag(tag)
                             .d { "Write locked from ${timber.Timber.findClassName()} on ${getCurrentThreadName()}." }
                         flow.tryEmit(true)
-                        return@write try {
+
+                        try {
                             action()
                         } finally {
                             Timber.tag(tag)
@@ -120,10 +124,20 @@ class ObservableReentrantReadWriteLock() {
                         }
                     }
                 } finally {
-                    lockContext.locks.dropLast(1).forEach { it.writeLock().unlock() }
+                    (lockContext.locks - finalLock).forEach { lockToUnlock ->
+
+                        Timber.d { "Unlocking $lockToUnlock" }
+                        val readCount = if (lockToUnlock.writeHoldCount == 0) lockToUnlock.readHoldCount else 0
+                        repeat(readCount) { lockToUnlock.readLock().lock() }
+                        lockToUnlock.writeLock().unlock()
+                    }
                 }
                 return result
             } else {
+                Timber.d { "Locking $lock" }
+                val rl = lock.readLock()
+                val readCount = if (lock.writeHoldCount == 0) lock.readHoldCount else 0
+                repeat(readCount) { rl.unlock() }
                 lock.writeLock().lock()
             }
         }

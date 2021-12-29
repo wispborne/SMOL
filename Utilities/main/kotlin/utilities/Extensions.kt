@@ -3,6 +3,7 @@ package utilities
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import org.apache.commons.io.FileUtils
 import timber.ktx.Timber
 import java.awt.Toolkit
@@ -19,6 +20,7 @@ import java.util.*
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
 import kotlin.io.path.isSameFileAs
+import kotlin.io.path.isWritable
 import kotlin.random.Random
 import kotlin.streams.asSequence
 import kotlin.system.measureTimeMillis
@@ -126,6 +128,12 @@ fun File.moveDirectory(destDir: File) {
 }
 
 /**
+ * From FileUtils in apache commons.
+ */
+@Throws(IOException::class)
+fun Path.moveDirectory(destDir: Path) = this.toFile().moveDirectory(destDir.toFile())
+
+/**
  * [https://jivimberg.io/blog/2018/05/04/parallel-map-in-kotlin/]
  */
 suspend fun <A, B> Iterable<A>.parallelMap(f: suspend (A) -> B): List<B> =
@@ -195,4 +203,19 @@ fun <T> List<Pair<T, Float>>.weightedRandom(): T {
 
     Timber.w { "Somehow failed to get a random item." }
     return this.random().first
+}
+
+suspend fun Path.awaitWrite(timeoutMillis: Long = 1000): Path {
+    var delayAcc = 0
+
+    while (!this@awaitWrite.isWritable() && delayAcc < timeoutMillis) {
+        delayAcc += 10
+        delay(timeMillis = 10)
+    }
+
+    if (this@awaitWrite.isWritable()) {
+        return this@awaitWrite
+    } else {
+        throw RuntimeException("Timed out waiting ${timeoutMillis}ms for write access to $this.")
+    }
 }

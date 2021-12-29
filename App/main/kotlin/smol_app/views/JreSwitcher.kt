@@ -10,24 +10,32 @@ import androidx.compose.material.RadioButton
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.currentRecomposeScope
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import smol_access.SL
 import smol_access.business.JreEntry
 import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
 import smol_app.util.parseHtml
 import kotlin.io.path.relativeTo
+import kotlin.random.Random
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AppState.jreSwitcher(modifier: Modifier = Modifier) {
-    val javasFound = remember { mutableStateListOf<JreEntry>() }
-    LaunchedEffect(Unit) {
-        javasFound.addAll(SL.jreManager.findJREs())
+    val recomposer = currentRecomposeScope
+    val javasFound = mutableStateListOf<JreEntry>()
+    LaunchedEffect(Random.nextLong()) {
+        javasFound.addAll(
+            SL.jreManager.findJREs()
+                .sortedBy { it.versionString })
     }
 
     SmolTooltipArea(
@@ -43,17 +51,27 @@ fun AppState.jreSwitcher(modifier: Modifier = Modifier) {
                 )
             }
 
-            javasFound.forEach { javaNameAndPath ->
+            javasFound.forEach { jreEntry ->
                 Row {
                     RadioButton(
-                        onClick = { },
+                        onClick = {
+                            if (!jreEntry.isUsedByGame) {
+                                GlobalScope.launch {
+                                    SL.jreManager.changeJre(jreEntry)
+
+                                    withContext(Dispatchers.Main) {
+                                        recomposer.invalidate()
+                                    }
+                                }
+                            }
+                        },
                         modifier = Modifier.align(Alignment.CenterVertically),
-                        selected = javaNameAndPath.isUsedByGame
+                        selected = jreEntry.isUsedByGame
                     )
                     Text(
                         modifier = Modifier.align(Alignment.CenterVertically),
-                        text = "<b>${javaNameAndPath.versionString}</b> (in folder <code>${
-                            javaNameAndPath.path.relativeTo(
+                        text = "<b>${jreEntry.versionString}</b> (in folder <code>${
+                            jreEntry.path.relativeTo(
                                 SL.gamePath.get()!!
                             )
                         }</code>)".parseHtml()

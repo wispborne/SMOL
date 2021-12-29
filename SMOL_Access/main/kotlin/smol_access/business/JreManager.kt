@@ -1,16 +1,22 @@
 package smol_access.business
 
+import kotlinx.coroutines.runBlocking
 import smol_access.config.GamePath
+import timber.ktx.Timber
 import utilities.IOLock
 import utilities.IOLocks
+import utilities.awaitWrite
+import utilities.moveDirectory
 import java.nio.file.Path
-import kotlin.io.path.absolutePathString
-import kotlin.io.path.exists
-import kotlin.io.path.listDirectoryEntries
-import kotlin.io.path.name
+import java.nio.file.StandardCopyOption
+import java.util.*
+import kotlin.io.path.*
 
 class JreManager(private val gamePath: GamePath) {
-    private val versionRegex = Regex("""(\d+\.\d+\.\d+[\d_\-.+\w]*)""")
+    companion object {
+        const val gameJreFolderName = "jre"
+        private val versionRegex = Regex("""(\d+\.\d+\.\d+[\d_\-.+\w]*)""")
+    }
 
     fun findJREs(): List<JreEntry> {
         IOLock.read(IOLocks.gameMainFolderLock) {
@@ -42,13 +48,55 @@ class JreManager(private val gamePath: GamePath) {
         }
     }
 
-    fun changeJre(jreEntry: JreEntry) {
+    fun changeJre(newJre: JreEntry) {
         IOLock.write(IOLocks.gameMainFolderLock) {
-            kotlin.runCatching {
-                val currentJrePath = findJREs().firstOrNull { it.isUsedByGame }
+            runBlocking {
+                kotlin.runCatching {
+                    val gamePath = gamePath.get()!!
+                    val currentJreSource = findJREs().firstOrNull { it.isUsedByGame }
+                    var currentJreDest: Path? = null
+                    val gameJrePath = kotlin.runCatching { gamePath.resolve(gameJreFolderName).awaitWrite() }
+                        .onFailure { Timber.w(it) }
+                        .getOrNull() ?: return@runBlocking
 
-                if (currentJrePath != null && currentJrePath.path.exists()) {
+                    // Move current JRE to a new folder.
+                    kotlin.runCatching {
+                        if (currentJreSource != null && currentJreSource.path.exists()) {
+                            currentJreDest =
+                                Path.of(gameJrePath.absolutePathString() + "-${currentJreSource.versionString}")
 
+                            if (currentJreDest!!.exists()) {
+                                currentJreDest =
+                                    Path.of(
+                                        currentJreDest!!.absolutePathString() + UUID.randomUUID().toString().take(6)
+                                    )
+                            }
+
+                            Timber.i { "Moving JRE ${currentJreSource.versionString} from '${currentJreSource.path}' to '$currentJreDest'." }
+                            currentJreSource.path.awaitWrite().moveDirectory(currentJreDest!!)
+                        }
+                    }
+                        .onFailure {
+                            Timber.w(it) { "Unable to move currently used JRE. Make sure the game is not running." }
+                            return@onFailure
+                        }
+
+                    // Rename target JRE to "jre".
+                    kotlin.runCatching {
+//                        gameJrePath.awaitWrite(5000)
+                        newJre.path.awaitWrite()
+                        Timber.i { "Moving JRE ${newJre.versionString} from '${newJre.path}' to '$gameJrePath'." }
+                        newJre.path.awaitWrite().moveDirectory(gameJrePath)
+                    }
+                        .onFailure {
+                            Timber.w(it) { "Unable to move new JRE $newJre to '$gameJrePath'." }
+                            // If we failed to move the new JRE into place but we did rename the one used by the game,
+                            // move the old one back into place so we don't have no "jre" folder at all.
+                            if (!gameJrePath.exists() && currentJreDest != null && currentJreDest!!.exists()) {
+                                Timber.w(it) { "Rolling back JRE change. Moving '$currentJreDest' to '$gameJrePath'." }
+                                currentJreDest!!.moveDirectory(gameJrePath)
+                            }
+                        }
                 }
             }
         }
@@ -59,5 +107,5 @@ data class JreEntry(
     val versionString: String,
     val path: Path
 ) {
-    val isUsedByGame = path.name == "jre"
+    val isUsedByGame = path.name == JreManager.gameJreFolderName
 }
