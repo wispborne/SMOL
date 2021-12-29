@@ -1,5 +1,6 @@
 package smol_app.composables
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -146,14 +147,12 @@ fun SmolDropdownWithButton(
 
 @Composable
 fun SmolDropdownArrow(modifier: Modifier = Modifier, expanded: Boolean) {
+    val arrowAngle by animateFloatAsState(if (expanded) 180f else 0f)
     Image(
         modifier = modifier
             .width(16.dp)
             .offset(x = 4.dp)
-            .run {
-                if (expanded) this.rotate(180f)
-                else this
-            },
+            .rotate(arrowAngle),
         painter = painterResource("menu-down.svg"),
         colorFilter = ColorFilter.tint(SmolTheme.dimmedIconColor()),
         contentDescription = null

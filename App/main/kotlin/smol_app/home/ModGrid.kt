@@ -4,6 +4,7 @@ package smol_app.home
 
 import AppState
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -24,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.*
@@ -165,12 +167,15 @@ fun AppState.ModGridView(
                 }
             }
             Box {
+                var isEnabledCollapsed = remember { mutableStateOf(false) }
+                var isDisabledCollapsed = remember { mutableStateOf(false) }
                 LazyColumn(Modifier.fillMaxWidth()) {
                     mods
                         .filterNotNull()
                         .groupBy { it.uiEnabled }
                         .toSortedMap(compareBy { !it }) // Flip to put Enabled at the top
                         .forEach { (modState, modsInGroup) ->
+                            val isCollapsed = if (modState) isEnabledCollapsed else isDisabledCollapsed
                             stickyHeader {
                                 Card(
                                     elevation = 8.dp,
@@ -183,11 +188,17 @@ fun AppState.ModGridView(
                                             end = contentPadding
                                         )
                                 ) {
-                                    Row {
+                                    Row(modifier = Modifier.mouseClickable {
+                                        if (this.buttons.isPrimaryPressed) {
+                                            isCollapsed.value = isCollapsed.value.not()
+                                        }
+                                    }) {
+                                        val arrowAngle by animateFloatAsState(if (isCollapsed.value) -90f else 0f)
                                         Icon(
                                             modifier = Modifier
                                                 .align(Alignment.CenterVertically)
-                                                .padding(start = 4.dp),
+                                                .padding(start = 4.dp)
+                                                .rotate(arrowAngle),
                                             imageVector = Icons.Outlined.ArrowDropDown,
                                             contentDescription = null,
                                         )
@@ -204,238 +215,291 @@ fun AppState.ModGridView(
                                     }
                                 }
                             }
-                            this.items(
-                                items = modsInGroup
-                                    .map { ModRow(mod = it) }
-                                    .sortedWith(
-                                        compareByDescending<ModRow> { it.mod.id in profile.value.favoriteMods }
-                                            .run {
-                                                fun getSortValue(modRow: ModRow): Comparable<*>? {
-                                                    return when (activeSortField) {
-                                                        ModGridSortField.Name -> modRow.mod.findFirstEnabledOrHighestVersion?.modInfo?.name?.lowercase()
-                                                        ModGridSortField.Author -> modRow.mod.findFirstEnabledOrHighestVersion?.modInfo?.author?.lowercase()
-                                                        ModGridSortField.VramImpact -> SL.vramChecker.vramUsage.value?.get(
-                                                            modRow.mod.findFirstEnabledOrHighestVersion?.smolId
-                                                        )?.bytesForMod
-                                                        else -> null
+                            if (!isCollapsed.value) {
+                                this.items(
+                                    items = modsInGroup
+                                        .map { ModRow(mod = it) }
+                                        .sortedWith(
+                                            compareByDescending<ModRow> { it.mod.id in profile.value.favoriteMods }
+                                                .run {
+                                                    fun getSortValue(modRow: ModRow): Comparable<*>? {
+                                                        return when (activeSortField) {
+                                                            ModGridSortField.Name -> modRow.mod.findFirstEnabledOrHighestVersion?.modInfo?.name?.lowercase()
+                                                            ModGridSortField.Author -> modRow.mod.findFirstEnabledOrHighestVersion?.modInfo?.author?.lowercase()
+                                                            ModGridSortField.VramImpact -> SL.vramChecker.vramUsage.value?.get(
+                                                                modRow.mod.findFirstEnabledOrHighestVersion?.smolId
+                                                            )?.bytesForMod
+                                                            else -> null
+                                                        }
+                                                    }
+                                                    return@run when {
+                                                        activeSortField == null -> thenBy { null }
+                                                        profile.value.modGridPrefs.isSortDescending ->
+                                                            thenByDescending { getSortValue(it) }
+                                                        else -> {
+                                                            thenBy { getSortValue(it) }
+                                                        }
                                                     }
                                                 }
-                                                return@run when {
-                                                    activeSortField == null -> thenBy { null }
-                                                    profile.value.modGridPrefs.isSortDescending ->
-                                                        thenByDescending { getSortValue(it) }
-                                                    else -> {
-                                                        thenBy { getSortValue(it) }
-                                                    }
-                                                }
-                                            }
-                                            .thenBy { it.mod.findFirstEnabledOrHighestVersion?.modInfo?.name })
-                            ) { modRow ->
-                                val mod = modRow.mod
-                                var showContextMenu by remember { mutableStateOf(false) }
-                                val highestLocalVersion =
-                                    mod.findHighestVersion?.versionCheckerInfo?.modVersion
-                                val onlineVersion = SL.versionChecker.getOnlineVersion(modId = mod.id)
-                                var isRowHighlighted by remember { mutableStateOf(false) }
+                                                .thenBy { it.mod.findFirstEnabledOrHighestVersion?.modInfo?.name })
+                                ) { modRow ->
+                                    val mod = modRow.mod
+                                    var showContextMenu by remember { mutableStateOf(false) }
+                                    val highestLocalVersion =
+                                        mod.findHighestVersion?.versionCheckerInfo?.modVersion
+                                    val onlineVersion = SL.versionChecker.getOnlineVersion(modId = mod.id)
+                                    var isRowHighlighted by remember { mutableStateOf(false) }
 
-                                ListItem(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .mouseClickable {
-                                            if (this.buttons.isPrimaryPressed) {
-                                                // If in "Checking rows" mode, clicking a row toggles checked.
-                                                // Otherwise, it open/closes Details panel
-                                                if (checkedRows.any()) {
-                                                    if (mod.id !in checkedRows) {
-                                                        checkedRows.add(mod.id)
+                                    ListItem(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .mouseClickable {
+                                                if (this.buttons.isPrimaryPressed) {
+                                                    // If in "Checking rows" mode, clicking a row toggles checked.
+                                                    // Otherwise, it open/closes Details panel
+                                                    if (checkedRows.any()) {
+                                                        if (mod.id !in checkedRows) {
+                                                            checkedRows.add(mod.id)
+                                                        } else {
+                                                            checkedRows.remove(mod.id)
+                                                        }
                                                     } else {
-                                                        checkedRows.remove(mod.id)
+                                                        selectedRow.value =
+                                                            (if (selectedRow.value == modRow) null else modRow)
                                                     }
-                                                } else {
-                                                    selectedRow.value =
-                                                        (if (selectedRow.value == modRow) null else modRow)
+                                                } else if (this.buttons.isSecondaryPressed) {
+                                                    showContextMenu = !showContextMenu
                                                 }
-                                            } else if (this.buttons.isSecondaryPressed) {
-                                                showContextMenu = !showContextMenu
                                             }
-                                        }
-                                        .background(
-                                            color = if (isRowHighlighted || selectedRow.value?.mod?.id == mod.id)
-                                                Color.Black.copy(alpha = .1f)
-                                            else Color.Transparent
-                                        )
-                                        .pointerMoveFilter(
-                                            onEnter = {
-                                                isRowHighlighted = true
-                                                false
-                                            },
-                                            onExit = {
-                                                isRowHighlighted = false
-                                                false
-                                            })
-                                ) {
-                                    Column(
-                                        modifier = Modifier.padding(
-                                            start = contentPadding,
-                                            end = contentPadding
-                                        )
+                                            .background(
+                                                color = if (isRowHighlighted || selectedRow.value?.mod?.id == mod.id)
+                                                    Color.Black.copy(alpha = .1f)
+                                                else Color.Transparent
+                                            )
+                                            .pointerMoveFilter(
+                                                onEnter = {
+                                                    isRowHighlighted = true
+                                                    false
+                                                },
+                                                onExit = {
+                                                    isRowHighlighted = false
+                                                    false
+                                                })
                                     ) {
-                                        Row(Modifier.fillMaxWidth()) {
-                                            // Favorites
-                                            Row(
-                                                modifier = Modifier
-                                                    .width(favoritesWidth)
-                                                    .align(Alignment.CenterVertically),
-                                            ) {
-                                                val isFavorited = mod.id in profile.value.favoriteMods
-                                                if (isFavorited || isRowHighlighted) {
-                                                    Icon(
-                                                        imageVector =
-                                                        (if (isFavorited)
-                                                            Icons.Default.Favorite
-                                                        else Icons.Default.FavoriteBorder),
-                                                        contentDescription = null,
-                                                        modifier = Modifier
-                                                            .padding(end = 16.dp)
-                                                            .mouseClickable {
-                                                                SL.userManager.setModFavorited(
-                                                                    modId = mod.id,
-                                                                    newFavoriteValue = isFavorited.not()
-                                                                )
-                                                            },
-                                                        tint = MaterialTheme.colors.primary
-                                                    )
+                                        Column(
+                                            modifier = Modifier.padding(
+                                                start = contentPadding,
+                                                end = contentPadding
+                                            )
+                                        ) {
+                                            Row(Modifier.fillMaxWidth()) {
+                                                // Favorites
+                                                Row(
+                                                    modifier = Modifier
+                                                        .width(favoritesWidth)
+                                                        .align(Alignment.CenterVertically),
+                                                ) {
+                                                    val isFavorited = mod.id in profile.value.favoriteMods
+                                                    if (isFavorited || isRowHighlighted) {
+                                                        Icon(
+                                                            imageVector =
+                                                            (if (isFavorited)
+                                                                Icons.Default.Favorite
+                                                            else Icons.Default.FavoriteBorder),
+                                                            contentDescription = null,
+                                                            modifier = Modifier
+                                                                .padding(end = 16.dp)
+                                                                .mouseClickable {
+                                                                    SL.userManager.setModFavorited(
+                                                                        modId = mod.id,
+                                                                        newFavoriteValue = isFavorited.not()
+                                                                    )
+                                                                },
+                                                            tint = MaterialTheme.colors.primary
+                                                        )
+                                                    }
                                                 }
-                                            }
 
-                                            // Mod Version Dropdown
-                                            modStateDropdown(
-                                                modifier = Modifier
-                                                    .width(modGridViewDropdownWidth.dp)
-                                                    .align(Alignment.CenterVertically),
-                                                mod = mod
-                                            )
+                                                // Mod Version Dropdown
+                                                modStateDropdown(
+                                                    modifier = Modifier
+                                                        .width(modGridViewDropdownWidth.dp)
+                                                        .align(Alignment.CenterVertically),
+                                                    mod = mod
+                                                )
 
-                                            // Mod name
-                                            Text(
-                                                modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
-                                                text = (mod.findFirstEnabled
-                                                    ?: mod.findHighestVersion)?.modInfo?.name
-                                                    ?: "",
-                                                fontWeight = FontWeight.SemiBold,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
+                                                // Mod name
+                                                Text(
+                                                    modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
+                                                    text = (mod.findFirstEnabled
+                                                        ?: mod.findHighestVersion)?.modInfo?.name
+                                                        ?: "",
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
 
-                                            // Mod Author
-                                            Text(
-                                                text = (mod.findFirstEnabledOrHighestVersion)?.modInfo?.author
-                                                    ?: "",
-                                                color = SmolTheme.dimmedTextColor(),
-                                                modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
+                                                // Mod Author
+                                                Text(
+                                                    text = (mod.findFirstEnabledOrHighestVersion)?.modInfo?.author
+                                                        ?: "",
+                                                    color = SmolTheme.dimmedTextColor(),
+                                                    modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
 
-                                            // Mod version (active or highest)
-                                            Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {
-                                                // Update badge icon
-                                                if (highestLocalVersion != null && onlineVersion != null && onlineVersion > highestLocalVersion) {
-                                                    val ddUrl =
-                                                        mod.findHighestVersion?.versionCheckerInfo?.directDownloadURL
-                                                    if (ddUrl != null) {
+                                                // Mod version (active or highest)
+                                                Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {
+                                                    // Update badge icon
+                                                    if (highestLocalVersion != null && onlineVersion != null && onlineVersion > highestLocalVersion) {
+                                                        val ddUrl =
+                                                            mod.findHighestVersion?.versionCheckerInfo?.directDownloadURL
+                                                        if (ddUrl != null) {
+                                                            SmolTooltipArea(tooltip = {
+                                                                SmolTooltipText(
+                                                                    text = buildString {
+                                                                        append("Newer version available: $onlineVersion")
+                                                                        append("\n\nClick to download and update.")
+                                                                    }
+                                                                )
+                                                            }, modifier = Modifier.mouseClickable {
+                                                                if (this.buttons.isPrimaryPressed) {
+                                                                    alertDialogSetter {
+                                                                        SmolAlertDialog(
+                                                                            onDismissRequest = { alertDialogSetter(null) },
+                                                                            confirmButton = {
+                                                                                SmolButton(onClick = {
+                                                                                    SL.UI.downloadManager.downloadFromUrl(
+                                                                                        url = ddUrl,
+                                                                                        shouldInstallAfter = true
+                                                                                    )
+                                                                                }) { Text("Take the risk") }
+                                                                            },
+                                                                            dismissButton = {
+                                                                                SmolSecondaryButton(onClick = {
+                                                                                    alertDialogSetter(null)
+                                                                                }) { Text("Cancel") }
+                                                                            },
+                                                                            title = {
+                                                                                Text(
+                                                                                    text = "Auto-update ${mod.findFirstEnabledOrHighestVersion?.modInfo?.name}",
+                                                                                    fontSize = 20.sp
+                                                                                )
+                                                                            },
+                                                                            text = {
+                                                                                Column {
+                                                                                    Text(
+                                                                                        text = ("Do you want to automatically download and update <b>${mod.findFirstEnabledOrHighestVersion?.modInfo?.name}</b> " +
+                                                                                                "from version <b>${mod.findFirstEnabledOrHighestVersion?.modInfo?.version}</b> " +
+                                                                                                "to version <b>$onlineVersion</b>?")
+                                                                                            .parseHtml(),
+                                                                                        fontSize = 16.sp
+                                                                                    )
+                                                                                    Text(
+                                                                                        text = "WARNING",
+                                                                                        color = SmolTheme.warningOrange,
+                                                                                        modifier = Modifier.padding(top = 16.dp)
+                                                                                            .align(Alignment.CenterHorizontally),
+                                                                                        fontWeight = FontWeight.SemiBold,
+                                                                                        fontSize = 18.sp
+                                                                                    )
+                                                                                    Text(
+                                                                                        text = "This may break your save",
+                                                                                        modifier = Modifier.align(
+                                                                                            Alignment.CenterHorizontally
+                                                                                        ),
+                                                                                        fontWeight = FontWeight.SemiBold,
+                                                                                        fontSize = 18.sp
+                                                                                    )
+                                                                                    Text(
+                                                                                        text = "Save compatibility is not guaranteed when updating a mod. " +
+                                                                                                "Check the mod's patch notes to see if save compatibility is mentioned.",
+                                                                                        modifier = Modifier.padding(top = 16.dp),
+                                                                                        fontSize = 16.sp
+                                                                                    )
+                                                                                    Text(
+                                                                                        text = "Bug reports about saves broken by using this feature will be ignored.",
+                                                                                        modifier = Modifier.padding(top = 8.dp),
+                                                                                        fontSize = 16.sp
+                                                                                    )
+                                                                                    val modThreadId =
+                                                                                        mod.findHighestVersion?.versionCheckerInfo?.modThreadId
+                                                                                    if (modThreadId != null) {
+                                                                                        SmolButton(
+                                                                                            modifier = Modifier.padding(
+                                                                                                top = 16.dp
+                                                                                            ),
+                                                                                            onClick = { modThreadId.openModThread() }) {
+                                                                                            Icon(
+                                                                                                modifier = Modifier.padding(
+                                                                                                    end = 8.dp
+                                                                                                ),
+                                                                                                painter = painterResource(
+                                                                                                    "open-in-new.svg"
+                                                                                                ),
+                                                                                                contentDescription = null
+                                                                                            )
+                                                                                            Text("Mod Page")
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        )
+                                                                    }
+                                                                }
+                                                            }
+                                                                .align(Alignment.CenterVertically)) {
+                                                                Image(
+                                                                    painter = painterResource("icon-direct-install.svg"),
+                                                                    contentDescription = null,
+                                                                    colorFilter = ColorFilter.tint(color = MaterialTheme.colors.secondary),
+                                                                    modifier = Modifier.width(28.dp).height(28.dp)
+                                                                        .padding(end = 8.dp)
+                                                                        .align(Alignment.CenterVertically)
+                                                                        .pointerHoverIcon(
+                                                                            PointerIcon(
+                                                                                Cursor.getPredefinedCursor(
+                                                                                    Cursor.HAND_CURSOR
+                                                                                )
+                                                                            )
+                                                                        )
+                                                                )
+                                                            }
+                                                        }
+
+                                                        val modThreadId =
+                                                            mod.findHighestVersion?.versionCheckerInfo?.modThreadId
                                                         SmolTooltipArea(tooltip = {
                                                             SmolTooltipText(
                                                                 text = buildString {
-                                                                    append("Newer version available: $onlineVersion")
-                                                                    append("\n\nClick to download and update.")
+                                                                    append("Newer version available: $onlineVersion.")
+                                                                    if (ddUrl == null) append("\nThis mod does not support direct download and should be downloaded manually.")
+                                                                    append("\n\nClick to open ${modThreadId?.getModThreadUrl()}.")
                                                                 }
                                                             )
                                                         }, modifier = Modifier.mouseClickable {
                                                             if (this.buttons.isPrimaryPressed) {
-                                                                alertDialogSetter {
-                                                                    SmolAlertDialog(
-                                                                        onDismissRequest = { alertDialogSetter(null) },
-                                                                        confirmButton = {
-                                                                            SmolButton(onClick = {
-                                                                                SL.UI.downloadManager.downloadFromUrl(
-                                                                                    url = ddUrl,
-                                                                                    shouldInstallAfter = true
-                                                                                )
-                                                                            }) { Text("Take the risk") }
-                                                                        },
-                                                                        dismissButton = {
-                                                                            SmolSecondaryButton(onClick = {
-                                                                                alertDialogSetter(null)
-                                                                            }) { Text("Cancel") }
-                                                                        },
-                                                                        title = {
-                                                                            Text(
-                                                                                text = "Auto-update ${mod.findFirstEnabledOrHighestVersion?.modInfo?.name}",
-                                                                                fontSize = 20.sp
-                                                                            )
-                                                                        },
-                                                                        text = {
-                                                                            Column {
-                                                                                Text(
-                                                                                    text = ("Do you want to automatically download and update <b>${mod.findFirstEnabledOrHighestVersion?.modInfo?.name}</b> " +
-                                                                                            "from version <b>${mod.findFirstEnabledOrHighestVersion?.modInfo?.version}</b> " +
-                                                                                            "to version <b>$onlineVersion</b>?")
-                                                                                        .parseHtml(),
-                                                                                    fontSize = 16.sp
-                                                                                )
-                                                                                Text(
-                                                                                    text = "WARNING",
-                                                                                    color = SmolTheme.warningOrange,
-                                                                                    modifier = Modifier.padding(top = 16.dp)
-                                                                                        .align(Alignment.CenterHorizontally),
-                                                                                    fontWeight = FontWeight.SemiBold,
-                                                                                    fontSize = 18.sp
-                                                                                )
-                                                                                Text(
-                                                                                    text = "This may break your save",
-                                                                                    modifier = Modifier.align(Alignment.CenterHorizontally),
-                                                                                    fontWeight = FontWeight.SemiBold,
-                                                                                    fontSize = 18.sp
-                                                                                )
-                                                                                Text(
-                                                                                    text = "Save compatibility is not guaranteed when updating a mod. " +
-                                                                                            "Check the mod's patch notes to see if save compatibility is mentioned.",
-                                                                                    modifier = Modifier.padding(top = 16.dp),
-                                                                                    fontSize = 16.sp
-                                                                                )
-                                                                                Text(
-                                                                                    text = "Bug reports about saves broken by using this feature will be ignored.",
-                                                                                    modifier = Modifier.padding(top = 8.dp),
-                                                                                    fontSize = 16.sp
-                                                                                )
-                                                                                val modThreadId =
-                                                                                    mod.findHighestVersion?.versionCheckerInfo?.modThreadId
-                                                                                if (modThreadId != null) {
-                                                                                    SmolButton(
-                                                                                        modifier = Modifier.padding(top = 16.dp),
-                                                                                        onClick = { modThreadId.openModThread() }) {
-                                                                                        Icon(
-                                                                                            modifier = Modifier.padding(
-                                                                                                end = 8.dp
-                                                                                            ),
-                                                                                            painter = painterResource("open-in-new.svg"),
-                                                                                            contentDescription = null
-                                                                                        )
-                                                                                        Text("Mod Page")
-                                                                                    }
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                    )
+                                                                if (Constants.isJCEFEnabled()) {
+                                                                    router.push(Screen.ModBrowser(modThreadId?.getModThreadUrl()))
+                                                                } else {
+                                                                    kotlin.runCatching {
+                                                                        modThreadId?.getModThreadUrl()
+                                                                            ?.openAsUriInBrowser()
+                                                                    }
+                                                                        .onFailure { Timber.w(it) }
                                                                 }
                                                             }
                                                         }
                                                             .align(Alignment.CenterVertically)) {
                                                             Image(
-                                                                painter = painterResource("icon-direct-install.svg"),
+                                                                painter = painterResource("new-box.svg"),
                                                                 contentDescription = null,
-                                                                colorFilter = ColorFilter.tint(color = MaterialTheme.colors.secondary),
+                                                                colorFilter = ColorFilter.tint(
+                                                                    color =
+                                                                    if (ddUrl == null) MaterialTheme.colors.secondary
+                                                                    else MaterialTheme.colors.secondary.copy(alpha = ContentAlpha.disabled)
+                                                                ),
                                                                 modifier = Modifier.width(28.dp).height(28.dp)
                                                                     .padding(end = 8.dp)
                                                                     .align(Alignment.CenterVertically)
@@ -449,116 +513,72 @@ fun AppState.ModGridView(
                                                             )
                                                         }
                                                     }
-
-                                                    val modThreadId =
-                                                        mod.findHighestVersion?.versionCheckerInfo?.modThreadId
-                                                    SmolTooltipArea(tooltip = {
-                                                        SmolTooltipText(
-                                                            text = buildString {
-                                                                append("Newer version available: $onlineVersion.")
-                                                                if (ddUrl == null) append("\nThis mod does not support direct download and should be downloaded manually.")
-                                                                append("\n\nClick to open ${modThreadId?.getModThreadUrl()}.")
-                                                            }
-                                                        )
-                                                    }, modifier = Modifier.mouseClickable {
-                                                        if (this.buttons.isPrimaryPressed) {
-                                                            if (Constants.isJCEFEnabled()) {
-                                                                router.push(Screen.ModBrowser(modThreadId?.getModThreadUrl()))
-                                                            } else {
-                                                                kotlin.runCatching {
-                                                                    modThreadId?.getModThreadUrl()?.openAsUriInBrowser()
-                                                                }
-                                                                    .onFailure { Timber.w(it) }
-                                                            }
-                                                        }
-                                                    }
-                                                        .align(Alignment.CenterVertically)) {
-                                                        Image(
-                                                            painter = painterResource("new-box.svg"),
-                                                            contentDescription = null,
-                                                            colorFilter = ColorFilter.tint(
-                                                                color =
-                                                                if (ddUrl == null) MaterialTheme.colors.secondary
-                                                                else MaterialTheme.colors.secondary.copy(alpha = ContentAlpha.disabled)
-                                                            ),
-                                                            modifier = Modifier.width(28.dp).height(28.dp)
-                                                                .padding(end = 8.dp)
-                                                                .align(Alignment.CenterVertically)
-                                                                .pointerHoverIcon(
-                                                                    PointerIcon(
-                                                                        Cursor.getPredefinedCursor(
-                                                                            Cursor.HAND_CURSOR
-                                                                        )
-                                                                    )
-                                                                )
-                                                        )
-                                                    }
+                                                    // Versions discovered
+                                                    Text(
+                                                        text = mod.variants
+                                                            .joinToString() { it.modInfo.version.toString() },
+                                                        modifier = Modifier.align(Alignment.CenterVertically),
+                                                        color = SmolTheme.dimmedTextColor()
+                                                    )
                                                 }
-                                                // Versions discovered
-                                                Text(
-                                                    text = mod.variants
-                                                        .joinToString() { it.modInfo.version.toString() },
-                                                    modifier = Modifier.align(Alignment.CenterVertically),
-                                                    color = SmolTheme.dimmedTextColor()
-                                                )
-                                            }
 
-                                            // VRAM
-                                            Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {
-                                                vramBar(mod, largestVramUsage)
-                                            }
+                                                // VRAM
+                                                Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {
+                                                    vramBar(mod, largestVramUsage)
+                                                }
 
-                                            // Game version (for active or highest)
-                                            Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {
-                                                Text(
-                                                    text = (mod.findFirstEnabled
-                                                        ?: mod.findHighestVersion)?.modInfo?.gameVersion ?: "",
-                                                    modifier = Modifier.align(Alignment.CenterVertically),
-                                                    color = SmolTheme.dimmedTextColor()
-                                                )
-                                            }
+                                                // Game version (for active or highest)
+                                                Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {
+                                                    Text(
+                                                        text = (mod.findFirstEnabled
+                                                            ?: mod.findHighestVersion)?.modInfo?.gameVersion ?: "",
+                                                        modifier = Modifier.align(Alignment.CenterVertically),
+                                                        color = SmolTheme.dimmedTextColor()
+                                                    )
+                                                }
 
-                                            // Checkbox
-                                            val isChecked = mod.id in checkedRows
+                                                // Checkbox
+                                                val isChecked = mod.id in checkedRows
 
-                                            val isCheckboxVisible =
-                                                isRowHighlighted || isChecked || checkedRows.any()
+                                                val isCheckboxVisible =
+                                                    isRowHighlighted || isChecked || checkedRows.any()
 
-                                            Row(
-                                                modifier = Modifier.width(checkboxesWidth)
-                                                    .align(Alignment.CenterVertically)
-                                                    .alpha(if (isCheckboxVisible) 1f else 0f)
-                                            ) {
-                                                modGridBulkActionMenu(
-                                                    modifier = Modifier.align(Alignment.CenterVertically),
-                                                    checkedRows = checkedRows
-                                                )
-                                                Checkbox(
-                                                    modifier = Modifier.width(checkboxesWidth),
-                                                    checked = isChecked,
-                                                    onCheckedChange = { checked ->
-                                                        if (checked) {
-                                                            checkedRows.add(mod.id)
-                                                        } else {
-                                                            checkedRows.remove(mod.id)
+                                                Row(
+                                                    modifier = Modifier.width(checkboxesWidth)
+                                                        .align(Alignment.CenterVertically)
+                                                        .alpha(if (isCheckboxVisible) 1f else 0f)
+                                                ) {
+                                                    modGridBulkActionMenu(
+                                                        modifier = Modifier.align(Alignment.CenterVertically),
+                                                        checkedRows = checkedRows
+                                                    )
+                                                    Checkbox(
+                                                        modifier = Modifier.width(checkboxesWidth),
+                                                        checked = isChecked,
+                                                        onCheckedChange = { checked ->
+                                                            if (checked) {
+                                                                checkedRows.add(mod.id)
+                                                            } else {
+                                                                checkedRows.remove(mod.id)
+                                                            }
                                                         }
-                                                    }
-                                                )
+                                                    )
+                                                }
+
+                                                // Context menu
+                                                ModContextMenu(
+                                                    showContextMenu = showContextMenu,
+                                                    onShowContextMenuChange = { showContextMenu = it },
+                                                    mod = mod,
+                                                    modInDebugDialog = modInDebugDialog,
+                                                    onModInDebugDialogChanged = { modInDebugDialog = it })
                                             }
 
-                                            // Context menu
-                                            ModContextMenu(
-                                                showContextMenu = showContextMenu,
-                                                onShowContextMenuChange = { showContextMenu = it },
-                                                mod = mod,
-                                                modInDebugDialog = modInDebugDialog,
-                                                onModInDebugDialogChanged = { modInDebugDialog = it })
-                                        }
-
-                                        Row {
-                                            Spacer(Modifier.width(modGridViewDropdownWidth.dp))
-                                            // Dependency warning
-                                            DependencyFixerRow(mod, mods.filterNotNull())
+                                            Row {
+                                                Spacer(Modifier.width(modGridViewDropdownWidth.dp))
+                                                // Dependency warning
+                                                DependencyFixerRow(mod, mods.filterNotNull())
+                                            }
                                         }
                                     }
                                 }
