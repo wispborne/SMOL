@@ -1,4 +1,4 @@
-package smol_app.views
+package smol_app.settings
 
 import AppState
 import androidx.compose.desktop.ui.tooling.preview.Preview
@@ -14,12 +14,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.arkivanov.decompose.pop
 import smol_access.Constants
 import smol_access.SL
 import smol_app.composables.*
+import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.toColors
+import smol_app.toolbar.*
 import smol_app.util.openInDesktop
+import smol_app.views.ramButton
 import utilities.rootCause
 import java.io.File
 import javax.swing.JFileChooser
@@ -35,21 +39,25 @@ fun AppState.settingsView(
 ) {
     val showLogPanel = remember { mutableStateOf(false) }
     Scaffold(topBar = {
-        TopAppBar {
-            SmolButton(onClick = router::pop, modifier = Modifier.padding(start = 16.dp)) {
-                Text("Back")
-            }
+        TopAppBar(modifier = Modifier.height(SmolTheme.topBarHeight)) {
+            launchButton()
+            installModsButton()
+            Spacer(Modifier.width(16.dp))
+            homeButton()
+            profilesButton()
+            screenTitle(text = "Settings")
+            modBrowserButton()
         }
     },
         content = {
             Box(modifier) {
-                Column(Modifier.padding(16.dp)) {
+                Column(Modifier.padding(top = 16.dp, bottom = 16.dp)) {
                     var gamePath by remember { mutableStateOf(SL.appConfig.gamePath ?: "") }
                     var archivesPath by remember { mutableStateOf(SL.appConfig.archivesPath ?: "") }
                     var stagingPath by remember { mutableStateOf(SL.appConfig.stagingPath ?: "") }
                     var alertDialogMessage: String? by remember { mutableStateOf(null) }
 
-                    fun save(): Boolean {
+                    fun saveSettings(): Boolean {
                         SL.appConfig.gamePath = gamePath
 
                         kotlin.runCatching {
@@ -74,29 +82,54 @@ fun AppState.settingsView(
                         )
                     }
 
-                    LazyColumn(Modifier.weight(1f)) {
+                    LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(vertical = 8.dp)) {
                         item {
-                            Column {
+                            Text(
+                                text = "Application Settings",
+                                modifier = Modifier.padding(bottom = 8.dp, start = 16.dp, end = 16.dp),
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = SmolTheme.orbitronSpaceFont,
+                                fontSize = 13.sp
+                            )
+                        }
+
+                        item {
+                            Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp)) {
                                 gamePath = gamePathSetting(gamePath)
                                 archivesPath = archivesPathSetting(archivesPath)
                                 stagingPath = stagingPathSetting(stagingPath)
-                                themeDropdown(Modifier.padding(start = 16.dp, top = 16.dp))
+                                themeDropdown(Modifier.padding(start = 16.dp, top = 24.dp))
                             }
                         }
+
+                        item { Divider(modifier = Modifier.padding(top = 32.dp, bottom = 8.dp)) }
+
+                        item {
+                            Text(
+                                text = "Game Settings",
+                                modifier = Modifier.padding(bottom = 8.dp, top = 8.dp, start = 16.dp, end = 16.dp),
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = SmolTheme.orbitronSpaceFont,
+                                fontSize = 13.sp
+                            )
+                        }
+                        item { ramButton(modifier = Modifier.padding(top = 8.dp)) }
                     }
+
+                    // Confirm buttons
                     Row(
-                        Modifier.fillMaxWidth(),
+                        Modifier.fillMaxWidth().padding(bottom = SmolTheme.bottomBarHeight, end = 16.dp),
                         horizontalArrangement = Arrangement.End
                     ) {
                         SmolButton(modifier = Modifier.padding(end = 16.dp), onClick = {
-                            if (save()) {
+                            if (saveSettings()) {
                                 router.pop()
                             }
                         }) { Text("Ok") }
                         SmolSecondaryButton(
                             modifier = Modifier.padding(end = 16.dp),
                             onClick = { router.pop() }) { Text("Cancel") }
-                        SmolSecondaryButton(onClick = { save() }) { Text("Apply") }
+                        SmolSecondaryButton(onClick = { saveSettings() }) { Text("Apply") }
                     }
                 }
             }
@@ -241,62 +274,64 @@ private fun AppState.themeDropdown(modifier: Modifier = Modifier): String {
     val themes = SL.themeManager.getThemes()
     val recomposeScope = currentRecomposeScope
 
-    Row(modifier) {
-        Text(modifier = Modifier.align(Alignment.CenterVertically), text = "Theme")
-        SmolDropdownWithButton(
-            modifier = Modifier.padding(start = 16.dp).align(Alignment.CenterVertically),
-            items = themes
-                .map { entry ->
-                    val colors = entry.value.toColors()
-                    SmolDropdownMenuItemCustom(
-                        backgroundColor = colors.surface,
-                        onClick = {
-                            themeName = entry.key
-                            SL.themeManager.setActiveTheme(entry.key)
-                        },
-                        customItemContent = { isMenuButton ->
-                            val height = 24.dp
-                            Text(
-                                text = entry.key,
-                                modifier = Modifier
-                                    .run { if (!isMenuButton) this.weight(1f) else this }
-                                    .align(Alignment.CenterVertically),
-                                fontWeight = FontWeight.Bold,
-                                color = colors.onSurface
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .padding(start = 16.dp)
-                                    .width(height * 3)
-                                    .height(height)
-                                    .background(color = colors.primary)
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .padding(start = 8.dp)
-                                    .width(height)
-                                    .height(height)
-                                    .background(color = colors.secondary)
-                            )
-                        }
-                    )
-                },
-            initiallySelectedIndex = themes.keys.indexOf(themeName).coerceAtLeast(0),
-            canSelectItems = true
-        )
-        SmolLinkText(
-            modifier = Modifier
-                .padding(start = 16.dp)
-                .align(Alignment.CenterVertically)
-                .mouseClickable { Constants.THEME_CONFIG_PATH.openInDesktop() }, text = "Edit"
-        )
-        SmolLinkText(
-            modifier = Modifier
-                .padding(start = 16.dp)
-                .align(Alignment.CenterVertically)
-                .mouseClickable { recomposeScope.invalidate() },
-            text = "Refresh"
-        )
+    Column(modifier) {
+        Text(text = "Theme")
+        Row {
+            SmolDropdownWithButton(
+                modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
+                items = themes
+                    .map { entry ->
+                        val colors = entry.value.toColors()
+                        SmolDropdownMenuItemCustom(
+                            backgroundColor = colors.surface,
+                            onClick = {
+                                themeName = entry.key
+                                SL.themeManager.setActiveTheme(entry.key)
+                            },
+                            customItemContent = { isMenuButton ->
+                                val height = 24.dp
+                                Text(
+                                    text = entry.key,
+                                    modifier = Modifier
+                                        .run { if (!isMenuButton) this.weight(1f) else this }
+                                        .align(Alignment.CenterVertically),
+                                    fontWeight = FontWeight.Bold,
+                                    color = colors.onSurface
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .padding(start = 16.dp)
+                                        .width(height * 3)
+                                        .height(height)
+                                        .background(color = colors.primary)
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .padding(start = 8.dp)
+                                        .width(height)
+                                        .height(height)
+                                        .background(color = colors.secondary)
+                                )
+                            }
+                        )
+                    },
+                initiallySelectedIndex = themes.keys.indexOf(themeName).coerceAtLeast(0),
+                canSelectItems = true
+            )
+            SmolLinkText(
+                modifier = Modifier
+                    .padding(start = 16.dp)
+                    .align(Alignment.CenterVertically)
+                    .mouseClickable { Constants.THEME_CONFIG_PATH.openInDesktop() }, text = "Edit"
+            )
+            SmolLinkText(
+                modifier = Modifier
+                    .padding(start = 16.dp)
+                    .align(Alignment.CenterVertically)
+                    .mouseClickable { recomposeScope.invalidate() },
+                text = "Refresh"
+            )
+        }
     }
 
     return themeName

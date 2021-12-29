@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.mouseClickable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
@@ -81,7 +82,13 @@ fun AppState.ModGridView(
             ListItem(modifier = Modifier.padding(start = contentPadding, end = contentPadding)) {
                 Row {
                     Spacer(modifier = Modifier.width(favoritesWidth).align(Alignment.CenterVertically))
-                    Spacer(Modifier.width(modGridViewDropdownWidth.dp).align(Alignment.CenterVertically))
+                    Box(modifier = Modifier.width(modGridViewDropdownWidth.dp).align(Alignment.CenterVertically)) {
+                        refreshButton {
+                            GlobalScope.launch(Dispatchers.Default) {
+                                reloadMods()
+                            }
+                        }
+                    }
 
                     SortableHeader(
                         modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
@@ -634,6 +641,26 @@ private fun RowScope.SortableHeader(
             SmolDropdownArrow(
                 modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 8.dp, end = 12.dp),
                 expanded = sortField == columnSortField && profile.value.modGridPrefs.isSortDescending
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun AppState.refreshButton(onRefresh: () -> Unit) {
+    SmolTooltipArea(
+        tooltip = { SmolTooltipText(text = "Refresh modlist & VRAM impact") },
+        delayMillis = SmolTooltipArea.delay
+    ) {
+        IconButton(
+            onClick = { onRefresh.invoke() },
+            modifier = Modifier.padding(start = 16.dp)
+                .background(color = Color.Black.copy(alpha = .15f), shape = CircleShape)
+        ) {
+            Icon(
+                painter = painterResource("refresh.svg"),
+                contentDescription = "Refresh"
             )
         }
     }

@@ -4,6 +4,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import org.apache.commons.io.FileUtils
+import timber.ktx.Timber
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
 import java.io.File
@@ -18,6 +19,7 @@ import java.util.*
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
 import kotlin.io.path.isSameFileAs
+import kotlin.random.Random
 import kotlin.streams.asSequence
 import kotlin.system.measureTimeMillis
 
@@ -179,4 +181,18 @@ fun InputStream.transferTo(out: OutputStream, onProgressUpdated: (progress: Long
     }
 
     return transferred
+}
+
+fun <T> List<Pair<T, Float>>.weightedRandom(): T {
+    val totalWeight = this.sumOf { it.second.toDouble() }
+    val random = Random.nextDouble() * totalWeight
+    var weightSoFar = 0.0
+
+    this.forEach { entry ->
+        weightSoFar += entry.second
+        if (random <= weightSoFar) return entry.first
+    }
+
+    Timber.w { "Somehow failed to get a random item." }
+    return this.random().first
 }

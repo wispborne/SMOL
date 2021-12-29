@@ -29,7 +29,7 @@ import smol_app.toasts.toastInstalledCard
 import smol_app.toasts.toaster
 import smol_app.views.FileDropper
 import smol_app.views.ProfilesView
-import smol_app.views.settingsView
+import smol_app.settings.settingsView
 import timber.ktx.Timber
 
 @OptIn(ExperimentalStdlibApi::class, ExperimentalDecomposeApi::class)

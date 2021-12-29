@@ -23,11 +23,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
 
-/**
- * Decodes “application/x-www-form-urlencoded” content.
- *
- * @hide
- */
 public final class UriCodec {
     private UriCodec() {
     }

@@ -1,5 +1,7 @@
 package smol_app.views
 
+import AppState
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.GridCells
 import androidx.compose.foundation.lazy.LazyVerticalGrid
@@ -19,16 +21,36 @@ import oshi.SystemInfo
 import smol_access.SL
 import smol_app.composables.SmolButton
 import smol_app.composables.SmolTextField
+import smol_app.composables.SmolTooltipArea
+import smol_app.composables.SmolTooltipText
 import smol_app.themes.SmolTheme
 import smol_app.util.vmParamsManager
 import kotlin.math.floor
 import kotlin.math.roundToInt
 
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun AppState.ramButton(modifier: Modifier = Modifier) {
+    val showVmParamsMenu = remember { mutableStateOf(false) }
+    SmolTooltipArea(
+        tooltip = { SmolTooltipText("Adjust the RAM allocated to the game. Modifies vmparams.") },
+        delayMillis = smol_app.composables.SmolTooltipArea.delay
+    ) {
+        SmolButton(
+            onClick = { showVmParamsMenu.value = true },
+            modifier = modifier.padding(start = 16.dp)
+        ) {
+            Text(text = "RAM")
+        }
+    }
+    vmParamsContextMenu(showVmParamsMenu)
+}
+
 @OptIn(ExperimentalMaterialApi::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun vmParamsContextMenu(
-    showContextMenu: Boolean,
-    onShowContextMenuChange: (Boolean) -> Unit,
+    showContextMenu: MutableState<Boolean>
 ) {
     val cellMinWidth = 88.dp
     val width = cellMinWidth * 2
@@ -53,8 +75,8 @@ fun vmParamsContextMenu(
 
     CursorDropdownMenu(
         modifier = Modifier.padding(16.dp).width(width),
-        expanded = showContextMenu,
-        onDismissRequest = { onShowContextMenuChange(false) }) {
+        expanded = showContextMenu.value,
+        onDismissRequest = { showContextMenu.value = false }) {
         Text(
             modifier = Modifier.align(Alignment.CenterHorizontally),
             text = "Set the amount of RAM assigned to the game."

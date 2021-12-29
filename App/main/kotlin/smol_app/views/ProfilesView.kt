@@ -18,7 +18,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.arkivanov.decompose.pop
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -31,6 +30,7 @@ import smol_access.model.UserProfile
 import smol_app.composables.*
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.lighten
+import smol_app.toolbar.*
 import smol_app.util.ellipsizeAfter
 import smol_app.util.smolPreview
 
@@ -49,15 +49,14 @@ fun AppState.ProfilesView(
 
     Scaffold(
         topBar = {
-            TopAppBar {
-                SmolButton(onClick = router::pop, modifier = Modifier.padding(start = 16.dp)) {
-                    Text("Back")
-                }
-                Text(
-                    modifier = Modifier.padding(8.dp).padding(start = 16.dp),
-                    text = "Mod Profiles",
-                    fontWeight = FontWeight.Bold
-                )
+            TopAppBar(modifier = Modifier.height(SmolTheme.topBarHeight)) {
+                launchButton()
+                installModsButton()
+                Spacer(Modifier.width(16.dp))
+                homeButton()
+                screenTitle(text = "Mod Profiles")
+                settingsButton()
+                modBrowserButton()
             }
         }, content = {
             Box(modifier.padding(16.dp)) {
@@ -83,16 +82,28 @@ fun AppState.ProfilesView(
                             modifier = Modifier.wrapContentHeight()
                                 .run {
                                     // Highlight active profile
-                                    if (isActiveProfile) this.border(
-                                        width = 4.dp,
-                                        color = MaterialTheme.colors.onSurface.lighten(),
-                                        shape = SmolTheme.smolFullyClippedButtonShape()
-                                    ) else this
+                                    if (isActiveProfile) this
+                                        .border(
+                                            width = 4.dp,
+                                            color = MaterialTheme.colors.onSurface.lighten(),
+                                            shape = SmolTheme.smolFullyClippedButtonShape()
+                                        )
+                                    else this
                                 },
                             shape = SmolTheme.smolFullyClippedButtonShape()
                         ) {
                             SelectionContainer {
-                                Column(modifier = Modifier.padding(16.dp)) {
+                                Column(
+                                    modifier = Modifier.run {
+                                        if (isActiveProfile) this.padding(16.dp)
+                                        else this.padding(
+                                            top = 8.dp,
+                                            bottom = 16.dp,
+                                            start = 16.dp,
+                                            end = 16.dp
+                                        )
+                                    }
+                                ) {
                                     Row {
                                         if (!isEditMode.value) {
                                             Text(
@@ -100,8 +111,8 @@ fun AppState.ProfilesView(
                                                     .weight(1f)
                                                     .padding(end = 16.dp)
                                                     .align(Alignment.CenterVertically),
-                                                fontWeight = FontWeight.Bold,
                                                 fontSize = 18.sp,
+                                                fontFamily = SmolTheme.orbitronSpaceFont,
                                                 text = modProfileName.value
                                             )
                                         } else {
@@ -139,7 +150,7 @@ fun AppState.ProfilesView(
                                     }
 
                                     Text(
-//                                    modifier = Modifier.align(Alignment.CenterVertically),
+                                        modifier = Modifier.padding(top = 8.dp),
                                         text = "${modProfile.enabledModVariants.count()} mods",
                                         fontFamily = SmolTheme.fireCodeFont,
                                         fontSize = 12.sp,

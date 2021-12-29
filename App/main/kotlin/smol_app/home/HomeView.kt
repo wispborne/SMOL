@@ -5,7 +5,6 @@ package smol_app.home
 import AppState
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.*
@@ -16,35 +15,30 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.push
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import org.tinylog.Logger
-import smol_access.Constants
 import smol_access.SL
 import smol_access.business.Archives
 import smol_access.business.GameEnabledMods.Companion.ENABLED_MODS_FILENAME
 import smol_access.business.KWatchEvent
 import smol_access.business.asWatchChannel
-import smol_access.config.Platform
 import smol_access.model.Mod
 import smol_access.util.IOLock
 import smol_app.cli.SmolCLI
 import smol_app.composables.*
 import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
-import smol_app.themes.SmolTheme.withAdjustedBrightness
-import smol_app.util.*
-import smol_app.views.vmParamsContextMenu
+import smol_app.toolbar.*
+import smol_app.util.filterModGrid
+import smol_app.util.replaceAllUsingDifference
+import smol_app.util.vmParamsManager
 import timber.ktx.Timber
 import utilities.equalsAny
-import utilities.toFileOrNull
 import utilities.toPathOrNull
 import utilities.trace
-import java.awt.FileDialog
-import kotlin.io.path.absolutePathString
 import kotlin.io.path.exists
 
 
@@ -93,18 +87,15 @@ fun AppState.homeView(
 
 
 //    var showConfirmMigrateDialog: Boolean by remember { mutableStateOf(false) }
-    var showLogPanel = remember { mutableStateOf(false) }
+    val showLogPanel = remember { mutableStateOf(false) }
     Scaffold(
         modifier = modifier,
         topBar = {
-            TopAppBar(
-                modifier = Modifier.height(72.dp)
-            ) {
+            TopAppBar(modifier = Modifier.height(SmolTheme.topBarHeight)) {
                 launchButton()
-                ramButton()
-
-                installModsButton(Modifier.padding(start = 16.dp))
-                refreshButton()
+                installModsButton()
+                Spacer(Modifier.width(16.dp))
+                screenTitle(text = "Home")
                 profilesButton()
                 settingsButton()
                 modBrowserButton()
@@ -229,7 +220,7 @@ private suspend fun watchDirsAndReloadOnChange(scope: CoroutineScope) {
     }
 }
 
-private suspend fun reloadMods() {
+suspend fun reloadMods() {
     if (SL.access.areModsLoading.value) {
         Logger.info { "Skipping reload of mods as they are currently refreshing already." }
         return
@@ -261,175 +252,6 @@ private suspend fun reloadMods() {
         }
     } catch (e: Exception) {
         Logger.debug(e)
-    }
-}
-
-@Composable
-private fun AppState.settingsButton() {
-    SmolButton(
-        onClick = { router.push(Screen.Settings) },
-        modifier = Modifier.padding(start = 16.dp)
-    ) {
-        Text("Settings")
-    }
-}
-
-@Composable
-private fun AppState.modBrowserButton() {
-    val isEnabled = Constants.isJCEFEnabled()
-    SmolTooltipArea(
-        tooltip = {
-            SmolTooltipText(
-                if (isEnabled) "View and install mods from the internet."
-                else "JCEF not found; add to /libs to enable the Mod Browser."
-            )
-        },
-        delayMillis = SmolTooltipArea.delay
-    ) {
-        SmolButton(
-            enabled = isEnabled,
-            onClick = { router.push(Screen.ModBrowser()) },
-            modifier = Modifier.padding(start = 16.dp)
-        ) {
-            Text("Mod Browser")
-        }
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun AppState.refreshButton() {
-    val refreshScope by remember { mutableStateOf(CoroutineScope(Job())) }
-
-    SmolTooltipArea(
-        tooltip = { SmolTooltipText(text = "Refresh modlist & VRAM impact") },
-        delayMillis = SmolTooltipArea.delay
-    ) {
-        SmolButton(
-            onClick = {
-                refreshScope.launch(Dispatchers.Default) {
-                    reloadMods()
-                }
-            },
-            modifier = Modifier.padding(start = 16.dp)
-        ) {
-            Icon(
-                painter = painterResource("refresh.svg"),
-                contentDescription = "Refresh",
-                tint = SmolTheme.dimmedIconColor()
-            )
-        }
-    }
-}
-
-@Composable
-private fun AppState.profilesButton() {
-    SmolTooltipArea(
-        tooltip = { SmolTooltipText("Create and swap between enabled mods.") },
-        delayMillis = SmolTooltipArea.delay
-    ) {
-        SmolButton(
-            onClick = { router.push(Screen.Profiles) },
-            modifier = Modifier.padding(start = 16.dp)
-        ) {
-            Text("Profiles")
-        }
-    }
-}
-
-@Composable
-private fun AppState.launchButton() {
-    SmolTooltipArea(
-        tooltip = { SmolTooltipText("Engage") },
-        delayMillis = SmolTooltipArea.delay
-    ) {
-        SmolButton(
-            onClick = {
-                val gameLauncher = SL.appConfig.gamePath.toPathOrNull()?.resolve("starsector.exe")
-                val commands = when (currentPlatform) {
-                    Platform.Windows -> arrayOf("cmd.exe", "/C")
-                    else -> arrayOf("open")
-                }
-                Logger.info { "Launching ${gameLauncher?.absolutePathString()} with working dir ${SL.appConfig.gamePath}." }
-                Runtime.getRuntime()
-                    .exec(
-                        arrayOf(*commands, gameLauncher?.absolutePathString() ?: "missing"),
-                        null,
-                        SL.appConfig.gamePath.toFileOrNull()
-                    )
-            },
-            colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.primary),
-            modifier = Modifier
-                .padding(start = 16.dp)
-                .border(
-                    8.dp,
-                    MaterialTheme.colors.primary.withAdjustedBrightness(-35),
-                    shape = SmolTheme.smolFullyClippedButtonShape()
-                ),
-            shape = SmolTheme.smolFullyClippedButtonShape(),
-            elevation = ButtonDefaults.elevation(
-                defaultElevation = 4.dp,
-                hoveredElevation = 8.dp,
-                pressedElevation = 16.dp
-            )
-        ) {
-            Text(text = "Launch", fontWeight = FontWeight.SemiBold)
-        }
-    }
-}
-
-@Composable
-private fun AppState.ramButton(modifier: Modifier = Modifier) {
-    var showVmParamsMenu by remember { mutableStateOf(false) }
-    SmolTooltipArea(
-        tooltip = { SmolTooltipText("Adjust the RAM allocated to the game. Modifies vmparams.") },
-        delayMillis = SmolTooltipArea.delay
-    ) {
-        SmolButton(
-            onClick = { showVmParamsMenu = true },
-            modifier = modifier.padding(start = 16.dp)
-        ) {
-            Text(text = "RAM")
-        }
-    }
-    vmParamsContextMenu(showVmParamsMenu) { showVmParamsMenu = it }
-}
-
-@Composable
-private fun AppState.installModsButton(modifier: Modifier = Modifier) {
-    SmolTooltipArea(
-        tooltip = { SmolTooltipText(text = "Install mod(s)") },
-        delayMillis = SmolTooltipArea.delay
-    ) {
-        SmolButton(
-            onClick = {
-                with(FileDialog(this.window, "Choose a file", FileDialog.LOAD)
-                    .apply {
-                        this.isMultipleMode = true
-                        this.directory = SL.appConfig.lastFilePickerDirectory
-                        this.isVisible = true
-                    })
-                {
-                    SL.appConfig.lastFilePickerDirectory = this.directory
-
-                    this.files
-                        .map { it.toPath() }
-                        .onEach { Logger.debug { "Chose file: $it" } }
-                        .forEach {
-                            GlobalScope.launch {
-                                SL.access.installFromUnknownSource(inputFile = it, shouldCompressModFolder = true)
-                            }
-                        }
-                }
-            },
-            modifier = modifier.padding(start = 16.dp)
-        ) {
-            Icon(
-                painter = painterResource("plus.svg"),
-                contentDescription = null,
-                tint = SmolTheme.dimmedIconColor()
-            )
-        }
     }
 }
 

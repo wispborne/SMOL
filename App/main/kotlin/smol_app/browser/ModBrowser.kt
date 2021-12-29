@@ -26,9 +26,7 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.arkivanov.decompose.pop
 import javafx.embed.swing.JFXPanel
 import javafx.scene.web.WebView
 import kotlinx.coroutines.Dispatchers
@@ -50,6 +48,7 @@ import smol_app.browser.chromium.ChromiumBrowser
 import smol_app.browser.javafx.javaFxBrowser
 import smol_app.composables.*
 import smol_app.themes.SmolTheme
+import smol_app.toolbar.*
 import smol_app.util.*
 import timber.ktx.Timber
 import java.awt.Cursor
@@ -88,15 +87,15 @@ fun AppState.ModBrowserView(
     Scaffold(
         modifier = modifier,
         topBar = {
-            TopAppBar {
-                SmolButton(onClick = router::pop, modifier = Modifier.padding(start = 16.dp)) {
-                    Text("Back")
-                }
-                Text(
-                    modifier = Modifier.padding(8.dp).padding(start = 16.dp),
-                    text = "Mod Browser",
-                    fontWeight = FontWeight.Bold
-                )
+            TopAppBar(modifier = Modifier.height(SmolTheme.topBarHeight)) {
+                launchButton()
+                installModsButton()
+                Spacer(Modifier.width(16.dp))
+                homeButton()
+                profilesButton()
+                settingsButton()
+                screenTitle(text = "Mod Browser")
+
                 SmolTooltipArea(
                     modifier = Modifier
                         .padding(start = 16.dp),
@@ -362,7 +361,6 @@ private fun AppState.embeddedBrowser(
                                         if (download.totalBytes.value != null)
                                             download.progress.emit(download.totalBytes.value ?: 0)
                                         download.status.emit(DownloadItem.Status.Completed)
-
                                     }
 
                                     if (download.path.value != null) {
