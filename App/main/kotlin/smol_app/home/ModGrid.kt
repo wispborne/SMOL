@@ -167,8 +167,8 @@ fun AppState.ModGridView(
                 }
             }
             Box {
-                var isEnabledCollapsed = remember { mutableStateOf(false) }
-                var isDisabledCollapsed = remember { mutableStateOf(false) }
+                val isEnabledCollapsed = remember { mutableStateOf(false) }
+                val isDisabledCollapsed = remember { mutableStateOf(false) }
                 LazyColumn(Modifier.fillMaxWidth()) {
                     mods
                         .filterNotNull()
@@ -676,7 +676,7 @@ fun AppState.refreshButton(onRefresh: () -> Unit) {
         IconButton(
             onClick = { onRefresh.invoke() },
             modifier = Modifier.padding(start = 16.dp)
-                .background(color = Color.Black.copy(alpha = .15f), shape = CircleShape)
+                .background(color = Color.Black.copy(alpha = .10f), shape = CircleShape)
         ) {
             Icon(
                 painter = painterResource("refresh.svg"),

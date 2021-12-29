@@ -23,6 +23,7 @@ import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.toColors
 import smol_app.toolbar.*
 import smol_app.util.openInDesktop
+import smol_app.views.jreSwitcher
 import smol_app.views.ramButton
 import utilities.rootCause
 import java.io.File
@@ -113,7 +114,8 @@ fun AppState.settingsView(
                                 fontSize = 13.sp
                             )
                         }
-                        item { ramButton(modifier = Modifier.padding(top = 8.dp)) }
+                        item { ramButton(modifier = Modifier.padding(start = 8.dp, top = 16.dp)) }
+                        item { jreSwitcher(modifier = Modifier.padding(start = 8.dp, top = 24.dp)) }
                     }
 
                     // Confirm buttons

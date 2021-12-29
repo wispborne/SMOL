@@ -24,6 +24,7 @@ import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.toColors
 import timber.ktx.Timber
 import java.awt.Desktop
+import java.io.File
 import java.net.URI
 import java.nio.file.Path
 import kotlin.io.path.listDirectoryEntries
@@ -173,3 +174,17 @@ fun Constants.isJCEFEnabled() =
     }
         .onFailure { Timber.w(it) }
         .getOrElse { false }
+
+
+fun openProgramInTerminal(command: String, workingDirectory: File?) {
+    val commands = when (currentPlatform) {
+        Platform.Windows -> arrayOf("cmd.exe", "/C")
+        else -> arrayOf("open")
+    }
+    Runtime.getRuntime()
+        .exec(
+            arrayOf(*commands, command),
+            null,
+            workingDirectory
+        )
+}

@@ -22,15 +22,14 @@ import kotlinx.coroutines.launch
 import org.tinylog.Logger
 import smol_access.Constants
 import smol_access.SL
-import smol_access.config.Platform
 import smol_app.composables.SmolButton
 import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
 import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.withAdjustedBrightness
-import smol_app.util.currentPlatform
 import smol_app.util.isJCEFEnabled
+import smol_app.util.openProgramInTerminal
 import utilities.toFileOrNull
 import utilities.toPathOrNull
 import utilities.weightedRandom
@@ -123,17 +122,11 @@ fun AppState.launchButton() {
         SmolButton(
             onClick = {
                 val gameLauncher = SL.appConfig.gamePath.toPathOrNull()?.resolve("starsector.exe")
-                val commands = when (currentPlatform) {
-                    Platform.Windows -> arrayOf("cmd.exe", "/C")
-                    else -> arrayOf("open")
-                }
                 Logger.info { "Launching ${gameLauncher?.absolutePathString()} with working dir ${SL.appConfig.gamePath}." }
-                Runtime.getRuntime()
-                    .exec(
-                        arrayOf(*commands, gameLauncher?.absolutePathString() ?: "missing"),
-                        null,
-                        SL.appConfig.gamePath.toFileOrNull()
-                    )
+                openProgramInTerminal(
+                    gameLauncher?.absolutePathString() ?: "missing",
+                    SL.appConfig.gamePath.toFileOrNull()
+                )
             },
             colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.primary),
             modifier = Modifier
