@@ -3,7 +3,7 @@ package smol_access.business
 import smol_access.config.GamePath
 import smol_access.config.Platform
 import smol_access.model.Vmparams
-import smol_access.util.IOLock
+import utilities.IOLock
 import timber.ktx.Timber
 import kotlin.io.path.*
 

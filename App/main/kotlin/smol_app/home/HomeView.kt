@@ -26,7 +26,7 @@ import smol_access.business.GameEnabledMods.Companion.ENABLED_MODS_FILENAME
 import smol_access.business.KWatchEvent
 import smol_access.business.asWatchChannel
 import smol_access.model.Mod
-import smol_access.util.IOLock
+import utilities.IOLock
 import smol_app.cli.SmolCLI
 import smol_app.composables.*
 import smol_app.navigation.Screen

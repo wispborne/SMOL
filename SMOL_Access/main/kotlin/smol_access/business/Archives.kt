@@ -18,7 +18,7 @@ import smol_access.model.Version
 import smol_access.model.VersionCheckerInfo
 import smol_access.util.ArchiveExtractToFolderCallback
 import smol_access.util.ArchiveExtractToMemoryCallback
-import smol_access.util.IOLock
+import utilities.IOLock
 import timber.ktx.Timber
 import timber.ktx.d
 import utilities.*
@@ -183,7 +183,7 @@ class Archives internal constructor(
                         "Time to extract mod_info.json & maybe vercheck file from ${inputArchiveFile.absolutePathString()}: ${time}ms."
                     }
                 }) {
-                    IOLock.read {
+                    IOLock.read(IOLocks.everythingLock) {
                         Timber.v { "Opening archive ${inputArchiveFile.name}" }
                         RandomAccessFileInStream(RandomAccessFile(inputArchiveFile.toFile(), "r")).use { fileInStream ->
                             SevenZip.openInArchive(null, fileInStream).use { inArchive ->

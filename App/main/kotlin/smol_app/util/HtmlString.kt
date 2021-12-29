@@ -6,6 +6,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import smol_app.themes.SmolTheme
 import kotlin.math.min
 
 /**
@@ -14,7 +15,8 @@ import kotlin.math.min
 private val tags = linkedMapOf(
     "<b>" to "</b>",
     "<i>" to "</i>",
-    "<u>" to "</u>"
+    "<u>" to "</u>",
+    "<code>" to "</code>",
 )
 
 /**
@@ -86,15 +88,10 @@ private fun recurse(string: String, to: AnnotatedString.Builder) {
  */
 private fun tagToStyle(tag: String): SpanStyle {
     return when (tag) {
-        "<b>" -> {
-            SpanStyle(fontWeight = FontWeight.Bold)
-        }
-        "<i>" -> {
-            SpanStyle(fontStyle = FontStyle.Italic)
-        }
-        "<u>" -> {
-            SpanStyle(textDecoration = TextDecoration.Underline)
-        }
+        "<b>" -> SpanStyle(fontWeight = FontWeight.Bold)
+        "<i>" -> SpanStyle(fontStyle = FontStyle.Italic)
+        "<u>" -> SpanStyle(textDecoration = TextDecoration.Underline)
+        "<code>" -> SpanStyle(fontFamily = SmolTheme.fireCodeFont)
         //This should only throw if you add a tag to the [tags] Map and forget to add it
         //to this function.
         else -> throw IllegalArgumentException("Tag $tag is not valid.")

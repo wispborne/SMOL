@@ -5,7 +5,7 @@ import org.apache.commons.csv.CSVParser
 import smol_access.Constants
 import smol_access.model.ModInfo
 import smol_access.model.VersionCheckerInfo
-import smol_access.util.IOLock
+import utilities.IOLock
 import timber.ktx.Timber
 import utilities.Jsanity
 import utilities.walk

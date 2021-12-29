@@ -16,47 +16,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import smol_access.SL
+import smol_access.business.JreEntry
 import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
-import utilities.prefer
-import java.nio.file.Path
-import kotlin.io.path.exists
-import kotlin.io.path.listDirectoryEntries
-import kotlin.io.path.name
+import smol_app.util.parseHtml
 import kotlin.io.path.relativeTo
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AppState.jreSwitcher(modifier: Modifier = Modifier) {
-    val javasFound = remember { mutableStateListOf<Pair<String, Path>>() }
+    val javasFound = remember { mutableStateListOf<JreEntry>() }
     LaunchedEffect(Unit) {
-        javasFound.addAll(
-            SL.gamePath.get()?.listDirectoryEntries()
-                ?.mapNotNull { path ->
-                    val javaExe = path.resolve("bin/java.exe")
-                    if (!javaExe.exists()) return@mapNotNull null
-
-                    val versionString = kotlin.runCatching {
-                        ProcessBuilder()
-                            .command("java.exe", "-version")
-                            .directory(path.toFile().resolve("bin"))
-                            .redirectErrorStream(true)
-                            .start()
-                            .inputStream
-                            .bufferedReader()
-                            .readLines()
-                            .prefer { it.contains("build") }
-                            .firstOrNull()
-                    }
-                        .onFailure { timber.ktx.Timber.e(it) { "Error getting java version from $'path'." } }
-                        .getOrElse { return@mapNotNull null }!!
-
-                    return@mapNotNull versionString to path
-                }
-                ?.toList() ?: emptyList()
-        )
+        javasFound.addAll(SL.jreManager.findJREs())
     }
-
 
     SmolTooltipArea(
         tooltip = { SmolTooltipText("Switch between JRE versions") },
@@ -76,11 +48,15 @@ fun AppState.jreSwitcher(modifier: Modifier = Modifier) {
                     RadioButton(
                         onClick = { },
                         modifier = Modifier.align(Alignment.CenterVertically),
-                        selected = javaNameAndPath.second.name == "jre"
+                        selected = javaNameAndPath.isUsedByGame
                     )
                     Text(
                         modifier = Modifier.align(Alignment.CenterVertically),
-                        text = "'${javaNameAndPath.first}' in folder '${javaNameAndPath.second.relativeTo(SL.gamePath.get()!!)}'"
+                        text = "<b>${javaNameAndPath.versionString}</b> (in folder <code>${
+                            javaNameAndPath.path.relativeTo(
+                                SL.gamePath.get()!!
+                            )
+                        }</code>)".parseHtml()
                     )
                 }
             }

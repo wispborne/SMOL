@@ -3,7 +3,7 @@ package smol_app.browser.javafx
 import io.ktor.http.*
 import kotlinx.coroutines.coroutineScope
 import smol_access.Constants
-import smol_access.util.IOLock
+import utilities.IOLock
 import smol_app.browser.DownloadItem
 import smol_app.browser.DownloadManager
 import timber.ktx.Timber

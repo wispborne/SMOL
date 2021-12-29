@@ -5,7 +5,7 @@ import smol_access.config.AppConfig
 import smol_access.config.GamePath
 import smol_access.model.Mod
 import smol_access.model.ModVariant
-import smol_access.util.IOLock
+import utilities.IOLock
 import smol_access.util.ManualReloadTrigger
 import timber.Timber
 import timber.ktx.i

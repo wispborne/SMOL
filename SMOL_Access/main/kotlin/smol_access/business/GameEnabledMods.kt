@@ -4,7 +4,7 @@ import com.google.gson.annotations.SerializedName
 import org.hjson.JsonObject
 import smol_access.config.GamePath
 import smol_access.model.ModInfo
-import smol_access.util.IOLock
+import utilities.IOLock
 import timber.ktx.Timber
 import utilities.Jsanity
 import java.nio.file.Path

@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import smol_access.Access
 import smol_access.Constants
-import smol_access.util.IOLock
+import utilities.IOLock
 import timber.ktx.Timber
 import utilities.transferTo
 import java.net.URL

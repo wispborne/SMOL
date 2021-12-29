@@ -1,7 +1,6 @@
 package utilities
 
 import com.google.gson.JsonElement
-import smol_access.util.IOLock
 import timber.ktx.Timber
 import java.nio.file.Path
 import java.util.prefs.Preferences

@@ -2,7 +2,7 @@ package smol_access.config
 
 import com.sun.jna.platform.win32.Advapi32Util
 import com.sun.jna.platform.win32.WinReg
-import smol_access.util.IOLock
+import utilities.IOLock
 import timber.ktx.Timber
 import utilities.toPathOrNull
 import java.io.File

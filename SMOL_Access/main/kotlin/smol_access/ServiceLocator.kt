@@ -51,6 +51,7 @@ class ServiceLocator internal constructor(
     ),
     internal val modInfoLoader: ModInfoLoader = ModInfoLoader(gson = jsanity),
     val gamePath: GamePath = GamePath(appConfig = appConfig),
+    val jreManager: JreManager = JreManager(gamePath = gamePath),
     val vramChecker: VramCheckerManager = VramCheckerManager(
         gamePath = gamePath,
         vramCheckerCache = VramCheckerCache(gson = jsanity)

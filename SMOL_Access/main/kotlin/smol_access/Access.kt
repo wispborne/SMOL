@@ -9,7 +9,7 @@ import smol_access.config.AppConfig
 import smol_access.config.Platform
 import smol_access.model.Mod
 import smol_access.model.ModVariant
-import smol_access.util.IOLock
+import utilities.IOLock
 import timber.ktx.Timber
 import utilities.mkdirsIfNotExist
 import utilities.toFileOrNull
