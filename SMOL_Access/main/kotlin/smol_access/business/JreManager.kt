@@ -1,25 +1,31 @@
 package smol_access.business
 
+import io.ktor.client.call.*
 import io.ktor.client.features.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
+import io.ktor.utils.io.*
+import io.ktor.utils.io.core.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import smol_access.HttpClientBuilder
 import smol_access.config.AppConfig
 import smol_access.config.GamePath
 import timber.ktx.Timber
-import utilities.IOLock
-import utilities.IOLocks
-import utilities.awaitWrite
-import utilities.moveDirectory
-import java.net.http.HttpResponse
+import utilities.*
 import java.nio.file.Path
 import java.util.*
 import kotlin.io.path.*
+import kotlin.io.use
 
 class JreManager(
     private val gamePath: GamePath,
     private val appConfig: AppConfig,
-    private val httpClientBuilder: HttpClientBuilder
+    private val httpClientBuilder: HttpClientBuilder,
+    private val archives: Archives
 ) {
     companion object {
         const val gameJreFolderName = "jre"
@@ -63,7 +69,7 @@ class JreManager(
                     val gamePathNN = gamePath.get()!!
                     val currentJreSource = findJREs().firstOrNull { it.isUsedByGame }
                     var currentJreDest: Path? = null
-                    val gameJrePath = kotlin.runCatching { gamePathNN.resolve(gameJreFolderName).awaitWrite() }
+                    val gameJrePath = kotlin.runCatching { gamePathNN.resolve(gameJreFolderName) }
                         .onFailure { Timber.w(it) }
                         .getOrNull() ?: return@runBlocking
 
@@ -76,7 +82,8 @@ class JreManager(
                             if (currentJreDest!!.exists()) {
                                 currentJreDest =
                                     Path.of(
-                                        currentJreDest!!.absolutePathString() + UUID.randomUUID().toString().take(6)
+                                        currentJreDest!!.absolutePathString() + "-" + UUID.randomUUID().toString()
+                                            .take(6)
                                     )
                             }
 
@@ -110,36 +117,91 @@ class JreManager(
         }
     }
 
-    suspend fun downloadJre8(onUpdate: (percent: Float) -> Unit) {
+    val jre8DownloadProgress = MutableStateFlow<Jre8Progress?>(null)
+
+    sealed class Jre8Progress {
+        data class Downloading(val progress: Float?) : Jre8Progress()
+        object Extracting : Jre8Progress()
+        object Done : Jre8Progress()
+    }
+
+    /**
+     * Observe progress using [jre8DownloadProgress].
+     */
+    suspend fun downloadJre8() {
         kotlin.runCatching {
             val gamePathNN = gamePath.get()!!
-            val gameJrePath = kotlin.runCatching { gamePathNN.resolve(gameJreFolderName).awaitWrite() }
+            val gameJrePath = kotlin.runCatching { gamePathNN.resolve(gameJreFolderName) }
                 .onFailure { Timber.w(it) }
                 .getOrNull() ?: return@runCatching
 
             httpClientBuilder.invoke().use { client ->
-                val httpResponse: HttpResponse<ByteArray> = client.get(appConfig.jre8Url) {
-                    onDownload { bytesSentTotal, contentLength ->
-                        Timber.d { "Received $bytesSentTotal bytes from $contentLength" }
-                        onUpdate(bytesSentTotal.toFloat() / contentLength.toFloat())
-                    }
-                }
-                val responseBody: ByteArray = httpResponse.body()
+                jre8DownloadProgress.value = Jre8Progress.Downloading(0f)
 
-                IOLock.write(IOLocks.gameMainFolderLock) {
+                withContext(Dispatchers.IO) {
                     var destForDownload = Path.of(gameJrePath.absolutePathString() + "-1.8.0")
 
-                    if (destForDownload.exists()) {
-                        destForDownload = Path.of(
-                            destForDownload.absolutePathString() + UUID.randomUUID().toString().take(6)
-                        )
+                    client.get<HttpStatement>(appConfig.jre8Url) {
+                        timeout {
+                            connectTimeoutMillis = 45000
+                            requestTimeoutMillis = 45000
+                        }
+                        onDownload { bytesSentTotal, contentLength ->
+                            Timber.d { "Received $bytesSentTotal bytes from $contentLength" }
+                            jre8DownloadProgress.value =
+                                Jre8Progress.Downloading(bytesSentTotal.toFloat() / contentLength.toFloat())
+                        }
                     }
-                    destForDownload.writeBytes(responseBody)
-                    println("JRE 8 saved to $destForDownload")
+                        .execute { httpResponse ->
+
+                            if (destForDownload.exists()) {
+                                destForDownload = Path.of(
+                                    destForDownload.absolutePathString() + "-" + UUID.randomUUID().toString().take(6)
+                                )
+                            }
+
+                            destForDownload = Path.of(destForDownload.absolutePathString() + ".7z")
+                            IOLock.write(IOLocks.gameMainFolderLock) {
+                                destForDownload.deleteIfExists()
+                                destForDownload.createFile()
+                            }
+                            val channel: ByteReadChannel = httpResponse.receive()
+
+                            while (!channel.isClosedForRead) {
+                                val packet = channel.readRemaining(DEFAULT_BUFFER_SIZE.toLong())
+
+                                IOLock.write(IOLocks.gameMainFolderLock) {
+                                    while (!packet.isEmpty) {
+                                        val bytes = packet.readBytes()
+                                        destForDownload.appendBytes(bytes)
+                                        println("Received ${destForDownload.fileSize()} bytes from ${httpResponse.contentLength()}")
+                                    }
+                                }
+                            }
+
+                            Timber.i { "JRE 8 saved to $destForDownload." }
+                        }
+
+
+                    Timber.i { "Extracting $destForDownload to $gameJrePath." }
+                    jre8DownloadProgress.value = Jre8Progress.Extracting
+                    val extractionTarget = gamePathNN.resolve("jre8-tmp")
+                    archives.extractArchive(
+                        archiveFile = destForDownload,
+                        destinationPath = extractionTarget
+                    )
+                    extractionTarget.resolve("jre")
+                        .moveDirectory(gamePathNN.resolve(destForDownload.nameWithoutExtension))
+                    destForDownload.deleteIfExists()
+                    extractionTarget.deleteRecursively()
+                    jre8DownloadProgress.value = Jre8Progress.Done
                 }
             }
         }
-            .onFailure { Timber.e(it) }
+            .onFailure { Timber.e(it) { "Failed to download JRE 8 from ${appConfig.jre8Url}." } }
+            .also {
+                jre8DownloadProgress.value = null
+            }
     }
 }
 
@@ -148,4 +210,10 @@ data class JreEntry(
     val path: Path
 ) {
     val isUsedByGame = path.name == JreManager.gameJreFolderName
+    val version = kotlin.runCatching {
+        if (versionString.startsWith("1.")) versionString.removePrefix("1.").take(1).toInt()
+        else versionString.takeWhile { it != '.' }.toInt()
+    }
+        .onFailure { Timber.d(it) }
+        .getOrElse { 0 }
 }

@@ -1,16 +1,15 @@
 package utilities
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.withContext
 import timber.ktx.Timber
 import timber.ktx.d
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
-import kotlin.concurrent.write
 
 val IOLock = ObservableReentrantReadWriteLock()
 
@@ -104,46 +103,38 @@ class ObservableReentrantReadWriteLock() {
      *
      * @return the return value of the action.
      */
+    @OptIn(ExperimentalCoroutinesApi::class)
     inline fun <T> write(lockContext: LockContext = IOLocks.defaultLock, action: () -> T): T {
-
-        val finalLock = lockContext.locks.last()
         lockContext.locks.forEach { lock ->
-            if (lock === finalLock) {
-                val result = try {
-                    lock.write {
-                        Timber.tag(tag)
-                            .d { "Write locked from ${timber.Timber.findClassName()} on ${getCurrentThreadName()}." }
-                        flow.tryEmit(true)
-
-                        try {
-                            action()
-                        } finally {
-                            Timber.tag(tag)
-                                .d { "Write unlocked from ${timber.Timber.findClassName()} on ${getCurrentThreadName()}." }
-                            flow.tryEmit(false)
-                        }
-                    }
-                } finally {
-                    (lockContext.locks - finalLock).forEach { lockToUnlock ->
-
-                        Timber.d { "Unlocking $lockToUnlock" }
-                        val readCount = if (lockToUnlock.writeHoldCount == 0) lockToUnlock.readHoldCount else 0
-                        repeat(readCount) { lockToUnlock.readLock().lock() }
-                        lockToUnlock.writeLock().unlock()
-                    }
-                }
-                return result
-            } else {
-                Timber.d { "Locking $lock" }
-                val rl = lock.readLock()
-                val readCount = if (lock.writeHoldCount == 0) lock.readHoldCount else 0
-                repeat(readCount) { rl.unlock() }
-                lock.writeLock().lock()
-            }
+            lockLock(lock)
         }
 
-        // If no locks, run func and return result.
-        return action.invoke()
+        try {
+            flow.tryEmit(true)
+            return action()
+        } finally {
+            lockContext.locks.forEach { lockToUnlock ->
+                unlockLock(lockToUnlock)
+            }
+            flow.tryEmit(false)
+        }
+    }
+
+    fun lockLock(lock: ReentrantReadWriteLock) {
+        Timber.tag(tag)
+            .d { "Write locked from ${timber.Timber.findClassName()} on ${getCurrentThreadName()}." }
+        val rl = lock.readLock()
+        val readCount = if (lock.writeHoldCount == 0) lock.readHoldCount else 0
+        repeat(readCount) { rl.unlock() }
+        lock.writeLock().lock()
+    }
+
+    fun unlockLock(lock: ReentrantReadWriteLock) {
+        Timber.tag(tag)
+            .d { "Write unlocked from ${timber.Timber.findClassName()} on ${getCurrentThreadName()}." }
+        val readCount = if (lock.writeHoldCount == 0) lock.readHoldCount else 0
+        repeat(readCount) { lock.readLock().lock() }
+        lock.writeLock().unlock()
     }
 }
 

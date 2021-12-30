@@ -291,14 +291,13 @@ class Archives internal constructor(
         }
 
         val modFolder =
-            extractArchive(modVariant.archiveInfo.folder, destinationFolder, modVariant.generateVariantFolderName())
+            extractArchive(modVariant.archiveInfo.folder, destinationFolder.resolve(modVariant.generateVariantFolderName()))
         removedNestedFolders(modFolder)
     }
 
-    private fun extractArchive(
+    fun extractArchive(
         archiveFile: Path,
-        destinationFolder: Path,
-        defaultFolderName: String
+        destinationPath: Path
     ): Path {
         IOLock.write {
             var modFolder: Path
@@ -314,7 +313,7 @@ class Archives internal constructor(
                     modFolder =
                             // Create new parent folder with id in it, don't reuse mod folder parent because different variants will have same folder name.
 //                        if (modInfoFile.parent == null)
-                        destinationFolder.resolve(defaultFolderName)
+                        destinationPath
 //                    else {
 //                        File(destinationFolder, modInfoFile.parentFile.path)
 //                    }

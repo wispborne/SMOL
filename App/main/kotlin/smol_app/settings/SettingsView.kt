@@ -87,10 +87,11 @@ fun AppState.settingsView(
                         )
                     }
 
-                    val javasFound = remember { SnapshotStateList<JreEntry>() }
+                    val recomposer = currentRecomposeScope
+                    val jresFound = remember { SnapshotStateList<JreEntry>() }
                     LaunchedEffect(Random.nextLong()) {
-                        javasFound.clear()
-                        javasFound.addAll(
+                        jresFound.clear()
+                        jresFound.addAll(
                             SL.jreManager.findJREs()
                                 .sortedBy { it.versionString })
                     }
@@ -130,12 +131,16 @@ fun AppState.settingsView(
                         item {
                             jreSwitcher(
                                 modifier = Modifier.padding(start = 8.dp, top = 24.dp),
-                                javasFound = javasFound
+                                recomposer = recomposer,
+                                jresFound = jresFound
                             )
                         }
                         if (true){  //|| javasFound.none { it.version == 8 }) {
                             item {
-                                jre8DownloadButton(modifier = Modifier.padding(start = 8.dp, top = 24.dp))
+                                jre8DownloadButton(modifier = Modifier.padding(start = 8.dp, top = 24.dp),
+                                    jresFound = jresFound,
+                                    recomposer = recomposer
+                                )
                             }
                         }
                     }

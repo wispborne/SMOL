@@ -10,6 +10,7 @@ import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
+import io.ktor.client.features.*
 import io.ktor.client.features.logging.*
 import smol_access.business.*
 import smol_access.config.AppConfig
@@ -23,6 +24,7 @@ import smol_access.util.ManualReloadTrigger
 import utilities.Jsanity
 
 var SL = ServiceLocator()
+
 //private val basicMoshi = Moshi.Builder()
 //    .addLast(KotlinJsonAdapterFactory()).build()
 private val basicGson = GsonBuilder().create()
@@ -35,6 +37,7 @@ class ServiceLocator internal constructor(
     val httpClientBuilder: HttpClientBuilder = {
         HttpClient(CIO) {
             install(Logging)
+            install(HttpTimeout)
             this.followRedirects = true
         }
     },
@@ -51,7 +54,6 @@ class ServiceLocator internal constructor(
     ),
     internal val modInfoLoader: ModInfoLoader = ModInfoLoader(gson = jsanity),
     val gamePath: GamePath = GamePath(appConfig = appConfig),
-    val jreManager: JreManager = JreManager(gamePath = gamePath, appConfig = appConfig, httpClientBuilder = httpClientBuilder),
     val vramChecker: VramCheckerManager = VramCheckerManager(
         gamePath = gamePath,
         vramCheckerCache = VramCheckerCache(gson = jsanity)
@@ -62,6 +64,12 @@ class ServiceLocator internal constructor(
         gamePath = gamePath,
         gson = jsanity,
         modInfoLoader = modInfoLoader
+    ),
+    val jreManager: JreManager = JreManager(
+        gamePath = gamePath,
+        appConfig = appConfig,
+        httpClientBuilder = httpClientBuilder,
+        archives = archives
     ),
     internal val modLoader: ModLoader = ModLoader(
         gamePath = gamePath,
