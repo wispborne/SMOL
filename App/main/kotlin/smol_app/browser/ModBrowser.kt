@@ -125,6 +125,7 @@ fun AppState.ModBrowserView(
                         imageVector = Icons.Default.Refresh,
                         contentDescription = null,
                         modifier = Modifier
+                            .padding(end = 8.dp)
                             .width(24.dp)
                             .height(24.dp)
                             .mouseClickable {
