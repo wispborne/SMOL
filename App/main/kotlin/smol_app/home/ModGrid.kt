@@ -147,14 +147,13 @@ fun AppState.ModGridView(
                             IconButton(
                                 onClick = { showVramRefreshWarning = true },
                                 modifier = Modifier
-                                    .padding(start = 8.dp, top = 2.dp)
-                                    .size(16.dp)
+                                    .padding(start = 6.dp)
+                                    .size(20.dp)
                                     .align(Alignment.CenterVertically)
                             ) {
                                 Icon(
                                     painter = painterResource("refresh.svg"),
-                                    contentDescription = null,
-                                    modifier = Modifier
+                                    contentDescription = null
                                 )
                             }
                         }

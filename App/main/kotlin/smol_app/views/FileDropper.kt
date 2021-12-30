@@ -14,7 +14,9 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.tinylog.Logger
 import smol_access.SL
 import smol_app.composables.SmolAlertDialog
@@ -23,13 +25,16 @@ import smol_app.composables.dashedBorder
 import smol_app.themes.SmolTheme
 import smol_app.util.bytesAsShortReadableMiB
 import smol_app.util.parseHtml
+import utilities.walk
 import java.awt.dnd.DropTarget
 import java.awt.dnd.DropTargetDragEvent
 import java.awt.dnd.DropTargetDropEvent
 import java.awt.dnd.DropTargetEvent
 import java.io.File
 import java.nio.file.Path
+import kotlin.io.path.absolutePathString
 import kotlin.io.path.fileSize
+import kotlin.io.path.isRegularFile
 import kotlin.io.path.name
 
 
@@ -120,6 +125,18 @@ fun AppState.FileDropper(
                 .background(Color.Black.copy(alpha = ContentAlpha.medium))
         ) {
             val file = fileBeingHovered ?: return@Box
+            var fileSize by remember { mutableStateOf<Long?>(null) }
+
+            LaunchedEffect(file.absolutePathString()) {
+                withContext(Dispatchers.Default) {
+                    fileSize = if (file.isRegularFile()) {
+                        file.fileSize()
+                    } else {
+                        file.walk().sumOf { it.fileSize() }
+                    }
+                }
+            }
+
             Card(
                 Modifier
                     .align(Alignment.Center),
@@ -159,8 +176,13 @@ fun AppState.FileDropper(
                                 fontSize = 19.sp,
                                 modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 8.dp)
                             )
+
                             Text(
-                                text = "<code>${file.fileSize().bytesAsShortReadableMiB}</code>".parseHtml(),
+                                text = "<code>${
+                                    if (fileSize == null)
+                                        "calculating..."
+                                    else fileSize?.bytesAsShortReadableMiB
+                                }</code>".parseHtml(),
                                 fontSize = 16.sp,
                                 modifier = Modifier.align(Alignment.CenterHorizontally)
                             )

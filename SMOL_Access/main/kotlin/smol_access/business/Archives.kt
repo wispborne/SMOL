@@ -231,7 +231,7 @@ class Archives internal constructor(
                 }
             }
                 .onFailure {
-                    Timber.w(it) { "Unable to read ${inputArchiveFile.absolutePathString()}" }
+                    Timber.w(it) { "Unable to read ${inputArchiveFile.absolutePathString()}." }
                     throw it
                 }
                 .getOrElse { null }
