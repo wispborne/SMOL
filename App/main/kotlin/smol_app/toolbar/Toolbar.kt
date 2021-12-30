@@ -178,11 +178,12 @@ fun AppState.installModsButton(modifier: Modifier = Modifier) {
             },
             modifier = modifier.padding(start = 16.dp)
         ) {
-            Icon(
-                painter = painterResource("plus.svg"),
-                contentDescription = null,
-                tint = SmolTheme.dimmedIconColor()
-            )
+            Text("Install Mods")
+//            Icon(
+//                painter = painterResource("plus.svg"),
+//                contentDescription = null,
+//                tint = SmolTheme.dimmedIconColor()
+//            )
         }
     }
 }

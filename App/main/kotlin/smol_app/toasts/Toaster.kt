@@ -1,15 +1,15 @@
 package smol_app.toasts
 
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Card
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
@@ -99,7 +99,7 @@ fun toaster(
     }
 
     if (horizontalArrangement != null) {
-        LazyRow(modifier, horizontalArrangement = horizontalArrangement) {
+        LazyRow(modifier, horizontalArrangement = horizontalArrangement, verticalAlignment = Alignment.Bottom) {
             items(items.value) {
                 renderToast(it)
             }
@@ -116,19 +116,27 @@ fun toaster(
 @Composable
 private fun renderToast(toast: Toast) {
     if ((toast.timeoutMillis ?: 1) > 0) {
-        if (toast.useStandardToastFrame) {
-            Card(
-                modifier = Modifier
-                    .border(1.dp, MaterialTheme.colors.background.lighten(), shape = MaterialTheme.shapes.medium),
-                backgroundColor = MaterialTheme.colors.background,
-                elevation = 4.dp
-            ) {
-                Box(Modifier.padding(16.dp)) {
+        Row(Modifier.fillMaxHeight()) {
+            Box(Modifier.align(Alignment.Bottom)) {
+                if (toast.useStandardToastFrame) {
+                    Card(
+                        modifier = Modifier
+                            .border(
+                                1.dp,
+                                MaterialTheme.colors.background.lighten(),
+                                shape = MaterialTheme.shapes.medium
+                            ),
+                        backgroundColor = MaterialTheme.colors.background,
+                        elevation = 4.dp
+                    ) {
+                        Box(Modifier.padding(16.dp)) {
+                            toast.content()
+                        }
+                    }
+                } else {
                     toast.content()
                 }
             }
-        } else {
-            toast.content()
         }
     }
 }

@@ -21,6 +21,7 @@ import smol_app.WindowState
 import smol_app.browser.ModBrowserView
 import smol_app.home.homeView
 import smol_app.navigation.Screen
+import smol_app.settings.settingsView
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.toColors
 import smol_app.toasts.Toast
@@ -29,7 +30,6 @@ import smol_app.toasts.toastInstalledCard
 import smol_app.toasts.toaster
 import smol_app.views.FileDropper
 import smol_app.views.ProfilesView
-import smol_app.settings.settingsView
 import timber.ktx.Timber
 
 @OptIn(ExperimentalStdlibApi::class, ExperimentalDecomposeApi::class)

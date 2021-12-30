@@ -99,7 +99,7 @@ fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
                         SmolTooltipText(
                             text = "Warning: ${mod.enabledVariants.size} versions of " +
                                     "${mod.findHighestVersion!!.modInfo.name} in the mods folder." +
-                                    " Remove one."
+                                    " Remove one.",
                         )
                     }) {
                         Image(

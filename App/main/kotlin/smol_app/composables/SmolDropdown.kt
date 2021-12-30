@@ -52,7 +52,7 @@ fun SmolPopupMenu(
             IconButton(
                 onClick = { setExpanded(true) },
                 modifier = Modifier.size(16.dp)
-            ) { Icon(imageVector = Icons.Default.MoreVert, contentDescription = null) }
+            ) { Icon(painter = painterResource("icon-more-horz.svg"), contentDescription = null) }
         }
     )
 }
@@ -142,7 +142,7 @@ fun SmolDropdownWithButton(
 }
 
 @Composable
-fun SmolDropdownArrow(modifier: Modifier = Modifier, expanded: Boolean) {
+fun SmolDropdownArrow(modifier: Modifier = Modifier, expanded: Boolean, colorFilter: ColorFilter = ColorFilter.tint(SmolTheme.dimmedIconColor())) {
     val arrowAngle by animateFloatAsState(if (expanded) 180f else 0f)
     Image(
         modifier = modifier
@@ -150,7 +150,7 @@ fun SmolDropdownArrow(modifier: Modifier = Modifier, expanded: Boolean) {
             .offset(x = 4.dp)
             .rotate(arrowAngle),
         painter = painterResource("menu-down.svg"),
-        colorFilter = ColorFilter.tint(SmolTheme.dimmedIconColor()),
+        colorFilter = colorFilter,
         contentDescription = null
     )
 }

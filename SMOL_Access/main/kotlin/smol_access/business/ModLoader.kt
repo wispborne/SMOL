@@ -167,8 +167,8 @@ class ModLoader internal constructor(
                             )
                         }
                         .values
+                        .map { mod -> mod.copy(variants = mod.variants.sortedBy { it.modInfo.version }) }
                         .filter { mod -> mod.variants.any { it.exists } }
-//                        .onEach { mod -> mod.variants.forEach { it.mod = mod } }
                         .toList()
                         .onEach {
                             Timber.d { "Loaded mod: $it" }
@@ -205,7 +205,7 @@ class ModLoader internal constructor(
 
                         ModListUpdate(
                             mods = updatedList,
-                            added = updatedListVariants.filter { it.smolId !in  previousModVariants.map { it.smolId } },
+                            added = updatedListVariants.filter { it.smolId !in previousModVariants.map { it.smolId } },
                             removed = previousModVariants.filter { it.smolId !in updatedListVariants.map { it.smolId } }
                         )
                     }

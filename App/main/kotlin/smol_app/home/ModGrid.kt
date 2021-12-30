@@ -93,7 +93,7 @@ fun AppState.ModGridView(
                     SortableHeader(
                         modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
                         columnSortField = ModGridSortField.Name,
-                        sortField = activeSortField,
+                        activeSortField = activeSortField,
                         profile = profile
                     ) {
                         Text("Name", fontWeight = FontWeight.Bold)
@@ -102,7 +102,7 @@ fun AppState.ModGridView(
                     SortableHeader(
                         modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
                         columnSortField = ModGridSortField.Author,
-                        sortField = activeSortField,
+                        activeSortField = activeSortField,
                         profile = profile
                     ) {
                         Text("Author", fontWeight = FontWeight.Bold)
@@ -128,7 +128,7 @@ fun AppState.ModGridView(
                         ) {
                             SortableHeader(
                                 columnSortField = ModGridSortField.VramImpact,
-                                sortField = activeSortField,
+                                activeSortField = activeSortField,
                                 profile = profile,
                                 modifier = Modifier.align(Alignment.CenterVertically)
                             ) {
@@ -663,17 +663,18 @@ fun AppState.ModGridView(
 private fun RowScope.SortableHeader(
     modifier: Modifier = Modifier,
     columnSortField: ModGridSortField,
-    sortField: ModGridSortField?,
+    activeSortField: ModGridSortField?,
     profile: State<UserProfile>,
     content: @Composable (() -> Unit)?
 ) {
+    val isSortActive = activeSortField == columnSortField
     Row(modifier
         .mouseClickable {
             SL.userManager.updateUserProfile {
                 it.copy(
                     modGridPrefs = it.modGridPrefs.copy(
                         sortField = columnSortField.name,
-                        isSortDescending = if (sortField == columnSortField) {
+                        isSortDescending = if (isSortActive) {
                             profile.value.modGridPrefs.isSortDescending.not()
                         } else {
                             true
@@ -688,8 +689,10 @@ private fun RowScope.SortableHeader(
                 .align(Alignment.CenterVertically)
         ) {
             SmolDropdownArrow(
-                modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 8.dp, end = 12.dp),
-                expanded = sortField == columnSortField && profile.value.modGridPrefs.isSortDescending
+                modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 8.dp, end = 12.dp)
+                    .alpha(if (isSortActive) 1f else 0.25f),
+                expanded = isSortActive && profile.value.modGridPrefs.isSortDescending,
+                colorFilter = ColorFilter.tint(MaterialTheme.colors.onBackground)
             )
         }
     }

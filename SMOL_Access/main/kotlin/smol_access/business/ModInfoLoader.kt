@@ -40,7 +40,7 @@ class ModInfoLoader(
                         .forEach { file ->
                             Timber.v { "  File: ${file.name}" }
 
-                            if (modInfo == null && file.name.equals(Constants.MOD_INFO_FILE)) {
+                            if (modInfo == null && file.name.equals(Constants.MOD_INFO_FILE, ignoreCase = true)) {
                                 modInfo = deserializeModInfoFile(file.readText())
                             }
                         }
