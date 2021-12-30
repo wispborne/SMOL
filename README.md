@@ -8,12 +8,13 @@ Starsector Mod Organizer & Launcher
 * **Mod Browser** to view and install mods from the Forums without leaving SMOL.
 * **Mod Profiles** allow swapping between different groups of mods/versions easily.
   * Make a new profile for a new save, or keep a barebones profile for mod development.
+* Easily assign more (or less) **RAM** to the game.
+* **Auto-install JRE 8** for better performance and **switch JREs** with a click.
 * **VRAM impact** estimates for each mod.
 * **Version checker** support.
   * Supports Direct Download, for mods that have added it.
 * Drag'n'drop or file browser **mod installation**.
   * Detects and fixes incorrect mod folder nesting.
-* Easily assign more (or less) **RAM** to the game.
 * Warns and provides fixes for missing mod **dependencies**.
   * eg. if LazyLib is disabled, a button is shown to enable it. If it is not found, a button appears to search for it online.
 * Works alongside manual mod management; you are **not locked into using SMOL**.

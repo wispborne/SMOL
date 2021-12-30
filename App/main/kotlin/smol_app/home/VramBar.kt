@@ -45,7 +45,7 @@ fun RowScope.vramBar(mod: Mod, largestVramUsage: Long?) {
             val widthWeight =
                 (vramResult.bytesForMod.toFloat() / largestVramUsage)
                     .coerceIn(0.01f, 0.99f)
-            Row(Modifier.height(28.dp)) {
+            Row(Modifier.height(28.dp).padding(end = 16.dp)) {
                 Box(
                     Modifier
                         .background(
