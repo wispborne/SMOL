@@ -237,7 +237,7 @@ fun AppState.ProfilesView(
             BottomAppBar(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                logButtonAndErrorDisplay(showLogPanel)
+                logButtonAndErrorDisplay(showLogPanel = showLogPanel)
             }
         }
     )

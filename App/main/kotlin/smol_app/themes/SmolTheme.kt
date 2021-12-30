@@ -3,13 +3,23 @@ package smol_app.themes
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.platform.Font
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import smol_access.SL
 import smol_access.themes.Theme
 import smol_app.util.hexToColor
+import kotlin.math.roundToInt
 
 object SmolTheme {
     val orbitronSpaceFont = FontFamily(Font("Font-Orbitron/Orbitron-VariableFont_wght.ttf"))

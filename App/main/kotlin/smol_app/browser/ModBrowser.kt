@@ -256,7 +256,7 @@ fun AppState.ModBrowserView(
             BottomAppBar(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                logButtonAndErrorDisplay(showLogPanel)
+                logButtonAndErrorDisplay(showLogPanel = showLogPanel)
             }
         }
     )

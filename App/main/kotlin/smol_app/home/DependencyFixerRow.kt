@@ -1,10 +1,8 @@
 package smol_app.home
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -38,13 +36,13 @@ fun DependencyFixerRow(
         .forEach { depState ->
             Row(Modifier.padding(start = 16.dp)) {
                 Image(
-                    painter = painterResource("beacon_med.png"),
+                    painter = painterResource("icon-warning.svg"),
                     modifier = Modifier
-                        .width(38.dp)
-                        .height(28.dp)
                         .padding(end = 8.dp)
+                        .size(24.dp)
                         .align(Alignment.CenterVertically),
-                    contentDescription = null
+                    contentDescription = null,
+                    colorFilter = ColorFilter.tint(color = MaterialTheme.colors.onBackground)
                 )
                 Text(
                     modifier = Modifier.align(Alignment.CenterVertically),
@@ -76,7 +74,7 @@ fun DependencyFixerRow(
                 ) {
                     Text(
                         text = when (depState) {
-                            is Dependencies.DependencyState.Disabled -> "Enable"
+                            is Dependencies.DependencyState.Disabled -> "Enable ${depState.variant.modInfo.name}"
                             is Dependencies.DependencyState.Missing -> "Search"
                             is Dependencies.DependencyState.Enabled -> "you should never see this"
                         }

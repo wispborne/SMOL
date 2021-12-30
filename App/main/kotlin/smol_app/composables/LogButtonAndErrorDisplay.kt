@@ -21,12 +21,12 @@ import smol_app.util.smolPreview
 @Composable
 @Preview
 private fun logButtonAndErrorDisplayPreview() = smolPreview {
-    logButtonAndErrorDisplay(mutableStateOf(true))
+    logButtonAndErrorDisplay(showLogPanel = mutableStateOf(true))
 }
 
 @Composable
-fun logButtonAndErrorDisplay(showLogPanel: MutableState<Boolean>) {
-    Row {
+fun logButtonAndErrorDisplay(modifier: Modifier = Modifier, showLogPanel: MutableState<Boolean>) {
+    Row(modifier) {
         SmolTooltipArea(
             tooltip = { SmolTooltipText(text = "Show/Hide Logs") },
             delayMillis = SmolTooltipArea.delay
@@ -53,7 +53,8 @@ fun logButtonAndErrorDisplay(showLogPanel: MutableState<Boolean>) {
         }
         Text(
             text = newestLogLine,
-            modifier = Modifier.align(Alignment.CenterVertically).padding(start = 8.dp)
+            maxLines = 1,
+            modifier = Modifier.padding(start = 8.dp).align(Alignment.CenterVertically)
         )
     }
 }

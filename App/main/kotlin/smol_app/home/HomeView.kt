@@ -175,7 +175,7 @@ fun AppState.homeView(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    logButtonAndErrorDisplay(showLogPanel)
+                    logButtonAndErrorDisplay(showLogPanel =showLogPanel)
                 }
             }
         }

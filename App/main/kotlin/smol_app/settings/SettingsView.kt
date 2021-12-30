@@ -81,7 +81,14 @@ fun AppState.settingsView(
                     if (alertDialogMessage != null) {
                         SmolAlertDialog(
                             title = { Text("Error", style = SmolTheme.alertDialogTitle()) },
-                            text = { alertDialogMessage?.let { Text(alertDialogMessage!!, style = SmolTheme.alertDialogBody()) } },
+                            text = {
+                                alertDialogMessage?.let {
+                                    Text(
+                                        alertDialogMessage!!,
+                                        style = SmolTheme.alertDialogBody()
+                                    )
+                                }
+                            },
                             onDismissRequest = { alertDialogMessage = null },
                             confirmButton = { Button(onClick = { alertDialogMessage = null }) { Text("Ok") } }
                         )
@@ -135,9 +142,10 @@ fun AppState.settingsView(
                                 jresFound = jresFound
                             )
                         }
-                        if (true){  //|| javasFound.none { it.version == 8 }) {
+                        if (true) {  //|| javasFound.none { it.version == 8 }) {
                             item {
-                                jre8DownloadButton(modifier = Modifier.padding(start = 8.dp, top = 24.dp),
+                                jre8DownloadButton(
+                                    modifier = Modifier.padding(start = 8.dp, top = 24.dp),
                                     jresFound = jresFound,
                                     recomposer = recomposer
                                 )
@@ -171,7 +179,7 @@ fun AppState.settingsView(
             BottomAppBar(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                logButtonAndErrorDisplay(showLogPanel)
+                logButtonAndErrorDisplay(showLogPanel = showLogPanel)
             }
         }
     )
