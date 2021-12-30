@@ -32,9 +32,9 @@ dependencies {
     // CSV
     implementation("org.apache.commons:commons-csv:1.8")
     // API
-    api("io.ktor:ktor-client-core:1.6.4")
-    api("io.ktor:ktor-client-cio:1.6.4")
-    api("io.ktor:ktor-client-logging:1.6.4")
+    api("io.ktor:ktor-client-core:1.6.7")
+    api("io.ktor:ktor-client-cio:1.6.7")
+    api("io.ktor:ktor-client-logging:1.6.7")
 
     // Version Checker Dependencies
     implementation("de.siegmar:fastcsv:2.1.0")

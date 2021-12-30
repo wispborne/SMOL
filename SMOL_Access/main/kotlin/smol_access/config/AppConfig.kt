@@ -20,6 +20,7 @@ class AppConfig(gson: Jsanity) :
     var archivesPath: String? by pref("archivesPath", defaultValue = null)
     var stagingPath: String? by pref(prefKey = "stagingPath", defaultValue = null)
     var lastFilePickerDirectory: String? by pref(prefKey = "lastFilePickerDirectory", defaultValue = null)
+    var jre8Url: String by pref(prefKey = "jre8Url", defaultValue = "https://drive.google.com/u/0/uc?id=155Lk0ml9AUGp5NwtTZGpdu7e7Ehdyeth&export=download")
     internal var userProfile: UserProfile? by pref(prefKey = "userProfile", defaultValue = null)
 
     override fun toString(): String {

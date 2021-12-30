@@ -1,17 +1,17 @@
 package smol_app.views
 
 import AppState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.RadioButton
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.currentRecomposeScope
-import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -21,22 +21,16 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import smol_access.SL
 import smol_access.business.JreEntry
+import smol_app.composables.SmolButton
 import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
 import smol_app.util.parseHtml
 import kotlin.io.path.relativeTo
-import kotlin.random.Random
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun AppState.jreSwitcher(modifier: Modifier = Modifier) {
+fun AppState.jreSwitcher(modifier: Modifier = Modifier, javasFound: SnapshotStateList<JreEntry>) {
     val recomposer = currentRecomposeScope
-    val javasFound = mutableStateListOf<JreEntry>()
-    LaunchedEffect(Random.nextLong()) {
-        javasFound.addAll(
-            SL.jreManager.findJREs()
-                .sortedBy { it.versionString })
-    }
 
     SmolTooltipArea(
         tooltip = { SmolTooltipText("Switch between JRE versions") },
@@ -79,5 +73,35 @@ fun AppState.jreSwitcher(modifier: Modifier = Modifier) {
                 }
             }
         }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun AppState.jre8DownloadButton(modifier: Modifier = Modifier) {
+    SmolTooltipArea(
+        tooltip = { SmolTooltipText("Download JRE 8") },
+        delayMillis = SmolTooltipArea.delay
+    ) {
+        var progress_ by remember { mutableStateOf(0f) }
+        val progress by animateFloatAsState(progress_)
+
+        Row(modifier = modifier.padding(start = 16.dp)) {
+            SmolButton(
+                onClick = {
+                    GlobalScope.launch {
+                        SL.jreManager.downloadJre8 {
+                            progress_ = it
+                        }
+                    }
+                },
+                modifier = Modifier.padding(bottom = 8.dp)
+            ) {
+                Text(text = "Download JRE 8")
+            }
+        }
+        CircularProgressIndicator(
+            progress = progress
+        )
     }
 }

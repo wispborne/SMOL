@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.mouseClickable
 import androidx.compose.material.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
@@ -18,16 +19,19 @@ import androidx.compose.ui.unit.sp
 import com.arkivanov.decompose.pop
 import smol_access.Constants
 import smol_access.SL
+import smol_access.business.JreEntry
 import smol_app.composables.*
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.toColors
 import smol_app.toolbar.*
 import smol_app.util.openInDesktop
+import smol_app.views.jre8DownloadButton
 import smol_app.views.jreSwitcher
 import smol_app.views.ramButton
 import utilities.rootCause
 import java.io.File
 import javax.swing.JFileChooser
+import kotlin.random.Random
 
 @OptIn(
     ExperimentalMaterialApi::class,
@@ -83,6 +87,14 @@ fun AppState.settingsView(
                         )
                     }
 
+                    val javasFound = remember { SnapshotStateList<JreEntry>() }
+                    LaunchedEffect(Random.nextLong()) {
+                        javasFound.clear()
+                        javasFound.addAll(
+                            SL.jreManager.findJREs()
+                                .sortedBy { it.versionString })
+                    }
+
                     LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(vertical = 8.dp)) {
                         item {
                             Text(
@@ -115,7 +127,17 @@ fun AppState.settingsView(
                             )
                         }
                         item { ramButton(modifier = Modifier.padding(start = 8.dp, top = 16.dp)) }
-                        item { jreSwitcher(modifier = Modifier.padding(start = 8.dp, top = 24.dp)) }
+                        item {
+                            jreSwitcher(
+                                modifier = Modifier.padding(start = 8.dp, top = 24.dp),
+                                javasFound = javasFound
+                            )
+                        }
+                        if (true){  //|| javasFound.none { it.version == 8 }) {
+                            item {
+                                jre8DownloadButton(modifier = Modifier.padding(start = 8.dp, top = 24.dp))
+                            }
+                        }
                     }
 
                     // Confirm buttons

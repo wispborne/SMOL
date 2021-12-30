@@ -1,18 +1,26 @@
 package smol_access.business
 
+import io.ktor.client.features.*
+import io.ktor.client.request.*
 import kotlinx.coroutines.runBlocking
+import smol_access.HttpClientBuilder
+import smol_access.config.AppConfig
 import smol_access.config.GamePath
 import timber.ktx.Timber
 import utilities.IOLock
 import utilities.IOLocks
 import utilities.awaitWrite
 import utilities.moveDirectory
+import java.net.http.HttpResponse
 import java.nio.file.Path
-import java.nio.file.StandardCopyOption
 import java.util.*
 import kotlin.io.path.*
 
-class JreManager(private val gamePath: GamePath) {
+class JreManager(
+    private val gamePath: GamePath,
+    private val appConfig: AppConfig,
+    private val httpClientBuilder: HttpClientBuilder
+) {
     companion object {
         const val gameJreFolderName = "jre"
         private val versionRegex = Regex("""(\d+\.\d+\.\d+[\d_\-.+\w]*)""")
@@ -52,10 +60,10 @@ class JreManager(private val gamePath: GamePath) {
         IOLock.write(IOLocks.gameMainFolderLock) {
             runBlocking {
                 kotlin.runCatching {
-                    val gamePath = gamePath.get()!!
+                    val gamePathNN = gamePath.get()!!
                     val currentJreSource = findJREs().firstOrNull { it.isUsedByGame }
                     var currentJreDest: Path? = null
-                    val gameJrePath = kotlin.runCatching { gamePath.resolve(gameJreFolderName).awaitWrite() }
+                    val gameJrePath = kotlin.runCatching { gamePathNN.resolve(gameJreFolderName).awaitWrite() }
                         .onFailure { Timber.w(it) }
                         .getOrNull() ?: return@runBlocking
 
@@ -100,6 +108,38 @@ class JreManager(private val gamePath: GamePath) {
                 }
             }
         }
+    }
+
+    suspend fun downloadJre8(onUpdate: (percent: Float) -> Unit) {
+        kotlin.runCatching {
+            val gamePathNN = gamePath.get()!!
+            val gameJrePath = kotlin.runCatching { gamePathNN.resolve(gameJreFolderName).awaitWrite() }
+                .onFailure { Timber.w(it) }
+                .getOrNull() ?: return@runCatching
+
+            httpClientBuilder.invoke().use { client ->
+                val httpResponse: HttpResponse<ByteArray> = client.get(appConfig.jre8Url) {
+                    onDownload { bytesSentTotal, contentLength ->
+                        Timber.d { "Received $bytesSentTotal bytes from $contentLength" }
+                        onUpdate(bytesSentTotal.toFloat() / contentLength.toFloat())
+                    }
+                }
+                val responseBody: ByteArray = httpResponse.body()
+
+                IOLock.write(IOLocks.gameMainFolderLock) {
+                    var destForDownload = Path.of(gameJrePath.absolutePathString() + "-1.8.0")
+
+                    if (destForDownload.exists()) {
+                        destForDownload = Path.of(
+                            destForDownload.absolutePathString() + UUID.randomUUID().toString().take(6)
+                        )
+                    }
+                    destForDownload.writeBytes(responseBody)
+                    println("JRE 8 saved to $destForDownload")
+                }
+            }
+        }
+            .onFailure { Timber.e(it) }
     }
 }
 
