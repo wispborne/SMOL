@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.GlobalScope
@@ -100,6 +101,7 @@ fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
                             text = "Warning: ${mod.enabledVariants.size} versions of " +
                                     "${mod.findHighestVersion!!.modInfo.name} in the mods folder." +
                                     " Remove one.",
+                            fontFamily = FontFamily.Default
                         )
                     }) {
                         Image(
