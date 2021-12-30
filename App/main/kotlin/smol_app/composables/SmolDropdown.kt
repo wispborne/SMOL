@@ -43,16 +43,12 @@ fun SmolPopupMenu(
     modifier: Modifier = Modifier,
     items: List<SmolDropdownMenuItem>,
 ) {
-//    val itemsWithButton = SmolDropdownMenuItemCustom(
-//        onClick = {},
-//        customItemContent = { _, _ ->
-//        }
-//    ).asList() + items
     SmolDropdownWithButton(
-        modifier, items,
+        modifier = modifier,
+        items = items,
         shouldShowSelectedItemInMenu = false,
         canSelectItems = false,
-        customButtonContent = { _, expanded, setExpanded ->
+        customButtonContent = { _, _, setExpanded ->
             IconButton(
                 onClick = { setExpanded(true) },
                 modifier = Modifier.size(16.dp)

@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.mouseClickable
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
@@ -42,7 +41,6 @@ import kotlinx.coroutines.launch
 import smol_access.Constants
 import smol_access.SL
 import smol_access.model.Mod
-import smol_access.model.ModId
 import smol_access.model.UserProfile
 import smol_app.UI
 import smol_app.WindowState
@@ -52,7 +50,6 @@ import smol_app.themes.SmolTheme
 import smol_app.util.*
 import smol_app.views.detailsPanel
 import timber.ktx.Timber
-import utilities.parallelMap
 import java.awt.Cursor
 
 private const val modGridViewDropdownWidth = 180
@@ -71,13 +68,14 @@ fun AppState.ModGridView(
     val favoritesWidth = 40.dp
     val checkboxesWidth = 40.dp
     val selectedRow = remember { mutableStateOf<ModRow?>(null) }
-    val checkedRows = remember { mutableStateListOf<ModId>() }
-    var modInDebugDialog: Mod? by remember { mutableStateOf(null) }
+    val checkedRows = remember { mutableStateListOf<Mod>() }
+    val modInDebugDialog = remember { mutableStateOf<Mod?>(null) }
     val largestVramUsage by remember { mutableStateOf(SL.vramChecker.vramUsage.value?.values?.maxOf { it.bytesForMod }) }
     val profile = SL.userManager.activeProfile.collectAsState()
     val activeSortField = profile.value.modGridPrefs.sortField?.let {
         kotlin.runCatching { ModGridSortField.valueOf(it) }.getOrNull()
     }
+    var showVramRefreshWarning by remember { mutableStateOf(false) }
 
     Box(modifier.padding(top = contentPadding, bottom = contentPadding)) {
         Column(Modifier) {
@@ -118,23 +116,47 @@ fun AppState.ModGridView(
                         Text(text = "Version(s)", fontWeight = FontWeight.Bold)
                     }
 
-                    SmolTooltipArea(
-                        modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
-                        tooltip = {
-                            SmolTooltipText(
-                                text = "An estimate of how much VRAM the mod will use." +
-                                        "\nAll images are counted, even if not used by the game."
-                            )
-                        },
-                        delayMillis = SmolTooltipArea.delay
-                    ) {
-                        SortableHeader(
-                            modifier = Modifier.weight(1f),
-                            columnSortField = ModGridSortField.VramImpact,
-                            sortField = activeSortField,
-                            profile = profile
+                    Row(modifier = Modifier.weight(1f).align(Alignment.CenterVertically)) {
+                        SmolTooltipArea(
+                            tooltip = {
+                                SmolTooltipText(
+                                    text = "An estimate of how much VRAM the mod will use." +
+                                            "\nAll images are counted, even if not used by the game."
+                                )
+                            },
+                            delayMillis = SmolTooltipArea.delay
                         ) {
-                            Text(text = "VRAM Impact", fontWeight = FontWeight.Bold)
+                            SortableHeader(
+                                columnSortField = ModGridSortField.VramImpact,
+                                sortField = activeSortField,
+                                profile = profile,
+                                modifier = Modifier.align(Alignment.CenterVertically)
+                            ) {
+                                Text(text = "VRAM Impact", fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        SmolTooltipArea(
+                            tooltip = {
+                                SmolTooltipText(
+                                    text = "Calculate VRAM Impact for all mods."
+                                )
+                            },
+                            delayMillis = SmolTooltipArea.delay
+                        ) {
+                            IconButton(
+                                onClick = { showVramRefreshWarning = true },
+                                modifier = Modifier
+                                    .padding(start = 8.dp, top = 2.dp)
+                                    .size(16.dp)
+                                    .align(Alignment.CenterVertically)
+                            ) {
+                                Icon(
+                                    painter = painterResource("refresh.svg"),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                )
+                            }
                         }
                     }
 
@@ -151,11 +173,11 @@ fun AppState.ModGridView(
                             checkedRows = checkedRows
                         )
                         Checkbox(
-                            checked = mods.all { mod -> mod != null && mod.id in checkedRows },
+                            checked = mods.all { mod -> mod != null && mod in checkedRows },
                             onCheckedChange = { isChecked ->
                                 if (isChecked) {
                                     checkedRows.replaceAllUsingDifference(
-                                        mods.mapNotNull { it?.id },
+                                        mods.filterNotNull(),
                                         doesOrderMatter = false
                                     )
                                 } else {
@@ -258,10 +280,10 @@ fun AppState.ModGridView(
                                                     // If in "Checking rows" mode, clicking a row toggles checked.
                                                     // Otherwise, it open/closes Details panel
                                                     if (checkedRows.any()) {
-                                                        if (mod.id !in checkedRows) {
-                                                            checkedRows.add(mod.id)
+                                                        if (mod !in checkedRows) {
+                                                            checkedRows.add(mod)
                                                         } else {
-                                                            checkedRows.remove(mod.id)
+                                                            checkedRows.remove(mod)
                                                         }
                                                     } else {
                                                         selectedRow.value =
@@ -272,7 +294,7 @@ fun AppState.ModGridView(
                                                 }
                                             }
                                             .background(
-                                                color = if (isRowHighlighted || selectedRow.value?.mod?.id == mod.id)
+                                                color = if (isRowHighlighted || selectedRow.value?.mod?.id == mod.id || mod in checkedRows)
                                                     Color.Black.copy(alpha = .1f)
                                                 else Color.Transparent
                                             )
@@ -384,7 +406,7 @@ fun AppState.ModGridView(
                                                                             title = {
                                                                                 Text(
                                                                                     text = "Auto-update ${mod.findFirstEnabledOrHighestVersion?.modInfo?.name}",
-                                                                                    fontSize = 20.sp
+                                                                                    style = SmolTheme.alertDialogTitle()
                                                                                 )
                                                                             },
                                                                             text = {
@@ -538,7 +560,7 @@ fun AppState.ModGridView(
                                                 }
 
                                                 // Checkbox
-                                                val isChecked = mod.id in checkedRows
+                                                val isChecked = mod in checkedRows
 
                                                 val isCheckboxVisible =
                                                     isRowHighlighted || isChecked || checkedRows.any()
@@ -557,9 +579,9 @@ fun AppState.ModGridView(
                                                         checked = isChecked,
                                                         onCheckedChange = { checked ->
                                                             if (checked) {
-                                                                checkedRows.add(mod.id)
+                                                                checkedRows.add(mod)
                                                             } else {
-                                                                checkedRows.remove(mod.id)
+                                                                checkedRows.remove(mod)
                                                             }
                                                         }
                                                     )
@@ -571,7 +593,8 @@ fun AppState.ModGridView(
                                                     onShowContextMenuChange = { showContextMenu = it },
                                                     mod = mod,
                                                     modInDebugDialog = modInDebugDialog,
-                                                    onModInDebugDialogChanged = { modInDebugDialog = it })
+                                                    checkedMods = checkedRows
+                                                )
                                             }
 
                                             Row {
@@ -604,29 +627,36 @@ fun AppState.ModGridView(
             )
         }
 
-        if (modInDebugDialog != null) {
-            debugDialog(mod = modInDebugDialog!!, onDismiss = { modInDebugDialog = null })
+        if (modInDebugDialog.value != null) {
+            debugDialog(mod = modInDebugDialog.value!!, onDismiss = { modInDebugDialog.value = null })
+        }
+
+        if (showVramRefreshWarning) {
+            SmolAlertDialog(
+                onDismissRequest = { showVramRefreshWarning = false },
+                confirmButton = {
+                    SmolButton(onClick = {
+                        showVramRefreshWarning = false
+                        GlobalScope.launch {
+                            SL.vramChecker.refreshVramUsage(mods = mods.toList().filterNotNull())
+                        }
+                    }) { Text("Calculate") }
+                },
+                dismissButton = {
+                    SmolSecondaryButton(onClick = {
+                        showVramRefreshWarning = false
+                    }) { Text("Cancel") }
+                },
+                title = { Text(text = "Calculate VRAM Impact", style = SmolTheme.alertDialogTitle()) },
+                text = {
+                    Text(
+                        text = "Calculating VRAM may take a long time, with high CPU and disk usage causing SMOL to stutter.\n\nAre you sure you want to continue?",
+                        style = SmolTheme.alertDialogBody()
+                    )
+                }
+            )
         }
     }
-}
-
-@Composable
-private fun modGridBulkActionMenu(modifier: Modifier = Modifier, checkedRows: SnapshotStateList<ModId>) {
-    SmolPopupMenu(
-        modifier = modifier
-            .padding(end = 8.dp)
-            .alpha(if (checkedRows.any()) 1f else 0f),
-        items = listOf(SmolDropdownMenuItemTemplate(
-            text = "Disable All",
-            onClick = {
-                GlobalScope.launch(Dispatchers.IO) {
-                    checkedRows
-                        .mapNotNull { modId -> SL.access.mods.value?.mods?.firstOrNull { it.id == modId } }
-                        .parallelMap { SL.access.disableMod(it) }
-                }
-            }
-        ))
-    )
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -670,13 +700,12 @@ private fun RowScope.SortableHeader(
 @Composable
 fun AppState.refreshButton(onRefresh: () -> Unit) {
     SmolTooltipArea(
-        tooltip = { SmolTooltipText(text = "Refresh modlist & VRAM impact") },
+        tooltip = { SmolTooltipText(text = "Refresh mod list.") },
         delayMillis = SmolTooltipArea.delay
     ) {
         IconButton(
             onClick = { onRefresh.invoke() },
             modifier = Modifier.padding(start = 16.dp)
-                .background(color = Color.Black.copy(alpha = .10f), shape = CircleShape)
         ) {
             Icon(
                 painter = painterResource("refresh.svg"),
@@ -684,6 +713,16 @@ fun AppState.refreshButton(onRefresh: () -> Unit) {
             )
         }
     }
+}
+
+@Composable
+fun modGridBulkActionMenu(modifier: Modifier = Modifier, checkedRows: SnapshotStateList<Mod>) {
+    SmolPopupMenu(
+        modifier = modifier
+            .padding(end = 8.dp)
+            .alpha(if (checkedRows.any()) 1f else 0f),
+        items = modGridBulkActionMenuItems(checkedRows)
+    )
 }
 
 @Preview

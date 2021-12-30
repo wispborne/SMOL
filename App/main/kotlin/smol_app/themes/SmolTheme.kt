@@ -52,6 +52,11 @@ object SmolTheme {
     @Composable
     fun Color.highlight(): Color = if (MaterialTheme.colors.isLight) this.darken() else this.lighten()
 
+    @Composable
+    fun alertDialogTitle() = MaterialTheme.typography.h6
+    @Composable
+    fun alertDialogBody() = MaterialTheme.typography.body1
+
     fun iconHeightWidth() = ButtonDefaults.MinHeight
     fun textIconHeightWidth() = ButtonDefaults.IconSize
 

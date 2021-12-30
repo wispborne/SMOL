@@ -264,7 +264,7 @@ fun AppState.ModBrowserView(
     if (alertDialogMessage != null) {
         SmolAlertDialog(
             onDismissRequest = { alertDialogMessage = null },
-            text = { Text(text = alertDialogMessage ?: "") }
+            text = { Text(text = alertDialogMessage ?: "", style = SmolTheme.alertDialogBody()) }
         )
     }
 

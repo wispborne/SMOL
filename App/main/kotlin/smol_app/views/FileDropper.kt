@@ -18,6 +18,7 @@ import org.tinylog.Logger
 import smol_access.SL
 import smol_app.composables.SmolAlertDialog
 import smol_app.composables.SmolButton
+import smol_app.themes.SmolTheme
 import java.awt.dnd.DropTarget
 import java.awt.dnd.DropTargetDragEvent
 import java.awt.dnd.DropTargetDropEvent
@@ -130,8 +131,8 @@ fun AppState.FileDropper(
 
     if (error != null) {
         SmolAlertDialog(
-            title = { Text("Unable to install") },
-            text = { Text("${error?.message}") },
+            title = { Text("Unable to install", style = SmolTheme.alertDialogTitle()) },
+            text = { Text("${error?.message}", style = SmolTheme.alertDialogBody()) },
             confirmButton = {
                 SmolButton(onClick = { error = null }) {
                     Text("OK, sorry")

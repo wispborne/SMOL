@@ -135,7 +135,10 @@ fun AppState.jre8DownloadButton(
                 onClick = { SL.appConfig.jre8Url.openAsUriInBrowser() },
                 modifier = Modifier.padding(start = 4.dp)
             ) {
-                Icon(painter = painterResource("web.svg"), contentDescription = null)
+                Icon(
+                    painter = painterResource("web.svg"),
+                    contentDescription = null
+                )
             }
         }
 

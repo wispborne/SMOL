@@ -26,7 +26,6 @@ import smol_access.business.GameEnabledMods.Companion.ENABLED_MODS_FILENAME
 import smol_access.business.KWatchEvent
 import smol_access.business.asWatchChannel
 import smol_access.model.Mod
-import utilities.IOLock
 import smol_app.cli.SmolCLI
 import smol_app.composables.*
 import smol_app.navigation.Screen
@@ -36,6 +35,7 @@ import smol_app.util.filterModGrid
 import smol_app.util.replaceAllUsingDifference
 import smol_app.util.vmParamsManager
 import timber.ktx.Timber
+import utilities.IOLock
 import utilities.equalsAny
 import utilities.toPathOrNull
 import utilities.trace
@@ -241,11 +241,6 @@ suspend fun reloadMods() {
                     },
                     async {
                         SL.archives.refreshArchivesManifest()
-                    },
-                    async {
-                        SL.vramChecker.vramUsage.value ?: SL.vramChecker.refreshVramUsage(
-                            mods = mods
-                        )
                     }
                 ).awaitAll()
             }

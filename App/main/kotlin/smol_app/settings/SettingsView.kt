@@ -80,8 +80,8 @@ fun AppState.settingsView(
 
                     if (alertDialogMessage != null) {
                         SmolAlertDialog(
-                            title = { Text("Error") },
-                            text = { alertDialogMessage?.let { Text(alertDialogMessage!!) } },
+                            title = { Text("Error", style = SmolTheme.alertDialogTitle()) },
+                            text = { alertDialogMessage?.let { Text(alertDialogMessage!!, style = SmolTheme.alertDialogBody()) } },
                             onDismissRequest = { alertDialogMessage = null },
                             confirmButton = { Button(onClick = { alertDialogMessage = null }) { Text("Ok") } }
                         )

@@ -248,9 +248,9 @@ fun AppState.ProfilesView(
         SmolAlertDialog(
             modifier = Modifier,
             onDismissRequest = { modProfileIdShowingDeleteConfirmation.value = null },
-            title = { Text("Confirm deletion") },
+            title = { Text("Confirm deletion", style = SmolTheme.alertDialogTitle()) },
             text = {
-                Text("Are you sure you want to delete \"${profile?.name}\"?")
+                Text("Are you sure you want to delete \"${profile?.name}\"?", style = SmolTheme.alertDialogBody())
             },
             confirmButton = {
                 SmolButton(onClick = {
