@@ -365,7 +365,10 @@ private fun AppState.themeDropdown(modifier: Modifier = Modifier): String {
                 modifier = Modifier
                     .padding(start = 16.dp)
                     .align(Alignment.CenterVertically)
-                    .mouseClickable { recomposeScope.invalidate() },
+                    .mouseClickable {
+                        SL.themeManager.reloadThemes()
+                        recomposeScope.invalidate()
+                    },
                 text = "Refresh"
             )
         }

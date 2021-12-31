@@ -24,10 +24,13 @@ abstract class Config(
 
     fun clear() = prefStorage.clear()
 
+    fun reload() = prefStorage.reload()
+
     interface PrefStorage {
         fun <T> get(key: String, defaultValue: T, property: KProperty<T>): T
         fun <T> put(key: String, value: T?, property: KProperty<T>)
         fun clear()
+        fun reload()
     }
 
     class JavaRegistryPrefStorage(private val gson: Gson) : PrefStorage {
@@ -69,5 +72,6 @@ abstract class Config(
             }
 
         override fun clear() = Preferences.userRoot().clear()
+        override fun reload() = Unit
     }
 }

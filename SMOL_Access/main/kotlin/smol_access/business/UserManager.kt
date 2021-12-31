@@ -93,4 +93,9 @@ class UserManager internal constructor(
             else profile.favoriteMods.filter { it != modId })
         }
     }
+
+    fun reloadUser() {
+        appConfig.reload()
+        activeProfileInner.value = appConfig.userProfile ?: return
+    }
 }

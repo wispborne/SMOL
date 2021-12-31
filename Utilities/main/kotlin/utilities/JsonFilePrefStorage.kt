@@ -46,4 +46,5 @@ class JsonFilePrefStorage(private val gson: Jsanity, private val file: Path) : C
         }
 
     override fun clear() = Preferences.userRoot().clear()
+    override fun reload() = Unit
 }

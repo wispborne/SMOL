@@ -57,4 +57,9 @@ class ThemeManager(
                 .getOrNull()
         } ?: defaultTheme
     }
+
+    fun reloadThemes() {
+        themeConfig.reload()
+        activeThemeInner.value = getActiveTheme()
+    }
 }

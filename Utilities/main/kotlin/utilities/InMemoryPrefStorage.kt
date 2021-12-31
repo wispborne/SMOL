@@ -31,4 +31,6 @@ class InMemoryPrefStorage(private val wrapped: Config.PrefStorage) : Config.Pref
     }
 
     override fun clear() = Preferences.userRoot().clear()
+
+    override fun reload() = memory.clear()
 }
