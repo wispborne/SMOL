@@ -17,6 +17,7 @@ import smol_access.business.Dependencies
 import smol_access.model.Mod
 import smol_app.composables.SmolButton
 import smol_app.themes.SmolTheme
+import smol_app.util.createGoogleSearchFor
 import smol_app.util.getModThreadId
 import smol_app.util.openAsUriInBrowser
 import smol_app.util.openModThread
@@ -64,7 +65,7 @@ fun DependencyFixerRow(
                             is Dependencies.DependencyState.Missing -> {
                                 GlobalScope.launch {
                                     depState.outdatedModIfFound?.getModThreadId()?.openModThread()
-                                        ?: "https://google.com/search?q=starsector+${depState.dependency.name ?: depState.dependency.id}+${depState.dependency.versionString}"
+                                        ?: createGoogleSearchFor("starsector ${depState.dependency.name ?: depState.dependency.id} ${depState.dependency.versionString}")
                                             .openAsUriInBrowser()
                                 }
                             }

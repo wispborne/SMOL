@@ -188,3 +188,5 @@ fun openProgramInTerminal(command: String, workingDirectory: File?) {
             workingDirectory
         )
 }
+
+fun createGoogleSearchFor(query: String) = "https://google.com/search?q=" + query.replace(' ', '+')

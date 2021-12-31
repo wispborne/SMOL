@@ -491,24 +491,34 @@ fun AppState.ModGridView(
 
                                                         val modThreadId =
                                                             mod.findHighestVersion?.versionCheckerInfo?.modThreadId
+                                                        val hasModThread = modThreadId?.isNotBlank() == true
                                                         SmolTooltipArea(tooltip = {
                                                             SmolTooltipText(
                                                                 text = buildString {
                                                                     append("Newer version available: $onlineVersion.")
                                                                     if (ddUrl == null) append("\nThis mod does not support direct download and should be downloaded manually.")
-                                                                    append("\n\nClick to open ${modThreadId?.getModThreadUrl()}.")
+                                                                    if (hasModThread) {
+                                                                        append("\n\nClick to open ${modThreadId?.getModThreadUrl()}.")
+                                                                    } else {
+                                                                        append("\n\nNo mod thread provided. Click to search on Google.")
+                                                                    }
                                                                 }
                                                             )
                                                         }, modifier = Modifier.mouseClickable {
                                                             if (this.buttons.isPrimaryPressed) {
-                                                                if (Constants.isJCEFEnabled()) {
-                                                                    router.push(Screen.ModBrowser(modThreadId?.getModThreadUrl()))
-                                                                } else {
-                                                                    kotlin.runCatching {
-                                                                        modThreadId?.getModThreadUrl()
-                                                                            ?.openAsUriInBrowser()
+                                                                if (hasModThread) {
+                                                                    if (Constants.isJCEFEnabled()) {
+                                                                        router.push(Screen.ModBrowser(modThreadId?.getModThreadUrl()))
+                                                                    } else {
+                                                                        kotlin.runCatching {
+                                                                            modThreadId?.getModThreadUrl()
+                                                                                ?.openAsUriInBrowser()
+                                                                        }
+                                                                            .onFailure { Timber.w(it) }
                                                                     }
-                                                                        .onFailure { Timber.w(it) }
+                                                                } else {
+                                                                    createGoogleSearchFor("starsector ${mod.findHighestVersion?.modInfo?.name}")
+                                                                        .openAsUriInBrowser()
                                                                 }
                                                             }
                                                         }
