@@ -12,8 +12,8 @@ import com.arkivanov.decompose.Router
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import net.sf.sevenzipjbinding.SevenZip
+import org.cef.CefApp
 import org.tinylog.Logger
-import org.update4j.Configuration
 import smol_access.Constants
 import smol_access.SL
 import smol_app.navigation.Screen
@@ -22,6 +22,7 @@ import smol_app.util.SmolPair
 import smol_app.util.SmolWindowState
 import smol_app.util.currentPlatform
 import timber.LogLevel
+import timber.ktx.Timber
 import utilities.makeFinite
 
 
@@ -81,7 +82,7 @@ fun main() = application {
     val onKeyEventHandlers = remember { mutableListOf<(KeyEvent) -> Boolean>() }
 
     Window(
-        onCloseRequest = ::exitApplication,
+        onCloseRequest = ::onQuit,
         state = appWindowState,
         title = Constants.APP_NAME,
         icon = painterResource("kotlin-icon.svg"),
@@ -104,6 +105,16 @@ fun main() = application {
 
         smolWindowState.appView()
     }
+}
+
+private fun ApplicationScope.onQuit() {
+    kotlin.runCatching {
+        CefApp.getInstance().dispose()
+        Timber.i { "Shut down JCEF." }
+    }
+        .onFailure { Timber.d(it) }
+
+    exitApplication()
 }
 
 fun doUpdateStuff() {

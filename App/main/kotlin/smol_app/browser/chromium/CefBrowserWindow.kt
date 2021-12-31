@@ -127,16 +127,14 @@ class CefBrowserWindow//                XDataViewer.dispose(null)// calling Syst
     override val currentUrl: String?
         get() = browser.url
 
-    override fun loadUrl(url: String) {
-        browser.loadURL(url)
-    }
+    override fun loadUrl(url: String) = browser.loadURL(url)
 
-    override fun goBack() {
-        browser.goBack()
-    }
+    override fun goBack() = browser.goBack()
 
-    override fun goForward() {
-        browser.goForward()
+    override fun goForward() = browser.goForward()
+
+    override fun quit() {
+        CefApp.getInstance().dispose()
     }
 
     fun cefDownloadHandler() = object : CefDownloadHandler {

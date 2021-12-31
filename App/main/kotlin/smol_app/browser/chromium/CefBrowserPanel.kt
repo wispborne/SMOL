@@ -122,16 +122,6 @@ class CefBrowserPanel
 
     init {
         if (cefApp == null) {
-            CefApp.addAppHandler(object : CefAppHandlerAdapter(null) {
-                override fun stateHasChanged(state: CefApp.CefAppState) {
-                    // Shutdown the app if the native CEF part is terminated
-                    if (state == CefApp.CefAppState.TERMINATED) {
-                        // calling System.exit(0) appears to be causing assert errors,
-                        // as its firing before all of the CEF objects shutdown.
-                        //System.exit(0);
-                    }
-                }
-            })
             val settings = CefSettings()
             settings.windowless_rendering_enabled = useOSR
             cefApp = CefApp.getInstance(settings)
@@ -221,6 +211,11 @@ class CefBrowserPanel
 
     override fun goForward() {
         browser?.goForward()
+    }
+
+    override fun quit() {
+        CefApp.getInstance().dispose()
+        cefApp = null
     }
 
     fun cefDownloadHandler() = object : CefDownloadHandler {
