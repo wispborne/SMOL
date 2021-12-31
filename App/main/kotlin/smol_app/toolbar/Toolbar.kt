@@ -151,7 +151,7 @@ fun AppState.launchButton() {
 @Composable
 fun AppState.installModsButton(modifier: Modifier = Modifier) {
     SmolTooltipArea(
-        tooltip = { SmolTooltipText(text = "Install mod(s).") },
+        tooltip = { SmolTooltipText(text = "Select one or more mod archives or mod_info.json files.") },
         delayMillis = SmolTooltipArea.delay
     ) {
         SmolButton(
