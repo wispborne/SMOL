@@ -157,7 +157,7 @@ fun AppState.installModsButton(modifier: Modifier = Modifier) {
         SmolButton(
             onClick = {
                 with(
-                    FileDialog(this.window, "Choose a file", FileDialog.LOAD)
+                    FileDialog(this.window, "Choose an archive or mod_info.json", FileDialog.LOAD)
                         .apply {
                             this.isMultipleMode = true
                             this.directory = SL.appConfig.lastFilePickerDirectory
@@ -168,7 +168,7 @@ fun AppState.installModsButton(modifier: Modifier = Modifier) {
 
                     this.files
                         .map { it.toPath() }
-                        .onEach { Logger.debug { "Chose file: $it" } }
+                        .onEach { Logger.debug { "Chosen file: $it" } }
                         .forEach {
                             GlobalScope.launch {
                                 SL.access.installFromUnknownSource(inputFile = it, shouldCompressModFolder = true)

@@ -24,6 +24,7 @@ class ModInfoLoader(
     ): Sequence<Pair<Path, DataFiles>> =
         IOLock.read {
             folderWithMods.walk(maxDepth = 1, FileVisitOption.FOLLOW_LINKS)
+                .plus(listOf(folderWithMods))
                 .filter { it.isDirectory() }
                 .mapNotNull { modFolder ->
                     var modInfo: ModInfo? = null

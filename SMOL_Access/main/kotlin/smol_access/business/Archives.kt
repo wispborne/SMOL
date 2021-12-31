@@ -18,7 +18,6 @@ import smol_access.model.Version
 import smol_access.model.VersionCheckerInfo
 import smol_access.util.ArchiveExtractToFolderCallback
 import smol_access.util.ArchiveExtractToMemoryCallback
-import utilities.IOLock
 import timber.ktx.Timber
 import timber.ktx.d
 import utilities.*
@@ -254,7 +253,8 @@ class Archives internal constructor(
                 throw RuntimeException("folderContainingSingleMod must be a folder! It's in the name!")
 
             val modInfoFile =
-                folderContainingSingleMod.walk(maxDepth = 2).firstOrNull { it.name.equals(Constants.MOD_INFO_FILE, ignoreCase = true) }
+                folderContainingSingleMod.walk(maxDepth = 2)
+                    .firstOrNull { it.name.equals(Constants.MOD_INFO_FILE, ignoreCase = true) }
                     ?: throw RuntimeException("Expected a ${Constants.MOD_INFO_FILE} in ${folderContainingSingleMod.absolutePathString()}")
 
 //            val modInfo = modInfoLoader.readModInfoFile(modInfoFile.readText())
@@ -291,7 +291,10 @@ class Archives internal constructor(
         }
 
         val modFolder =
-            extractArchive(modVariant.archiveInfo.folder, destinationFolder.resolve(modVariant.generateVariantFolderName()))
+            extractArchive(
+                modVariant.archiveInfo.folder,
+                destinationFolder.resolve(modVariant.generateVariantFolderName())
+            )
         removedNestedFolders(modFolder)
     }
 
@@ -342,13 +345,21 @@ class Archives internal constructor(
 
                     if (!inputModFolder.exists()) throw RuntimeException("Mod folder doesn't exist:  ${inputModFolder.absolutePathString()}.")
 
-                    if (inputModFolder.isRegularFile() && !inputModFolder.name.equals(Constants.MOD_INFO_FILE, ignoreCase = true)) throw RuntimeException(
+                    if (inputModFolder.isRegularFile() && !inputModFolder.name.equals(
+                            Constants.MOD_INFO_FILE,
+                            ignoreCase = true
+                        )
+                    ) throw RuntimeException(
                         "Not a mod folder: ${inputModFolder.absolutePathString()}."
                     )
 
                     // If they dropped mod_info.json, use the parent folder
                     val modFolder =
-                        if (inputModFolder.isRegularFile() && inputModFolder.name.equals(Constants.MOD_INFO_FILE, ignoreCase = true)) inputModFolder.parent
+                        if (inputModFolder.isRegularFile() && inputModFolder.name.equals(
+                                Constants.MOD_INFO_FILE,
+                                ignoreCase = true
+                            )
+                        ) inputModFolder.parent
                             ?: inputModFolder
                         else inputModFolder
 
@@ -358,6 +369,7 @@ class Archives internal constructor(
                         folderWithMods = modFolder,
                         desiredFiles = emptyList()
                     )
+                        .toList()
 
                     if (mods.none()) {
                         val runtimeException = RuntimeException("No mods found in ${modFolder.absolutePathString()}.")

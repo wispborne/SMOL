@@ -71,7 +71,10 @@ class ObservableReentrantReadWriteLock() {
                 } finally {
                     lockContext.locks.dropLast(1).forEach {
                         Timber.v { "Unlocking $it" }
-                        it.readLock().unlock()
+                        runCatching {
+                            it.readLock().unlock()
+                        }
+                            .onFailure { Timber.e(it) }
                     }
                 }
                 return result
