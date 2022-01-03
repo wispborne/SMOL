@@ -11,6 +11,7 @@ import appView
 import com.arkivanov.decompose.Router
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import net.sf.sevenzipjbinding.SevenZip
 import org.cef.CefApp
 import org.tinylog.Logger
@@ -74,8 +75,10 @@ fun main() = application {
                 )
             }
 
-
-        SL.modRepo.refreshFromInternet()
+        rememberCoroutineScope().launch {
+            kotlin.runCatching { SL.modRepo.refreshFromInternet() }
+                .onFailure { Timber.w(it) }
+        }
     }
 
 

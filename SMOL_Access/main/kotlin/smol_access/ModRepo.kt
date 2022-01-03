@@ -6,7 +6,7 @@ import io.ktor.client.statement.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import mod_repo.ModIndexCache
 import mod_repo.ModdingSubforumCache
 import mod_repo.ScrapedMod
@@ -21,9 +21,8 @@ class ModRepo internal constructor(private val jsanity: Jsanity, private val htt
     fun getModIndexItems(): List<ScrapedMod> = modIndexCache.items
     fun getModdingSubforumItems(): List<ScrapedMod> = moddingSubforumCache.items
 
-    fun refreshFromInternet() {
-
-        scope.launch(Dispatchers.IO) {
+    suspend fun refreshFromInternet() {
+        withContext(Dispatchers.IO) {
             httpClientBuilder.invoke().use { client ->
                 val freshIndexMods = kotlin.runCatching {
                     client.get<HttpResponse>(Constants.indexUrl)
@@ -42,7 +41,7 @@ class ModRepo internal constructor(private val jsanity: Jsanity, private val htt
             }
         }
 
-        scope.launch(Dispatchers.IO) {
+        withContext(Dispatchers.IO) {
             httpClientBuilder.invoke().use { client ->
                 val freshModdingMods = kotlin.runCatching {
                     client.get<HttpResponse>(Constants.moddingForumUrl)

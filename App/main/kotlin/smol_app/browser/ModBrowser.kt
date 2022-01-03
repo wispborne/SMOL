@@ -83,6 +83,7 @@ fun AppState.ModBrowserView(
     val linkLoader = remember { mutableStateOf<((String) -> Unit)?>(null) }
     var alertDialogMessage: String? by remember { mutableStateOf(null) }
     val showLogPanel = remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
         modifier = modifier,
@@ -121,41 +122,44 @@ fun AppState.ModBrowserView(
                     modifier = Modifier
                         .padding(end = 16.dp),
                     tooltip = { SmolTooltipText(text = "Fetch latest mod cache.") }) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .padding(end = 8.dp)
-                            .width(24.dp)
-                            .height(24.dp)
-                            .mouseClickable {
-                                if (this.buttons.isPrimaryPressed) {
-                                    SL.modRepo.refreshFromInternet()
-                                }
-                            },
-                        tint = SmolTheme.dimmedIconColor()
-                    )
+                    IconButton(
+                        modifier = Modifier.padding(end = 8.dp),
+                        onClick = {
+                            coroutineScope.launch {
+                                kotlin.runCatching { SL.modRepo.refreshFromInternet() }
+                                    .onFailure { Timber.w(it) }
+                            } }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .width(24.dp)
+                                .height(24.dp),
+                            tint = SmolTheme.dimmedIconColor()
+                        )
+                    }
                 }
                 SmolTooltipArea(
                     modifier = Modifier,
                     tooltip = { SmolTooltipText(text = "Open in a browser") }) {
-                    Icon(
-                        painter = painterResource("web.svg"),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .width(24.dp)
-                            .height(24.dp)
-                            .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)))
-                            .mouseClickable {
-                                if (this.buttons.isPrimaryPressed) {
-                                    runCatching {
-                                        browser.value?.currentUrl?.openAsUriInBrowser()
-                                    }
-                                        .onFailure { Logger.warn(it) }
-                                }
-                            },
-                        tint = SmolTheme.dimmedIconColor()
-                    )
+                    IconButton(
+                        onClick = {
+                            runCatching {
+                                browser.value?.currentUrl?.openAsUriInBrowser()
+                            }
+                                .onFailure { Logger.warn(it) }
+                        }
+                    ) {
+                        Icon(
+                            painter = painterResource("web.svg"),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .width(24.dp)
+                                .height(24.dp)
+                                .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)))
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.width(16.dp))
             }
