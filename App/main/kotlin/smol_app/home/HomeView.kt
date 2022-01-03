@@ -20,9 +20,9 @@ import com.arkivanov.decompose.push
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import org.tinylog.Logger
+import smol_access.Constants
 import smol_access.SL
 import smol_access.business.Archives
-import smol_access.business.GameEnabledMods.Companion.ENABLED_MODS_FILENAME
 import smol_access.business.KWatchEvent
 import smol_access.business.asWatchChannel
 import smol_access.model.Mod
@@ -190,7 +190,7 @@ private suspend fun watchDirsAndReloadOnChange(scope: CoroutineScope) {
             ?.resolve(Archives.ARCHIVE_MANIFEST_FILENAME) // Watch manifest.json
             ?.run { if (this.exists()) this.asWatchChannel(scope = scope) else emptyFlow() } ?: emptyFlow(),
         SL.gamePath.getModsPath().asWatchChannel(scope = scope),
-        SL.gamePath.getModsPath().resolve(ENABLED_MODS_FILENAME) // Watch enabled_mods.json
+        SL.gamePath.getModsPath().resolve(Constants.ENABLED_MODS_FILENAME) // Watch enabled_mods.json
             .run { if (this.exists()) this.asWatchChannel(scope = scope) else emptyFlow() },
         SL.archives.getArchivesPath()?.toPathOrNull()?.asWatchChannel(scope = scope) ?: emptyFlow(),
     )

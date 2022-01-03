@@ -26,7 +26,7 @@ import timber.LogLevel
 
 @Composable
 fun AppState.logPanel(
-    modifier: Modifier = androidx.compose.ui.Modifier,
+    modifier: Modifier = Modifier,
     onHideModPanel: () -> Unit
 ) {
     val horzScrollState = rememberScrollState()
@@ -34,53 +34,53 @@ fun AppState.logPanel(
         modifier = modifier
             .width((window.width / 2).dp)
             .fillMaxHeight()
-            .padding(bottom = smol_app.themes.SmolTheme.bottomBarHeight, top = 8.dp, start = 8.dp, end = 8.dp),
-        shape = androidx.compose.ui.graphics.RectangleShape
+            .padding(bottom = SmolTheme.bottomBarHeight, top = 8.dp, start = 8.dp, end = 8.dp),
+        shape = RectangleShape
     ) {
         val linesToShow = 200
         val log = remember { mutableStateListOf<String>() }
 
         LaunchedEffect(Unit) {
-            smol_app.Logging.logFlow.collect {
+            Logging.logFlow.collect {
                 if (log.size >= linesToShow) log.removeFirstOrNull()
                 log.add(it)
             }
         }
 
-        Box(modifier = androidx.compose.ui.Modifier.padding(8.dp)) {
+        Box(modifier = Modifier.padding(8.dp)) {
             val lazyListState = rememberLazyListState()
             Column {
                 Row {
-                    val selectedLogLevel = remember { smol_app.Logging.logLevel }
+                    val selectedLogLevel = remember { Logging.logLevel }
                     SmolDropdownWithButton(
-                        modifier = androidx.compose.ui.Modifier.padding(bottom = 4.dp),
-                        items = timber.LogLevel.values().map {
+                        modifier = Modifier.padding(bottom = 4.dp),
+                        items = LogLevel.values().map {
                             SmolDropdownMenuItemTemplate(
                                 text = it.name.lowercase().replaceFirstChar { it.uppercaseChar() },
                                 onClick = {
-                                    smol_app.Logging.logLevel = it
+                                    Logging.logLevel = it
                                 })
                         },
                         initiallySelectedIndex = selectedLogLevel.ordinal
                     )
-                    Spacer(androidx.compose.ui.Modifier.weight(1f))
+                    Spacer(Modifier.weight(1f))
                     IconButton(
                         onClick = { onHideModPanel() }) {
                         Icon(
-                            imageVector = androidx.compose.material.icons.Icons.Default.Close,
+                            imageVector = Icons.Default.Close,
                             contentDescription = null
                         )
                     }
                 }
                 Box(
-                    modifier = androidx.compose.ui.Modifier
+                    modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
                         .horizontalScroll(horzScrollState)
                 ) {
                     SelectionContainer {
                         LazyColumn(
-                            modifier = androidx.compose.ui.Modifier
+                            modifier = Modifier
                                 .fillMaxWidth(),
                             state = lazyListState
                         ) {
@@ -88,15 +88,15 @@ fun AppState.logPanel(
                                 Text(
                                     text = it,
                                     softWrap = false,
-                                    fontFamily = smol_app.themes.SmolTheme.fireCodeFont,
+                                    fontFamily = SmolTheme.fireCodeFont,
                                     fontSize = 14.sp,
                                     color = when (it.trim().firstOrNull()?.lowercase()) {
-                                        "v" -> androidx.compose.material.MaterialTheme.colors.onSurface.copy(alpha = androidx.compose.material.ContentAlpha.disabled)
-                                        "d" -> androidx.compose.material.MaterialTheme.colors.onSurface.copy(alpha = androidx.compose.material.ContentAlpha.medium)
-                                        "i" -> androidx.compose.material.MaterialTheme.colors.onSurface
-                                        "w" -> androidx.compose.material.MaterialTheme.colors.error.copy(alpha = androidx.compose.material.ContentAlpha.high)
-                                        "e" -> androidx.compose.material.MaterialTheme.colors.error
-                                        else -> androidx.compose.material.MaterialTheme.colors.onSurface
+                                        "v" -> MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.disabled)
+                                        "d" -> MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium)
+                                        "i" -> MaterialTheme.colors.onSurface
+                                        "w" -> MaterialTheme.colors.error.copy(alpha = ContentAlpha.high)
+                                        "e" -> MaterialTheme.colors.error
+                                        else -> MaterialTheme.colors.onSurface
                                     }
                                 )
                             }
@@ -104,15 +104,15 @@ fun AppState.logPanel(
                     }
                 }
                 HorizontalScrollbar(
-                    modifier = androidx.compose.ui.Modifier.align(androidx.compose.ui.Alignment.CenterHorizontally)
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
                         .height(8.dp).fillMaxWidth(),
                     adapter = ScrollbarAdapter(horzScrollState)
                 )
             }
             VerticalScrollbar(
-                modifier = androidx.compose.ui.Modifier.width(8.dp).align(androidx.compose.ui.Alignment.CenterEnd)
+                modifier = Modifier.width(8.dp).align(Alignment.CenterEnd)
                     .fillMaxHeight(),
-                adapter = ScrollbarAdapter(lazyListState)
+                adapter = rememberScrollbarAdapter(lazyListState)
             )
         }
     }

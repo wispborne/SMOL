@@ -2,6 +2,7 @@ package smol_access.business
 
 import com.google.gson.annotations.SerializedName
 import org.hjson.JsonObject
+import smol_access.Constants.ENABLED_MODS_FILENAME
 import smol_access.config.GamePath
 import smol_access.model.ModInfo
 import utilities.IOLock
@@ -17,10 +18,6 @@ class GameEnabledMods(
     private val gson: Jsanity,
     private val gamePath: GamePath
 ) {
-    companion object {
-        const val ENABLED_MODS_FILENAME = "enabled_mods.json"
-    }
-
     fun getEnabledMods(): EnabledMods =
         kotlin.runCatching {
             IOLock.write {

@@ -19,15 +19,6 @@ sealed class ModInfo(
     abstract val dependencies: List<Dependency>
     val isUtilityMod = utilityString.toBooleanStrictOrNull() ?: false
 
-    @Deprecated("Cool idea but doesn't work well, everybody formats things differently.")
-    val authorsSplit: List<String> =
-        kotlin.runCatching {
-            author
-                .split(',')
-                .map { it.trim() }
-        }
-            .getOrElse { emptyList() }
-
     data class v091(
         private val _id: String = "",
         private val _name: String = "",
@@ -92,8 +83,21 @@ sealed class ModInfo(
     }
 
     override fun toString(): String {
-        return "ModInfo(id='$id', name='$name', author='$author', utilityString='$utilityString', description='$description', gameVersion='$gameVersion', jars=$jars, modPlugin='$modPlugin', version=$version, dependencies=$dependencies, isUtilityMod=$isUtilityMod)"
+        return "ModInfo(" +
+                "id='$id', " +
+                "name='$name', " +
+                "version=$version, " +
+                "author='$author', " +
+                "utilityString='$utilityString', " +
+                "requiredMemoryMB=$requiredMemoryMB, " +
+                "gameVersion='$gameVersion', " +
+                "jars=$jars, " +
+                "modPlugin='$modPlugin', " +
+                "dependencies=$dependencies, " +
+                "description='$description', " +
+                ")"
     }
+
 }
 
 data class Version(

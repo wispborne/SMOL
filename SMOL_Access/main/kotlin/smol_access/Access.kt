@@ -2,7 +2,6 @@ package smol_access
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.update
 import smol_access.business.Archives
 import smol_access.business.ModListUpdate
@@ -13,8 +12,8 @@ import smol_access.config.Platform
 import smol_access.model.Mod
 import smol_access.model.ModId
 import smol_access.model.ModVariant
-import utilities.IOLock
 import timber.ktx.Timber
+import utilities.IOLock
 import utilities.mkdirsIfNotExist
 import utilities.toFileOrNull
 import utilities.toPathOrNull
@@ -89,7 +88,7 @@ class Access internal constructor(
     val modModificationState = MutableStateFlow<Map<ModId, ModModificationState>>(emptyMap())
 
     sealed class ModModificationState {
-        object Ready: ModModificationState()
+        object Ready : ModModificationState()
         object DisablingVariants : ModModificationState()
         object EnablingVariant : ModModificationState()
     }
@@ -119,7 +118,7 @@ class Access internal constructor(
         try {
             val modVariantParent = modVariant?.mod(modLoader)
             if (modVariantParent != null && mod != modVariantParent) {
-                val err = "Variant and mod were different! ${mod.id}, ${modVariant!!.smolId}"
+                val err = "Variant and mod were different! ${mod.id}, ${modVariant.smolId}"
                 Timber.i { err }
                 return Result.failure(RuntimeException(err))
             }
@@ -146,22 +145,29 @@ class Access internal constructor(
 
             mod.variants
                 .filter { mod.isEnabled(it) || it.modsFolderInfo != null }
-                .also { modModificationState.update { it.toMutableMap().apply { this[mod.id] = ModModificationState.DisablingVariants } } }
+                .also {
+                    modModificationState.update {
+                        it.toMutableMap().apply { this[mod.id] = ModModificationState.DisablingVariants }
+                    }
+                }
                 .forEach { staging.disableModVariant(it) }
 
             return if (modVariant != null) {
                 // Enable the one we want.
                 // Slower: Reload, since we just disabled it
 //                val freshModVariant =
-//                    modLoader.reload(listOf(mod.id))?.mods?.flatMap { it.variants }?.first { it.smolId == modVariant.smolId }
-//                        ?: kotlin.run {
-//                            val error = "After disabling, couldn't find mod variant ${modVariant.smolId}."
-//                            Timber.w { error }
-//                            return Result.failure(RuntimeException(error))
-//                        }
+                modLoader.reload(listOf(mod.id))?.mods?.flatMap { it.variants }
+                    ?.first { it.smolId == modVariant.smolId }
+                    ?: kotlin.run {
+                        val error = "After disabling, couldn't find mod variant ${modVariant.smolId}."
+                        Timber.w { error }
+                        return Result.failure(RuntimeException(error))
+                    }
                 // Faster: Assume we disabled it and change the mod to be disabled.
 //                modVariant.mod = modVariant.mod.copy(isEnabledInGame = false)
-                modModificationState.update { it.toMutableMap().apply { this[mod.id] = ModModificationState.EnablingVariant } }
+                modModificationState.update {
+                    it.toMutableMap().apply { this[mod.id] = ModModificationState.EnablingVariant }
+                }
                 staging.enableModVariant(modVariant)
             } else {
                 Result.success(Unit)
@@ -182,17 +188,23 @@ class Access internal constructor(
 
     suspend fun enableModVariant(modToEnable: ModVariant): Result<Unit> {
         try {
-            modModificationState.update { it.toMutableMap().apply { this[modToEnable.mod(this@Access).id] = ModModificationState.EnablingVariant } }
+            modModificationState.update {
+                it.toMutableMap().apply { this[modToEnable.mod(this@Access).id] = ModModificationState.EnablingVariant }
+            }
             return staging.enableModVariant(modToEnable)
         } finally {
             staging.manualReloadTrigger.trigger.emit("Enabled mod: $modToEnable")
-            modModificationState.update { it.toMutableMap().apply { this[modToEnable.mod(this@Access).id] = ModModificationState.Ready } }
+            modModificationState.update {
+                it.toMutableMap().apply { this[modToEnable.mod(this@Access).id] = ModModificationState.Ready }
+            }
         }
     }
 
     suspend fun disableMod(mod: Mod): Result<Unit> {
         try {
-            modModificationState.update { it.toMutableMap().apply { this[mod.id] = ModModificationState.DisablingVariants } }
+            modModificationState.update {
+                it.toMutableMap().apply { this[mod.id] = ModModificationState.DisablingVariants }
+            }
             return staging.disableMod(mod)
         } finally {
             staging.manualReloadTrigger.trigger.emit("Mod unstaged: $mod")
@@ -203,7 +215,9 @@ class Access internal constructor(
     suspend fun disableModVariant(modVariant: ModVariant): Result<Unit> {
         val mod = modVariant.mod(this@Access)
         try {
-            modModificationState.update { it.toMutableMap().apply { this[mod.id] = ModModificationState.DisablingVariants } }
+            modModificationState.update {
+                it.toMutableMap().apply { this[mod.id] = ModModificationState.DisablingVariants }
+            }
             return staging.disableModVariant(modVariant)
         } finally {
             staging.manualReloadTrigger.trigger.emit("Disabled mod: $modVariant")

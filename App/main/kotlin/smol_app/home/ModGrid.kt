@@ -27,14 +27,13 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.arkivanov.decompose.push
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -42,8 +41,6 @@ import kotlinx.coroutines.launch
 import smol_access.Constants
 import smol_access.SL
 import smol_access.model.Mod
-import smol_access.model.UserProfile
-import smol_app.UI
 import smol_app.WindowState
 import smol_app.composables.*
 import smol_app.navigation.Screen
@@ -388,85 +385,10 @@ fun AppState.ModGridView(
                                                             }, modifier = Modifier.mouseClickable {
                                                                 if (this.buttons.isPrimaryPressed) {
                                                                     alertDialogSetter {
-                                                                        SmolAlertDialog(
-                                                                            onDismissRequest = { alertDialogSetter(null) },
-                                                                            confirmButton = {
-                                                                                SmolButton(onClick = {
-                                                                                    SL.UI.downloadManager.downloadFromUrl(
-                                                                                        url = ddUrl,
-                                                                                        shouldInstallAfter = true
-                                                                                    )
-                                                                                }) { Text("Take the risk") }
-                                                                            },
-                                                                            dismissButton = {
-                                                                                SmolSecondaryButton(onClick = {
-                                                                                    alertDialogSetter(null)
-                                                                                }) { Text("Cancel") }
-                                                                            },
-                                                                            title = {
-                                                                                Text(
-                                                                                    text = "Auto-update ${mod.findFirstEnabledOrHighestVersion?.modInfo?.name}",
-                                                                                    style = SmolTheme.alertDialogTitle()
-                                                                                )
-                                                                            },
-                                                                            text = {
-                                                                                Column {
-                                                                                    Text(
-                                                                                        text = ("Do you want to automatically download and update <b>${mod.findFirstEnabledOrHighestVersion?.modInfo?.name}</b> " +
-                                                                                                "from version <b>${mod.findFirstEnabledOrHighestVersion?.modInfo?.version}</b> " +
-                                                                                                "to version <b>$onlineVersion</b>?")
-                                                                                            .parseHtml(),
-                                                                                        fontSize = 16.sp
-                                                                                    )
-                                                                                    Text(
-                                                                                        text = "WARNING",
-                                                                                        color = SmolTheme.warningOrange,
-                                                                                        modifier = Modifier.padding(top = 16.dp)
-                                                                                            .align(Alignment.CenterHorizontally),
-                                                                                        fontWeight = FontWeight.SemiBold,
-                                                                                        fontSize = 18.sp
-                                                                                    )
-                                                                                    Text(
-                                                                                        text = "This may break your save",
-                                                                                        modifier = Modifier.align(
-                                                                                            Alignment.CenterHorizontally
-                                                                                        ),
-                                                                                        fontWeight = FontWeight.SemiBold,
-                                                                                        fontSize = 18.sp
-                                                                                    )
-                                                                                    Text(
-                                                                                        text = "Save compatibility is not guaranteed when updating a mod. " +
-                                                                                                "Check the mod's patch notes to see if save compatibility is mentioned.",
-                                                                                        modifier = Modifier.padding(top = 16.dp),
-                                                                                        fontSize = 16.sp
-                                                                                    )
-                                                                                    Text(
-                                                                                        text = "Bug reports about saves broken by using this feature will be ignored.",
-                                                                                        modifier = Modifier.padding(top = 8.dp),
-                                                                                        fontSize = 16.sp
-                                                                                    )
-                                                                                    val modThreadId =
-                                                                                        mod.findHighestVersion?.versionCheckerInfo?.modThreadId
-                                                                                    if (modThreadId != null) {
-                                                                                        SmolButton(
-                                                                                            modifier = Modifier.padding(
-                                                                                                top = 16.dp
-                                                                                            ),
-                                                                                            onClick = { modThreadId.openModThread() }) {
-                                                                                            Icon(
-                                                                                                modifier = Modifier.padding(
-                                                                                                    end = 8.dp
-                                                                                                ),
-                                                                                                painter = painterResource(
-                                                                                                    "open-in-new.svg"
-                                                                                                ),
-                                                                                                contentDescription = null
-                                                                                            )
-                                                                                            Text("Mod Page")
-                                                                                        }
-                                                                                    }
-                                                                                }
-                                                                            }
+                                                                        DirectDownloadAlertDialog(
+                                                                            ddUrl = ddUrl,
+                                                                            mod = mod,
+                                                                            onlineVersion = onlineVersion
                                                                         )
                                                                     }
                                                                 }
@@ -495,11 +417,12 @@ fun AppState.ModGridView(
                                                         val hasModThread = modThreadId?.isNotBlank() == true
                                                         SmolTooltipArea(tooltip = {
                                                             SmolTooltipText(
-                                                                text = buildString {
+                                                                text = buildAnnotatedString {
                                                                     append("Newer version available: $onlineVersion.")
-                                                                    if (ddUrl == null) append("\nThis mod does not support direct download and should be downloaded manually.")
+                                                                    append("\n\n<i>Update information is provided by the mod author, not SMOL, and cannot be guaranteed.</i>".parseHtml())
+                                                                    if (ddUrl == null) append("\n<i>This mod does not support direct download and should be downloaded manually.</i>".parseHtml())
                                                                     if (hasModThread) {
-                                                                        append("\n\nClick to open ${modThreadId?.getModThreadUrl()}.")
+                                                                        append("\n\nClick to open <code>${modThreadId?.getModThreadUrl()}</code>.".parseHtml())
                                                                     } else {
                                                                         append("\n\nNo mod thread provided. Click to search on Google.")
                                                                     }
@@ -664,81 +587,6 @@ fun AppState.ModGridView(
                         style = SmolTheme.alertDialogBody()
                     )
                 }
-            )
-        }
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun RowScope.SortableHeader(
-    modifier: Modifier = Modifier,
-    columnSortField: ModGridSortField,
-    activeSortField: ModGridSortField?,
-    profile: State<UserProfile>,
-    content: @Composable (() -> Unit)?
-) {
-    val isSortActive = activeSortField == columnSortField
-    Row(modifier
-        .mouseClickable {
-            SL.userManager.updateUserProfile {
-                it.copy(
-                    modGridPrefs = it.modGridPrefs.copy(
-                        sortField = columnSortField.name,
-                        isSortDescending = if (isSortActive) {
-                            profile.value.modGridPrefs.isSortDescending.not()
-                        } else {
-                            true
-                        }
-                    )
-                )
-            }
-        }) {
-        content?.invoke()
-        Box(
-            modifier = Modifier
-                .align(Alignment.CenterVertically)
-        ) {
-            SmolDropdownArrow(
-                modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 8.dp, end = 12.dp)
-                    .alpha(if (isSortActive) 1f else 0.25f),
-                expanded = isSortActive && profile.value.modGridPrefs.isSortDescending,
-                colorFilter = ColorFilter.tint(MaterialTheme.colors.onBackground)
-            )
-        }
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun AppState.refreshButton(onRefresh: () -> Unit) {
-    SmolTooltipArea(
-        tooltip = { SmolTooltipText(text = "Refresh mod list.") },
-        delayMillis = SmolTooltipArea.delay
-    ) {
-        val areModsLoading = SL.access.areModsLoading.collectAsState().value
-        IconButton(
-            onClick = { if (!areModsLoading) onRefresh.invoke() },
-            modifier = Modifier.padding(start = 16.dp)
-        ) {
-            val infiniteTransition = rememberInfiniteTransition()
-            val angle by infiniteTransition.animateFloat(
-                initialValue = 0F,
-                targetValue = 360F,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(1000, easing = FastOutLinearInEasing)
-                )
-            )
-
-            Icon(
-                painter = painterResource("refresh.svg"),
-                modifier = Modifier
-                    .graphicsLayer {
-                        if (areModsLoading) {
-                            rotationZ = angle
-                        }
-                    },
-                contentDescription = "Refresh"
             )
         }
     }

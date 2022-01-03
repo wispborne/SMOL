@@ -1,8 +1,9 @@
 package smol_app.home
 
-import androidx.compose.foundation.*
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.*
@@ -27,7 +28,6 @@ import smol_app.composables.SmolDropdownArrow
 import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
 import smol_app.themes.SmolTheme
-import smol_app.themes.SmolTheme.lighten
 import smol_app.util.ModState
 import smol_app.util.state
 
@@ -140,15 +140,11 @@ fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
                         .border(1.dp, MaterialTheme.colors.primary, shape = SmolTheme.smolFullyClippedButtonShape()),
                     onDismissRequest = { expanded = false }
                 ) {
-                    val interactionSource = remember { MutableInteractionSource() }
-                    val isHovered by interactionSource.collectIsHoveredAsState()
                     dropdownMenuItems.forEachIndexed { index, action ->
                         Box {
-                            val highlightColor = MaterialTheme.colors.surface
                             DropdownMenuItem(
                                 modifier = Modifier.sizeIn(maxWidth = 400.dp)
-                                    .background(if (isHovered) background.lighten() else background)
-                                    .hoverable(interactionSource = interactionSource, enabled = true),
+                                    .background(background),
                                 onClick = {
                                     expanded = false
                                     Logger.debug { "Selected $action." }

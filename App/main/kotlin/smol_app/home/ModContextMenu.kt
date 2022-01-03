@@ -2,8 +2,7 @@ package smol_app.home
 
 import AppState
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -86,7 +85,7 @@ private fun AppState.modGridSingleModMenu(
             Image(
                 painter = painterResource("icon-folder.svg"),
                 colorFilter = ColorFilter.tint(MaterialTheme.colors.onSurface),
-                modifier = Modifier.padding(end = 12.dp),
+                modifier = Modifier.padding(end = 12.dp).size(24.dp),
                 contentDescription = null
             )
             Text("Open Folder")
@@ -108,7 +107,7 @@ private fun AppState.modGridSingleModMenu(
             Image(
                 painter = painterResource("icon-archive.svg"),
                 colorFilter = ColorFilter.tint(MaterialTheme.colors.onSurface),
-                modifier = Modifier.padding(end = 12.dp),
+                modifier = Modifier.padding(end = 12.dp).size(24.dp),
                 contentDescription = null
             )
             Text("Open Archive")
@@ -122,18 +121,16 @@ private fun AppState.modGridSingleModMenu(
                 router.push(Screen.ModBrowser(modThreadId.getModThreadUrl()))
                 onShowContextMenuChange(false)
             },
-            modifier = Modifier.width(200.dp)
         ) {
             Image(
-                painter = painterResource("web.svg"),
+                painter = painterResource("icon-open-in-app.svg"),
                 colorFilter = ColorFilter.tint(MaterialTheme.colors.onSurface),
-                modifier = Modifier.padding(end = 12.dp),
+                modifier = Modifier.padding(end = 12.dp).size(24.dp),
                 contentDescription = null
             )
             Text(
-                text = "Forum Page (SMOL)",
+                text = "View website in SMOL",
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.align(Alignment.CenterVertically)
             )
         }
@@ -143,18 +140,16 @@ private fun AppState.modGridSingleModMenu(
                 modThreadId.openModThread()
                 onShowContextMenuChange(false)
             },
-            modifier = Modifier.width(200.dp)
         ) {
             Image(
                 painter = painterResource("web.svg"),
                 colorFilter = ColorFilter.tint(MaterialTheme.colors.onSurface),
-                modifier = Modifier.padding(end = 12.dp),
+                modifier = Modifier.padding(end = 12.dp).size(24.dp),
                 contentDescription = null
             )
             Text(
-                text = "Forum Page (Browser)",
+                text = "View website in browser",
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.align(Alignment.CenterVertically)
             )
         }
@@ -171,7 +166,7 @@ private fun AppState.modGridSingleModMenu(
         Image(
             painter = painterResource("icon-vram-impact.svg"),
             colorFilter = ColorFilter.tint(MaterialTheme.colors.onSurface),
-            modifier = Modifier.padding(end = 12.dp),
+            modifier = Modifier.padding(end = 12.dp).size(24.dp),
             contentDescription = null
         )
         Text("Check VRAM Impact")
@@ -184,7 +179,7 @@ private fun AppState.modGridSingleModMenu(
         Image(
             painter = painterResource("icon-bug.svg"),
             colorFilter = ColorFilter.tint(MaterialTheme.colors.onSurface),
-            modifier = Modifier.padding(end = 12.dp),
+            modifier = Modifier.padding(end = 12.dp).size(24.dp),
             contentDescription = null
         )
         Text("Debug Info")
