@@ -19,22 +19,29 @@ import utilities.parallelMap
 import utilities.trace
 import java.time.Instant
 
-class VersionChecker(
+interface IVersionChecker {
+    fun getOnlineVersion(modId: ModId): VersionCheckerInfo.Version?
+
+    @Suppress("ConvertCallChainIntoSequence")
+    suspend fun lookUpVersions(mods: List<Mod>, forceLookup: Boolean)
+}
+
+internal class VersionChecker(
     private val gson: Jsanity,
     private val versionCheckerCache: VersionCheckerCache,
     private val userManager: UserManager,
     private val modLoader: ModLoader,
     private val httpClientBuilder: HttpClientBuilder
-) {
+) : IVersionChecker {
     companion object {
         const val DEFAULT_CHECK_INTERVAL_MILLIS: Long = 1000 * 60 * 5 // 5 mins
     }
 
-    fun getOnlineVersion(modId: ModId) =
+    override fun getOnlineVersion(modId: ModId) =
         versionCheckerCache.onlineVersions[modId]
 
     @Suppress("ConvertCallChainIntoSequence")
-    suspend fun lookUpVersions(mods: List<Mod>, forceLookup: Boolean) {
+    override suspend fun lookUpVersions(mods: List<Mod>, forceLookup: Boolean) {
         val msSinceLastCheck = Instant.now().toEpochMilli() - versionCheckerCache.lastCheckTimestamp
         val checkIntervalMillis =
             userManager.activeProfile.value.versionCheckerIntervalMillis ?: DEFAULT_CHECK_INTERVAL_MILLIS

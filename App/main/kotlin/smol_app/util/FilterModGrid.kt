@@ -3,7 +3,6 @@ package smol_app.util
 import dev.sphericalkat.sublimefuzzy.Fuzzy
 import me.xdrop.fuzzywuzzy.FuzzySearch
 import smol_access.Access
-import smol_access.business.ModLoader
 import smol_access.model.Mod
 import smol_access.model.ModVariant
 import smol_app.util.Filter.searchMethod

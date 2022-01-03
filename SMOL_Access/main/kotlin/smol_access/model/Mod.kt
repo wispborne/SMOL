@@ -110,7 +110,7 @@ data class ModVariant(
             get() = Mod.MOCK.variants.first()
     }
 
-    fun mod(modLoader: ModLoader) = modLoader.mods.value?.mods!!.first { it.id == modInfo.id }
+    internal fun mod(modLoader: ModLoader) = modLoader.mods.value?.mods!!.first { it.id == modInfo.id }
     fun mod(access: Access) = access.mods.value?.mods!!.first { it.id == modInfo.id }
 
     val exists: Boolean

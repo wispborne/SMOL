@@ -78,8 +78,8 @@ class ServiceLocator internal constructor(
         modInfoLoader = modInfoLoader,
         gameEnabledMods = gameEnabledMods
     ),
-    val dependencies: Dependencies = Dependencies(modLoader = modLoader),
-    val versionChecker: VersionChecker = VersionChecker(
+    val dependencyFinder: DependencyFinder = DependencyFinder(modLoader = modLoader),
+    val versionChecker: IVersionChecker = VersionChecker(
         gson = jsanity,
         versionCheckerCache = versionCheckerCache,
         userManager = userManager,

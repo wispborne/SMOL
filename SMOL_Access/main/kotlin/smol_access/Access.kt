@@ -1,6 +1,9 @@
 package smol_access
 
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.getAndUpdate
+import kotlinx.coroutines.flow.update
 import smol_access.business.Archives
 import smol_access.business.ModListUpdate
 import smol_access.business.ModLoader
@@ -8,6 +11,7 @@ import smol_access.business.Staging
 import smol_access.config.AppConfig
 import smol_access.config.Platform
 import smol_access.model.Mod
+import smol_access.model.ModId
 import smol_access.model.ModVariant
 import utilities.IOLock
 import timber.ktx.Timber
@@ -82,6 +86,14 @@ class Access internal constructor(
         get() = modLoader.mods
     val areModsLoading = modLoader.isLoading
 
+    val modModificationState = MutableStateFlow<Map<ModId, ModModificationState>>(emptyMap())
+
+    sealed class ModModificationState {
+        object Ready: ModModificationState()
+        object DisablingVariants : ModModificationState()
+        object EnablingVariant : ModModificationState()
+    }
+
     /**
      * Reads all mods from /mods, staging, and archive folders.
      */
@@ -131,8 +143,10 @@ class Access internal constructor(
             // Disable all active mod variants
             // or variants that in the mod folder while the mod itself is disabled.
             // There should only ever be one active but might as well be careful.
+
             mod.variants
                 .filter { mod.isEnabled(it) || it.modsFolderInfo != null }
+                .also { modModificationState.update { it.toMutableMap().apply { this[mod.id] = ModModificationState.DisablingVariants } } }
                 .forEach { staging.disableModVariant(it) }
 
             return if (modVariant != null) {
@@ -147,12 +161,14 @@ class Access internal constructor(
                         }
                 // Faster: Assume we disabled it and change the mod to be disabled.
 //                modVariant.mod = modVariant.mod.copy(isEnabledInGame = false)
+                modModificationState.update { it.toMutableMap().apply { this[mod.id] = ModModificationState.EnablingVariant } }
                 staging.enableModVariant(modVariant)
             } else {
                 Result.success(Unit)
             }
         } finally {
             staging.manualReloadTrigger.trigger.emit("For mod ${mod.id}, staged variant: $modVariant.")
+            modModificationState.update { it.toMutableMap().apply { this[mod.id] = ModModificationState.Ready } }
         }
     }
 
@@ -166,25 +182,32 @@ class Access internal constructor(
 
     suspend fun enableModVariant(modToEnable: ModVariant): Result<Unit> {
         try {
+            modModificationState.update { it.toMutableMap().apply { this[modToEnable.mod(this@Access).id] = ModModificationState.EnablingVariant } }
             return staging.enableModVariant(modToEnable)
         } finally {
             staging.manualReloadTrigger.trigger.emit("Enabled mod: $modToEnable")
+            modModificationState.update { it.toMutableMap().apply { this[modToEnable.mod(this@Access).id] = ModModificationState.Ready } }
         }
     }
 
     suspend fun disableMod(mod: Mod): Result<Unit> {
         try {
+            modModificationState.update { it.toMutableMap().apply { this[mod.id] = ModModificationState.DisablingVariants } }
             return staging.disableMod(mod)
         } finally {
             staging.manualReloadTrigger.trigger.emit("Mod unstaged: $mod")
+            modModificationState.update { it.toMutableMap().apply { this[mod.id] = ModModificationState.Ready } }
         }
     }
 
     suspend fun disableModVariant(modVariant: ModVariant): Result<Unit> {
+        val mod = modVariant.mod(this@Access)
         try {
+            modModificationState.update { it.toMutableMap().apply { this[mod.id] = ModModificationState.DisablingVariants } }
             return staging.disableModVariant(modVariant)
         } finally {
             staging.manualReloadTrigger.trigger.emit("Disabled mod: $modVariant")
+            modModificationState.update { it.toMutableMap().apply { this[mod.id] = ModModificationState.Ready } }
         }
     }
 

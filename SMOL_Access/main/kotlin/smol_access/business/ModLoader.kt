@@ -21,7 +21,7 @@ import utilities.trace
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 
-class ModLoader internal constructor(
+internal class ModLoader internal constructor(
     private val gamePath: GamePath,
     private val config: AppConfig,
     private val archives: Archives,

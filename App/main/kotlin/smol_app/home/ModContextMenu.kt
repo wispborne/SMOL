@@ -1,5 +1,6 @@
 package smol_app.home
 
+import AppState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -14,12 +15,15 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.arkivanov.decompose.push
 import kotlinx.coroutines.*
 import org.tinylog.Logger
 import smol_access.SL
 import smol_access.model.Mod
 import smol_app.composables.SmolDropdownMenuItemTemplate
+import smol_app.navigation.Screen
 import smol_app.util.getModThreadId
+import smol_app.util.getModThreadUrl
 import smol_app.util.openModThread
 import smol_app.util.uiEnabled
 import utilities.parallelMap
@@ -28,7 +32,7 @@ import kotlin.io.path.exists
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun ModContextMenu(
+fun AppState.ModContextMenu(
     showContextMenu: Boolean,
     onShowContextMenuChange: (Boolean) -> Unit,
     mod: Mod,
@@ -61,7 +65,7 @@ fun ModContextMenu(
 }
 
 @Composable
-private fun modGridSingleModMenu(
+private fun AppState.modGridSingleModMenu(
     mod: Mod,
     onShowContextMenuChange: (Boolean) -> Unit,
     coroutineScope: CoroutineScope,
@@ -115,6 +119,27 @@ private fun modGridSingleModMenu(
     if (modThreadId != null) {
         DropdownMenuItem(
             onClick = {
+                router.push(Screen.ModBrowser(modThreadId.getModThreadUrl()))
+                onShowContextMenuChange(false)
+            },
+            modifier = Modifier.width(200.dp)
+        ) {
+            Image(
+                painter = painterResource("web.svg"),
+                colorFilter = ColorFilter.tint(MaterialTheme.colors.onSurface),
+                modifier = Modifier.padding(end = 12.dp),
+                contentDescription = null
+            )
+            Text(
+                text = "Forum Page (SMOL)",
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.align(Alignment.CenterVertically)
+            )
+        }
+
+        DropdownMenuItem(
+            onClick = {
                 modThreadId.openModThread()
                 onShowContextMenuChange(false)
             },
@@ -127,7 +152,7 @@ private fun modGridSingleModMenu(
                 contentDescription = null
             )
             Text(
-                text = "Forum Page",
+                text = "Forum Page (Browser)",
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.align(Alignment.CenterVertically)

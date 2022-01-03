@@ -101,7 +101,7 @@ fun AppState.homeView(
                 modBrowserButton()
                 if (isWriteLocked.value) {
                     CircularProgressIndicator(
-                        modifier = Modifier
+                        modifier = Modifier.padding(start = 16.dp)
                     )
                 }
                 Row(

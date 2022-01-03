@@ -4,7 +4,7 @@ package smol_app.home
 
 import AppState
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.*
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -27,6 +27,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -715,12 +716,28 @@ fun AppState.refreshButton(onRefresh: () -> Unit) {
         tooltip = { SmolTooltipText(text = "Refresh mod list.") },
         delayMillis = SmolTooltipArea.delay
     ) {
+        val areModsLoading = SL.access.areModsLoading.collectAsState().value
         IconButton(
-            onClick = { onRefresh.invoke() },
+            onClick = { if (!areModsLoading) onRefresh.invoke() },
             modifier = Modifier.padding(start = 16.dp)
         ) {
+            val infiniteTransition = rememberInfiniteTransition()
+            val angle by infiniteTransition.animateFloat(
+                initialValue = 0F,
+                targetValue = 360F,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(1000, easing = FastOutLinearInEasing)
+                )
+            )
+
             Icon(
                 painter = painterResource("refresh.svg"),
+                modifier = Modifier
+                    .graphicsLayer {
+                        if (areModsLoading) {
+                            rotationZ = angle
+                        }
+                    },
                 contentDescription = "Refresh"
             )
         }

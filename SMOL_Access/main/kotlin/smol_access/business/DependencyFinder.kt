@@ -5,7 +5,7 @@ import smol_access.model.Mod
 import smol_access.model.ModVariant
 import timber.ktx.Timber
 
-class Dependencies internal constructor(private val modLoader: ModLoader) {
+class DependencyFinder internal constructor(private val modLoader: ModLoader) {
     fun findDependencies(modVariant: ModVariant, mods: List<Mod>): List<Pair<Dependency, Mod?>> =
         modVariant.modInfo.dependencies
             .map { dep -> dep to mods.firstOrNull { it.id == dep.id } }

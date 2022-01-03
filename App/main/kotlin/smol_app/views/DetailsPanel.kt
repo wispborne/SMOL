@@ -135,7 +135,7 @@ fun BoxScope.detailsPanel(
                     Text("Description", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
                     Text(modInfo?.description ?: "", modifier = Modifier.padding(top = 2.dp))
                     val dependencies =
-                        modVariant?.run { SL.dependencies.findDependencies(modVariant = this, mods = mods) }
+                        modVariant?.run { SL.dependencyFinder.findDependencies(modVariant = this, mods = mods) }
                             ?: emptyList()
                     if (dependencies.isNotEmpty()) {
                         Text("Dependencies", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
@@ -228,7 +228,7 @@ fun BoxScope.detailsPanelGameStyled(
                 Text("Description", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
                 Text(modInfo?.description ?: "", modifier = Modifier.padding(top = 2.dp))
                 val dependencies =
-                    modVariant?.run { SL.dependencies.findDependencies(modVariant = this, mods = allMods) }
+                    modVariant?.run { SL.dependencyFinder.findDependencies(modVariant = this, mods = allMods) }
                         ?: emptyList()
                 if (dependencies.isNotEmpty()) {
                     Text("Dependencies", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
