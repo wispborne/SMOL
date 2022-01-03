@@ -2,6 +2,19 @@
 
 Starsector Mod Organizer & Launcher
 
+## Why?
+
+Why make this? Starsector is already incredibly easy to mod, and there are two [mod managers](https://fractalsoftworks.com/forum/index.php?topic=21995.0) already [out there](https://www.nexusmods.com/site/mods/179).
+
+- SMOL is more than a mod manager; it has VRAM Estimator built-in, as well as Version Checker, **and** a an online mod browser.
+- SMOL supports multiple versions of the same mod.
+- I wanted to build something with an intuitive, pretty UI.
+- I wanted to learn Compose for Desktop, which is the (brand new) UI framework behind this.
+
+SMOL works alongside manual mod management, too!
+
+Did this really need to be built? Absolutely not, but it has been fun to work on and I've learned a lot, and isn't that what hobbies are about? :)
+
 ## Main Features
 
 * Quickly **switch between mod versions**.
