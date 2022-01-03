@@ -128,7 +128,8 @@ fun AppState.ModBrowserView(
                             coroutineScope.launch {
                                 kotlin.runCatching { SL.modRepo.refreshFromInternet() }
                                     .onFailure { Timber.w(it) }
-                            } }
+                            }
+                        }
                     ) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
@@ -245,10 +246,10 @@ fun AppState.ModBrowserView(
                                 }
                             }
                         }
-
                         second {
                             embeddedBrowser(browser, linkLoader, jfxpanel, defaultUrl ?: Constants.FORUM_MOD_INDEX_URL)
                         }
+                        horizontalSplitter()
                     }
                 }
             }
