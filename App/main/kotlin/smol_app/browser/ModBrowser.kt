@@ -1,5 +1,4 @@
 package smol_app.browser
-
 import AppState
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -27,8 +26,6 @@ import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import javafx.embed.swing.JFXPanel
-import javafx.scene.web.WebView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -45,7 +42,6 @@ import smol_app.ModBrowserState
 import smol_app.UI
 import smol_app.browser.chromium.CefBrowserPanel
 import smol_app.browser.chromium.ChromiumBrowser
-import smol_app.browser.javafx.javaFxBrowser
 import smol_app.composables.*
 import smol_app.themes.SmolTheme
 import smol_app.toolbar.*
@@ -54,10 +50,6 @@ import timber.ktx.Timber
 import java.awt.Cursor
 import java.nio.file.Path
 import java.util.*
-
-object WebViewHolder {
-    var webView: WebView? = null
-}
 
 private val modListMinWidthDp = 600.dp
 
@@ -78,7 +70,6 @@ fun AppState.ModBrowserView(
     val shownModdingSubforumMods =
         remember { mutableStateListOf<ScrapedMod?>(elements = moddingSubforumMods.toTypedArray()) }
 
-    val jfxpanel: JFXPanel = remember { JFXPanel() }
     val browser = remember { mutableStateOf<ChromiumBrowser?>(null) }
     val linkLoader = remember { mutableStateOf<((String) -> Unit)?>(null) }
     var alertDialogMessage: String? by remember { mutableStateOf(null) }
@@ -247,7 +238,7 @@ fun AppState.ModBrowserView(
                             }
                         }
                         second {
-                            embeddedBrowser(browser, linkLoader, jfxpanel, defaultUrl ?: Constants.FORUM_MOD_INDEX_URL)
+                            embeddedBrowser(browser, linkLoader, defaultUrl ?: Constants.FORUM_MOD_INDEX_URL)
                         }
                         horizontalSplitter()
                     }
@@ -286,7 +277,6 @@ fun AppState.ModBrowserView(
 private fun AppState.embeddedBrowser(
     browser: MutableState<ChromiumBrowser?>,
     linkLoader: MutableState<((String) -> Unit)?>,
-    jfxpanel: JFXPanel,
     startUrl: String
 ) {
     val background = MaterialTheme.colors.background
@@ -394,7 +384,7 @@ private fun AppState.embeddedBrowser(
             }
         )
     } else {
-        javaFxBrowser(jfxpanel, background, linkLoader)
+//        javaFxBrowser(jfxpanel, background, linkLoader)
     }
 }
 
