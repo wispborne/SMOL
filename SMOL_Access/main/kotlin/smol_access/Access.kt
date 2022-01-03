@@ -152,13 +152,13 @@ class Access internal constructor(
             return if (modVariant != null) {
                 // Enable the one we want.
                 // Slower: Reload, since we just disabled it
-                val freshModVariant =
-                    modLoader.reload(listOf(mod.id))?.mods?.flatMap { it.variants }?.first { it.smolId == modVariant.smolId }
-                        ?: kotlin.run {
-                            val error = "After disabling, couldn't find mod variant ${modVariant.smolId}."
-                            Timber.w { error }
-                            return Result.failure(RuntimeException(error))
-                        }
+//                val freshModVariant =
+//                    modLoader.reload(listOf(mod.id))?.mods?.flatMap { it.variants }?.first { it.smolId == modVariant.smolId }
+//                        ?: kotlin.run {
+//                            val error = "After disabling, couldn't find mod variant ${modVariant.smolId}."
+//                            Timber.w { error }
+//                            return Result.failure(RuntimeException(error))
+//                        }
                 // Faster: Assume we disabled it and change the mod to be disabled.
 //                modVariant.mod = modVariant.mod.copy(isEnabledInGame = false)
                 modModificationState.update { it.toMutableMap().apply { this[mod.id] = ModModificationState.EnablingVariant } }
