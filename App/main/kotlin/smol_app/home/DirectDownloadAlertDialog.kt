@@ -30,6 +30,7 @@ fun AppState.DirectDownloadAlertDialog(
         onDismissRequest = { alertDialogSetter(null) },
         confirmButton = {
             SmolButton(onClick = {
+                alertDialogSetter(null)
                 smol_access.SL.UI.downloadManager.downloadFromUrl(
                     url = ddUrl,
                     shouldInstallAfter = true

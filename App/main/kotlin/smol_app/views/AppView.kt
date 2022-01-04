@@ -38,7 +38,7 @@ import timber.ktx.Timber
 fun WindowState.appView() {
     val theme = SL.themeManager.activeTheme.collectAsState()
 
-    var alertDialogBuilder: @Composable (() -> Unit)? by remember { mutableStateOf(null) }
+    var alertDialogBuilder: @Composable ((dismiss: () -> Unit) -> Unit)? by remember { mutableStateOf(null) }
     val appState by remember {
         mutableStateOf(AppState(this).apply {
             this.alertDialogSetter = { alertDialogBuilder = it }
@@ -134,7 +134,7 @@ fun WindowState.appView() {
             }
 
             if (alertDialogBuilder != null) {
-                alertDialogBuilder?.invoke()
+                alertDialogBuilder?.invoke { appState.alertDialogSetter(null) }
             }
         }
     }
@@ -145,5 +145,5 @@ class AppState(windowState: WindowState) : IWindowState by windowState {
     /**
      * Usage: alertDialogSetter.invoke { AlertDialog(...) }
      */
-    lateinit var alertDialogSetter: (@Composable (() -> Unit)?) -> Unit
+    lateinit var alertDialogSetter: (@Composable ((dismiss: () -> Unit) -> Unit)?) -> Unit
 }

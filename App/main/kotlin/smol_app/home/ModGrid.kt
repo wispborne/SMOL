@@ -267,7 +267,8 @@ fun AppState.ModGridView(
                                     var showContextMenu by remember { mutableStateOf(false) }
                                     val highestLocalVersion =
                                         mod.findHighestVersion?.versionCheckerInfo?.modVersion
-                                    val onlineVersion = SL.versionChecker.getOnlineVersion(modId = mod.id)
+                                    val onlineVersionInfo = SL.versionChecker.getOnlineVersion(modId = mod.id)
+                                    val onlineVersion = onlineVersionInfo?.modVersion
                                     var isRowHighlighted by remember { mutableStateOf(false) }
 
                                     ListItem(
@@ -375,13 +376,13 @@ fun AppState.ModGridView(
                                                 Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {
                                                     // Update badge icon
                                                     if (highestLocalVersion != null && onlineVersion != null && onlineVersion > highestLocalVersion) {
-                                                        val ddUrl =
-                                                            mod.findHighestVersion?.versionCheckerInfo?.directDownloadURL
+                                                        val ddUrl = onlineVersionInfo.directDownloadURL?.ifBlank { null }
+                                                            ?: mod.findHighestVersion?.versionCheckerInfo?.directDownloadURL
                                                         if (ddUrl != null) {
                                                             SmolTooltipArea(tooltip = {
                                                                 SmolTooltipText(
                                                                     text = buildString {
-                                                                        append("Newer version available: $onlineVersion")
+                                                                        append("Newer version available: ${onlineVersionInfo.modVersion}")
                                                                         append("\n\nClick to download and update.")
                                                                     }
                                                                 )
@@ -421,7 +422,7 @@ fun AppState.ModGridView(
                                                         SmolTooltipArea(tooltip = {
                                                             SmolTooltipText(
                                                                 text = buildAnnotatedString {
-                                                                    append("Newer version available: $onlineVersion.")
+                                                                    append("Newer version available: ${onlineVersionInfo.modVersion}.")
                                                                     append("\n\n<i>Update information is provided by the mod author, not SMOL, and cannot be guaranteed.</i>".parseHtml())
                                                                     if (ddUrl == null) append("\n<i>This mod does not support direct download and should be downloaded manually.</i>".parseHtml())
                                                                     if (hasModThread) {

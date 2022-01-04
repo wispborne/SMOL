@@ -10,6 +10,6 @@ import utilities.JsonFilePrefStorage
 
 class VersionCheckerCache(gson: Jsanity) :
     Config(InMemoryPrefStorage(JsonFilePrefStorage(gson, Constants.VERCHECK_CACHE_PATH))) {
-    var onlineVersions: Map<ModId, VersionCheckerInfo.Version> by pref(defaultValue = emptyMap())
+    var onlineVersions: Map<ModId, VersionCheckerInfo> by pref(defaultValue = emptyMap())
     var lastCheckTimestamp: Long by pref(defaultValue = 0L)
 }

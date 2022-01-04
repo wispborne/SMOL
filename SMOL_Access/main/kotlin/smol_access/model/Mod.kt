@@ -88,12 +88,12 @@ data class ModVariant(
         get() = createSmolId(modInfo)
 
     companion object {
-        private val filter = Regex("""[^0-9a-zA-Z\\.\-_]""")
+        private val smolIdAllowedChars = Regex("""[^0-9a-zA-Z\\.\-_]""")
         fun createSmolId(id: String, version: Version) =
             buildString {
-                append(id.replace(filter, "").take(6))
+                append(id.replace(smolIdAllowedChars, "").take(6))
                 append("-")
-                append(version.toString().replace(filter, "").take(9))
+                append(version.toString().replace(smolIdAllowedChars, "").take(9))
                 append("-")
                 append(
                     Objects.hash(
@@ -126,7 +126,8 @@ data class ModVariant(
         val folder: Path
     )
 
-    fun generateVariantFolderName() = "${modInfo.name}_${smolId}"
+    private val systemFolderNameAllowedChars = Regex("""[^0-9a-zA-Z\\.\-_ ]""")
+    fun generateVariantFolderName() = "${modInfo.name.replace(systemFolderNameAllowedChars, "")}_${smolId}"
 }
 
 typealias SmolId = String

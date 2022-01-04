@@ -20,9 +20,15 @@ import utilities.trace
 import java.time.Instant
 
 interface IVersionChecker {
-    fun getOnlineVersion(modId: ModId): VersionCheckerInfo.Version?
+    /**
+     * Gets the cached online version for the [mod].
+     */
+    fun getOnlineVersion(modId: ModId): VersionCheckerInfo?
 
     @Suppress("ConvertCallChainIntoSequence")
+    /**
+     * Look up the version checker file online.
+     */
     suspend fun lookUpVersions(mods: List<Mod>, forceLookup: Boolean)
 }
 
@@ -69,7 +75,7 @@ internal class VersionChecker(
                                             modVariant.mod(modLoader) to gson.fromJson<VersionCheckerInfo>(
                                                 json = it,
                                                 shouldStripComments = true
-                                            ).modVersion!!
+                                            )
                                         }
                                 }
                                     .onFailure {
