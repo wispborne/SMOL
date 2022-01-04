@@ -3,17 +3,15 @@
 package smol_app.toolbar
 
 import AppState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.push
@@ -27,7 +25,6 @@ import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
 import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
-import smol_app.themes.SmolTheme.withAdjustedBrightness
 import smol_app.util.isJCEFEnabled
 import smol_app.util.openProgramInTerminal
 import utilities.toFileOrNull
@@ -130,12 +127,11 @@ fun AppState.launchButton() {
             },
             colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.primary),
             modifier = Modifier
-                .padding(start = 16.dp)
-                .border(
-                    8.dp,
-                    MaterialTheme.colors.primary.withAdjustedBrightness(-35),
-                    shape = SmolTheme.smolFullyClippedButtonShape()
-                ),
+                .padding(start = 16.dp),
+            border = BorderStroke(
+                width = 4.dp,
+                color = MaterialTheme.colors.primaryVariant
+            ),
             shape = SmolTheme.smolFullyClippedButtonShape(),
             elevation = ButtonDefaults.elevation(
                 defaultElevation = 4.dp,
@@ -143,7 +139,11 @@ fun AppState.launchButton() {
                 pressedElevation = 16.dp
             )
         ) {
-            Text(text = "Launch", fontWeight = FontWeight.SemiBold)
+            Text(
+                text = "Launch",
+                modifier = Modifier.padding(4.dp),
+                fontWeight = FontWeight.SemiBold
+            )
         }
     }
 }

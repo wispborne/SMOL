@@ -112,6 +112,27 @@
       "surface": "#F0F0F0",
       "background": "#FFFFFF",
       "hyperlink": "#00B5B5"
+    },
+    "AlexAtheos, Creator of Starsector": {
+      "isDark": true,
+      "primary": "#00FF00",
+      "primaryVariant": "#00DA00",
+      "secondary": "#0000FF",
+      "secondaryVariant": "#0000C0",
+      "surface": "#C60000",
+      "background": "#9C0000",
+      "hyperlink": "#00FFFF"
+    },
+    "Wunder": {
+      "isDark": true,
+      "primary": "#63727B",
+      "primaryVariant": "#DD5D6F",
+      "secondary": "#DD5D6F",
+      "secondaryVariant": "#BF394B",
+      "onPrimary": "#FDFDFD",
+      "surface": "#32444F",
+      "background": "#112633",
+      "hyperlink": "#DD5D6F"
     }
   }
 }

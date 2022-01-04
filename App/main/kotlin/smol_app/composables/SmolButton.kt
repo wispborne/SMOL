@@ -24,7 +24,7 @@ fun SmolButton(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     elevation: ButtonElevation? = ButtonDefaults.elevation(),
     shape: Shape? = null,
-    border: BorderStroke? = BorderStroke(2.dp, ButtonDefaults.buttonColors().backgroundColor(enabled).value.darken()),
+    border: BorderStroke? = BorderStroke(2.dp, MaterialTheme.colors.primaryVariant),
     colors: ButtonColors = ButtonDefaults.buttonColors(),
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
     content: @Composable RowScope.() -> Unit
