@@ -58,6 +58,7 @@ fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
                     firstEnabledVariant == null
                             || mod.enabledVariants.any { enabledVariant -> enabledVariant.smolId != variant.smolId }
                 }
+                .sortedByDescending { it.modInfo.version }
 
             if (otherVariantsThanEnabled.any()) {
                 val otherVariants = otherVariantsThanEnabled
