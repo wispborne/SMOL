@@ -41,7 +41,7 @@ fun SplitPaneScope.horizontalSplitter() {
                 Box(
                     Modifier
                         .background(SolidColor(Color.Gray), alpha = 0.50f)
-                        .width(3.dp)
+                        .width(4.dp)
                         .height(32.dp)
                         .align(Alignment.Center)
                 )

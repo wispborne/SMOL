@@ -1,0 +1,17 @@
+Name: Java Application Bundler 
+Short Name: appbundler
+URL: https://github.com/TheInfiniteKind/appbundler/
+Version: 1.0 (commit ad6782ea)
+License: GPL-2.0
+
+Description:
+Packages a Java application as Mac app bundle.
+
+See the project URL for related documentation.
+
+Local Modifications:
+1. Clone the repo using Git.
+2. Apply the Apple Silicon support patch from
+   https://github.com/TheInfiniteKind/appbundler/issues/75
+3. Run `ant` from the top-level directory.
+4. Copy the resulting /appbundler/bin/appbundler-1.0ea.jar file to this directory.

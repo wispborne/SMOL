@@ -114,10 +114,10 @@ class CefBrowserPanel
     companion object {
         private val serialVersionUID = -5570653778104813836L
         private var address: JTextField? = null
-        private var cefApp: CefApp? = null
-        private var client: CefClient? = null
-        private var browser: CefBrowser? = null
-        private var browserUI: Component? = null
+        var cefApp: CefApp? = null
+        var client: CefClient? = null
+        var browser: CefBrowser? = null
+        var browserUI: Component? = null
     }
 
     init {

@@ -17,6 +17,7 @@ import org.cef.CefApp
 import org.tinylog.Logger
 import smol_access.Constants
 import smol_access.SL
+import smol_app.browser.chromium.CefBrowserPanel
 import smol_app.navigation.Screen
 import smol_app.navigation.rememberRouter
 import smol_app.util.SmolPair
@@ -112,7 +113,10 @@ fun main() = application {
 
 private fun ApplicationScope.onQuit() {
     kotlin.runCatching {
+        Timber.i { "Shutting down JCEF..." }
         CefApp.getInstance().dispose()
+        CefBrowserPanel.browser?.close(true)
+        CefBrowserPanel.cefApp?.dispose()
         Timber.i { "Shut down JCEF." }
     }
         .onFailure { Timber.d(it) }

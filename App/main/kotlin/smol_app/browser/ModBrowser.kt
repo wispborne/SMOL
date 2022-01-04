@@ -93,7 +93,7 @@ fun AppState.ModBrowserView(
                         .padding(start = 16.dp),
                     tooltip = {
                         SmolTooltipText(text = buildString {
-                            appendLine("The Mod Browser lists mods scraped from the official forum.")
+                            appendLine("The Mod Browser lists mods scraped from the official forum, with permission.")
                             appendLine("The list is <b>not</b> live; it is fetched from an online cache, which is updated periodically so as to avoid excessive load on the forum.")
                             append("If a mod has been added to the forum but doesn't yet show up in the list, simply navigate to it using the browser and download it.")
                         }.parseHtml())

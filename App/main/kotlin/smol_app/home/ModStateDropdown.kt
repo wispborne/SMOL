@@ -44,6 +44,7 @@ sealed class DropdownAction {
 @Composable
 fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
     val firstEnabledVariant = mod.findFirstEnabled
+    val font = SmolTheme.orbitronSpaceFont
 
     /**
      * Disable: at least one variant enabled
@@ -106,7 +107,7 @@ fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
                                 text = "Warning: ${mod.enabledVariants.size} versions of " +
                                         "${mod.findHighestVersion!!.modInfo.name} in the mods folder." +
                                         " Remove one.",
-                                fontFamily = FontFamily.Default
+                                fontFamily = SmolTheme.normalFont
                             )
                         }) {
                             Image(
@@ -126,7 +127,8 @@ fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
                             // If no enabled variant, show "Disabled"
                             else -> "Disabled"
                         },
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = font
                     )
                     SmolDropdownArrow(
                         Modifier.align(Alignment.CenterVertically),
@@ -187,7 +189,8 @@ fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
                                         is DropdownAction.MigrateMod -> "Migrate to ${Constants.APP_NAME}"
                                         is DropdownAction.ResetToArchive -> "Reset to default"
                                     },
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = font
                                 )
                             }
                         }

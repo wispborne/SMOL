@@ -54,6 +54,7 @@ fun scrapedModCard(mod: ScrapedMod, linkLoader: MutableState<((String) -> Unit)?
                     modifier = Modifier,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
+                    fontFamily = SmolTheme.orbitronSpaceFont,
                     text = mod.name.ifBlank { "???" }
                 )
                 if (mod.authors.isNotBlank()) {

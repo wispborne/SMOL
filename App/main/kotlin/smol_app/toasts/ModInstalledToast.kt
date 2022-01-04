@@ -40,7 +40,10 @@ fun toastInstalledCard(
                     modifier = Modifier
                         .padding(top = 8.dp),
                     onClick = {
-                        GlobalScope.launch { SL.access.enableModVariant(modVariant) }
+                        GlobalScope.launch { SL.access.changeActiveVariant(
+                            mod = modVariant.mod(SL.access),
+                            modVariant = modVariant
+                        ) }
                         requestToastDismissal.invoke()
                     }
                 ) {

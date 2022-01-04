@@ -17,6 +17,7 @@ repositories {
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
 }
 
+val jcefFolder = "jcef-v1.0.18"
 dependencies {
     implementation(compose.desktop.currentOs)
     implementation("org.jetbrains.compose.components:components-splitpane-desktop:1.0.0")
@@ -97,7 +98,7 @@ compose.desktop {
                 println("OS: Windows")
                 console = true
                 upgradeUuid = "51169f8d-9aec-4abf-b30a-f5bc5a5f6509"
-                jvmArgs += listOf("-Djava.library.path=./libs/jcef-v1.0.10-92.0.25/bin/lib/win64") // For CEF (Chromium Embedded Framework)
+                jvmArgs += listOf("-Djava.library.path=./libs/$jcefFolder/bin/lib/win64") // For CEF (Chromium Embedded Framework)
 //                jvmArgs += listOf("-Djava.library.path=native/windows") // To use lwjgl in VRAM Checker
             }
             macOS {

@@ -34,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.arkivanov.decompose.push
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -355,7 +356,9 @@ fun AppState.ModGridView(
                                                         ?: "",
                                                     fontWeight = FontWeight.SemiBold,
                                                     maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
+                                                    overflow = TextOverflow.Ellipsis,
+                                                    fontFamily = SmolTheme.orbitronSpaceFont,
+                                                    fontSize = 14.sp
                                                 )
 
                                                 // Mod Author

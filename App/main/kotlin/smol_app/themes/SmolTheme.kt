@@ -23,8 +23,8 @@ import kotlin.math.roundToInt
 
 object SmolTheme {
     val orbitronSpaceFont = FontFamily(Font("Font-Orbitron/Orbitron-VariableFont_wght.ttf"))
-
     val fireCodeFont = FontFamily(Font("Font-Fire_Mono/FiraMono-Regular.ttf"))
+    val normalFont = FontFamily.Default
 
     val warningOrange = Color(java.awt.Color.decode("#F95D13").rgb)
 
