@@ -241,6 +241,9 @@ suspend fun reloadMods() {
                     },
                     async {
                         SL.archives.refreshArchivesManifest()
+                    },
+                    async {
+                        SL.saveReader.readAllSaves()
                     }
                 ).awaitAll()
             }
