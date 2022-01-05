@@ -350,7 +350,7 @@ fun AppState.ModGridView(
                                                 )
 
                                                 // Mod name
-                                                Text(
+                                                SmolText(
                                                     modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
                                                     text = (mod.findFirstEnabled
                                                         ?: mod.findHighestVersion)?.modInfo?.name
@@ -363,7 +363,7 @@ fun AppState.ModGridView(
                                                 )
 
                                                 // Mod Author
-                                                Text(
+                                                SmolText(
                                                     text = (mod.findFirstEnabledOrHighestVersion)?.modInfo?.author
                                                         ?: "",
                                                     color = SmolTheme.dimmedTextColor(),

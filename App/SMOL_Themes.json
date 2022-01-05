@@ -133,6 +133,26 @@
       "surface": "#32444F",
       "background": "#112633",
       "hyperlink": "#DD5D6F"
+    },
+    "Royalty": {
+      "isDark": true,
+      "primary": "#C6A14B",
+      "primaryVariant": "#A5812A",
+      "secondary": "#B79782",
+      "secondaryVariant": "#97745D",
+      "surface": "#383049",
+      "background": "#291E3F",
+      "hyperlink": "#B79782"
+    },
+    "Comes": {
+      "isDark": true,
+      "primary": "#C6A14B",
+      "primaryVariant": "#A5812A",
+      "secondary": "#B79782",
+      "secondaryVariant": "#97745D",
+      "surface": "#544A6A",
+      "background": "#383049",
+      "hyperlink": "#B79782"
     }
   }
 }

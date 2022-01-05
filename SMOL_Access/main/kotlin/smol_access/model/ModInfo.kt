@@ -142,6 +142,10 @@ data class Version(
         (this.build ?: "0").compareTo((other.build ?: ""), ignoreCase = true).run { if (this != 0) return this }
         return 0
     }
+
+    override fun equals(other: Any?): Boolean {
+        return other is Version && this.raw == other.raw
+    }
 }
 
 data class Dependency(

@@ -45,6 +45,7 @@ fun AppState.ProfilesView(
 ) {
     val modProfileIdShowingDeleteConfirmation = remember { mutableStateOf<Int?>(null) }
     var userProfile = SL.userManager.activeProfile.collectAsState().value
+    val saveGames = SL.saveReader.saves.collectAsState()
     val showLogPanel = remember { mutableStateOf(false) }
 
     Scaffold(
@@ -70,122 +71,25 @@ fun AppState.ProfilesView(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     cells = GridCells.Adaptive(370.dp)
                 ) {
-                    this.items(items = userProfile.modProfiles
+                    this.items(items = userProfile.modProfiles + saveGames.value.mapIndexed { index, saveFile ->
+                        UserProfile.ModProfile(
+                            id = 1337 + index,
+                            name = saveFile.characterName,
+                            description = "",
+                            sortOrder = 1337 + index,
+                            enabledModVariants = saveFile.mods.map {
+                                UserProfile.ModProfile.EnabledModVariant(
+                                    modId = it.id,
+                                    smolVariantId = ModVariant.createSmolId(it.id, it.version)
+                                )
+                            }
+                        )
+                    }
                         .sortedWith(
                             compareByDescending<UserProfile.ModProfile> { it.id == userProfile.activeModProfileId }
                                 .thenBy { it.sortOrder })
                     ) { modProfile ->
-                        val isActiveProfile = userProfile.activeModProfileId == modProfile.id
-                        val isEditMode = remember { mutableStateOf(false) }
-                        val modProfileName = remember { mutableStateOf(modProfile.name) }
-                        Card(
-                            modifier = Modifier.wrapContentHeight()
-                                .run {
-                                    // Highlight active profile
-                                    if (isActiveProfile) this
-                                        .border(
-                                            width = 4.dp,
-                                            color = MaterialTheme.colors.onSurface.lighten(),
-                                            shape = SmolTheme.smolFullyClippedButtonShape()
-                                        )
-                                    else this
-                                },
-                            shape = SmolTheme.smolFullyClippedButtonShape()
-                        ) {
-                            SelectionContainer {
-                                Column(
-                                    modifier = Modifier
-                                        .run {
-                                            if (isActiveProfile) this.padding(16.dp)
-                                            else this.padding(
-                                                top = 8.dp,
-                                                bottom = 16.dp,
-                                                start = 16.dp,
-                                                end = 16.dp
-                                            )
-                                        }
-                                ) {
-                                    Row {
-                                        if (!isEditMode.value) {
-                                            Text(
-                                                modifier = Modifier
-                                                    .weight(1f)
-                                                    .padding(end = 16.dp)
-                                                    .align(Alignment.CenterVertically),
-                                                fontSize = 18.sp,
-                                                fontFamily = SmolTheme.orbitronSpaceFont,
-                                                text = modProfileName.value
-                                            )
-                                        } else {
-                                            SmolTextField(
-                                                modifier = Modifier
-                                                    .weight(1f)
-                                                    .padding(end = 16.dp)
-                                                    .align(Alignment.CenterVertically),
-                                                value = modProfileName.value,
-                                                label = { Text(text = "Profile Name") },
-                                                singleLine = true,
-                                                onValueChange = { newValue ->
-                                                    modProfileName.value = newValue
-                                                    SL.userManager.updateUserProfile { old ->
-                                                        old.copy(modProfiles = old.modProfiles.map { profile ->
-                                                            if (profile.id == modProfile.id) {
-                                                                profile.copy(name = newValue)
-                                                            } else profile
-                                                        })
-                                                    }
-                                                }
-                                            )
-                                        }
-
-                                        // Control buttons
-                                        DisableSelection {
-                                            profileControls(
-                                                isEditMode = isEditMode,
-                                                modProfileIdShowingDeleteConfirmation = modProfileIdShowingDeleteConfirmation,
-                                                modProfile = modProfile,
-                                                isActiveProfile = isActiveProfile,
-                                                modVariants = modVariants
-                                            )
-                                        }
-                                    }
-
-                                    Text(
-                                        modifier = Modifier.padding(top = 8.dp),
-                                        text = "${modProfile.enabledModVariants.count()} mods",
-                                        fontFamily = SmolTheme.fireCodeFont,
-                                        fontSize = 12.sp,
-                                    )
-
-                                    // Mod list
-                                    Box {
-                                        val modNameLength = 28
-                                        Text(
-                                            modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
-                                                .align(Alignment.TopStart),
-                                            fontFamily = SmolTheme.fireCodeFont,
-                                            softWrap = false,
-                                            fontWeight = FontWeight.Light,
-                                            fontSize = 14.sp,
-                                            text = modProfile.enabledModVariants.joinToString(separator = "\n") {
-                                                val modVariant = modVariants.value[it.smolVariantId]
-                                                modVariant?.modInfo?.name?.ellipsizeAfter(modNameLength)?.plus(": ")
-                                                    ?: "${it.modId} (missing)\n    ${it.smolVariantId}"
-                                            })
-                                        Text(
-                                            modifier = Modifier.padding(top = 16.dp).align(Alignment.TopEnd),
-                                            fontFamily = SmolTheme.fireCodeFont,
-                                            softWrap = false,
-                                            fontWeight = FontWeight.Light,
-                                            fontSize = 14.sp,
-                                            text = modProfile.enabledModVariants.joinToString(separator = "\n") {
-                                                val modVariant = modVariants.value[it.smolVariantId]
-                                                modVariant?.modInfo?.version?.toString() ?: ""
-                                            })
-                                    }
-                                }
-                            }
-                        }
+                        ModProfileCard(userProfile, modProfile, modProfileIdShowingDeleteConfirmation, modVariants)
                     }
 
                     this.item {
@@ -273,6 +177,169 @@ fun AppState.ProfilesView(
     }
 }
 
+@Composable
+@Preview
+fun ModProfileCardPreview() = smolPreview {
+    val modProfile = UserProfile.ModProfile(
+        id = 0,
+        name = "test profile",
+        description = "desc",
+        sortOrder = 0,
+        enabledModVariants = listOf(
+            UserProfile.ModProfile.EnabledModVariant(
+                modId = "mod_id",
+                smolVariantId = "23444"
+            )
+        )
+    )
+    val userProfile = UserProfile(
+        id = 1337,
+        username = "user",
+        activeModProfileId = 0,
+        versionCheckerIntervalMillis = null,
+        modProfiles = emptyList(), //listOf(modProfile),
+        profileVersion = 1,
+        theme = null,
+        favoriteMods = emptyList(),
+        modGridPrefs = UserProfile.ModGridPrefs(
+            sortField = null
+        )
+    )
+    ModProfileCard(
+        userProfile = userProfile,
+        modProfile = modProfile,
+        modProfileIdShowingDeleteConfirmation = mutableStateOf(null),
+        modVariants = mutableStateOf(emptyMap())
+    )
+}
+
+@Composable
+fun ModProfileCard(
+    userProfile: UserProfile,
+    modProfile: UserProfile.ModProfile,
+    modProfileIdShowingDeleteConfirmation: MutableState<Int?>,
+    modVariants: MutableState<Map<SmolId, ModVariant>>
+) {
+    val isActiveProfile = userProfile.activeModProfileId == modProfile.id
+    val isUserMade = modProfile in userProfile.modProfiles
+    val isEditMode = remember { mutableStateOf(false) }
+    val modProfileName = remember { mutableStateOf(modProfile.name) }
+    Card(
+        modifier = Modifier.wrapContentHeight()
+            .run {
+                // Highlight active profile
+                if (isActiveProfile) this
+                    .border(
+                        width = 4.dp,
+                        color = MaterialTheme.colors.onSurface.lighten(),
+                        shape = SmolTheme.smolFullyClippedButtonShape()
+                    )
+                else this
+            },
+        shape = SmolTheme.smolFullyClippedButtonShape()
+    ) {
+        SelectionContainer {
+            Column(
+                modifier = Modifier
+                    .run {
+                        if (isActiveProfile) this.padding(16.dp)
+                        else this.padding(
+                            top = 8.dp,
+                            bottom = 16.dp,
+                            start = 16.dp,
+                            end = 16.dp
+                        )
+                    }
+            ) {
+                Row {
+                    if (!isEditMode.value) {
+                        Text(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 16.dp)
+                                .align(Alignment.CenterVertically),
+                            fontSize = 18.sp,
+                            fontFamily = SmolTheme.orbitronSpaceFont,
+                            text = if (!isUserMade) "Save: " + modProfileName.value else modProfileName.value
+                        )
+                    } else {
+                        SmolTextField(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 16.dp)
+                                .align(Alignment.CenterVertically),
+                            value = modProfileName.value,
+                            label = { Text(text = "Profile Name") },
+                            singleLine = true,
+                            onValueChange = { newValue ->
+                                modProfileName.value = newValue
+                                SL.userManager.updateUserProfile { old ->
+                                    old.copy(modProfiles = old.modProfiles.map { profile ->
+                                        if (profile.id == modProfile.id) {
+                                            profile.copy(name = newValue)
+                                        } else profile
+                                    })
+                                }
+                            }
+                        )
+                    }
+
+                    // Control buttons
+                    DisableSelection {
+                        if (isUserMade) {
+                            profileControls(
+                                isEditMode = isEditMode,
+                                modProfileIdShowingDeleteConfirmation = modProfileIdShowingDeleteConfirmation,
+                                modProfile = modProfile,
+                                isActiveProfile = isActiveProfile,
+                                modVariants = modVariants
+                            )
+                        } else {
+                            saveGameProfileControls(
+                                modProfile = modProfile
+                            )
+                        }
+                    }
+                }
+
+                Text(
+                    modifier = Modifier.padding(top = 8.dp),
+                    text = "${modProfile.enabledModVariants.count()} mods",
+                    fontFamily = SmolTheme.fireCodeFont,
+                    fontSize = 12.sp,
+                )
+
+                // Mod list
+                Box {
+                    val modNameLength = 28
+                    Text(
+                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+                            .align(Alignment.TopStart),
+                        fontFamily = SmolTheme.fireCodeFont,
+                        softWrap = false,
+                        fontWeight = FontWeight.Light,
+                        fontSize = 14.sp,
+                        text = modProfile.enabledModVariants.joinToString(separator = "\n") {
+                            val modVariant = modVariants.value[it.smolVariantId]
+                            modVariant?.modInfo?.name?.ellipsizeAfter(modNameLength)?.plus(": ")
+                                ?: "${it.modId} (missing)\n    ${it.smolVariantId}"
+                        })
+                    Text(
+                        modifier = Modifier.padding(top = 16.dp).align(Alignment.TopEnd),
+                        fontFamily = SmolTheme.fireCodeFont,
+                        softWrap = false,
+                        fontWeight = FontWeight.Light,
+                        fontSize = 14.sp,
+                        text = modProfile.enabledModVariants.joinToString(separator = "\n") {
+                            val modVariant = modVariants.value[it.smolVariantId]
+                            modVariant?.modInfo?.version?.toString() ?: ""
+                        })
+                }
+            }
+        }
+    }
+}
+
 @Preview
 @Composable
 fun profileControlsPreview() = smolPreview {
@@ -288,7 +355,7 @@ fun profileControlsPreview() = smolPreview {
 }
 
 @Composable
-private fun profileControls(
+fun profileControls(
     modifier: Modifier = Modifier,
     isEditMode: MutableState<Boolean>,
     modProfileIdShowingDeleteConfirmation: MutableState<Int?>,
@@ -374,6 +441,37 @@ private fun profileControls(
                         text = "Activate"
                     )
             }
+        }
+    }
+}
+
+@Preview
+@Composable
+fun saveGameProfileControlsPreview() = smolPreview {
+    Column {
+        saveGameProfileControls(
+            modProfile = UserManager.defaultModProfile
+        )
+    }
+}
+
+@Composable
+fun saveGameProfileControls(
+    modifier: Modifier = Modifier,
+    modProfile: UserProfile.ModProfile
+) {
+    Row(
+        modifier = modifier
+    ) {
+        SmolButton(
+            modifier = Modifier
+                .padding(start = 8.dp)
+                .align(Alignment.CenterVertically),
+            onClick = {
+
+            }
+        ) {
+            Text("Create Profile")
         }
     }
 }
