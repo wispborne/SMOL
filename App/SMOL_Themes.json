@@ -153,6 +153,17 @@
       "surface": "#544A6A",
       "background": "#383049",
       "hyperlink": "#B79782"
+    },
+    "Red Pain": {
+      "isDark": true,
+      "primary": "#F83A5B",
+      "primaryVariant": "#F6123A",
+      "secondary": "#C24369",
+      "secondaryVariant": "#65061F",
+      "onPrimary": "#FDFDFD",
+      "surface": "#21000C",
+      "background": "#21000C",
+      "hyperlink": "#AEB3DA"
     }
   }
 }

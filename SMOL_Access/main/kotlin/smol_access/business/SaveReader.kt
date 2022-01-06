@@ -21,7 +21,7 @@ class SaveReader(
 
     private val descriptorFileName = "descriptor.xml"
     private val defaultSaveFolder = gamePath.get()?.resolve("saves")
-    private val datePattern = "yyyy-MM-dd HH:mm:ss.SSS zzz"
+    private val datePatterns = listOf("yyyy-MM-dd HH:mm:ss.SSS zzz", "yyyy-MM-dd HH:mm:ss.S zzz")
 
     fun readAllSaves(saveFolder: Path? = defaultSaveFolder) {
         saveFolder ?: run {
@@ -73,7 +73,23 @@ class SaveReader(
                 saveFileVersion = saveTree["saveFileVersion"]?.asText() ?: "",
                 saveDate = (saveTree["saveDate"]?.get("")?.textValue())
                     .let {
-                        kotlin.runCatching { ZonedDateTime.parse(it, DateTimeFormatter.ofPattern(datePattern)) }
+                        kotlin.runCatching {
+                            val exceptions = mutableListOf<Exception>()
+                            val results = datePatterns.mapNotNull { datePattern ->
+                                try {
+                                    ZonedDateTime.parse(it, DateTimeFormatter.ofPattern(datePattern))
+                                } catch (e: Exception) {
+                                    exceptions += e
+                                    null
+                                }
+                            }
+
+                            return@runCatching if (results.isNotEmpty()) {
+                                results.first()
+                            } else {
+                                throw exceptions.first()
+                            }
+                        }
                             .onFailure { Timber.w(it) }
                             .getOrElse { ZonedDateTime.now() }
                     },

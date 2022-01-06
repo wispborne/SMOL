@@ -356,7 +356,7 @@ fun AppState.ModGridView(
                                                         ?: mod.findHighestVersion)?.modInfo?.name
                                                         ?: "",
                                                     fontWeight = FontWeight.SemiBold,
-                                                    maxLines = 1,
+                                                    maxLines = 2,
                                                     overflow = TextOverflow.Ellipsis,
                                                     fontFamily = SmolTheme.orbitronSpaceFont,
                                                     fontSize = 14.sp
