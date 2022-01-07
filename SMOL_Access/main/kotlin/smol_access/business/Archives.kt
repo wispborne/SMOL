@@ -192,7 +192,12 @@ class Archives internal constructor(
                                 val modInfoFile = items
                                     .firstOrNull { it.path.contains(Constants.MOD_INFO_FILE, ignoreCase = true) }
                                 val versionCheckerFile = items
-                                    .firstOrNull { it.path.contains(Constants.VERSION_CHECKER_FILE_PATTERN) }
+                                    .firstOrNull {
+                                        it.path.endsWith(
+                                            Constants.VERSION_CHECKER_FILE_ENDING,
+                                            ignoreCase = true
+                                        )
+                                    }
 
                                 val dataFiles = run {
                                     var modInfo: ModInfo? = null
