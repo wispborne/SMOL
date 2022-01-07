@@ -36,21 +36,23 @@ object Logging {
         val tinyLogLevelLower = tinyLogLevel.name.lowercase()
 
         if (!wasTinyLogConfigured) {
+            println("Configuring TinyLog.")
             Configuration.replace(
                 mapOf(
-                    //                "writer1" to "console",
-                    //                "writer1.level" to tinyLogLevelLower,
-                    //                "writer1.format" to format,
+                    "writerRoll" to "rolling file",
+                    "writerRoll.level" to tinyLogLevelLower,
+                    "writerRoll.format" to format,
+                    "writerRoll.file" to "SMOL.{count}.log",
+                    "writerRoll.latest" to "SMOL.log",
+                    "writerRoll.buffered" to "true",
+                    "writerRoll.backups" to "2",
+                    "writerRoll.policies" to "size: 50mb",
+                    "writerRoll.convert" to "gzip",
 
-                    "writer2" to "rolling file",
-                    "writer2.level" to tinyLogLevelLower,
-                    "writer2.format" to format,
-                    "writer2.file" to "SMOL_log.{count}.log",
-                    "writer2.buffered" to "true",
-                    "writer2.backups" to "2",
-                    "writer2.policies" to "size: 10mb",
+                    "writingthread" to "true",
                 )
             )
+
             wasTinyLogConfigured = true
         }
 
@@ -85,4 +87,39 @@ object Logging {
             }
         }
     }
+//
+//    private fun setupLog4J() {
+//        val builder = ConfigurationBuilderFactory.newConfigurationBuilder()
+//
+//        builder.setStatusLevel(Level.ERROR)
+//        builder.setConfigurationName("RollingBuilder")
+//
+//        // create a rolling file appender
+//        builder.add(
+//            builder.newAppender("rolling", "RollingFile")
+//                .addAttribute("fileName", "logs/SMOL.log")
+//                .addAttribute("filePattern", "logs/SMOL-%d{MM-dd-yy}.log.gz")
+//                .add(
+//                    builder.newLayout("PatternLayout")
+//                        .addAttribute("pattern", "%d [%t] %-5level: %msg%n")
+//                )
+//                .addComponent(
+//                    builder.newComponent("Policies")
+//                        .addComponent(builder.newComponent("SizeBasedTriggeringPolicy").addAttribute("size", "50M"))
+//                )
+//        )
+//
+//        // create the new logger
+//        builder.add(
+//            builder.newLogger("TestLogger", Level.DEBUG)
+//                .add(builder.newAppenderRef("rolling"))
+//                .addAttribute("additivity", false)
+//        )
+//
+//        builder.add(
+//            builder.newRootLogger(Level.DEBUG)
+//                .add(builder.newAppenderRef("rolling"))
+//        )
+//        val ctx: LoggerContext = Configurator.initialize(builder.build())
+//    }
 }

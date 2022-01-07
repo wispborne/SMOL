@@ -22,13 +22,17 @@ dependencies {
     implementation(compose.desktop.currentOs)
     implementation("org.jetbrains.compose.components:components-splitpane-desktop:1.0.0")
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.5.21")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2-native-mt")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0-native-mt")
 
     implementation(fileTree("../libs") { include("**/*.jar") })
     implementation(fileTree("libs") { include("**/*.jar") })
     implementation(project(":SMOL_Access"))
     implementation(project(":VRAM_Checker"))
     implementation(project(":Utilities"))
+
+    // Logging
+    implementation("org.tinylog:tinylog-api-kotlin:2.4.1")
+    implementation("org.tinylog:tinylog-impl:2.4.1")
 
     // Modifying mod pages
     implementation("org.jsoup:jsoup:1.14.3")
@@ -40,7 +44,7 @@ dependencies {
     implementation("com.github.ajalt.clikt:clikt:3.3.0")
 
     // CLI builder, Kotlin
-    implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.3")
+//    implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.4")
 
     // Fuzzy Search
     implementation("me.xdrop:fuzzywuzzy:1.3.1")

@@ -54,7 +54,7 @@ class Jsanity(
         val hjson = kotlin.runCatching {
             JsonValue.readHjson(strippedJson).toString(Stringify.FORMATTED)
         }
-            .onFailure { Timber.w(it) { "HJson error parsing: \n$strippedJson" } }
+            .onFailure { Timber.w(it) { "HJson error parsing: \n${strippedJson.lines().take(10)}" } }
             .getOrThrow()
 
         // Jackson

@@ -8,8 +8,9 @@ import timber.ktx.Timber
 import utilities.IOLock
 import utilities.IOLocks
 import java.nio.file.Path
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 import kotlin.io.path.isDirectory
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
@@ -72,23 +73,14 @@ class SaveReader(
                 portraitPath = saveTree["portraitName"]?.asText() ?: "",
                 saveFileVersion = saveTree["saveFileVersion"]?.asText() ?: "",
                 saveDate = (saveTree["saveDate"]?.get("")?.textValue())
-                    .let {
+                    .let { dateString ->
                         kotlin.runCatching {
-                            val exceptions = mutableListOf<Exception>()
-                            val results = datePatterns.mapNotNull { datePattern ->
-                                try {
-                                    ZonedDateTime.parse(it, DateTimeFormatter.ofPattern(datePattern))
-                                } catch (e: Exception) {
-                                    exceptions += e
-                                    null
-                                }
-                            }
-
-                            return@runCatching if (results.isNotEmpty()) {
-                                results.first()
-                            } else {
-                                throw exceptions.first()
-                            }
+                            LocalDateTime.parse(
+                                dateString
+                                    ?.replace(" UTC", "")
+                                    ?.replace(" ", "T")
+                            )
+                                .atZone(ZoneOffset.UTC)
                         }
                             .onFailure { Timber.w(it) }
                             .getOrElse { ZonedDateTime.now() }
