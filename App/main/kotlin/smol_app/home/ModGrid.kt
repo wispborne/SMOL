@@ -28,6 +28,8 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.*
+import androidx.compose.ui.layout.boundsInParent
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -78,8 +80,13 @@ fun AppState.ModGridView(
     }
     var showVramRefreshWarning by remember { mutableStateOf(false) }
 
+    fun getVramImpactForMod(mod: Mod) = SL.vramChecker.vramUsage.value?.get(
+        mod.findFirstEnabledOrHighestVersion?.smolId
+    )
+
     Box(modifier.padding(top = contentPadding, bottom = contentPadding)) {
         Column(Modifier) {
+            var vramPosition by remember { mutableStateOf(0.dp) }
             ListItem(modifier = Modifier.padding(start = contentPadding, end = contentPadding)) {
                 Row {
                     Spacer(modifier = Modifier.width(favoritesWidth).align(Alignment.CenterVertically))
@@ -117,7 +124,10 @@ fun AppState.ModGridView(
                         Text(text = "Version(s)", fontWeight = FontWeight.Bold)
                     }
 
-                    Row(modifier = Modifier.weight(1f).align(Alignment.CenterVertically)) {
+                    Row(modifier = Modifier
+                        .weight(1f)
+                        .align(Alignment.CenterVertically)
+                        .onGloballyPositioned { vramPosition = it.boundsInParent().left.dp }) {
                         SmolTooltipArea(
                             tooltip = {
                                 SmolTooltipText(
@@ -198,6 +208,10 @@ fun AppState.ModGridView(
                         .toSortedMap(compareBy { !it }) // Flip to put Enabled at the top
                         .forEach { (modState, modsInGroup) ->
                             val isCollapsed = if (modState) isEnabledCollapsed else isDisabledCollapsed
+                            val groupName = when (modState) {
+                                true -> "Enabled"
+                                false -> "Disabled"
+                            }
                             stickyHeader {
                                 Card(
                                     elevation = 8.dp,
@@ -210,30 +224,45 @@ fun AppState.ModGridView(
                                             end = contentPadding
                                         )
                                 ) {
-                                    Row(modifier = Modifier.mouseClickable {
-                                        if (this.buttons.isPrimaryPressed) {
-                                            isCollapsed.value = isCollapsed.value.not()
+                                    Box {
+                                        Row(modifier = Modifier.mouseClickable {
+                                            if (this.buttons.isPrimaryPressed) {
+                                                isCollapsed.value = isCollapsed.value.not()
+                                            }
+                                        }) {
+                                            val arrowAngle by animateFloatAsState(if (isCollapsed.value) -90f else 0f)
+                                            Icon(
+                                                modifier = Modifier
+                                                    .align(Alignment.CenterVertically)
+                                                    .padding(start = 4.dp)
+                                                    .rotate(arrowAngle),
+                                                imageVector = Icons.Outlined.ArrowDropDown,
+                                                contentDescription = null,
+                                            )
+                                            Text(
+                                                text = "$groupName (${modsInGroup.count()})",
+                                                color = MaterialTheme.colors.onSurface,
+                                                modifier = Modifier
+                                                    .padding(8.dp),
+                                                fontWeight = FontWeight.Bold
+                                            )
                                         }
-                                    }) {
-                                        val arrowAngle by animateFloatAsState(if (isCollapsed.value) -90f else 0f)
-                                        Icon(
+                                        val allImpacts = modsInGroup.map { getVramImpactForMod(it) }
+                                        val totalBytes =
+                                            allImpacts.sumOf { it?.bytesForMod ?: 0L }.bytesAsReadableMiB
+                                        val totalImages = "${allImpacts.sumOf { it?.imageCount ?: 0 }} images"
+                                        SmolTooltipArea(
+                                            tooltip = { SmolTooltipText(text = "All ${groupName.lowercase()} mods\n\n$totalBytes\n$totalImages") },
                                             modifier = Modifier
-                                                .align(Alignment.CenterVertically)
-                                                .padding(start = 4.dp)
-                                                .rotate(arrowAngle),
-                                            imageVector = Icons.Outlined.ArrowDropDown,
-                                            contentDescription = null,
-                                        )
-                                        Text(
-                                            text = when (modState) {
-                                                true -> "Enabled (${modsInGroup.count()})"
-                                                false -> "Disabled (${modsInGroup.count()})"
-                                            },
-                                            color = MaterialTheme.colors.onSurface,
-                                            modifier = Modifier
-                                                .padding(8.dp),
-                                            fontWeight = FontWeight.Bold
-                                        )
+                                                .padding(start = vramPosition + 16.dp)
+                                                .align(Alignment.CenterStart),
+                                        ) {
+                                            Text(
+                                                text = "Σ $totalBytes",
+                                                style = MaterialTheme.typography.body2,
+                                                modifier = Modifier.alpha(0.7f)
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -248,9 +277,7 @@ fun AppState.ModGridView(
                                                         return when (activeSortField) {
                                                             ModGridSortField.Name -> modRow.mod.findFirstEnabledOrHighestVersion?.modInfo?.name?.lowercase()
                                                             ModGridSortField.Author -> modRow.mod.findFirstEnabledOrHighestVersion?.modInfo?.author?.lowercase()
-                                                            ModGridSortField.VramImpact -> SL.vramChecker.vramUsage.value?.get(
-                                                                modRow.mod.findFirstEnabledOrHighestVersion?.smolId
-                                                            )?.bytesForMod
+                                                            ModGridSortField.VramImpact -> getVramImpactForMod(modRow.mod)?.bytesForMod
                                                             else -> null
                                                         }
                                                     }
