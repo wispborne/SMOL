@@ -63,15 +63,16 @@
       "background": "#17171A",
       "hyperlink": "#21FEEC"
     },
-    "Kemet - Twilight": {
+    "Kemet - Phase": {
       "isDark": true,
-      "onPrimary": "#E3E4E9",
-      "primary": "#7F477C",
-      "primaryVariant": "#5C4883",
-      "secondary": "#AA11A9",
-      "secondaryVariant": "#701A8C",
-      "surface": "#2D1952",
-      "background": "#1B2452"
+      "onPrimary": "#131418",
+      "primary": "#59DC63",
+      "primaryVariant": "#C56A1C",
+      "secondary": "#A52208",
+      "secondaryVariant": "#D2BE18",
+      "surface": "#1E2025",
+      "background": "#121316",
+      "hyperlink": "#2FE861"
     },
     "Kemet - Frog": {
       "isDark": true,
