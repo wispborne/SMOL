@@ -17,7 +17,7 @@ dependencies {
     api(project(":Mod_Repo"))
 
     implementation("org.jetbrains.kotlin:kotlin-reflect:${project.property("kotlin")!!}")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2-native-mt")
+    implementation(project.property("coroutines")!!)
 
     implementation(fileTree("../libs") {
         include("**/*.jar")

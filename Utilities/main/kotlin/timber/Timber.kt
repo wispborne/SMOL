@@ -241,18 +241,21 @@ class Timber private constructor() {
         }
 
         private fun logToConsole(priority: LogLevel, tag: String?, message: String) {
-            scope.launch {
-                val priorityChar = "${priority.name.firstOrNull()?.uppercase()}"
-                val formattedMsg =
-                    "${Instant.now()} ${if (priorityChar.isNotBlank()) "$priorityChar/" else ""}${if (!tag.isNullOrBlank()) "$tag/" else ""} $message"
-                if (priority < LogLevel.WARN) {
-                    System.out.println(formattedMsg)
-                } else {
-                    System.err.println(formattedMsg)
-                }
+            kotlin.runCatching {
+                scope.launch {
+                    val priorityChar = "${priority.name.firstOrNull()?.uppercase()}"
+                    val formattedMsg =
+                        "${Instant.now()} ${if (priorityChar.isNotBlank()) "$priorityChar/" else ""}${if (!tag.isNullOrBlank()) "$tag/" else ""} $message"
+                    if (priority < LogLevel.WARN) {
+                        System.out.println(formattedMsg)
+                    } else {
+                        System.err.println(formattedMsg)
+                    }
 
-                appenders.forEach { it.invoke(priority, formattedMsg) }
+                    appenders.forEach { it.invoke(priority, formattedMsg) }
+                }
             }
+                .onFailure { System.err.println(it.message) }
         }
 
         companion object {

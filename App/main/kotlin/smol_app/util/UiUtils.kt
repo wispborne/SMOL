@@ -79,7 +79,7 @@ val Long.bytesAsReadableMiB: String
  * 0.1 MiB
  */
 val Long.bytesAsShortReadableMiB: String
-    get() = "%.1f MiB".format(this.bitsToMiB)
+    get() = "%.2f MiB".format(this.bitsToMiB)
 
 /**
  * From [https://github.com/JetBrains/skija/blob/ebd63708b35e23667c1bf65845182430d0cf0860/shared/java/impl/Platform.java].

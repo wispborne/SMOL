@@ -136,6 +136,7 @@ class DownloadManager(
 
                 if (shouldInstallAfter) {
                     access.installFromUnknownSource(inputFile = file, shouldCompressModFolder = true)
+                    access.reload()
                 }
             }
         } catch (e: CancellationException) {

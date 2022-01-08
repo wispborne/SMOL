@@ -93,6 +93,14 @@ class ObservableReentrantReadWriteLock() {
         action = action
     )
 
+    fun updateLockedFlowState() {
+        if (IOLocks.everythingLock.locks.any { it.isWriteLocked }) {
+            flow.tryEmit(true)
+        } else {
+            flow.tryEmit(false)
+        }
+    }
+
     /**
      * Executes the given [action] under the write lock of this lock.
      *
@@ -113,13 +121,13 @@ class ObservableReentrantReadWriteLock() {
         }
 
         try {
-            flow.tryEmit(true)
+            updateLockedFlowState()
             return action()
         } finally {
             lockContext.locks.forEach { lockToUnlock ->
                 unlockLock(lockToUnlock)
             }
-            flow.tryEmit(false)
+            updateLockedFlowState()
         }
     }
 

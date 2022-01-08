@@ -27,7 +27,7 @@ dependencies {
     api ("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.1")
 
     implementation("org.jetbrains.kotlin:kotlin-reflect:${project.property("kotlin")!!}")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2-native-mt")
+    implementation(project.property("coroutines")!!)
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {

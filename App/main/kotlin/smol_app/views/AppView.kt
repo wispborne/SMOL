@@ -88,12 +88,12 @@ fun WindowState.appView() {
 //                    }
 
                     LaunchedEffect(Unit) {
-                        SL.access.mods.onEach { modListUpdate ->
-                            val addedModVariants = modListUpdate?.added ?: return@onEach
+                        SL.access.mods.collect { modListUpdate ->
+                            val addedModVariants = modListUpdate?.added ?: return@collect
 
                             if (addedModVariants == modListUpdate.mods.flatMap { it.variants }) {
                                 Timber.i { "Added mods are the same as existing mods, this is probably startup. Not adding 'mod found' toasts." }
-                                return@onEach
+                                return@collect
                             }
 
                             addedModVariants

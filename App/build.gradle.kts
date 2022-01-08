@@ -20,9 +20,9 @@ repositories {
 val jcefFolder = "jcef-v1.0.18"
 dependencies {
     implementation(compose.desktop.currentOs)
-    implementation("org.jetbrains.compose.components:components-splitpane-desktop:1.0.0")
+    implementation("org.jetbrains.compose.components:components-splitpane-desktop:1.0.1")
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.5.21")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0-native-mt")
+    implementation(project.property("coroutines")!!)
 
     implementation(fileTree("../libs") { include("**/*.jar") })
     implementation(fileTree("libs") { include("**/*.jar") })

@@ -78,6 +78,7 @@ class Archives internal constructor(
      * @param shouldCompressModFolder If true, will compress the mod as needed and place the archive in the folder.
      */
     suspend fun installFromUnknownSource(inputFile: Path, destinationFolder: Path, shouldCompressModFolder: Boolean) {
+        Timber.i { "Installing ${inputFile.absolutePathString()} to ${destinationFolder.absolutePathString()}. (shouldCompressModFolder=$shouldCompressModFolder)" }
         if (!inputFile.exists()) throw RuntimeException("File does not exist: ${inputFile.absolutePathString()}")
         if (!destinationFolder.exists()) throw RuntimeException("File does not exist: ${destinationFolder.absolutePathString()}")
 

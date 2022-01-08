@@ -62,7 +62,7 @@ internal class Staging(
             Timber.i { "Disabling mod ${modVariant.modInfo.id} as part of disabling variant ${modVariant.smolId}." }
             gameEnabledMods.disable(modVariant.modInfo.id)
         } else {
-            Timber.i { "Mod ${modVariant.modInfo.id} was already disabled and won't be disabled as part of disabling variant ${modVariant.smolId}." }
+            Timber.i { "Mod ${modVariant.modInfo.id} was already disabled in enabled_mods.json and won't be disabled as part of disabling variant ${modVariant.smolId}." }
         }
 
         Timber.i { "Disabling ${modVariant.smolId}: success." }
@@ -83,11 +83,13 @@ internal class Staging(
             archives.extractMod(modVariant, stagingFolder)
         }
             .onFailure {
+                Timber.w(it) { "Tried to stage ${modVariant.smolId} by unzipping ${modVariant.archiveInfo?.folder} but it failed. Looking for it in the /mods folder, instead." }
+
                 // If we can't unzip the archive, see if it's in the /mods folder, we can get it from there.
-                if (modVariant.modsFolderInfo != null && modVariant.modsFolderInfo.folder.exists()) {
+                if (modVariant.modsFolderInfo?.folder?.exists() == true) {
                     val linkFoldersResult = linkFolders(
-                        modVariant.modsFolderInfo.folder,
-                        gamePath.getModsPath().resolve(modVariant.generateVariantFolderName())
+                        sourceFolder = modVariant.modsFolderInfo.folder,
+                        destFolder = stagingFolder.resolve(modVariant.generateVariantFolderName())
                     )
 
                     if (linkFoldersResult.isFailure) {

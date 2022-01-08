@@ -39,7 +39,7 @@ fun smolSearchField(
             },
             singleLine = true,
             maxLines = 1,
-            leadingIcon = { Icon(painter = painterResource("magnify.svg"), contentDescription = null) }
+            leadingIcon = { Icon(painter = painterResource("icon-search.svg"), contentDescription = null) }
         )
     }
 }

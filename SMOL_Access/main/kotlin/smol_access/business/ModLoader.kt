@@ -30,7 +30,11 @@ internal class ModLoader internal constructor(
 ) {
     private val modsMutable = MutableStateFlow<ModListUpdate?>(null)
     val mods = modsMutable.asStateFlow()
-        .also { GlobalScope.launch(Dispatchers.Default) { it.collect { Timber.i { "Mod list updated: ${it?.mods?.size} mods." } } } }
+        .also {
+            GlobalScope.launch(Dispatchers.Default) {
+                it.collect { Timber.i { "Mod list updated: ${it?.mods?.size} mods (${it?.added?.joinToString { it.smolId }} added, ${it?.removed?.joinToString { it.smolId }} removed)." } }
+            }
+        }
 
     private var isReloadingMutable = MutableStateFlow(false)
     val isLoading = isReloadingMutable.asStateFlow()

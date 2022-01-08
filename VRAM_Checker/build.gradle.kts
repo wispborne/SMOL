@@ -19,7 +19,7 @@ dependencies {
     })
 
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.5.21")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2-native-mt")
+    implementation(project.property("coroutines")!!)
 
     implementation("de.siegmar:fastcsv:2.1.0")
     implementation("com.fasterxml.jackson.core:jackson-core:2.13.0")

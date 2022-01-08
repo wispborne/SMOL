@@ -4,7 +4,7 @@ package smol_app.home
 
 import AppState
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -29,9 +29,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -429,7 +431,7 @@ fun AppState.ModGridView(
                                                                     if (hasModThread) {
                                                                         append("\n\nClick to open <code>${modThreadId?.getModThreadUrl()}</code>.".parseHtml())
                                                                     } else {
-                                                                        append("\n\nNo mod thread provided. Click to search on Google.")
+                                                                        append("\n\n<b>No mod thread provided. Click to search on Google.</b>".parseHtml())
                                                                     }
                                                                 }
                                                             )
@@ -453,7 +455,10 @@ fun AppState.ModGridView(
                                                         }
                                                             .align(Alignment.CenterVertically)) {
                                                             Image(
-                                                                painter = painterResource("new-box.svg"),
+                                                                painter = painterResource(
+                                                                    if (hasModThread) "icon-new-update.svg"
+                                                                    else "icon-new-update-search.svg"
+                                                                ),
                                                                 contentDescription = null,
                                                                 colorFilter = ColorFilter.tint(
                                                                     color =
@@ -473,10 +478,30 @@ fun AppState.ModGridView(
                                                             )
                                                         }
                                                     }
+
                                                     // Versions discovered
                                                     Text(
-                                                        text = mod.variants
-                                                            .joinToString() { it.modInfo.version.toString() },
+                                                        text = buildAnnotatedString {
+                                                            val dimStyle = SpanStyle(
+                                                                color = MaterialTheme.colors.onBackground.copy(alpha = 0.4f)
+                                                            )
+                                                            mod.variants
+                                                                .forEachIndexed { index, element ->
+                                                                    if (mod.isEnabled(element)) {
+                                                                        append(element.modInfo.version.toString())
+                                                                    } else {
+                                                                        withStyle(dimStyle) {
+                                                                            append(element.modInfo.version.toString())
+                                                                        }
+                                                                    }
+
+                                                                    withStyle(dimStyle) {
+                                                                        if (index != mod.variants.count() - 1) {
+                                                                            append(", ")
+                                                                        }
+                                                                    }
+                                                                }
+                                                        },
                                                         modifier = Modifier.align(Alignment.CenterVertically),
                                                         color = SmolTheme.dimmedTextColor()
                                                     )
