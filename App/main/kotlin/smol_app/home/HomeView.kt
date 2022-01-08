@@ -17,14 +17,13 @@ import androidx.compose.ui.input.key.*
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.push
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.tinylog.Logger
-import smol_access.Constants
 import smol_access.SL
-import smol_access.business.Archives
-import smol_access.business.KWatchEvent
-import smol_access.business.asWatchChannel
 import smol_access.model.Mod
 import smol_app.cli.SmolCLI
 import smol_app.composables.*
@@ -34,12 +33,8 @@ import smol_app.toolbar.*
 import smol_app.util.filterModGrid
 import smol_app.util.replaceAllUsingDifference
 import smol_app.util.vmParamsManager
-import timber.ktx.Timber
 import utilities.IOLock
 import utilities.equalsAny
-import utilities.toPathOrNull
-import utilities.trace
-import kotlin.io.path.exists
 
 
 @OptIn(
@@ -51,20 +46,11 @@ import kotlin.io.path.exists
 fun AppState.homeView(
     modifier: Modifier = Modifier
 ) {
-    var isRefreshingMods = false
-    val refreshTrigger by remember { mutableStateOf(Unit) }
     val mods: SnapshotStateList<Mod> = remember { mutableStateListOf() }
     val shownMods: SnapshotStateList<Mod?> = mods.toMutableStateList()
-    val onRefreshingMods = { refreshing: Boolean -> isRefreshingMods = refreshing }
     val scope = rememberCoroutineScope()
     val isWriteLocked = IOLock.stateFlow.collectAsState()
 
-    LaunchedEffect(refreshTrigger) {
-        scope.launch {
-            Timber.d { "Initial mod refresh." }
-            reloadMods()
-        }
-    }
 
     scope.launch {
         withContext(Dispatchers.Default) {
@@ -76,13 +62,6 @@ fun AppState.homeView(
                 }
             }
         }
-    }
-
-    DisposableEffect(Unit) {
-        val handle = scope.launch {
-            watchDirsAndReloadOnChange(scope)
-        }
-        onDispose { handle.cancel() }
     }
 
 
@@ -180,77 +159,6 @@ fun AppState.homeView(
             }
         }
     )
-}
-
-@OptIn(ExperimentalCoroutinesApi::class)
-private suspend fun watchDirsAndReloadOnChange(scope: CoroutineScope) {
-    val NSA: List<Flow<KWatchEvent?>> = listOf(
-        SL.access.getStagingPath()?.toPathOrNull()?.asWatchChannel(scope = scope) ?: emptyFlow(),
-        SL.access.getStagingPath()?.toPathOrNull()
-            ?.resolve(Archives.ARCHIVE_MANIFEST_FILENAME) // Watch manifest.json
-            ?.run { if (this.exists()) this.asWatchChannel(scope = scope) else emptyFlow() } ?: emptyFlow(),
-        SL.gamePath.getModsPath().asWatchChannel(scope = scope),
-        SL.gamePath.getModsPath().resolve(Constants.ENABLED_MODS_FILENAME) // Watch enabled_mods.json
-            .run { if (this.exists()) this.asWatchChannel(scope = scope) else emptyFlow() },
-        SL.archives.getArchivesPath()?.toPathOrNull()?.asWatchChannel(scope = scope) ?: emptyFlow(),
-    )
-    Timber.i {
-        "Started watching folders ${
-            NSA.joinToString()
-        }"
-    }
-    withContext(Dispatchers.Default) {
-        NSA
-            .plus(SL.manualReloadTrigger.trigger.map { null })
-            .merge()
-            .collectLatest {
-                if (!IOLock.stateFlow.value) {
-                    if (it?.kind == KWatchEvent.Kind.Initialized)
-                        return@collectLatest
-                    // Short delay so that if a new file change comes in during this time,
-                    // this is canceled in favor of the new change. This should prevent
-                    // refreshing 500 times if 500 files are changed in a few millis.
-                    delay(1000)
-                    Logger.info { "Trying to reload to due to file change: $it" }
-                    reloadMods()
-                } else {
-                    Logger.info { "Skipping mod reload while IO locked." }
-                }
-            }
-    }
-}
-
-suspend fun reloadMods() {
-    if (SL.access.areModsLoading.value) {
-        Logger.info { "Skipping reload of mods as they are currently refreshing already." }
-        return
-    }
-    try {
-        coroutineScope {
-            trace(onFinished = { _, millis -> Timber.i { "Finished reloading everything in ${millis}ms (this is not how long it took to reload just the mods)." } }) {
-                Timber.d { "Reloading mods." }
-                SL.access.reload()
-                val mods = SL.access.mods.value?.mods ?: emptyList()
-
-                listOf(
-                    async {
-                        SL.versionChecker.lookUpVersions(
-                            forceLookup = false,
-                            mods = mods
-                        )
-                    },
-                    async {
-                        SL.archives.refreshArchivesManifest()
-                    },
-                    async {
-                        SL.saveReader.readAllSaves()
-                    }
-                ).awaitAll()
-            }
-        }
-    } catch (e: Exception) {
-        Logger.debug(e)
-    }
 }
 
 @OptIn(ExperimentalComposeUiApi::class)

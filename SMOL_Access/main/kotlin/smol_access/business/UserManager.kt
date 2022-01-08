@@ -51,7 +51,7 @@ class UserManager internal constructor(
     fun updateUserProfile(mutator: (oldProfile: UserProfile) -> UserProfile): UserProfile {
         val newProfile = mutator(activeProfile.value)
         activeProfileInner.value = newProfile
-        Timber.d { "Updated active profile ${newProfile.username} to $newProfile" }
+        Timber.i { "Updated active profile ${newProfile.username} to $newProfile" }
         return newProfile
     }
 
@@ -69,7 +69,7 @@ class UserManager internal constructor(
                 enabledModVariants = emptyList()
             )
             userProfile.copy(modProfiles = userProfile.modProfiles + newModProfile)
-                .also { Timber.d { "Created mod profile $newModProfile" } }
+                .also { Timber.i { "Created mod profile $newModProfile" } }
         }
     }
 
@@ -81,7 +81,7 @@ class UserManager internal constructor(
                 throw RuntimeException("Profile $modProfileId not found.")
             } else {
                 return@updateUserProfile oldProfile.copy(modProfiles = oldProfile.modProfiles.filterNot { it.id == modProfileId })
-                    .also { Timber.d { "Removed mod profile $profileToRemove" } }
+                    .also { Timber.i { "Removed mod profile $profileToRemove" } }
             }
         }
     }

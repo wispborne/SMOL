@@ -5,16 +5,12 @@ import smol_access.config.AppConfig
 import smol_access.config.GamePath
 import smol_access.model.Mod
 import smol_access.model.ModVariant
-import utilities.IOLock
 import smol_access.util.ManualReloadTrigger
 import timber.Timber
 import timber.ktx.i
 import timber.ktx.v
 import timber.ktx.w
-import utilities.deleteRecursively
-import utilities.toPathOrNull
-import utilities.trace
-import utilities.walk
+import utilities.*
 import java.nio.file.AccessDeniedException
 import java.nio.file.Path
 import kotlin.io.path.*
@@ -74,7 +70,7 @@ internal class Staging(
     }
 
     suspend fun stageInternal(modVariant: ModVariant): Result<Unit> {
-        if (modVariant.stagingInfo != null) {
+        if (modVariant.stagingInfo?.folder?.exists() == true) {
             Timber.i { "Mod already staged! $modVariant" }
             return Result.success(Unit)
         }
@@ -125,6 +121,7 @@ internal class Staging(
             val result = linkFromStagingToGameMods(modVariant)
 
             if (result != Result.success(Unit)) {
+                Timber.w(result.exceptionOrNull()) { "Error enabling ${modVariant.smolId}." }
                 return result
             }
 

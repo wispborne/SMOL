@@ -69,7 +69,7 @@ class DownloadManager(
 
         try {
             if (!isDownloadable(url)) {
-                Timber.d { "Link not downloadable (no file): $url." }
+                Timber.i { "Link not downloadable (no file): $url." }
                 return downloadItem
                     .apply {
                         this.status.value =
@@ -80,7 +80,7 @@ class DownloadManager(
             val conn = URL(url).openConnection()
             Timber.v { "Url $url has headers ${conn.headerFields.entries.joinToString(separator = "\n")}" }
 
-            Timber.d { "Downloadable file clicked: $url." }
+            Timber.i { "Downloadable file clicked: $url." }
             val contentDisposition = ContentDisposition.parse(conn.getHeaderField("Content-Disposition"))
             val filename = contentDisposition.parameter("filename")
 

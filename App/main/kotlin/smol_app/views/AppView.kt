@@ -13,8 +13,14 @@ import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.jetbrains.Children
 import com.arkivanov.decompose.extensions.compose.jetbrains.animation.child.crossfade
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
+import org.tinylog.Logger
+import smol_access.Constants
 import smol_access.SL
+import smol_access.business.Archives
+import smol_access.business.KWatchEvent
+import smol_access.business.asWatchChannel
 import smol_app.IWindowState
 import smol_app.UI
 import smol_app.WindowState
@@ -31,6 +37,9 @@ import smol_app.toasts.toaster
 import smol_app.views.FileDropper
 import smol_app.views.ProfilesView
 import timber.ktx.Timber
+import utilities.IOLock
+import utilities.toPathOrNull
+import kotlin.io.path.exists
 
 @OptIn(ExperimentalStdlibApi::class, ExperimentalDecomposeApi::class)
 @Composable
@@ -79,16 +88,17 @@ fun WindowState.appView() {
 //                    }
 
                     LaunchedEffect(Unit) {
-                        SL.access.mods.collect { modListUpdate ->
-                            val addedModVariants = modListUpdate?.added ?: return@collect
+                        SL.access.mods.onEach { modListUpdate ->
+                            val addedModVariants = modListUpdate?.added ?: return@onEach
 
                             if (addedModVariants == modListUpdate.mods.flatMap { it.variants }) {
-                                Timber.d { "Added mods are the same as existing mods, this is probably startup. Not adding 'mod found' toasts." }
-                                return@collect
+                                Timber.i { "Added mods are the same as existing mods, this is probably startup. Not adding 'mod found' toasts." }
+                                return@onEach
                             }
 
                             addedModVariants
                                 .forEach { newModVariant ->
+                                    Timber.i { "Found new mod ${newModVariant.modInfo.id} ${newModVariant.modInfo.version}." }
                                     val id = "new-" + newModVariant.smolId
                                     SL.UI.toaster.addItem(Toast(
                                         id = id,
@@ -133,6 +143,25 @@ fun WindowState.appView() {
                 }
             }
 
+            val scope = rememberCoroutineScope()
+            var isRefreshingMods = false
+            val refreshTrigger by remember { mutableStateOf(Unit) }
+            val onRefreshingMods = { refreshing: Boolean -> isRefreshingMods = refreshing }
+
+            LaunchedEffect(refreshTrigger) {
+                scope.launch {
+                    Timber.i { "Initial mod refresh." }
+                    reloadModsInner()
+                }
+            }
+
+            DisposableEffect(Unit) {
+                val handle = scope.launch {
+                    watchDirsAndReloadOnChange(scope)
+                }
+                onDispose { handle.cancel() }
+            }
+
             if (alertDialogBuilder != null) {
                 alertDialogBuilder?.invoke { appState.alertDialogSetter(null) }
             }
@@ -146,4 +175,78 @@ class AppState(windowState: WindowState) : IWindowState by windowState {
      * Usage: alertDialogSetter.invoke { AlertDialog(...) }
      */
     lateinit var alertDialogSetter: (@Composable ((dismiss: () -> Unit) -> Unit)?) -> Unit
+
+    suspend fun reloadMods() = reloadModsInner()
+}
+
+
+@OptIn(ExperimentalCoroutinesApi::class)
+private suspend fun watchDirsAndReloadOnChange(scope: CoroutineScope) {
+    val NSA: List<Flow<KWatchEvent?>> = listOf(
+        SL.access.getStagingPath()?.toPathOrNull()?.asWatchChannel(scope = scope) ?: emptyFlow(),
+        SL.access.getStagingPath()?.toPathOrNull()
+            ?.resolve(Archives.ARCHIVE_MANIFEST_FILENAME) // Watch manifest.json
+            ?.run { if (this.exists()) this.asWatchChannel(scope = scope) else emptyFlow() } ?: emptyFlow(),
+        SL.gamePath.getModsPath().asWatchChannel(scope = scope),
+        SL.gamePath.getModsPath().resolve(Constants.ENABLED_MODS_FILENAME) // Watch enabled_mods.json
+            .run { if (this.exists()) this.asWatchChannel(scope = scope) else emptyFlow() },
+        SL.archives.getArchivesPath()?.toPathOrNull()?.asWatchChannel(scope = scope) ?: emptyFlow(),
+    )
+    Timber.i {
+        "Started watching folders ${
+            NSA.joinToString()
+        }"
+    }
+    withContext(Dispatchers.Default) {
+        NSA
+            .plus(SL.manualReloadTrigger.trigger.map { null })
+            .merge()
+            .collectLatest {
+                if (!IOLock.stateFlow.value) {
+                    if (it?.kind == KWatchEvent.Kind.Initialized)
+                        return@collectLatest
+                    // Short delay so that if a new file change comes in during this time,
+                    // this is canceled in favor of the new change. This should prevent
+                    // refreshing 500 times if 500 files are changed in a few millis.
+                    delay(1000)
+                    Logger.info { "Trying to reload to due to file change: $it" }
+                    reloadModsInner()
+                } else {
+                    Logger.info { "Skipping mod reload while IO locked." }
+                }
+            }
+    }
+}
+
+private suspend fun reloadModsInner() {
+    if (SL.access.areModsLoading.value) {
+        Logger.info { "Skipping reload of mods as they are currently refreshing already." }
+        return
+    }
+    try {
+        coroutineScope {
+            utilities.trace(onFinished = { _, millis -> Timber.i { "Finished reloading everything in ${millis}ms (this is not how long it took to reload just the mods)." } }) {
+                Timber.i { "Reloading mods." }
+                SL.access.reload()
+                val mods = SL.access.mods.value?.mods ?: emptyList()
+
+                listOf(
+                    async {
+                        SL.versionChecker.lookUpVersions(
+                            forceLookup = false,
+                            mods = mods
+                        )
+                    },
+                    async {
+                        SL.archives.refreshArchivesManifest()
+                    },
+                    async {
+                        SL.saveReader.readAllSaves()
+                    }
+                ).awaitAll()
+            }
+        }
+    } catch (e: Exception) {
+        Logger.debug(e)
+    }
 }

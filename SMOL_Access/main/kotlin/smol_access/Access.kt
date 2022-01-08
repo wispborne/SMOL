@@ -45,15 +45,15 @@ class Access internal constructor(
         }
 
         SL.archives.getArchivesManifest()
-            .also { Timber.d { "Archives folder manifest: ${it?.manifestItems?.keys?.joinToString()}" } }
+            .also { Timber.i { "Archives folder manifest: ${it?.manifestItems?.keys?.joinToString()}" } }
 
         if (uiConfig.stagingPath.toFileOrNull()?.exists() != true) {
             uiConfig.stagingPath = Constants.STAGING_FOLDER_DEFAULT.absolutePathString()
         }
 
-        Timber.d { "Game: ${uiConfig.gamePath}" }
-        Timber.d { "Archives: ${uiConfig.archivesPath}" }
-        Timber.d { "Staging: ${uiConfig.stagingPath}" }
+        Timber.i { "Game: ${uiConfig.gamePath}" }
+        Timber.i { "Archives: ${uiConfig.archivesPath}" }
+        Timber.i { "Staging: ${uiConfig.stagingPath}" }
     }
 
     /**
@@ -115,6 +115,7 @@ class Access internal constructor(
      * Changes the active mod variant, or disables all if `null` is set.
      */
     suspend fun changeActiveVariant(mod: Mod, modVariant: ModVariant?): Result<Unit> {
+        Timber.i { "Changing active variant of ${mod.id} to ${modVariant?.smolId}. (current: ${mod.findFirstEnabled?.smolId})." }
         try {
             val modVariantParent = modVariant?.mod(modLoader)
             if (modVariantParent != null && mod != modVariantParent) {
@@ -140,11 +141,13 @@ class Access internal constructor(
             }
 
             // Disable all active mod variants
-            // or variants that in the mod folder while the mod itself is disabled.
+            // or variants that in the mod folder while the mod itself is disabled
+            // (except for the variant we want to actually enable, if that's already active).
             // There should only ever be one active but might as well be careful.
 
             mod.variants
                 .filter { mod.isEnabled(it) || it.modsFolderInfo != null }
+                .filter { it != modVariant }
                 .also {
                     modModificationState.update {
                         it.toMutableMap().apply { this[mod.id] = ModModificationState.DisablingVariants }

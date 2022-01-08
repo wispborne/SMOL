@@ -1,9 +1,13 @@
 package timber
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.newSingleThreadContext
 import org.jetbrains.annotations.NonNls
 import timber.Timber.DebugTree.Companion.fqcnIgnore
 import java.io.PrintWriter
 import java.io.StringWriter
+import java.time.Instant
 import java.util.*
 import java.util.Collections.unmodifiableList
 import java.util.regex.Pattern
@@ -195,7 +199,12 @@ class Timber private constructor() {
     }
 
     /** A [Tree] for debug builds. Automatically infers the tag from the calling class. */
-    open class DebugTree(var logLevel: LogLevel, val appenders: List<(String) -> Unit> = emptyList()) : Tree() {
+    open class DebugTree(
+        var logLevel: LogLevel,
+        val appenders: List<(level: LogLevel, formattedMessage: String) -> Unit> = emptyList()
+    ) : Tree() {
+        private val logDispatcher = newSingleThreadContext("smol_logger")
+        private val scope = CoroutineScope(logDispatcher)
 
         override val tag: String?
             get() = super.tag ?: findClassName()
@@ -232,16 +241,18 @@ class Timber private constructor() {
         }
 
         private fun logToConsole(priority: LogLevel, tag: String?, message: String) {
-            val priorityChar = "${priority.name.firstOrNull()?.uppercase()}"
-            val formattedMsg =
-                "${if (priorityChar.isNotBlank()) "$priorityChar/" else ""}${if (!tag.isNullOrBlank()) "$tag/" else ""} $message"
-            if (priority < LogLevel.WARN) {
-                System.out.println(formattedMsg)
-            } else {
-                System.err.println(formattedMsg)
-            }
+            scope.launch {
+                val priorityChar = "${priority.name.firstOrNull()?.uppercase()}"
+                val formattedMsg =
+                    "${Instant.now()} ${if (priorityChar.isNotBlank()) "$priorityChar/" else ""}${if (!tag.isNullOrBlank()) "$tag/" else ""} $message"
+                if (priority < LogLevel.WARN) {
+                    System.out.println(formattedMsg)
+                } else {
+                    System.err.println(formattedMsg)
+                }
 
-            appenders.forEach { it.invoke(formattedMsg) }
+                appenders.forEach { it.invoke(priority, formattedMsg) }
+            }
         }
 
         companion object {

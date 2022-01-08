@@ -2,6 +2,7 @@ package smol_app
 
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.newSingleThreadContext
 import org.tinylog.Level
 import org.tinylog.Logger
 import org.tinylog.configuration.Configuration
@@ -32,7 +33,7 @@ object Logging {
         }
 
     fun setup() {
-        val format = "{date:MM-dd HH:mm:ss.SSS} {class}.{method}:{line} {level}: {message}"
+        val format = "{message}"
         val tinyLogLevelLower = tinyLogLevel.name.lowercase()
 
         if (!wasTinyLogConfigured) {
@@ -64,10 +65,23 @@ object Logging {
         Timber.plant(
             Timber.DebugTree(
                 logLevel = logLevel,
-                appenders = listOf { logMessage -> logFlow.tryEmit(logMessage) }
+                appenders = listOf(
+                    { _, formattedMessage -> logFlow.tryEmit(formattedMessage) },
+                    { priority, formattedMessage ->
+                        when (priority) {
+                            LogLevel.VERBOSE -> Logger.trace { formattedMessage }
+                            LogLevel.DEBUG -> Logger.debug { formattedMessage }
+                            LogLevel.INFO -> Logger.info { formattedMessage }
+                            LogLevel.WARN -> Logger.warn { formattedMessage }
+                            LogLevel.ERROR -> Logger.error { formattedMessage }
+                            LogLevel.ASSERT -> Logger.error { formattedMessage }
+                        }
+                    }
+                )
             )
         )
-        Timber.plant(tinyLoggerTree())
+
+//        Timber.plant(tinyLoggerTree())
     }
 
     private fun tinyLoggerTree() = object : Timber.Tree() {

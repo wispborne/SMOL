@@ -26,7 +26,7 @@ class VramCheckerManager(
     suspend fun refreshVramUsage(mods: List<Mod>): Map<SmolId, VramCheckerCache.Result> {
         val modIdsToUpdate = mods.map { it.id }
 
-        Timber.d { "Refreshing VRAM use of ${modIdsToUpdate.count()} mods." }
+        Timber.i { "Refreshing VRAM use of ${modIdsToUpdate.count()} mods." }
 
         val results = VramChecker(
             enabledModIds = mods.filter { it.hasEnabledVariant }.map { it.id },

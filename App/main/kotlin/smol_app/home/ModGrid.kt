@@ -70,7 +70,7 @@ fun AppState.ModGridView(
     val checkedRows = remember { mutableStateListOf<Mod>() }
     val modInDebugDialog = remember { mutableStateOf<Mod?>(null) }
     val largestVramUsage by remember { mutableStateOf(SL.vramChecker.vramUsage.value?.values?.maxOf { it.bytesForMod }) }
-    val profile = remember { SL.userManager.activeProfile.collectAsState() }
+    val profile = SL.userManager.activeProfile.collectAsState()
     val activeSortField = profile.value.modGridPrefs.sortField?.let {
         kotlin.runCatching { ModGridSortField.valueOf(it) }.getOrNull()
     }
@@ -376,8 +376,9 @@ fun AppState.ModGridView(
                                                 Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {
                                                     // Update badge icon
                                                     if (highestLocalVersion != null && onlineVersion != null && onlineVersion > highestLocalVersion) {
-                                                        val ddUrl = onlineVersionInfo.directDownloadURL?.ifBlank { null }
-                                                            ?: mod.findHighestVersion?.versionCheckerInfo?.directDownloadURL
+                                                        val ddUrl =
+                                                            onlineVersionInfo.directDownloadURL?.ifBlank { null }
+                                                                ?: mod.findHighestVersion?.versionCheckerInfo?.directDownloadURL
                                                         if (ddUrl != null) {
                                                             SmolTooltipArea(tooltip = {
                                                                 SmolTooltipText(

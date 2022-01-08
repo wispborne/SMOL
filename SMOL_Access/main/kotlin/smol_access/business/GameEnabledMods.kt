@@ -68,7 +68,7 @@ class GameEnabledMods(
                 .apply {
                     // If nothing to remove, bail. No reason to write file again.
                     if (!remove(modId)) {
-                        Timber.d { "Mod was already disabled. $modId" }
+                        Timber.i { "Mod was already disabled. $modId" }
                         return@updateEnabledModsFile null
                     }
                 }

@@ -35,7 +35,7 @@ fun main() = application {
     kotlin.runCatching {
         Logging.logLevel =
             if (safeMode) LogLevel.VERBOSE
-            else LogLevel.DEBUG
+            else LogLevel.INFO
         Logging.setup()
     }
         .onFailure { println(it) }
@@ -119,7 +119,7 @@ private fun ApplicationScope.onQuit() {
         CefBrowserPanel.cefApp?.dispose()
         Timber.i { "Shut down JCEF." }
     }
-        .onFailure { Timber.d(it) }
+        .onFailure { Timber.e(it) }
 
     exitApplication()
 }

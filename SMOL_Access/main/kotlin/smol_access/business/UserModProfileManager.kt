@@ -48,11 +48,11 @@ class UserModProfileManager internal constructor(
             val newModProfile = userManager.activeProfile.value.modProfiles.firstOrNull { it.id == newModProfileId }
                 ?: throw NullPointerException("Unable to find mod profile $newModProfileId.")
             Timber.i { "Changing mod profile to ${newModProfile.name}" }
-            trace(onFinished = { _, millis: Long -> Timber.d { "Changed mod profile to ${newModProfile.name} in ${millis}ms." } }) {
+            trace(onFinished = { _, millis: Long -> Timber.i { "Changed mod profile to ${newModProfile.name} in ${millis}ms." } }) {
                 val diff =
                     userManager.activeProfile.value.activeModProfile.enabledModVariants.diff(newModProfile.enabledModVariants) { it.smolVariantId }
 
-                Timber.d { "Mod profile diff for switching: $diff." }
+                Timber.i { "Mod profile diff for switching: $diff." }
                 val variantsToDisable = diff.removed
                 val variantsToEnable = diff.added
                 val allKnownVariants = modLoader.mods.value?.mods?.flatMap { it.variants } ?: emptyList()
@@ -62,8 +62,8 @@ class UserModProfileManager internal constructor(
                         allKnownVariants.firstOrNull { knownVar -> knownVar.smolId == varToDisable.smolVariantId }
                             .also {
                                 if (it == null) {
-                                    // Just log as debug, not an issue if we can't disable something that doesn't exist anyway.
-                                    Timber.d { "Cannot disable variant $varToDisable, as it cannot be found." }
+                                    // Just log as info, not an issue if we can't disable something that doesn't exist anyway.
+                                    Timber.i { "Cannot disable variant $varToDisable, as it cannot be found." }
                                 }
                             }
                     }
@@ -85,7 +85,7 @@ class UserModProfileManager internal constructor(
                     }
 
                 userManager.updateUserProfile { it.copy(activeModProfileId = newModProfileId) }
-                Timber.d { "Changed mod profile to $newModProfile" }
+                Timber.i { "Changed mod profile to $newModProfile" }
             }
         } catch (e: Exception) {
             Timber.e(e) {
