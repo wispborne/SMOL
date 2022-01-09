@@ -25,6 +25,7 @@ import smol_app.composables.dashedBorder
 import smol_app.themes.SmolTheme
 import smol_app.util.bytesAsShortReadableMiB
 import smol_app.util.parseHtml
+import timber.ktx.Timber
 import utilities.walk
 import java.awt.dnd.DropTarget
 import java.awt.dnd.DropTargetDragEvent
@@ -129,11 +130,14 @@ fun AppState.FileDropper(
 
             LaunchedEffect(file.absolutePathString()) {
                 withContext(Dispatchers.Default) {
-                    fileSize = if (file.isRegularFile()) {
-                        file.fileSize()
-                    } else {
-                        file.walk().sumOf { it.fileSize() }
+                    kotlin.runCatching {
+                        fileSize = if (file.isRegularFile()) {
+                            file.fileSize()
+                        } else {
+                            file.walk().sumOf { it.fileSize() }
+                        }
                     }
+                        .onFailure { Timber.w(it) }
                 }
             }
 

@@ -35,7 +35,7 @@ import smol_app.toasts.downloadToast
 import smol_app.toasts.toastInstalledCard
 import smol_app.toasts.toaster
 import smol_app.views.FileDropper
-import smol_app.views.ProfilesView
+import smol_app.modprofiles.ProfilesView
 import timber.ktx.Timber
 import utilities.IOLock
 import utilities.toPathOrNull

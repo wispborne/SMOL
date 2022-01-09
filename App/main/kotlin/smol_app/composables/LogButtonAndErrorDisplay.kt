@@ -33,7 +33,7 @@ fun logButtonAndErrorDisplay(modifier: Modifier = Modifier, showLogPanel: Mutabl
     Row(modifier) {
         SmolTooltipArea(
             tooltip = { SmolTooltipText(text = "Show/Hide Logs") },
-            delayMillis = SmolTooltipArea.delay
+            delayMillis = SmolTooltipArea.shortDelay
         ) {
             IconToggleButton(
                 checked = showLogPanel.value,

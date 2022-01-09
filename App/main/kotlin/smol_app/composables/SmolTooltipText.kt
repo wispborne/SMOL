@@ -1,13 +1,10 @@
 package smol_app.composables
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.*
+import androidx.compose.material.LocalTextStyle
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
@@ -18,7 +15,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.dp
 
 @Composable
 fun SmolTooltipText(
@@ -39,17 +35,10 @@ fun SmolTooltipText(
     onTextLayout: (TextLayoutResult) -> Unit = {},
     style: TextStyle = LocalTextStyle.current
 ) {
-    Card(
-        modifier = modifier,
-        elevation = 4.dp,
-        shape = RectangleShape
-    ) {
+    SmolTooltipBackground(modifier = modifier) {
         Text(
             text = text,
-            modifier = Modifier
-                .background(MaterialTheme.colors.surface)
-                .border(1.dp, MaterialTheme.colors.primary.copy(alpha = ContentAlpha.medium))
-                .padding(16.dp),
+            modifier = Modifier,
             color = color,
             fontSize = fontSize,
             fontStyle = fontStyle,
@@ -87,17 +76,10 @@ fun SmolTooltipText(
     onTextLayout: (TextLayoutResult) -> Unit = {},
     style: TextStyle = LocalTextStyle.current
 ) {
-    Card(
-        modifier = modifier,
-        elevation = 4.dp,
-        shape = RectangleShape
-    ) {
+    SmolTooltipBackground(modifier = modifier) {
         Text(
             text = text,
-            modifier = Modifier
-                .background(MaterialTheme.colors.surface)
-                .border(1.dp, MaterialTheme.colors.primary.copy(alpha = ContentAlpha.medium))
-                .padding(16.dp),
+            modifier = Modifier,
             color = color,
             fontSize = fontSize,
             fontStyle = fontStyle,

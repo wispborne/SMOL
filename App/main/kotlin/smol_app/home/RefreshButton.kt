@@ -22,7 +22,7 @@ import smol_app.composables.SmolTooltipText
 fun AppState.refreshButton(onRefresh: () -> Unit) {
     SmolTooltipArea(
         tooltip = { SmolTooltipText(text = "Refresh mod list.") },
-        delayMillis = SmolTooltipArea.delay
+        delayMillis = SmolTooltipArea.shortDelay
     ) {
         val areModsLoading = SL.access.areModsLoading.collectAsState().value
         IconButton(

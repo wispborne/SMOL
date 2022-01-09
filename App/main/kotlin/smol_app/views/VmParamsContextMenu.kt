@@ -32,7 +32,7 @@ fun AppState.ramButton(modifier: Modifier = Modifier) {
     val showVmParamsMenu = remember { mutableStateOf(false) }
     SmolTooltipArea(
         tooltip = { SmolTooltipText("Adjust the RAM allocated to the game. Modifies vmparams.") },
-        delayMillis = SmolTooltipArea.delay
+        delayMillis = SmolTooltipArea.shortDelay
     ) {
         SmolButton(
             onClick = { showVmParamsMenu.value = true },

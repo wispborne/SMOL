@@ -63,7 +63,7 @@ fun AppState.jreSwitcher(
 
             SmolTooltipArea(
                 tooltip = { SmolTooltipText("Set ${jreEntry.versionString} as the active JRE.") },
-                delayMillis = SmolTooltipArea.delay
+                delayMillis = SmolTooltipArea.shortDelay
             ) {
                 Row {
                     RadioButton(
@@ -104,7 +104,7 @@ fun AppState.jre8DownloadButton(
                     }</code>'.".parseHtml()
                 )
             },
-            delayMillis = SmolTooltipArea.delay
+            delayMillis = SmolTooltipArea.shortDelay
         ) {
             SmolButton(
                 enabled = jre8DownloadProgress == null,
@@ -129,7 +129,7 @@ fun AppState.jre8DownloadButton(
             tooltip = {
                 SmolTooltipText("Download in a browser.")
             },
-            delayMillis = SmolTooltipArea.delay
+            delayMillis = SmolTooltipArea.shortDelay
         ) {
             IconButton(
                 onClick = { SL.appConfig.jre8Url.openAsUriInBrowser() },

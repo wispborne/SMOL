@@ -119,7 +119,7 @@ fun AppState.ModGridView(
                     SmolTooltipArea(
                         modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
                         tooltip = { SmolTooltipText(text = "The version(s) tracked by SMOL.") },
-                        delayMillis = SmolTooltipArea.delay
+                        delayMillis = SmolTooltipArea.shortDelay
                     ) {
                         Text(text = "Version(s)", fontWeight = FontWeight.Bold)
                     }
@@ -135,7 +135,7 @@ fun AppState.ModGridView(
                                             "\nAll images are counted, even if not used by the game."
                                 )
                             },
-                            delayMillis = SmolTooltipArea.delay
+                            delayMillis = SmolTooltipArea.shortDelay
                         ) {
                             SortableHeader(
                                 columnSortField = ModGridSortField.VramImpact,
@@ -153,7 +153,7 @@ fun AppState.ModGridView(
                                     text = "Calculate VRAM Impact for all mods."
                                 )
                             },
-                            delayMillis = SmolTooltipArea.delay
+                            delayMillis = SmolTooltipArea.shortDelay
                         ) {
                             IconButton(
                                 onClick = { showVramRefreshWarning = true },

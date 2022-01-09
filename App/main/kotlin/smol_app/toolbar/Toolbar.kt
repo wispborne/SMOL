@@ -55,7 +55,7 @@ fun AppState.modBrowserButton() {
                 else "JCEF not found; add to /libs to enable the Mod Browser."
             )
         },
-        delayMillis = SmolTooltipArea.delay
+        delayMillis = SmolTooltipArea.shortDelay
     ) {
         SmolButton(
             enabled = isEnabled,
@@ -71,7 +71,7 @@ fun AppState.modBrowserButton() {
 fun AppState.profilesButton() {
     SmolTooltipArea(
         tooltip = { SmolTooltipText("Create and swap between enabled mods.") },
-        delayMillis = SmolTooltipArea.delay
+        delayMillis = SmolTooltipArea.shortDelay
     ) {
         SmolButton(
             onClick = { router.push(Screen.Profiles) },
@@ -86,7 +86,7 @@ fun AppState.profilesButton() {
 fun AppState.homeButton(modifier: Modifier = Modifier) {
     SmolTooltipArea(
         tooltip = { SmolTooltipText("View and change mods.") },
-        delayMillis = SmolTooltipArea.delay
+        delayMillis = SmolTooltipArea.shortDelay
     ) {
         SmolButton(
             onClick = { router.push(Screen.Home) },
@@ -114,7 +114,7 @@ fun AppState.launchButton() {
     val launchText = remember { sayings.weightedRandom() }
     SmolTooltipArea(
         tooltip = { SmolTooltipText(launchText) },
-        delayMillis = SmolTooltipArea.delay
+        delayMillis = SmolTooltipArea.shortDelay
     ) {
         SmolButton(
             onClick = {
@@ -152,7 +152,7 @@ fun AppState.launchButton() {
 fun AppState.installModsButton(modifier: Modifier = Modifier) {
     SmolTooltipArea(
         tooltip = { SmolTooltipText(text = "Select one or more mod archives or mod_info.json files.") },
-        delayMillis = SmolTooltipArea.delay
+        delayMillis = SmolTooltipArea.shortDelay
     ) {
         SmolButton(
             onClick = {
@@ -180,7 +180,7 @@ fun AppState.installModsButton(modifier: Modifier = Modifier) {
         ) {
             Text("Install Mods")
 //            Icon(
-//                painter = painterResource("plus.svg"),
+//                painter = painterResource("icon-plus.svg"),
 //                contentDescription = null,
 //                tint = SmolTheme.dimmedIconColor()
 //            )
