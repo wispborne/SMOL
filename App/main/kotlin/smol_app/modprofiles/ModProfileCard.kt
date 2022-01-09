@@ -22,65 +22,44 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import smol_access.SL
-import smol_access.business.UserManager
+import smol_access.business.SaveFile
 import smol_access.model.ModVariant
 import smol_access.model.SmolId
 import smol_access.model.UserProfile
-import smol_app.composables.SmolButton
 import smol_app.composables.SmolTextField
 import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipBackground
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.lighten
 import smol_app.util.smolPreview
-
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 @Composable
 @Preview
 fun ModProfileCardPreview() = smolPreview {
-    val modProfile = UserProfile.ModProfile(
-        id = 0,
-        name = "test profile",
-        description = "desc",
-        sortOrder = 0,
-        enabledModVariants = listOf(
-            UserProfile.ModProfile.EnabledModVariant(
-                modId = "mod_id",
-                smolVariantId = "23444"
-            )
-        )
-    )
-    val userProfile = UserProfile(
-        id = 1337,
-        username = "user",
-        activeModProfileId = 0,
-        versionCheckerIntervalMillis = null,
-        modProfiles = emptyList(), //listOf(modProfile),
-        profileVersion = 1,
-        theme = null,
-        favoriteMods = emptyList(),
-        modGridPrefs = UserProfile.ModGridPrefs(
-            sortField = null
-        )
-    )
     ModProfileCard(
-        userProfile = userProfile,
-        modProfile = modProfile,
+        userProfile = mockUserProfile,
+        modProfile = mockModProfile,
         modProfileIdShowingDeleteConfirmation = mutableStateOf(null),
         modVariants = mutableStateOf(emptyMap())
     )
 }
 
+private val dateFormat = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
+
 @OptIn(ExperimentalFoundationApi::class, ExperimentalAnimationApi::class)
 @Composable
 fun ModProfileCard(
     userProfile: UserProfile,
-    modProfile: UserProfile.ModProfile,
+    modProfile: ModProfileCardInfo,
     modProfileIdShowingDeleteConfirmation: MutableState<Int?>,
     modVariants: MutableState<Map<SmolId, ModVariant>>
 ) {
     val isActiveProfile = userProfile.activeModProfileId == modProfile.id
-    val isUserMade = modProfile in userProfile.modProfiles
+    val isUserMade = modProfile is ModProfileCardInfo.EditableModProfileCardInfo
     val isEditMode = remember { mutableStateOf(false) }
     val modProfileName = remember { mutableStateOf(modProfile.name) }
     var isExpanded by remember { mutableStateOf(false) }
@@ -116,27 +95,32 @@ fun ModProfileCard(
                 Column(
                     modifier = Modifier
                         .run {
-                            if (isActiveProfile) this.padding(16.dp)
-                            else this.padding(
-                                top = 8.dp,
-                                bottom = 16.dp,
+                            if (isActiveProfile) this.padding(
                                 start = 16.dp,
-                                end = 16.dp
+                                top = 16.dp,
+                                end = 8.dp,
+                                bottom = 16.dp
+                            )
+                            else this.padding(
+                                start = 16.dp,
+                                top = 8.dp,
+                                end = 8.dp,
+                                bottom = 16.dp
                             )
                         }) {
-                    Row {
-                        if (!isEditMode.value) {
-                            Text(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .padding(end = 16.dp)
-                                    .align(Alignment.CenterVertically),
-                                fontSize = 18.sp,
-                                fontFamily = SmolTheme.orbitronSpaceFont,
-                                text = modProfileName.value
-                            )
-                        } else {
-                            SelectionContainer {
+                    SelectionContainer {
+                        Row {
+                            if (!isEditMode.value) {
+                                Text(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .padding(end = 16.dp)
+                                        .align(Alignment.CenterVertically),
+                                    fontSize = 18.sp,
+                                    fontFamily = SmolTheme.orbitronSpaceFont,
+                                    text = modProfileName.value
+                                )
+                            } else {
                                 SmolTextField(
                                     modifier = Modifier
                                         .weight(1f)
@@ -157,15 +141,60 @@ fun ModProfileCard(
                                     }
                                 )
                             }
+
+                            if (isUserMade) {
+                                IconToggleButton(
+                                    modifier = Modifier
+                                        .align(Alignment.CenterVertically)
+                                        .run {
+                                            if (isEditMode.value) this.border(
+                                                width = 2.dp,
+                                                color = MaterialTheme.colors.onSurface.lighten(),
+                                                shape = SmolTheme.smolNormalButtonShape()
+                                            ) else this
+                                        }
+                                        .height(20.dp),
+                                    checked = isEditMode.value,
+                                    onCheckedChange = { isEditMode.value = !isEditMode.value }
+                                ) {
+                                    Icon(
+                                        painter = painterResource("pencil-outline.svg"),
+                                        modifier = Modifier,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colors.onSurface
+                                    )
+                                }
+                            }
                         }
                     }
 
-                    Text(
-                        modifier = Modifier.padding(top = 4.dp),
-                        text = "${modProfile.enabledModVariants.count()} mods",
-                        fontFamily = SmolTheme.fireCodeFont,
-                        fontSize = 12.sp,
-                    )
+                    Row {
+                        val count = modProfile.enabledModVariants.count()
+                        Text(
+                            modifier = Modifier.padding(top = 8.dp),
+                            text = "$count ${if (count == 1) "mod" else "mods"}",
+                            fontFamily = SmolTheme.fireCodeFont,
+                            fontSize = 12.sp,
+                        )
+
+                        if (modProfile is ModProfileCardInfo.SaveModProfileCardInfo) {
+                            Text(
+                                modifier = Modifier.padding(top = 8.dp),
+                                text = " • level ${modProfile.saveFile.characterLevel}",
+                                fontFamily = SmolTheme.fireCodeFont,
+                                fontSize = 12.sp,
+                            )
+                        }
+                    }
+
+                    if (modProfile is ModProfileCardInfo.SaveModProfileCardInfo) {
+                        Text(
+                            modifier = Modifier.padding(top = 8.dp),
+                            text = dateFormat.format(modProfile.saveFile.saveDate),
+                            fontFamily = SmolTheme.fireCodeFont,
+                            fontSize = 12.sp,
+                        )
+                    }
                 }
 
                 Divider(Modifier.height(1.dp).fillMaxWidth())
@@ -191,10 +220,14 @@ fun ModProfileCard(
                                 .weight(1f)
                         ) {
                             Box(Modifier.fillMaxWidth()) {
-                                Text(
-                                    text = if (isExpanded) "Collapse" else "Expand",
-                                    modifier = Modifier.width(IntrinsicSize.Min).align(Alignment.CenterStart),
-                                    fontSize = 14.sp
+                                Icon(
+                                    painter = painterResource(
+                                        if (isExpanded) "icon-collapse.svg"
+                                        else "icon-expand.svg"
+                                    ),
+                                    modifier = Modifier.align(Alignment.CenterStart),
+//                                    fontSize = 14.sp,
+                                    contentDescription = null
                                 )
                             }
                         }
@@ -225,7 +258,7 @@ fun ModProfileCard(
 fun modList(
     modifier: Modifier = Modifier,
     modVariants: MutableState<Map<SmolId, ModVariant>>,
-    modProfile: UserProfile.ModProfile
+    modProfile: ModProfileCardInfo
 ) {
     // Mod list
 //    val modNameLength = 28
@@ -279,7 +312,7 @@ fun profileControlsPreview() = smolPreview {
         profileControls(
             isEditMode = mutableStateOf(false),
             modProfileIdShowingDeleteConfirmation = mutableStateOf(null),
-            modProfile = UserManager.defaultModProfile,
+            modProfile = mockModProfile,
             isActiveProfile = false,
             modVariants = mutableStateOf(emptyMap())
         )
@@ -291,7 +324,7 @@ fun profileControls(
     modifier: Modifier = Modifier,
     isEditMode: MutableState<Boolean>,
     modProfileIdShowingDeleteConfirmation: MutableState<Int?>,
-    modProfile: UserProfile.ModProfile,
+    modProfile: ModProfileCardInfo,
     isActiveProfile: Boolean,
     modVariants: MutableState<Map<SmolId, ModVariant>>
 ) {
@@ -326,27 +359,6 @@ fun profileControls(
                 )
             }
         }
-        IconToggleButton(
-            modifier = Modifier
-                .align(Alignment.CenterVertically)
-                .run {
-                    if (isEditMode.value) this.border(
-                        width = 2.dp,
-                        color = MaterialTheme.colors.onSurface.lighten(),
-                        shape = SmolTheme.smolNormalButtonShape()
-                    ) else this
-                }
-                .height(SmolTheme.iconHeightWidth())
-                .width(SmolTheme.iconHeightWidth()),
-            checked = isEditMode.value,
-            onCheckedChange = { isEditMode.value = !isEditMode.value }
-        ) {
-            Icon(
-                painter = painterResource("pencil-outline.svg"),
-                contentDescription = null,
-                tint = MaterialTheme.colors.onSurface
-            )
-        }
         IconButton(
             modifier = Modifier
                 .align(Alignment.CenterVertically)
@@ -370,7 +382,7 @@ fun profileControls(
 fun saveGameProfileControlsPreview() = smolPreview {
     Column {
         saveGameProfileControls(
-            modProfile = UserManager.defaultModProfile
+            modProfile = mockModProfile
         )
     }
 }
@@ -378,14 +390,14 @@ fun saveGameProfileControlsPreview() = smolPreview {
 @Composable
 fun saveGameProfileControls(
     modifier: Modifier = Modifier,
-    modProfile: UserProfile.ModProfile
+    modProfile: ModProfileCardInfo
 ) {
     Row(
         modifier = modifier
     ) {
-        SmolButton(
+        OutlinedButton(
             modifier = Modifier
-                .padding(start = 8.dp, end = 8.dp, top = 8.dp)
+                .padding(start = 8.dp, end = 8.dp, top = 4.dp)
                 .align(Alignment.CenterVertically),
             onClick = {
 
@@ -395,3 +407,50 @@ fun saveGameProfileControls(
         }
     }
 }
+
+private val mockModProfile = ModProfileCardInfo.EditableModProfileCardInfo(
+    id = 0,
+    name = "test profile",
+    description = "desc",
+    sortOrder = 0,
+    enabledModVariants = listOf(
+        UserProfile.ModProfile.EnabledModVariant(
+            modId = "mod_id",
+            smolVariantId = "23444"
+        )
+    )
+)
+private val mockSaveModProfile = ModProfileCardInfo.SaveModProfileCardInfo(
+    id = 0,
+    name = "test profile",
+    description = "desc",
+    sortOrder = 0,
+    enabledModVariants = listOf(
+        UserProfile.ModProfile.EnabledModVariant(
+            modId = "mod_id",
+            smolVariantId = "23444"
+        )
+    ),
+    saveFile = SaveFile(
+        id = "save",
+        characterName = "The Boss",
+        characterLevel = 24,
+        portraitPath = "g/g/g",
+        saveFileVersion = "0.5",
+        saveDate = Instant.now().atZone(ZoneId.systemDefault()),
+        mods = emptyList()
+    )
+)
+private val mockUserProfile = UserProfile(
+    id = 1337,
+    username = "user",
+    activeModProfileId = 0,
+    versionCheckerIntervalMillis = null,
+    modProfiles = emptyList(), //listOf(modProfile),
+    profileVersion = 1,
+    theme = null,
+    favoriteMods = emptyList(),
+    modGridPrefs = UserProfile.ModGridPrefs(
+        sortField = null
+    )
+)

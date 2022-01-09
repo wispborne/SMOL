@@ -16,6 +16,7 @@ import org.jetbrains.compose.splitpane.ExperimentalSplitPaneApi
 import org.jetbrains.compose.splitpane.HorizontalSplitPane
 import org.jetbrains.compose.splitpane.rememberSplitPaneState
 import smol_access.SL
+import smol_access.business.SaveFile
 import smol_access.model.ModVariant
 import smol_access.model.UserProfile
 import smol_app.composables.*
@@ -85,6 +86,15 @@ fun AppState.ProfilesView(
                                 .sortedWith(
                                     compareByDescending<UserProfile.ModProfile> { it.id == userProfile.activeModProfileId }
                                         .thenBy { it.sortOrder })
+                                .map {
+                                    ModProfileCardInfo.EditableModProfileCardInfo(
+                                        id = it.id,
+                                        name = it.name,
+                                        description = it.description,
+                                        sortOrder = it.sortOrder,
+                                        enabledModVariants = it.enabledModVariants
+                                    )
+                                }
                             ) { modProfile ->
                                 ModProfileCard(
                                     userProfile,
@@ -114,7 +124,7 @@ fun AppState.ProfilesView(
                             this.items(items = saveGames.value
                                 .sortedByDescending { it.saveDate }
                                 .mapIndexed { index, saveFile ->
-                                    UserProfile.ModProfile(
+                                    ModProfileCardInfo.SaveModProfileCardInfo(
                                         id = 1337 + index,
                                         name = saveFile.characterName,
                                         description = "",
@@ -124,7 +134,8 @@ fun AppState.ProfilesView(
                                                 modId = it.id,
                                                 smolVariantId = ModVariant.createSmolId(it.id, it.version)
                                             )
-                                        }
+                                        },
+                                        saveFile = saveFile
                                     )
                                 }
                             ) { modProfile ->
@@ -222,4 +233,41 @@ private fun NewModProfileCard(onProfileCreated: () -> Unit) {
             }
         }
     }
+}
+
+sealed class ModProfileCardInfo(
+    val id: Int,
+    val name: String,
+    val description: String,
+    val sortOrder: Int,
+    val enabledModVariants: List<UserProfile.ModProfile.EnabledModVariant>
+) {
+    class EditableModProfileCardInfo(
+        id: Int,
+        name: String,
+        description: String,
+        sortOrder: Int,
+        enabledModVariants: List<UserProfile.ModProfile.EnabledModVariant>
+    ) : ModProfileCardInfo(
+        id = id,
+        name = name,
+        description = description,
+        sortOrder = sortOrder,
+        enabledModVariants = enabledModVariants,
+    )
+
+    class SaveModProfileCardInfo(
+        id: Int,
+        name: String,
+        description: String,
+        sortOrder: Int,
+        enabledModVariants: List<UserProfile.ModProfile.EnabledModVariant>,
+        val saveFile: SaveFile
+    ) : ModProfileCardInfo(
+        id = id,
+        name = name,
+        description = description,
+        sortOrder = sortOrder,
+        enabledModVariants = enabledModVariants,
+    )
 }

@@ -31,11 +31,9 @@ import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -507,31 +505,34 @@ fun AppState.ModGridView(
                                                     }
 
                                                     // Versions discovered
-                                                    Text(
-                                                        text = buildAnnotatedString {
-                                                            val dimStyle = SpanStyle(
-                                                                color = MaterialTheme.colors.onBackground.copy(alpha = 0.4f)
-                                                            )
-                                                            mod.variants
-                                                                .forEachIndexed { index, element ->
-                                                                    if (mod.isEnabled(element)) {
+                                                    Row(
+                                                        modifier = Modifier.align(Alignment.CenterVertically).weight(1f),
+                                                        horizontalArrangement = Arrangement.Center
+                                                    ) {
+                                                        val dimColor =
+                                                            MaterialTheme.colors.onBackground.copy(alpha = 0.4f)
+                                                        mod.variants
+                                                            .forEachIndexed { index, element ->
+                                                                val enabled = mod.isEnabled(element)
+                                                                Text(
+                                                                    text = buildString {
                                                                         append(element.modInfo.version.toString())
-                                                                    } else {
-                                                                        withStyle(dimStyle) {
-                                                                            append(element.modInfo.version.toString())
-                                                                        }
-                                                                    }
-
-                                                                    withStyle(dimStyle) {
-                                                                        if (index != mod.variants.count() - 1) {
-                                                                            append(", ")
-                                                                        }
-                                                                    }
-                                                                }
-                                                        },
-                                                        modifier = Modifier.align(Alignment.CenterVertically),
-                                                        color = SmolTheme.dimmedTextColor()
-                                                    )
+                                                                        append(
+                                                                            if (index != mod.variants.count() - 1)
+                                                                                ", " else ""
+                                                                        )
+                                                                    },
+//                                                                    modifier = Modifier.run {
+//                                                                        if (enabled) this.align(
+//                                                                            Alignment.CenterHorizontally
+//                                                                        ) else this
+//                                                                    },
+                                                                    color = if (enabled)
+                                                                        Color.Unspecified
+                                                                    else dimColor
+                                                                )
+                                                            }
+                                                    }
                                                 }
 
                                                 // VRAM
