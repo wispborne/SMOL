@@ -2,6 +2,7 @@ package smol_app.modprofiles
 
 import AppState
 import androidx.compose.desktop.ui.tooling.preview.Preview
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.GridCells
 import androidx.compose.foundation.lazy.LazyVerticalGrid
@@ -11,6 +12,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import org.jetbrains.compose.splitpane.ExperimentalSplitPaneApi
+import org.jetbrains.compose.splitpane.HorizontalSplitPane
+import org.jetbrains.compose.splitpane.rememberSplitPaneState
 import smol_access.SL
 import smol_access.model.ModVariant
 import smol_access.model.UserProfile
@@ -20,17 +24,25 @@ import smol_app.toolbar.*
 
 @OptIn(
     ExperimentalMaterialApi::class,
-    androidx.compose.foundation.ExperimentalFoundationApi::class
+    ExperimentalFoundationApi::class, ExperimentalSplitPaneApi::class
 )
 @Composable
 @Preview
 fun AppState.ProfilesView(
     modifier: Modifier = Modifier
 ) {
+    val recomposer = currentRecomposeScope
     val modProfileIdShowingDeleteConfirmation = remember { mutableStateOf<Int?>(null) }
-    var userProfile = SL.userManager.activeProfile.collectAsState().value
+    val userProfile = SL.userManager.activeProfile.collectAsState().value
     val saveGames = SL.saveReader.saves.collectAsState()
     val showLogPanel = remember { mutableStateOf(false) }
+    val modVariants = remember {
+        mutableStateOf(SL.access.mods.value?.mods
+            ?.flatMap { it.variants }
+            ?.associateBy { it.smolId }
+            ?: emptyMap())
+    }
+    val splitPageState = rememberSplitPaneState(initialPositionPercentage = 0.50f)
 
     Scaffold(
         topBar = {
@@ -44,74 +56,84 @@ fun AppState.ProfilesView(
                 modBrowserButton()
             }
         }, content = {
-            Box(modifier.padding(16.dp)) {
-                val modVariants = remember {
-                    mutableStateOf(SL.access.mods.value?.mods?.flatMap { it.variants }?.associateBy { it.smolId }
-                        ?: emptyMap())
-                }
+            HorizontalSplitPane(
+                modifier = modifier.padding(
+                    start = 16.dp,
+                    top = 16.dp,
+                    end = 16.dp,
+                    bottom = SmolTheme.bottomBarHeight
+                ),
+                splitPaneState = splitPageState
+            ) {
+                first {
+                    Column {
+                        Text(
+                            text = "Profiles",
+                            style = MaterialTheme.typography.h6,
+                            modifier = Modifier.padding(start = 8.dp, bottom = 16.dp)
+                        )
+                        LazyVerticalGrid(
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            cells = GridCells.Adaptive(370.dp)
+                        ) {
+                            this.item {
+                                NewModProfileCard(onProfileCreated = { recomposer.invalidate() })
+                            }
 
-                LazyVerticalGrid(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    cells = GridCells.Adaptive(370.dp)
-                ) {
-                    this.items(items = userProfile.modProfiles + saveGames.value.mapIndexed { index, saveFile ->
-                        UserProfile.ModProfile(
-                            id = 1337 + index,
-                            name = saveFile.characterName,
-                            description = "",
-                            sortOrder = 1337 + index,
-                            enabledModVariants = saveFile.mods.map {
-                                UserProfile.ModProfile.EnabledModVariant(
-                                    modId = it.id,
-                                    smolVariantId = ModVariant.createSmolId(it.id, it.version)
+                            this.items(items = userProfile.modProfiles
+                                .sortedWith(
+                                    compareByDescending<UserProfile.ModProfile> { it.id == userProfile.activeModProfileId }
+                                        .thenBy { it.sortOrder })
+                            ) { modProfile ->
+                                ModProfileCard(
+                                    userProfile,
+                                    modProfile,
+                                    modProfileIdShowingDeleteConfirmation,
+                                    modVariants
                                 )
                             }
-                        )
+                        }
                     }
-                        .sortedWith(
-                            compareByDescending<UserProfile.ModProfile> { it.id == userProfile.activeModProfileId }
-                                .thenBy { it.sortOrder })
-                    ) { modProfile ->
-                        ModProfileCard(userProfile, modProfile, modProfileIdShowingDeleteConfirmation, modVariants)
-                    }
+                }
 
-                    this.item {
-                        var newProfileName by remember { mutableStateOf("") }
-                        Card(
-                            shape = SmolTheme.smolFullyClippedButtonShape()
+                horizontalSplitter(modifier = Modifier.padding(start = 16.dp, end = 16.dp))
+
+                second {
+                    Column {
+                        Text(
+                            text = "Saves",
+                            style = MaterialTheme.typography.h6,
+                            modifier = Modifier.padding(start = 8.dp, bottom = 16.dp)
+                        )
+                        LazyVerticalGrid(
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            cells = GridCells.Adaptive(370.dp)
                         ) {
-                            Column(Modifier.padding(16.dp).fillMaxWidth()) {
-                                SmolTextField(
-                                    value = newProfileName,
-                                    onValueChange = { newProfileName = it },
-                                    singleLine = true,
-                                    label = { Text("Name") }
-                                )
-                                SmolButton(
-                                    modifier = Modifier.padding(top = 16.dp),
-                                    onClick = {
-                                        if (newProfileName.isNotBlank()) {
-                                            SL.userManager.createModProfile(
-                                                name = newProfileName,
-                                                description = null,
-                                                sortOrder = SL.userManager.activeProfile.value.modProfiles.maxOf { it.sortOrder } + 1
+                            this.items(items = saveGames.value
+                                .sortedByDescending { it.saveDate }
+                                .mapIndexed { index, saveFile ->
+                                    UserProfile.ModProfile(
+                                        id = 1337 + index,
+                                        name = saveFile.characterName,
+                                        description = "",
+                                        sortOrder = 1337 + index,
+                                        enabledModVariants = saveFile.mods.map {
+                                            UserProfile.ModProfile.EnabledModVariant(
+                                                modId = it.id,
+                                                smolVariantId = ModVariant.createSmolId(it.id, it.version)
                                             )
-                                            newProfileName = ""
-                                            userProfile = SL.userManager.activeProfile.value
                                         }
-                                    }) {
-                                    Icon(
-                                        modifier = Modifier
-                                            .height(SmolTheme.textIconHeightWidth())
-                                            .width(SmolTheme.textIconHeightWidth()),
-                                        painter = painterResource("icon-plus.svg"),
-                                        contentDescription = null
-                                    )
-                                    Text(
-                                        text = "New Profile"
                                     )
                                 }
+                            ) { modProfile ->
+                                ModProfileCard(
+                                    userProfile,
+                                    modProfile,
+                                    modProfileIdShowingDeleteConfirmation,
+                                    modVariants
+                                )
                             }
                         }
                     }
@@ -158,5 +180,46 @@ fun AppState.ProfilesView(
                 }
             }
         )
+    }
+}
+
+@Composable
+private fun NewModProfileCard(onProfileCreated: () -> Unit) {
+    var newProfileName by remember { mutableStateOf("") }
+    Card(
+        shape = SmolTheme.smolFullyClippedButtonShape()
+    ) {
+        Column(Modifier.padding(16.dp).fillMaxWidth()) {
+            SmolTextField(
+                value = newProfileName,
+                onValueChange = { newProfileName = it },
+                singleLine = true,
+                label = { Text("Name") }
+            )
+            SmolButton(
+                modifier = Modifier.padding(top = 16.dp),
+                onClick = {
+                    if (newProfileName.isNotBlank()) {
+                        SL.userManager.createModProfile(
+                            name = newProfileName,
+                            description = null,
+                            sortOrder = SL.userManager.activeProfile.value.modProfiles.maxOf { it.sortOrder } + 1
+                        )
+                        newProfileName = ""
+                        onProfileCreated.invoke()
+                    }
+                }) {
+                Icon(
+                    modifier = Modifier
+                        .height(SmolTheme.textIconHeightWidth())
+                        .width(SmolTheme.textIconHeightWidth()),
+                    painter = painterResource("icon-plus.svg"),
+                    contentDescription = null
+                )
+                Text(
+                    text = "New Profile"
+                )
+            }
+        }
     }
 }

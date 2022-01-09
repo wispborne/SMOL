@@ -16,35 +16,36 @@ import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.splitpane.ExperimentalSplitPaneApi
 import org.jetbrains.compose.splitpane.SplitPaneScope
+import smol_app.themes.SmolTheme.lighten
 import java.awt.Cursor
 
 @OptIn(ExperimentalSplitPaneApi::class)
 //@Composable
-fun SplitPaneScope.horizontalSplitter() {
+fun SplitPaneScope.horizontalSplitter(modifier: Modifier = Modifier) {
     splitter {
         visiblePart {
             Box(
-                Modifier
+                modifier
                     .width(1.dp)
                     .fillMaxHeight()
-                    .background(MaterialTheme.colors.background)
+                    .background(MaterialTheme.colors.background.lighten())
             )
         }
         handle {
             Box(
                 Modifier
-                    .width(3.dp)
+                    .width(5.dp)
                     .fillMaxHeight()
                     .markAsHandle()
                     .cursorForHorizontalResize()
             ) {
-                Box(
-                    Modifier
-                        .background(SolidColor(Color.Gray), alpha = 0.50f)
-                        .width(4.dp)
-                        .height(32.dp)
-                        .align(Alignment.Center)
-                )
+//                Box(
+//                    Modifier
+//                        .background(SolidColor(Color.Gray), alpha = 0.50f)
+//                        .width(5.dp)
+//                        .height(32.dp)
+//                        .align(Alignment.Center)
+//                )
             }
         }
     }

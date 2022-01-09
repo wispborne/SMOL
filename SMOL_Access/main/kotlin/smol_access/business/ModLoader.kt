@@ -171,7 +171,7 @@ internal class ModLoader internal constructor(
                             )
                         }
                         .values
-                        .map { mod -> mod.copy(variants = mod.variants.sortedByDescending { it.modInfo.version }) }
+                        .map { mod -> mod.copy(variants = mod.variants.sortedBy { it.modInfo.version }) }
                         .filter { mod -> mod.variants.any { it.exists } }
                         .toList()
                         .onEach {

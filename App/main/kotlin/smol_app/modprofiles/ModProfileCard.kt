@@ -5,7 +5,6 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -15,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
@@ -32,7 +32,6 @@ import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipBackground
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.lighten
-import smol_app.util.ellipsizeAfter
 import smol_app.util.smolPreview
 
 
@@ -87,7 +86,15 @@ fun ModProfileCard(
     var isExpanded by remember { mutableStateOf(false) }
 
     SmolTooltipArea(
-        tooltip = { SmolTooltipBackground { modList(modVariants = modVariants, modProfile = modProfile) } },
+        tooltip = {
+            SmolTooltipBackground {
+                modList(
+                    modifier = Modifier.widthIn(max = 400.dp),
+                    modVariants = modVariants,
+                    modProfile = modProfile
+                )
+            }
+        },
         delayMillis = SmolTooltipArea.shortDelay
     ) {
         Card(
@@ -126,7 +133,7 @@ fun ModProfileCard(
                                     .align(Alignment.CenterVertically),
                                 fontSize = 18.sp,
                                 fontFamily = SmolTheme.orbitronSpaceFont,
-                                text = if (!isUserMade) "Save: " + modProfileName.value else modProfileName.value
+                                text = modProfileName.value
                             )
                         } else {
                             SelectionContainer {
@@ -159,22 +166,6 @@ fun ModProfileCard(
                         fontFamily = SmolTheme.fireCodeFont,
                         fontSize = 12.sp,
                     )
-
-                    // Control buttons
-                    if (isUserMade) {
-                        profileControls(
-                            modifier = Modifier.padding(top = 8.dp),
-                            isEditMode = isEditMode,
-                            modProfileIdShowingDeleteConfirmation = modProfileIdShowingDeleteConfirmation,
-                            modProfile = modProfile,
-                            isActiveProfile = isActiveProfile,
-                            modVariants = modVariants
-                        )
-                    } else {
-                        saveGameProfileControls(
-                            modProfile = modProfile
-                        )
-                    }
                 }
 
                 Divider(Modifier.height(1.dp).fillMaxWidth())
@@ -192,14 +183,37 @@ fun ModProfileCard(
                         )
                     }
 
-                    TextButton(
-                        onClick = { isExpanded = isExpanded.not() },
-                        modifier = Modifier.padding(top = 4.dp)
-                    ) {
-                        Text(
-                            text = if (isExpanded) "Collapse" else "Expand",
-                            fontSize = 14.sp
-                        )
+                    Row {
+                        TextButton(
+                            onClick = { isExpanded = isExpanded.not() },
+                            modifier = Modifier
+                                .padding(top = 4.dp, start = 4.dp, end = 4.dp)
+                                .weight(1f)
+                        ) {
+                            Box(Modifier.fillMaxWidth()) {
+                                Text(
+                                    text = if (isExpanded) "Collapse" else "Expand",
+                                    modifier = Modifier.width(IntrinsicSize.Min).align(Alignment.CenterStart),
+                                    fontSize = 14.sp
+                                )
+                            }
+                        }
+
+                        // Control buttons
+                        if (isUserMade) {
+                            profileControls(
+                                modifier = Modifier.padding(top = 8.dp),
+                                isEditMode = isEditMode,
+                                modProfileIdShowingDeleteConfirmation = modProfileIdShowingDeleteConfirmation,
+                                modProfile = modProfile,
+                                isActiveProfile = isActiveProfile,
+                                modVariants = modVariants
+                            )
+                        } else {
+                            saveGameProfileControls(
+                                modProfile = modProfile
+                            )
+                        }
                     }
                 }
             }
@@ -214,29 +228,38 @@ fun modList(
     modProfile: UserProfile.ModProfile
 ) {
     // Mod list
-    val modNameLength = 28
+//    val modNameLength = 28
     SelectionContainer {
         Row(modifier) {
             if (modProfile.enabledModVariants.any()) {
-                Text(
-                    fontFamily = SmolTheme.fireCodeFont,
-                    softWrap = false,
-                    fontWeight = FontWeight.Light,
-                    fontSize = 14.sp,
-                    text = modProfile.enabledModVariants.joinToString(separator = "\n") {
-                        val modVariant = modVariants.value[it.smolVariantId]
-                        modVariant?.modInfo?.name?.ellipsizeAfter(modNameLength)?.plus(": ")
-                            ?: "${it.modId} (missing)\n    ${it.smolVariantId}"
-                    })
-                Text(
-                    fontFamily = SmolTheme.fireCodeFont,
-                    softWrap = false,
-                    fontWeight = FontWeight.Light,
-                    fontSize = 14.sp,
-                    text = modProfile.enabledModVariants.joinToString(separator = "\n") {
-                        val modVariant = modVariants.value[it.smolVariantId]
-                        modVariant?.modInfo?.version?.toString() ?: ""
-                    })
+                Column {
+                    modProfile.enabledModVariants.forEach { enabledModVariant ->
+                        val modVariant = modVariants.value[enabledModVariant.smolVariantId]
+
+                        Row {
+                            Text(
+                                modifier = Modifier.weight(1f),
+                                fontFamily = SmolTheme.fireCodeFont,
+                                fontWeight = FontWeight.Light,
+                                fontSize = 14.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                text = modVariant?.modInfo?.name?.plus(": ")
+                                    ?: "${enabledModVariant.modId} (missing)\n    ${enabledModVariant.smolVariantId}"
+                            )
+
+                            Text(
+                                fontFamily = SmolTheme.fireCodeFont,
+                                fontWeight = FontWeight.Light,
+                                softWrap = false,
+                                fontSize = 14.sp,
+                                maxLines = 1,
+//                                overflow = TextOverflow.Ellipsis,
+                                text = modVariant?.modInfo?.version?.toString() ?: ""
+                            )
+                        }
+                    }
+                }
             } else {
                 Text(
                     text = "No mods.",
@@ -275,63 +298,13 @@ fun profileControls(
     Row(
         modifier = modifier
     ) {
-        IconToggleButton(
-            modifier = Modifier
-                .align(Alignment.CenterVertically)
-                .background(
-                    shape = SmolTheme.smolNormalButtonShape(),
-                    color = SmolTheme.grey()
-                )
-                .run {
-                    if (isEditMode.value) this.border(
-                        width = 2.dp,
-                        color = MaterialTheme.colors.onSurface.lighten(),
-                        shape = SmolTheme.smolNormalButtonShape()
-                    ) else this
-                }
-                .height(ButtonDefaults.MinHeight)
-                .width(ButtonDefaults.MinHeight),
-            checked = isEditMode.value,
-            onCheckedChange = { isEditMode.value = !isEditMode.value }
-        ) {
-            Icon(
-                painter = painterResource("pencil-outline.svg"),
-                contentDescription = null,
-                tint = MaterialTheme.colors.onSurface
-            )
-        }
-        IconButton(
-            modifier = Modifier
-                .padding(start = 8.dp)
-                .background(
-                    shape = SmolTheme.smolNormalButtonShape(),
-                    color = SmolTheme.grey()
-                )
-                .align(Alignment.CenterVertically)
-                .height(SmolTheme.iconHeightWidth())
-                .width(SmolTheme.iconHeightWidth()),
-            onClick = {
-                modProfileIdShowingDeleteConfirmation.value = modProfile.id
-            }
-        ) {
-            Icon(
-                painter = painterResource("trash-can-outline.svg"),
-                contentDescription = null,
-                tint = MaterialTheme.colors.onSurface
-            )
-        }
-
         if (!isActiveProfile) {
             IconButton(
                 modifier = Modifier
-                    .padding(start = 8.dp)
-                    .background(
-                        shape = SmolTheme.smolNormalButtonShape(),
-                        color = ButtonDefaults.buttonColors().backgroundColor(enabled = true).value
-                    )
+                    .padding(start = 8.dp, end = 4.dp)
+                    .align(Alignment.CenterVertically)
                     .height(SmolTheme.iconHeightWidth())
-                    .width(SmolTheme.iconHeightWidth())
-                    .align(Alignment.CenterVertically),
+                    .width(SmolTheme.iconHeightWidth()),
                 enabled = !isActiveProfile,
                 onClick = {
                     if (!isActiveProfile) {
@@ -348,10 +321,46 @@ fun profileControls(
                 }) {
                 Icon(
                     painter = painterResource("icon-swap.svg"),
-                    tint = ButtonDefaults.buttonColors().contentColor(enabled = true).value,
+                    tint = MaterialTheme.colors.primary,
                     contentDescription = null
                 )
             }
+        }
+        IconToggleButton(
+            modifier = Modifier
+                .align(Alignment.CenterVertically)
+                .run {
+                    if (isEditMode.value) this.border(
+                        width = 2.dp,
+                        color = MaterialTheme.colors.onSurface.lighten(),
+                        shape = SmolTheme.smolNormalButtonShape()
+                    ) else this
+                }
+                .height(SmolTheme.iconHeightWidth())
+                .width(SmolTheme.iconHeightWidth()),
+            checked = isEditMode.value,
+            onCheckedChange = { isEditMode.value = !isEditMode.value }
+        ) {
+            Icon(
+                painter = painterResource("pencil-outline.svg"),
+                contentDescription = null,
+                tint = MaterialTheme.colors.onSurface
+            )
+        }
+        IconButton(
+            modifier = Modifier
+                .align(Alignment.CenterVertically)
+                .height(SmolTheme.iconHeightWidth())
+                .width(SmolTheme.iconHeightWidth()),
+            onClick = {
+                modProfileIdShowingDeleteConfirmation.value = modProfile.id
+            }
+        ) {
+            Icon(
+                painter = painterResource("trash-can-outline.svg"),
+                contentDescription = null,
+                tint = MaterialTheme.colors.onSurface
+            )
         }
     }
 }
@@ -376,7 +385,7 @@ fun saveGameProfileControls(
     ) {
         SmolButton(
             modifier = Modifier
-                .padding(start = 8.dp)
+                .padding(start = 8.dp, end = 8.dp, top = 8.dp)
                 .align(Alignment.CenterVertically),
             onClick = {
 
