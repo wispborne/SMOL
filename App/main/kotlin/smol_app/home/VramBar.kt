@@ -18,6 +18,7 @@ import smol_app.composables.SmolTooltipText
 import smol_app.themes.SmolTheme
 import smol_app.util.bytesAsReadableMiB
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun RowScope.vramBar(mod: Mod, largestVramUsage: Long?) {
     val variant = mod.findFirstEnabledOrHighestVersion

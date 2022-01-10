@@ -4,56 +4,30 @@ package smol_app.home
 
 import AppState
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.mouseClickable
 import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.input.pointer.*
-import androidx.compose.ui.layout.boundsInParent
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.arkivanov.decompose.push
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import smol_access.Constants
 import smol_access.SL
 import smol_access.model.Mod
 import smol_app.WindowState
 import smol_app.composables.*
-import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
 import smol_app.util.*
 import smol_app.views.detailsPanel
-import timber.ktx.Timber
-import java.awt.Cursor
 
-private const val modGridViewDropdownWidth = 180
+const val modGridViewDropdownWidth = 180
 
 @OptIn(
     ExperimentalMaterialApi::class,
@@ -71,130 +45,27 @@ fun AppState.ModGridView(
     val selectedRow = remember { mutableStateOf<ModRow?>(null) }
     val checkedRows = remember { mutableStateListOf<Mod>() }
     val modInDebugDialog = remember { mutableStateOf<Mod?>(null) }
-    val largestVramUsage by remember { mutableStateOf(SL.vramChecker.vramUsage.value?.values?.maxOf { it.bytesForMod }) }
+    val largestVramUsage = remember { mutableStateOf(SL.vramChecker.vramUsage.value?.values?.maxOf { it.bytesForMod }) }
     val profile = SL.userManager.activeProfile.collectAsState()
     val activeSortField = profile.value.modGridPrefs.sortField?.let {
         kotlin.runCatching { ModGridSortField.valueOf(it) }.getOrNull()
     }
-    var showVramRefreshWarning by remember { mutableStateOf(false) }
-
-    fun getVramImpactForMod(mod: Mod) = SL.vramChecker.vramUsage.value?.get(
-        mod.findFirstEnabledOrHighestVersion?.smolId
-    )
+    val showVramRefreshWarning = remember { mutableStateOf(false) }
 
     Box(modifier.padding(top = contentPadding, bottom = contentPadding)) {
         Column(Modifier) {
-            var vramPosition by remember { mutableStateOf(0.dp) }
+            val vramPosition = remember { mutableStateOf(0.dp) }
             ListItem(modifier = Modifier.padding(start = contentPadding, end = contentPadding)) {
-                Row {
-                    Spacer(modifier = Modifier.width(favoritesWidth).align(Alignment.CenterVertically))
-                    Box(modifier = Modifier.width(modGridViewDropdownWidth.dp).align(Alignment.CenterVertically)) {
-                        refreshButton {
-                            GlobalScope.launch(Dispatchers.Default) {
-                                reloadMods()
-                            }
-                        }
-                    }
-
-                    SortableHeader(
-                        modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
-                        columnSortField = ModGridSortField.Name,
-                        activeSortField = activeSortField,
-                        profile = profile
-                    ) {
-                        Text("Name", fontWeight = FontWeight.Bold)
-                    }
-
-                    SortableHeader(
-                        modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
-                        columnSortField = ModGridSortField.Author,
-                        activeSortField = activeSortField,
-                        profile = profile
-                    ) {
-                        Text("Author", fontWeight = FontWeight.Bold)
-                    }
-
-                    SmolTooltipArea(
-                        modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
-                        tooltip = { SmolTooltipText(text = "The version(s) tracked by SMOL.") },
-                        delayMillis = SmolTooltipArea.shortDelay
-                    ) {
-                        Text(text = "Version(s)", fontWeight = FontWeight.Bold)
-                    }
-
-                    Row(modifier = Modifier
-                        .weight(1f)
-                        .align(Alignment.CenterVertically)
-                        .onGloballyPositioned { vramPosition = it.boundsInParent().left.dp }) {
-                        SmolTooltipArea(
-                            tooltip = {
-                                SmolTooltipText(
-                                    text = "An estimate of how much VRAM the mod will use." +
-                                            "\nAll images are counted, even if not used by the game."
-                                )
-                            },
-                            delayMillis = SmolTooltipArea.shortDelay
-                        ) {
-                            SortableHeader(
-                                columnSortField = ModGridSortField.VramImpact,
-                                activeSortField = activeSortField,
-                                profile = profile,
-                                modifier = Modifier.align(Alignment.CenterVertically)
-                            ) {
-                                Text(text = "VRAM Impact", fontWeight = FontWeight.Bold)
-                            }
-                        }
-
-                        SmolTooltipArea(
-                            tooltip = {
-                                SmolTooltipText(
-                                    text = "Calculate VRAM Impact for all mods."
-                                )
-                            },
-                            delayMillis = SmolTooltipArea.shortDelay
-                        ) {
-                            IconButton(
-                                onClick = { showVramRefreshWarning = true },
-                                modifier = Modifier
-                                    .padding(start = 6.dp)
-                                    .size(20.dp)
-                                    .align(Alignment.CenterVertically)
-                            ) {
-                                Icon(
-                                    painter = painterResource("refresh.svg"),
-                                    contentDescription = null
-                                )
-                            }
-                        }
-                    }
-
-                    Text(
-                        text = "Game Version",
-                        modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
-                        fontWeight = FontWeight.Bold
-                    )
-                    Row(
-                        modifier = Modifier.width(checkboxesWidth).align(Alignment.CenterVertically)
-                    ) {
-                        modGridBulkActionMenu(
-                            modifier = Modifier.align(Alignment.CenterVertically),
-                            checkedRows = checkedRows
-                        )
-                        Checkbox(
-                            checked = mods.all { mod -> mod != null && mod in checkedRows },
-                            onCheckedChange = { isChecked ->
-                                if (isChecked) {
-                                    checkedRows.replaceAllUsingDifference(
-                                        mods.filterNotNull(),
-                                        doesOrderMatter = false
-                                    )
-                                } else {
-                                    checkedRows.clear()
-                                }
-                            }
-                        )
-                    }
-                }
+                ModGridHeader(
+                    favoritesWidth = favoritesWidth,
+                    activeSortField = activeSortField,
+                    profile = profile,
+                    vramPosition = vramPosition,
+                    showVramRefreshWarning = showVramRefreshWarning,
+                    checkboxesWidth = checkboxesWidth,
+                    checkedRows = checkedRows,
+                    mods = mods
+                )
             }
             Box {
                 val isEnabledCollapsed = remember { mutableStateOf(false) }
@@ -211,58 +82,7 @@ fun AppState.ModGridView(
                                 false -> "Disabled"
                             }
                             stickyHeader {
-                                Card(
-                                    elevation = 8.dp,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(
-                                            top = 8.dp,
-                                            bottom = 8.dp,
-                                            start = contentPadding,
-                                            end = contentPadding
-                                        )
-                                ) {
-                                    Box {
-                                        Row(modifier = Modifier.mouseClickable {
-                                            if (this.buttons.isPrimaryPressed) {
-                                                isCollapsed.value = isCollapsed.value.not()
-                                            }
-                                        }) {
-                                            val arrowAngle by animateFloatAsState(if (isCollapsed.value) -90f else 0f)
-                                            Icon(
-                                                modifier = Modifier
-                                                    .align(Alignment.CenterVertically)
-                                                    .padding(start = 4.dp)
-                                                    .rotate(arrowAngle),
-                                                imageVector = Icons.Outlined.ArrowDropDown,
-                                                contentDescription = null,
-                                            )
-                                            Text(
-                                                text = "$groupName (${modsInGroup.count()})",
-                                                color = MaterialTheme.colors.onSurface,
-                                                modifier = Modifier
-                                                    .padding(8.dp),
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                        }
-                                        val allImpacts = modsInGroup.map { getVramImpactForMod(it) }
-                                        val totalBytes =
-                                            allImpacts.sumOf { it?.bytesForMod ?: 0L }.bytesAsReadableMiB
-                                        val totalImages = "${allImpacts.sumOf { it?.imageCount ?: 0 }} images"
-                                        SmolTooltipArea(
-                                            tooltip = { SmolTooltipText(text = "All ${groupName.lowercase()} mods\n\n$totalBytes\n$totalImages") },
-                                            modifier = Modifier
-                                                .padding(start = vramPosition + 16.dp)
-                                                .align(Alignment.CenterStart),
-                                        ) {
-                                            Text(
-                                                text = "Σ $totalBytes",
-                                                style = MaterialTheme.typography.body2,
-                                                modifier = Modifier.alpha(0.7f)
-                                            )
-                                        }
-                                    }
-                                }
+                                ModGridSectionHeader(contentPadding, isCollapsed, groupName, modsInGroup, vramPosition)
                             }
                             if (!isCollapsed.value) {
                                 this.items(
@@ -290,311 +110,18 @@ fun AppState.ModGridView(
                                                 }
                                                 .thenBy { it.mod.findFirstEnabledOrHighestVersion?.modInfo?.name })
                                 ) { modRow ->
-                                    val mod = modRow.mod
-                                    var showContextMenu by remember { mutableStateOf(false) }
-                                    val highestLocalVersion =
-                                        mod.findHighestVersion?.versionCheckerInfo?.modVersion
-                                    val onlineVersionInfo = SL.versionChecker.getOnlineVersion(modId = mod.id)
-                                    val onlineVersion = onlineVersionInfo?.modVersion
-                                    var isRowHighlighted by remember { mutableStateOf(false) }
-
-                                    ListItem(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .mouseClickable {
-                                                if (this.buttons.isPrimaryPressed) {
-                                                    // If in "Checking rows" mode, clicking a row toggles checked.
-                                                    // Otherwise, it open/closes Details panel
-                                                    if (checkedRows.any()) {
-                                                        if (mod !in checkedRows) {
-                                                            checkedRows.add(mod)
-                                                        } else {
-                                                            checkedRows.remove(mod)
-                                                        }
-                                                    } else {
-                                                        selectedRow.value =
-                                                            (if (selectedRow.value == modRow) null else modRow)
-                                                    }
-                                                } else if (this.buttons.isSecondaryPressed) {
-                                                    showContextMenu = !showContextMenu
-                                                }
-                                            }
-                                            .background(
-                                                color = if (isRowHighlighted || selectedRow.value?.mod?.id == mod.id || mod in checkedRows)
-                                                    Color.Black.copy(alpha = .1f)
-                                                else Color.Transparent
-                                            )
-                                            .pointerMoveFilter(
-                                                onEnter = {
-                                                    isRowHighlighted = true
-                                                    false
-                                                },
-                                                onExit = {
-                                                    isRowHighlighted = false
-                                                    false
-                                                })
-                                    ) {
-                                        Column(
-                                            modifier = Modifier.padding(
-                                                start = contentPadding,
-                                                end = contentPadding
-                                            )
-                                        ) {
-                                            Row(Modifier.fillMaxWidth()) {
-                                                // Favorites
-                                                Row(
-                                                    modifier = Modifier
-                                                        .width(favoritesWidth)
-                                                        .align(Alignment.CenterVertically),
-                                                ) {
-                                                    val isFavorited = mod.id in profile.value.favoriteMods
-                                                    if (isFavorited || isRowHighlighted) {
-                                                        Icon(
-                                                            imageVector =
-                                                            (if (isFavorited)
-                                                                Icons.Default.Favorite
-                                                            else Icons.Default.FavoriteBorder),
-                                                            contentDescription = null,
-                                                            modifier = Modifier
-                                                                .padding(end = 16.dp)
-                                                                .mouseClickable {
-                                                                    SL.userManager.setModFavorited(
-                                                                        modId = mod.id,
-                                                                        newFavoriteValue = isFavorited.not()
-                                                                    )
-                                                                },
-                                                            tint = MaterialTheme.colors.primary
-                                                        )
-                                                    }
-                                                }
-
-                                                // Mod Version Dropdown
-                                                modStateDropdown(
-                                                    modifier = Modifier
-                                                        .width(modGridViewDropdownWidth.dp)
-                                                        .align(Alignment.CenterVertically),
-                                                    mod = mod
-                                                )
-
-                                                // Mod name
-                                                SmolText(
-                                                    modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
-                                                    text = (mod.findFirstEnabled
-                                                        ?: mod.findHighestVersion)?.modInfo?.name
-                                                        ?: "",
-                                                    fontWeight = FontWeight.SemiBold,
-                                                    maxLines = 2,
-                                                    overflow = TextOverflow.Ellipsis,
-                                                    fontFamily = SmolTheme.orbitronSpaceFont,
-                                                    fontSize = 14.sp
-                                                )
-
-                                                // Mod Author
-                                                SmolText(
-                                                    text = (mod.findFirstEnabledOrHighestVersion)?.modInfo?.author
-                                                        ?: "",
-                                                    color = SmolTheme.dimmedTextColor(),
-                                                    modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-
-                                                // Mod version (active or highest)
-                                                Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {
-                                                    // Update badge icon
-                                                    if (highestLocalVersion != null && onlineVersion != null && onlineVersion > highestLocalVersion) {
-                                                        val ddUrl =
-                                                            onlineVersionInfo.directDownloadURL?.ifBlank { null }
-                                                                ?: mod.findHighestVersion?.versionCheckerInfo?.directDownloadURL
-                                                        if (ddUrl != null) {
-                                                            SmolTooltipArea(tooltip = {
-                                                                SmolTooltipText(
-                                                                    text = buildString {
-                                                                        append("Newer version available: ${onlineVersionInfo.modVersion}")
-                                                                        append("\n\nClick to download and update.")
-                                                                    }
-                                                                )
-                                                            }, modifier = Modifier.mouseClickable {
-                                                                if (this.buttons.isPrimaryPressed) {
-                                                                    alertDialogSetter {
-                                                                        DirectDownloadAlertDialog(
-                                                                            ddUrl = ddUrl,
-                                                                            mod = mod,
-                                                                            onlineVersion = onlineVersion
-                                                                        )
-                                                                    }
-                                                                }
-                                                            }
-                                                                .align(Alignment.CenterVertically)) {
-                                                                Image(
-                                                                    painter = painterResource("icon-direct-install.svg"),
-                                                                    contentDescription = null,
-                                                                    colorFilter = ColorFilter.tint(color = MaterialTheme.colors.secondary),
-                                                                    modifier = Modifier.width(28.dp).height(28.dp)
-                                                                        .padding(end = 8.dp)
-                                                                        .align(Alignment.CenterVertically)
-                                                                        .pointerHoverIcon(
-                                                                            PointerIcon(
-                                                                                Cursor.getPredefinedCursor(
-                                                                                    Cursor.HAND_CURSOR
-                                                                                )
-                                                                            )
-                                                                        )
-                                                                )
-                                                            }
-                                                        }
-
-                                                        val modThreadId =
-                                                            mod.findHighestVersion?.versionCheckerInfo?.modThreadId
-                                                        val hasModThread = modThreadId?.isNotBlank() == true
-                                                        SmolTooltipArea(tooltip = {
-                                                            SmolTooltipText(
-                                                                text = buildAnnotatedString {
-                                                                    append("Newer version available: ${onlineVersionInfo.modVersion}.")
-                                                                    append("\n\n<i>Update information is provided by the mod author, not SMOL, and cannot be guaranteed.</i>".parseHtml())
-                                                                    if (ddUrl == null) append("\n<i>This mod does not support direct download and should be downloaded manually.</i>".parseHtml())
-                                                                    if (hasModThread) {
-                                                                        append("\n\nClick to open <code>${modThreadId?.getModThreadUrl()}</code>.".parseHtml())
-                                                                    } else {
-                                                                        append("\n\n<b>No mod thread provided. Click to search on Google.</b>".parseHtml())
-                                                                    }
-                                                                }
-                                                            )
-                                                        }, modifier = Modifier.mouseClickable {
-                                                            if (this.buttons.isPrimaryPressed) {
-                                                                if (hasModThread) {
-                                                                    if (Constants.isJCEFEnabled()) {
-                                                                        router.push(Screen.ModBrowser(modThreadId?.getModThreadUrl()))
-                                                                    } else {
-                                                                        kotlin.runCatching {
-                                                                            modThreadId?.getModThreadUrl()
-                                                                                ?.openAsUriInBrowser()
-                                                                        }
-                                                                            .onFailure { Timber.w(it) }
-                                                                    }
-                                                                } else {
-                                                                    createGoogleSearchFor("starsector ${mod.findHighestVersion?.modInfo?.name}")
-                                                                        .openAsUriInBrowser()
-                                                                }
-                                                            }
-                                                        }
-                                                            .align(Alignment.CenterVertically)) {
-                                                            Image(
-                                                                painter = painterResource(
-                                                                    if (hasModThread) "icon-new-update.svg"
-                                                                    else "icon-new-update-search.svg"
-                                                                ),
-                                                                contentDescription = null,
-                                                                colorFilter = ColorFilter.tint(
-                                                                    color =
-                                                                    if (ddUrl == null) MaterialTheme.colors.secondary
-                                                                    else MaterialTheme.colors.secondary.copy(alpha = ContentAlpha.disabled)
-                                                                ),
-                                                                modifier = Modifier.width(28.dp).height(28.dp)
-                                                                    .padding(end = 8.dp)
-                                                                    .align(Alignment.CenterVertically)
-                                                                    .pointerHoverIcon(
-                                                                        PointerIcon(
-                                                                            Cursor.getPredefinedCursor(
-                                                                                Cursor.HAND_CURSOR
-                                                                            )
-                                                                        )
-                                                                    )
-                                                            )
-                                                        }
-                                                    }
-
-                                                    // Versions discovered
-                                                    Row(
-                                                        modifier = Modifier.align(Alignment.CenterVertically).weight(1f),
-                                                        horizontalArrangement = Arrangement.Center
-                                                    ) {
-                                                        val dimColor =
-                                                            MaterialTheme.colors.onBackground.copy(alpha = 0.4f)
-                                                        mod.variants
-                                                            .forEachIndexed { index, element ->
-                                                                val enabled = mod.isEnabled(element)
-                                                                Text(
-                                                                    text = buildString {
-                                                                        append(element.modInfo.version.toString())
-                                                                        append(
-                                                                            if (index != mod.variants.count() - 1)
-                                                                                ", " else ""
-                                                                        )
-                                                                    },
-//                                                                    modifier = Modifier.run {
-//                                                                        if (enabled) this.align(
-//                                                                            Alignment.CenterHorizontally
-//                                                                        ) else this
-//                                                                    },
-                                                                    color = if (enabled)
-                                                                        Color.Unspecified
-                                                                    else dimColor
-                                                                )
-                                                            }
-                                                    }
-                                                }
-
-                                                // VRAM
-                                                Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {
-                                                    vramBar(mod, largestVramUsage)
-                                                }
-
-                                                // Game version (for active or highest)
-                                                Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {
-                                                    Text(
-                                                        text = (mod.findFirstEnabled
-                                                            ?: mod.findHighestVersion)?.modInfo?.gameVersion ?: "",
-                                                        modifier = Modifier.align(Alignment.CenterVertically),
-                                                        color = SmolTheme.dimmedTextColor()
-                                                    )
-                                                }
-
-                                                // Checkbox
-                                                val isChecked = mod in checkedRows
-
-                                                val isCheckboxVisible =
-                                                    isRowHighlighted || isChecked || checkedRows.any()
-
-                                                Row(
-                                                    modifier = Modifier.width(checkboxesWidth)
-                                                        .align(Alignment.CenterVertically)
-                                                        .alpha(if (isCheckboxVisible) 1f else 0f)
-                                                ) {
-                                                    modGridBulkActionMenu(
-                                                        modifier = Modifier.align(Alignment.CenterVertically),
-                                                        checkedRows = checkedRows
-                                                    )
-                                                    Checkbox(
-                                                        modifier = Modifier.width(checkboxesWidth),
-                                                        checked = isChecked,
-                                                        onCheckedChange = { checked ->
-                                                            if (checked) {
-                                                                checkedRows.add(mod)
-                                                            } else {
-                                                                checkedRows.remove(mod)
-                                                            }
-                                                        }
-                                                    )
-                                                }
-
-                                                // Context menu
-                                                ModContextMenu(
-                                                    showContextMenu = showContextMenu,
-                                                    onShowContextMenuChange = { showContextMenu = it },
-                                                    mod = mod,
-                                                    modInDebugDialog = modInDebugDialog,
-                                                    checkedMods = checkedRows
-                                                )
-                                            }
-
-                                            Row {
-                                                Spacer(Modifier.width(modGridViewDropdownWidth.dp))
-                                                // Dependency warning
-                                                DependencyFixerRow(mod, mods.filterNotNull())
-                                            }
-                                        }
-                                    }
+                                    ModGridRow(
+                                        modRow,
+                                        checkedRows,
+                                        selectedRow,
+                                        contentPadding,
+                                        favoritesWidth,
+                                        profile,
+                                        largestVramUsage,
+                                        checkboxesWidth,
+                                        modInDebugDialog,
+                                        mods
+                                    )
                                 }
                             }
                         }
@@ -622,12 +149,12 @@ fun AppState.ModGridView(
             debugDialog(mod = modInDebugDialog.value!!, onDismiss = { modInDebugDialog.value = null })
         }
 
-        if (showVramRefreshWarning) {
+        if (showVramRefreshWarning.value) {
             SmolAlertDialog(
-                onDismissRequest = { showVramRefreshWarning = false },
+                onDismissRequest = { showVramRefreshWarning.value = false },
                 confirmButton = {
                     SmolButton(onClick = {
-                        showVramRefreshWarning = false
+                        showVramRefreshWarning.value = false
                         GlobalScope.launch {
                             SL.vramChecker.refreshVramUsage(mods = mods.toList().filterNotNull())
                         }
@@ -635,7 +162,7 @@ fun AppState.ModGridView(
                 },
                 dismissButton = {
                     SmolSecondaryButton(onClick = {
-                        showVramRefreshWarning = false
+                        showVramRefreshWarning.value = false
                     }) { Text("Cancel") }
                 },
                 title = { Text(text = "Calculate VRAM Impact", style = SmolTheme.alertDialogTitle()) },
@@ -649,6 +176,11 @@ fun AppState.ModGridView(
         }
     }
 }
+
+fun getVramImpactForMod(mod: Mod) =
+    SL.vramChecker.vramUsage.value?.get(
+        mod.findFirstEnabledOrHighestVersion?.smolId
+    )
 
 @Composable
 fun modGridBulkActionMenu(modifier: Modifier = Modifier, checkedRows: SnapshotStateList<Mod>) {
