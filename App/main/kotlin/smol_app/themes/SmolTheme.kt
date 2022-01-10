@@ -3,23 +3,13 @@ package smol_app.themes
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Outline
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.platform.Font
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import smol_access.SL
 import smol_access.themes.Theme
 import smol_app.util.hexToColor
-import kotlin.math.roundToInt
 
 object SmolTheme {
     val orbitronSpaceFont = FontFamily(Font("Font-Orbitron/Orbitron-VariableFont_wght.ttf"))
@@ -35,8 +25,11 @@ object SmolTheme {
     fun smolFullyClippedButtonShape() = CutCornerShape(size = cornerClipping)
 
     @Composable
-    fun Color.lighten() = this.withAdjustedBrightness(amount = 20)
-    fun Color.darken() = this.withAdjustedBrightness(amount = -20)
+    fun Color.lighten(amount: Int? = null) =
+        this.withAdjustedBrightness(amount = amount ?: 20)
+
+    fun Color.darken(amount: Int? = null) =
+        this.withAdjustedBrightness(amount = amount ?: -20)
 
     fun Color.withAdjustedBrightness(amount: Int): Color {
         val r = ((this.red * 255) + amount).coerceIn(0f, 255f).toInt().toString(radix = 16)
@@ -47,7 +40,7 @@ object SmolTheme {
         val gg = (if (g.length < 2) "0" else "") + g
         val bb = (if (b.length < 2) "0" else "") + b
 
-        return "$rr$gg$bb".hexToColor() ?: this
+        return "$rr$gg$bb".hexToColor() ?: this.copy()
     }
 
     @Composable
@@ -60,10 +53,12 @@ object SmolTheme {
     fun grey() = if (MaterialTheme.colors.isLight) "#DDDDDD".hexToColor()!! else "#333333".hexToColor()!!
 
     @Composable
-    fun Color.highlight(): Color = if (MaterialTheme.colors.isLight) this.darken() else this.lighten()
+    fun Color.highlight(amount: Int? = null): Color =
+        if (MaterialTheme.colors.isLight) this.darken(amount) else this.lighten(amount)
 
     @Composable
     fun alertDialogTitle() = MaterialTheme.typography.h6
+
     @Composable
     fun alertDialogBody() = MaterialTheme.typography.body1
 

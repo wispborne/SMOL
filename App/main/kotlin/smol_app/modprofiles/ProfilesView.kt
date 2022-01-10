@@ -2,7 +2,9 @@ package smol_app.modprofiles
 
 import AppState
 import androidx.compose.desktop.ui.tooling.preview.Preview
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.GridCells
 import androidx.compose.foundation.lazy.LazyVerticalGrid
@@ -21,6 +23,7 @@ import smol_access.model.ModVariant
 import smol_access.model.UserProfile
 import smol_app.composables.*
 import smol_app.themes.SmolTheme
+import smol_app.themes.SmolTheme.lighten
 import smol_app.toolbar.*
 
 @OptIn(
@@ -198,6 +201,14 @@ fun AppState.ProfilesView(
 private fun NewModProfileCard(onProfileCreated: () -> Unit) {
     var newProfileName by remember { mutableStateOf("") }
     Card(
+        modifier = Modifier
+            .border(
+                shape = SmolTheme.smolFullyClippedButtonShape(),
+                border = BorderStroke(
+                    width = 1.dp,
+                    color = MaterialTheme.colors.surface.lighten()
+                )
+            ),
         shape = SmolTheme.smolFullyClippedButtonShape()
     ) {
         Column(Modifier.padding(16.dp).fillMaxWidth()) {
