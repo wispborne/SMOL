@@ -75,7 +75,7 @@ class SmolCLI(
         val sortOrder by option().int()
 
         override fun run() {
-            val profile = userManager.createModProfile(name = name, description = description, sortOrder = sortOrder)
+            val profile = userManager.createModProfile(name = name, description = description ?: "", sortOrder = sortOrder)
             echo("Created mod profile $profile (not yet active).")
         }
     }

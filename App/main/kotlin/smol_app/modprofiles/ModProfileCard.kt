@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerMoveFilter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -141,6 +142,7 @@ fun ModProfileCard(
                                         value = modProfileName.value,
                                         label = { Text(text = "Profile Name") },
                                         singleLine = true,
+                                        textStyle = TextStyle.Default.copy(fontFamily = SmolTheme.orbitronSpaceFont),
                                         onValueChange = { newValue ->
                                             modProfileName.value = newValue
                                             SL.userManager.updateUserProfile { old ->
@@ -262,7 +264,7 @@ fun ModProfileCard(
                                 isBeingHovered = isBeingHovered
                             )
                         } else {
-                            saveGameProfileControls()
+                            saveGameProfileControls(modProfile = modProfile)
                         }
                     }
                 }
@@ -440,13 +442,14 @@ fun profileControls(
 @Composable
 fun saveGameProfileControlsPreview() = smolPreview {
     Column {
-        saveGameProfileControls()
+        saveGameProfileControls(modProfile = mockModProfile)
     }
 }
 
 @Composable
 fun saveGameProfileControls(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    modProfile: ModProfileCardInfo
 ) {
     Row(
         modifier = modifier
@@ -456,7 +459,11 @@ fun saveGameProfileControls(
                 .padding(start = 8.dp, end = 8.dp, top = 4.dp)
                 .align(Alignment.CenterVertically),
             onClick = {
-
+                SL.userManager.createModProfile(
+                    name = modProfile.name,
+                    sortOrder = null,
+                    enabledModVariants = modProfile.enabledModVariants
+                )
             }
         ) {
             Text("Create Profile")

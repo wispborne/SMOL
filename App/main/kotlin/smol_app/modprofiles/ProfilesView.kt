@@ -224,7 +224,6 @@ private fun NewModProfileCard(onProfileCreated: () -> Unit) {
                     if (newProfileName.isNotBlank()) {
                         SL.userManager.createModProfile(
                             name = newProfileName,
-                            description = null,
                             sortOrder = SL.userManager.activeProfile.value.modProfiles.maxOf { it.sortOrder } + 1
                         )
                         newProfileName = ""

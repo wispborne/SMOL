@@ -4,7 +4,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import smol_access.config.AppConfig
 import smol_access.model.UserProfile
@@ -57,16 +56,17 @@ class UserManager internal constructor(
 
     fun createModProfile(
         name: String,
-        description: String?,
+        description: String = "",
         sortOrder: Int?,
+        enabledModVariants: List<UserProfile.ModProfile.EnabledModVariant> = emptyList()
     ): UserProfile {
         return updateUserProfile { userProfile ->
             val newModProfile = UserProfile.ModProfile(
                 id = userProfile.modProfiles.maxOf { it.id } + 1, // New id is the previous highest id +1
                 name = name,
-                description = description ?: "",
+                description = description,
                 sortOrder = sortOrder ?: (userProfile.modProfiles.maxOf { it.sortOrder } + 1),
-                enabledModVariants = emptyList()
+                enabledModVariants = enabledModVariants
             )
             userProfile.copy(modProfiles = userProfile.modProfiles + newModProfile)
                 .also { Timber.i { "Created mod profile $newModProfile" } }
