@@ -9,23 +9,40 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.*
+import androidx.compose.material.Checkbox
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.ListItem
+import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import smol_access.SL
 import smol_access.model.Mod
+import smol_access.model.ModVariant
 import smol_app.WindowState
-import smol_app.composables.*
+import smol_app.composables.SmolAlertDialog
+import smol_app.composables.SmolButton
+import smol_app.composables.SmolPopupMenu
+import smol_app.composables.SmolSecondaryButton
 import smol_app.themes.SmolTheme
-import smol_app.util.*
+import smol_app.util.bytesAsShortReadableMiB
+import smol_app.util.uiEnabled
 import smol_app.views.detailsPanel
+import timber.ktx.Timber
+import utilities.calculateFileSize
+import kotlin.io.path.absolutePathString
+import kotlin.io.path.exists
+import kotlin.io.path.fileSize
+import kotlin.io.path.name
 
 const val modGridViewDropdownWidth = 180
 
@@ -51,6 +68,7 @@ fun AppState.ModGridView(
         kotlin.runCatching { ModGridSortField.valueOf(it) }.getOrNull()
     }
     val showVramRefreshWarning = remember { mutableStateOf(false) }
+    val variantToConfirmDeletionOf = remember { mutableStateOf<ModVariant?>(null) }
 
     Box(modifier.padding(top = contentPadding, bottom = contentPadding)) {
         Column(Modifier) {
@@ -120,7 +138,8 @@ fun AppState.ModGridView(
                                         largestVramUsage,
                                         checkboxesWidth,
                                         modInDebugDialog,
-                                        mods
+                                        mods,
+                                        variantToConfirmDeletionOf
                                     )
                                 }
                             }
@@ -171,6 +190,91 @@ fun AppState.ModGridView(
                         text = "Calculating VRAM may take a long time, with high CPU and disk usage causing SMOL to stutter.\n\nAre you sure you want to continue?",
                         style = SmolTheme.alertDialogBody()
                     )
+                }
+            )
+        }
+
+        if (variantToConfirmDeletionOf.value != null) {
+            val modVariantBeingRemoved = variantToConfirmDeletionOf.value!!
+            var shouldRemoveArchive by remember { mutableStateOf(true) }
+            var shouldRemoveStagingAndMods by remember { mutableStateOf(true) }
+
+            SmolAlertDialog(
+                title = {
+                    Text(
+                        text = "Delete ${modVariantBeingRemoved.modInfo.name} ${modVariantBeingRemoved.modInfo.version}?",
+                        style = SmolTheme.alertDialogTitle()
+                    )
+                },
+                text = {
+                    Column {
+                        Text(
+                            text = "Are you sure you want to permanently delete:",
+                            modifier = Modifier.padding(bottom = 8.dp),
+                            style = SmolTheme.alertDialogBody()
+                        )
+
+                        if (modVariantBeingRemoved.archiveInfo?.folder?.exists() == true) {
+                            Row {
+                                Checkbox(
+                                    modifier = Modifier.align(Alignment.CenterVertically),
+                                    checked = shouldRemoveArchive,
+                                    onCheckedChange = { shouldRemoveArchive = shouldRemoveArchive.not() }
+                                )
+                                Text(
+                                    text = "${modVariantBeingRemoved.archiveInfo?.folder?.name} ${
+                                        kotlin.runCatching { modVariantBeingRemoved.archiveInfo?.folder?.fileSize() }
+                                            .getOrNull()?.bytesAsShortReadableMiB?.let { "($it)" }
+                                    }",
+                                    modifier = Modifier.align(Alignment.CenterVertically),
+                                    style = SmolTheme.alertDialogBody()
+                                )
+                            }
+                        }
+                        if (modVariantBeingRemoved.stagingInfo?.folder?.exists() == true) {
+                            Row {
+                                Checkbox(
+                                    modifier = Modifier.align(Alignment.CenterVertically),
+                                    checked = shouldRemoveStagingAndMods,
+                                    onCheckedChange = { shouldRemoveStagingAndMods = shouldRemoveStagingAndMods.not() }
+                                )
+                                var folderSize by remember { mutableStateOf<String?>("calculating") }
+
+                                LaunchedEffect(modVariantBeingRemoved.stagingInfo?.folder?.absolutePathString()) {
+                                    withContext(Dispatchers.Default) {
+                                        folderSize = kotlin.runCatching {
+                                            modVariantBeingRemoved.stagingInfo?.folder?.calculateFileSize()
+                                        }
+                                            .onFailure { Timber.w(it) }
+                                            .getOrNull()?.bytesAsShortReadableMiB
+                                    }
+                                }
+
+                                Text(
+                                    text = "${modVariantBeingRemoved.stagingInfo?.folder?.name} ${
+                                        folderSize.let { "($it)" }
+                                    }",
+                                    modifier = Modifier.align(Alignment.CenterVertically),
+                                    style = SmolTheme.alertDialogBody()
+                                )
+                            }
+                        }
+                    }
+                },
+                onDismissRequest = { variantToConfirmDeletionOf.value = null },
+                dismissButton = {
+                    SmolSecondaryButton(onClick = { variantToConfirmDeletionOf.value = null }) {
+                        Text("Cancel")
+                    }
+                },
+                confirmButton = {
+                    SmolButton(
+                        modifier = Modifier.padding(end = 4.dp),
+                        onClick = {
+//                        SL.access.deleteVariant(modVariantBeingRemoved)
+                        }) {
+                        Text(text = "Delete")
+                    }
                 }
             )
         }

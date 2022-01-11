@@ -26,7 +26,7 @@ import smol_app.themes.SmolTheme
 import smol_app.util.bytesAsShortReadableMiB
 import smol_app.util.parseHtml
 import timber.ktx.Timber
-import utilities.walk
+import utilities.calculateFileSize
 import java.awt.dnd.DropTarget
 import java.awt.dnd.DropTargetDragEvent
 import java.awt.dnd.DropTargetDropEvent
@@ -34,8 +34,6 @@ import java.awt.dnd.DropTargetEvent
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
-import kotlin.io.path.fileSize
-import kotlin.io.path.isRegularFile
 import kotlin.io.path.name
 
 
@@ -131,11 +129,7 @@ fun AppState.FileDropper(
             LaunchedEffect(file.absolutePathString()) {
                 withContext(Dispatchers.Default) {
                     kotlin.runCatching {
-                        fileSize = if (file.isRegularFile()) {
-                            file.fileSize()
-                        } else {
-                            file.walk().sumOf { it.fileSize() }
-                        }
+                        fileSize = file.calculateFileSize()
                     }
                         .onFailure { Timber.w(it) }
                 }

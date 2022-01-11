@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import com.arkivanov.decompose.push
 import smol_access.Constants
 import smol_access.model.Mod
+import smol_access.model.ModVariant
 import smol_access.model.UserProfile
 import smol_app.composables.SmolText
 import smol_app.composables.SmolTooltipArea
@@ -45,7 +46,8 @@ fun AppState.ModGridRow(
     largestVramUsage: MutableState<Long?>,
     checkboxesWidth: Dp,
     modInDebugDialog: MutableState<Mod?>,
-    mods: SnapshotStateList<Mod?>
+    mods: SnapshotStateList<Mod?>,
+    variantToConfirmDeletionOf: MutableState<ModVariant?>
 ) {
     val mod = modRow.mod
     var showContextMenu by remember { mutableStateOf(false) }
@@ -126,11 +128,12 @@ fun AppState.ModGridRow(
                 }
 
                 // Mod Version Dropdown
-                modStateDropdown(
+                ModVariantsDropdown(
                     modifier = Modifier
                         .width(modGridViewDropdownWidth.dp)
                         .align(Alignment.CenterVertically),
-                    mod = mod
+                    mod = mod,
+                    variantToConfirmDeletionOf = variantToConfirmDeletionOf
                 )
 
                 // Mod name

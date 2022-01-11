@@ -17,10 +17,7 @@ import java.nio.file.FileVisitOption
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.*
-import kotlin.io.path.deleteIfExists
-import kotlin.io.path.exists
-import kotlin.io.path.isSameFileAs
-import kotlin.io.path.isWritable
+import kotlin.io.path.*
 import kotlin.random.Random
 import kotlin.streams.asSequence
 import kotlin.system.measureTimeMillis
@@ -52,6 +49,16 @@ fun Path.deleteRecursively(vararg options: FileVisitOption = arrayOf(FileVisitOp
             .forEach { obj -> obj.deleteIfExists() }
     }
 }
+
+suspend fun Path.calculateFileSize() =
+    coroutineScope {
+        if (this@calculateFileSize.isRegularFile()) {
+            this@calculateFileSize.fileSize()
+        } else {
+            this@calculateFileSize.walk().sumOf { it.fileSize() }
+        }
+    }
+
 
 fun Path.walk(maxDepth: Int = Int.MAX_VALUE, vararg options: FileVisitOption): Sequence<Path> =
     Files.walk(this, maxDepth, *options)

@@ -12,7 +12,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.GlobalScope
@@ -23,10 +22,7 @@ import smol_access.Constants
 import smol_access.SL
 import smol_access.model.Mod
 import smol_access.model.ModVariant
-import smol_app.composables.SmolButton
-import smol_app.composables.SmolDropdownArrow
-import smol_app.composables.SmolTooltipArea
-import smol_app.composables.SmolTooltipText
+import smol_app.composables.*
 import smol_app.themes.SmolTheme
 import smol_app.util.ModState
 import smol_app.util.state
@@ -42,7 +38,11 @@ sealed class DropdownAction {
 @ExperimentalFoundationApi
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
+fun ModVariantsDropdown(
+    modifier: Modifier = Modifier,
+    mod: Mod,
+    variantToConfirmDeletionOf: MutableState<ModVariant?>
+) {
     val firstEnabledVariant = mod.findFirstEnabled
     val font = SmolTheme.orbitronSpaceFont
 
@@ -143,7 +143,7 @@ fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
                         .border(1.dp, MaterialTheme.colors.primary, shape = SmolTheme.smolFullyClippedButtonShape()),
                     onDismissRequest = { expanded = false }
                 ) {
-                    dropdownMenuItems.forEachIndexed { index, action ->
+                    dropdownMenuItems.forEach { action ->
                         Box {
                             DropdownMenuItem(
                                 modifier = Modifier.sizeIn(maxWidth = 400.dp)
@@ -182,16 +182,40 @@ fun modStateDropdown(modifier: Modifier = Modifier, mod: Mod) {
                                             .onFailure { Logger.error(it) }
                                     }
                                 }) {
-                                Text(
-                                    text = when (action) {
-                                        is DropdownAction.ChangeToVariant -> action.variant.modInfo.version.toString()
-                                        is DropdownAction.Disable -> "Disable"
-                                        is DropdownAction.MigrateMod -> "Migrate to ${Constants.APP_NAME}"
-                                        is DropdownAction.ResetToArchive -> "Reset to default"
-                                    },
-                                    fontWeight = FontWeight.Bold,
-                                    fontFamily = font
-                                )
+                                Row {
+                                    Text(
+                                        modifier = Modifier
+                                            .align(Alignment.CenterVertically)
+                                            .weight(1f),
+                                        text = when (action) {
+                                            is DropdownAction.ChangeToVariant -> action.variant.modInfo.version.toString()
+                                            is DropdownAction.Disable -> "Disable"
+                                            is DropdownAction.MigrateMod -> "Migrate to ${Constants.APP_NAME}"
+                                            is DropdownAction.ResetToArchive -> "Reset to default"
+                                        },
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = font
+                                    )
+
+                                    if (action is DropdownAction.ChangeToVariant) {
+                                        SmolIconButton(
+                                            onClick = {
+                                                expanded = false
+                                                variantToConfirmDeletionOf.value = action.variant
+                                            },
+                                            modifier = Modifier
+                                                .align(Alignment.CenterVertically),
+                                            rippleRadius = 20.dp
+                                        ) {
+                                            Icon(
+                                                painter = painterResource("icon-remove.svg"),
+                                                modifier = Modifier
+                                                    .size(16.dp),
+                                                contentDescription = null
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
