@@ -429,7 +429,7 @@ fun profileControls(
             ) {
                 val alphaOfHoverDimmedElements = animateFloatAsState(if (isBeingHovered) 0.8f else 0.5f).value
                 Icon(
-                    painter = painterResource("trash-can-outline.svg"),
+                    painter = painterResource("icon-trash.svg"),
                     contentDescription = null,
                     tint = MaterialTheme.colors.onSurface.copy(alpha = alphaOfHoverDimmedElements)
                 )

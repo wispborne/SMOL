@@ -13,15 +13,14 @@ import smol_access.model.Mod
 import smol_access.model.ModId
 import smol_access.model.ModVariant
 import timber.ktx.Timber
-import utilities.IOLock
-import utilities.mkdirsIfNotExist
-import utilities.toFileOrNull
-import utilities.toPathOrNull
+import utilities.*
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import kotlin.io.path.absolutePathString
+import kotlin.io.path.deleteIfExists
+import kotlin.io.path.exists
 
 class Access internal constructor(
     private val staging: Staging,
@@ -228,4 +227,55 @@ class Access internal constructor(
         }
     }
 
+    fun deleteVariant(modVariant: ModVariant, removeArchive: Boolean, removeUncompressedFolder: Boolean) {
+        Timber.i { "Deleting mod variant ${modVariant.smolId} folders. Remove archive? $removeArchive. Remove staging/mods files? $removeUncompressedFolder." }
+        trace(onFinished = { _, millis ->
+            Timber.i { "Deleted mod variant ${modVariant.smolId} folders in ${millis}ms. Remove archive? $removeArchive. Remove staging/mods files? $removeUncompressedFolder." }
+        }) {
+            IOLock.write(IOLocks.modFilesLock) {
+                if (removeArchive) {
+                    val archiveFolder = modVariant.archiveInfo?.folder
+
+                    if (archiveFolder?.exists() != true) {
+                        Timber.e { "Unable to delete archive folder for variant ${modVariant.smolId}. File: $archiveFolder." }
+                    } else {
+                        kotlin.runCatching { archiveFolder.deleteIfExists() }
+                            .onFailure {
+                                Timber.e(it) { "Unable to delete archive folder for variant ${modVariant.smolId}." }
+                            }
+                    }
+                }
+
+                if (removeUncompressedFolder) {
+                    val stagingFolder = modVariant.stagingInfo?.folder
+
+                    if (stagingFolder?.exists() != true) {
+                        if (stagingFolder != null) {
+                            // If staging folder is null, then it's fine not to delete it, we probably just want to delete the /mods folder.
+                            Timber.w { "Unable to delete staging folder for variant ${modVariant.smolId}. File: $stagingFolder." }
+                        }
+                    } else {
+                        kotlin.runCatching { stagingFolder.deleteRecursively() }
+                            .onFailure {
+                                Timber.e(it) { "Unable to delete staging folder for variant ${modVariant.smolId}." }
+                            }
+                    }
+
+                    val gameModsFolder = modVariant.modsFolderInfo?.folder
+
+                    if (gameModsFolder?.exists() != true) {
+                        if (gameModsFolder != null) {
+                            // If /mods folder is null, then it's fine not to delete it, we probably just want to delete the staging folder.
+                            Timber.w { "Unable to delete staging folder for variant ${modVariant.smolId}. File: $gameModsFolder." }
+                        }
+                    } else {
+                        kotlin.runCatching { gameModsFolder.deleteRecursively() }
+                            .onFailure {
+                                Timber.e(it) { "Unable to delete game mods folder for variant ${modVariant.smolId}." }
+                            }
+                    }
+                }
+            }
+        }
+    }
 }

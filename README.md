@@ -2,6 +2,8 @@
 
 Starsector Mod Organizer & Launcher
 
+For Windows only. Unix users, check out [AtlanticAccent's Mod Manager](https://fractalsoftworks.com/forum/index.php?topic=21995.msg332186#msg332186).
+
 ## Why?
 
 Why make this? Starsector is already incredibly easy to mod, and there are two [mod managers](https://fractalsoftworks.com/forum/index.php?topic=21995.0) already [out there](https://www.nexusmods.com/site/mods/179).
@@ -37,6 +39,10 @@ Did this really need to be built? Absolutely not, but it has been fun to work on
 * Built-in and easily configurable **themes**.
 * **Favorite** a mod to pin it to the top.
 * In-app **log viewer** with selectable logging level.
+
+### Supported File Formats
+
+SMOL uses 7zip, so anything 7zip supports: AR, ARJ, CAB, CHM, CPIO, CramFS, DMG, EXT, FAT, GPT, HFS, IHEX, ISO, LZH, LZMA, MBR, MSI, NSIS, NTFS, QCOW2, RAR, RPM, SquashFS, UDF, UEFI, VDI, VHD, VMDK, WIM, XAR and Z
 
 ## Under the Hood
 

@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.input.pointer.pointerMoveFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -145,8 +146,14 @@ fun ModVariantsDropdown(
                 ) {
                     dropdownMenuItems.forEach { action ->
                         Box {
+                            var isHovered by remember { mutableStateOf(false) }
+
                             DropdownMenuItem(
                                 modifier = Modifier.sizeIn(maxWidth = 400.dp)
+                                    .pointerMoveFilter(
+                                        onEnter = { isHovered = true; false },
+                                        onExit = { isHovered = false; false }
+                                    )
                                     .background(background),
                                 onClick = {
                                     expanded = false
@@ -197,7 +204,7 @@ fun ModVariantsDropdown(
                                         fontFamily = font
                                     )
 
-                                    if (action is DropdownAction.ChangeToVariant) {
+                                    if (isHovered && action is DropdownAction.ChangeToVariant) {
                                         SmolIconButton(
                                             onClick = {
                                                 expanded = false
@@ -208,9 +215,9 @@ fun ModVariantsDropdown(
                                             rippleRadius = 20.dp
                                         ) {
                                             Icon(
-                                                painter = painterResource("icon-remove.svg"),
+                                                painter = painterResource("icon-trash.svg"),
                                                 modifier = Modifier
-                                                    .size(16.dp),
+                                                    .size(18.dp),
                                                 contentDescription = null
                                             )
                                         }

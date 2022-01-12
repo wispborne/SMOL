@@ -230,8 +230,17 @@ fun AppState.ModGridView(
                                     style = SmolTheme.alertDialogBody()
                                 )
                             }
+                        } else {
+                            shouldRemoveArchive = false
                         }
-                        if (modVariantBeingRemoved.stagingInfo?.folder?.exists() == true) {
+
+                        val looseFilesToShow = modVariantBeingRemoved.stagingInfo?.folder.let {
+                            if (it?.exists() != true)
+                                modVariantBeingRemoved.modsFolderInfo?.folder
+                            else it
+                        }
+
+                        if (looseFilesToShow?.exists() == true) {
                             Row {
                                 Checkbox(
                                     modifier = Modifier.align(Alignment.CenterVertically),
@@ -240,10 +249,10 @@ fun AppState.ModGridView(
                                 )
                                 var folderSize by remember { mutableStateOf<String?>("calculating") }
 
-                                LaunchedEffect(modVariantBeingRemoved.stagingInfo?.folder?.absolutePathString()) {
+                                LaunchedEffect(looseFilesToShow.absolutePathString()) {
                                     withContext(Dispatchers.Default) {
                                         folderSize = kotlin.runCatching {
-                                            modVariantBeingRemoved.stagingInfo?.folder?.calculateFileSize()
+                                            looseFilesToShow.calculateFileSize()
                                         }
                                             .onFailure { Timber.w(it) }
                                             .getOrNull()?.bytesAsShortReadableMiB
@@ -251,13 +260,15 @@ fun AppState.ModGridView(
                                 }
 
                                 Text(
-                                    text = "${modVariantBeingRemoved.stagingInfo?.folder?.name} ${
+                                    text = "${looseFilesToShow.name} ${
                                         folderSize.let { "($it)" }
                                     }",
                                     modifier = Modifier.align(Alignment.CenterVertically),
                                     style = SmolTheme.alertDialogBody()
                                 )
                             }
+                        } else {
+                            shouldRemoveStagingAndMods = false
                         }
                     }
                 },
@@ -271,7 +282,12 @@ fun AppState.ModGridView(
                     SmolButton(
                         modifier = Modifier.padding(end = 4.dp),
                         onClick = {
-//                        SL.access.deleteVariant(modVariantBeingRemoved)
+                            variantToConfirmDeletionOf.value = null
+                            SL.access.deleteVariant(
+                                modVariant = modVariantBeingRemoved,
+                                removeArchive = shouldRemoveArchive,
+                                removeUncompressedFolder = shouldRemoveStagingAndMods
+                            )
                         }) {
                         Text(text = "Delete")
                     }
