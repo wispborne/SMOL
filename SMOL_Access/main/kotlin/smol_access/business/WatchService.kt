@@ -113,7 +113,7 @@ class KWatchChannel(
                     shouldRegisterPath = false
                 }
 
-                // Wait one second for a change (gives us a chance to cancel this coroutine once per second).
+                // Wait one second for each change.
                 val monitorKey = watchService.poll(1, TimeUnit.SECONDS) ?: continue
                 val dirPath = monitorKey.watchable() as? Path ?: break
                 monitorKey.pollEvents().forEach {
@@ -157,7 +157,7 @@ class KWatchChannel(
                 }
 
                 // Don't eat ALL the CPU, and yield to other coroutines.
-                delay(100)
+                delay(1000)
             }
 
             close()

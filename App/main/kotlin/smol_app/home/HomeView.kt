@@ -48,11 +48,10 @@ fun AppState.homeView(
 ) {
     val mods: SnapshotStateList<Mod> = remember { mutableStateListOf() }
     val shownMods: SnapshotStateList<Mod?> = mods.toMutableStateList()
-    val scope = rememberCoroutineScope()
     val isWriteLocked = IOLock.stateFlow.collectAsState()
 
 
-    scope.launch {
+    LaunchedEffect(Unit) {
         withContext(Dispatchers.Default) {
             SL.access.mods.collectLatest { freshMods ->
                 if (freshMods != null) {

@@ -2,7 +2,8 @@ package smol_app.home
 
 import AppState
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -12,19 +13,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.push
 import kotlinx.coroutines.*
 import org.tinylog.Logger
+import smol_access.Constants
 import smol_access.SL
 import smol_access.model.Mod
 import smol_app.composables.SmolDropdownMenuItemTemplate
 import smol_app.navigation.Screen
-import smol_app.util.getModThreadId
-import smol_app.util.getModThreadUrl
-import smol_app.util.openModThread
-import smol_app.util.uiEnabled
+import smol_app.util.*
 import utilities.parallelMap
 import java.awt.Desktop
 import kotlin.io.path.exists
@@ -115,26 +113,31 @@ private fun AppState.modGridSingleModMenu(
     }
 
     val modThreadId = mod.getModThreadId()
-    if (modThreadId != null) {
-        DropdownMenuItem(
-            onClick = {
-                router.push(Screen.ModBrowser(modThreadId.getModThreadUrl()))
-                onShowContextMenuChange(false)
-            },
-        ) {
-            Image(
-                painter = painterResource("icon-open-in-app.svg"),
-                colorFilter = ColorFilter.tint(MaterialTheme.colors.onSurface),
-                modifier = Modifier.padding(end = 12.dp).size(24.dp),
-                contentDescription = null
-            )
-            Text(
-                text = "View website in SMOL",
-                maxLines = 1,
-                modifier = Modifier.align(Alignment.CenterVertically)
-            )
-        }
 
+    if (Constants.isJCEFEnabled()) {
+        if (modThreadId != null) {
+            DropdownMenuItem(
+                onClick = {
+                    router.push(Screen.ModBrowser(modThreadId.getModThreadUrl()))
+                    onShowContextMenuChange(false)
+                },
+            ) {
+                Image(
+                    painter = painterResource("icon-open-in-app.svg"),
+                    colorFilter = ColorFilter.tint(MaterialTheme.colors.onSurface),
+                    modifier = Modifier.padding(end = 12.dp).size(24.dp),
+                    contentDescription = null
+                )
+                Text(
+                    text = "View website in SMOL",
+                    maxLines = 1,
+                    modifier = Modifier.align(Alignment.CenterVertically)
+                )
+            }
+        }
+    }
+
+    if (modThreadId != null) {
         DropdownMenuItem(
             onClick = {
                 modThreadId.openModThread()

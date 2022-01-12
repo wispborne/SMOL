@@ -1,7 +1,6 @@
 package smol_app.toasts
 
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -16,7 +15,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import smol_access.SL
 import smol_app.UI
@@ -71,30 +69,27 @@ fun toaster(
     verticalArrangement: Arrangement.Vertical? = Arrangement.Top,
     horizontalArrangement: Arrangement.Horizontal? = null
 ) {
-    val scope = rememberCoroutineScope()
     val recomposeScope = currentRecomposeScope
     val toasterState = SL.UI.toaster
     val items = toasterState.items.collectAsState()
 
     LaunchedEffect(Unit) {
-        scope.launch {
-            while (true) {
-                items.value.toList().forEach {
-                    if (toasterState.timersByToastId.containsKey(it.id)) {
-                        toasterState.timersByToastId[it.id] = toasterState.timersByToastId[it.id]!! - 100
-                    }
+        while (true) {
+            items.value.toList().forEach {
+                if (toasterState.timersByToastId.containsKey(it.id)) {
+                    toasterState.timersByToastId[it.id] = toasterState.timersByToastId[it.id]!! - 100
                 }
-
-                val preFilterSize = items.value.size
-                toasterState.items.value =
-                    items.value.filter { (toasterState.timersByToastId[it.id] ?: 1) > 0 }
-
-                if (preFilterSize != items.value.size) {
-                    recomposeScope.invalidate()
-                }
-
-                delay(100)
             }
+
+            val preFilterSize = items.value.size
+            toasterState.items.value =
+                items.value.filter { (toasterState.timersByToastId[it.id] ?: 1) > 0 }
+
+            if (preFilterSize != items.value.size) {
+                recomposeScope.invalidate()
+            }
+
+            delay(500)
         }
     }
 
