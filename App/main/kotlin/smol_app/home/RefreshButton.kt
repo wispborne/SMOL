@@ -29,22 +29,25 @@ fun AppState.refreshButton(onRefresh: () -> Unit) {
             onClick = { if (!areModsLoading) onRefresh.invoke() },
             modifier = Modifier.padding(start = 16.dp)
         ) {
-            val infiniteTransition = rememberInfiniteTransition()
-            val angle by infiniteTransition.animateFloat(
-                initialValue = 0F,
-                targetValue = 360F,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(1000, easing = FastOutLinearInEasing)
-                )
-            )
 
             Icon(
                 painter = painterResource("refresh.svg"),
                 modifier = Modifier
-                    .graphicsLayer {
+                    .run {
                         if (areModsLoading) {
-                            rotationZ = angle
-                        }
+                            // Moving this animation code outside of the conditional causes SMOL to eat an entire CPU core
+                            // and allocate 4.62 GB over 60 seconds. Don't do that!
+                            val infiniteTransition = rememberInfiniteTransition()
+                            val angle by infiniteTransition.animateFloat(
+                                initialValue = 0F,
+                                targetValue = 360F,
+                                animationSpec = infiniteRepeatable(
+                                    animation = tween(1000, easing = FastOutLinearInEasing)
+                                )
+                            )
+
+                            this.graphicsLayer { rotationZ = angle }
+                        } else this
                     },
                 contentDescription = "Refresh"
             )
