@@ -6,9 +6,12 @@ import AppState
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.material.Checkbox
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ListItem
@@ -88,7 +91,8 @@ fun AppState.ModGridView(
             Box {
                 val isEnabledCollapsed = remember { mutableStateOf(false) }
                 val isDisabledCollapsed = remember { mutableStateOf(false) }
-                LazyColumn(Modifier.fillMaxWidth()) {
+                val listState = rememberLazyListState()
+                LazyColumn(Modifier.fillMaxWidth(), state = listState) {
                     mods
                         .filterNotNull()
                         .groupBy { it.uiEnabled }
@@ -146,13 +150,12 @@ fun AppState.ModGridView(
                         }
                 }
 
-                // Bugged in Compose: java.lang.IllegalArgumentException: Index should be non-negative (-1)
-//                VerticalScrollbar(
-//                    modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
-//                    adapter = rememberScrollbarAdapter(
-//                        scrollState = state
-//                    )
-//                )
+                VerticalScrollbar(
+                    modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                    adapter = rememberScrollbarAdapter(
+                        scrollState = listState
+                    )
+                )
             }
         }
 
