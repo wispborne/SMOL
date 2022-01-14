@@ -74,9 +74,9 @@ fun AppState.homeView(
                 installModsButton()
                 Spacer(Modifier.width(16.dp))
                 screenTitle(text = "Home")
+                modBrowserButton()
                 profilesButton()
                 settingsButton()
-                modBrowserButton()
                 if (isWriteLocked.value) {
                     CircularProgressIndicator(
                         modifier = Modifier.padding(start = 16.dp)

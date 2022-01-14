@@ -86,9 +86,9 @@ fun AppState.ModBrowserView(
                 installModsButton()
                 Spacer(Modifier.width(16.dp))
                 homeButton()
+                screenTitle(text = "Mod Browser")
                 profilesButton()
                 settingsButton()
-                screenTitle(text = "Mod Browser")
 
                 SmolTooltipArea(
                     modifier = Modifier

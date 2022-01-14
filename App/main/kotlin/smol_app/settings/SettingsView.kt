@@ -49,9 +49,9 @@ fun AppState.settingsView(
             installModsButton()
             Spacer(Modifier.width(16.dp))
             homeButton()
+            modBrowserButton()
             profilesButton()
             screenTitle(text = "Settings")
-            modBrowserButton()
         }
     },
         content = {

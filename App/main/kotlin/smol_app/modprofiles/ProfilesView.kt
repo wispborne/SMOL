@@ -55,9 +55,9 @@ fun AppState.ProfilesView(
                 installModsButton()
                 Spacer(Modifier.width(16.dp))
                 homeButton()
+                modBrowserButton()
                 screenTitle(text = "Mod Profiles")
                 settingsButton()
-                modBrowserButton()
             }
         }, content = {
             HorizontalSplitPane(
