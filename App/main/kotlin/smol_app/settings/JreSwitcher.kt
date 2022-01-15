@@ -4,15 +4,13 @@ import AppState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.RecomposeScope
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -91,7 +89,11 @@ fun AppState.jreSwitcher(
                     )
                     Text(
                         modifier = Modifier.align(Alignment.CenterVertically)
-                            .clickable { onClick.invoke() },
+                            .clickable(
+                                indication = null,
+                                interactionSource = remember { MutableInteractionSource() },
+                                onClick = { onClick.invoke() },
+                            ),
                         text = "<b>Java ${jreEntry.version}</b> (${jreEntry.versionString}) in folder <code>${
                             jreEntry.path.relativeTo(
                                 SL.gamePath.get()!!
