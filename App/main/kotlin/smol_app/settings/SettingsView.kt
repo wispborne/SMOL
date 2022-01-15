@@ -28,7 +28,9 @@ import smol_app.util.openInDesktop
 import smol_app.views.jre8DownloadButton
 import smol_app.views.jreSwitcher
 import smol_app.views.ramButton
+import timber.ktx.Timber
 import utilities.rootCause
+import utilities.toPathOrNull
 import java.io.File
 import javax.swing.JFileChooser
 import kotlin.random.Random
@@ -60,37 +62,55 @@ fun AppState.settingsView(
                     var gamePath by remember { mutableStateOf(SL.appConfig.gamePath ?: "") }
                     var archivesPath by remember { mutableStateOf(SL.appConfig.archivesPath ?: "") }
                     var stagingPath by remember { mutableStateOf(SL.appConfig.stagingPath ?: "") }
-                    var alertDialogMessage: String? by remember { mutableStateOf(null) }
+                    val alertDialogMessage = remember { mutableStateOf<String?>(null) }
 
                     fun saveSettings(): Boolean {
-                        SL.appConfig.gamePath = gamePath
-
-                        kotlin.runCatching {
-                            SL.archives.changePath(archivesPath)
-                            SL.access.changeStagingPath(stagingPath)
+                        val errors = kotlin.runCatching {
+                            SL.access.validatePaths(
+                                newGamePath = gamePath.toPathOrNull(),
+                                newArchivesPath = archivesPath.toPathOrNull(),
+                                newStagingPath = stagingPath.toPathOrNull()
+                            )
                         }
-                            .onFailure { ex ->
-                                alertDialogMessage =
-                                    "${ex.rootCause()::class.simpleName}\n${ex.rootCause().message}"
-                                return false
+                            .recover {
+                                Timber.w(it)
+                                listOfNotNull(it.message)
                             }
+                            .getOrNull()
+
+                        if (errors != null && errors.isNotEmpty()) {
+                            alertDialogMessage.value = errors.joinToString(separator = "\n")
+                            return false
+                        } else {
+                            SL.appConfig.gamePath = gamePath
+
+                            kotlin.runCatching {
+                                SL.archives.changePath(archivesPath)
+                                SL.access.changeStagingPath(stagingPath)
+                            }
+                                .onFailure { ex ->
+                                    alertDialogMessage.value =
+                                        "${ex.rootCause()::class.simpleName}\n${ex.rootCause().message}"
+                                    return false
+                                }
+                        }
 
                         return true
                     }
 
-                    if (alertDialogMessage != null) {
+                    if (alertDialogMessage.value != null) {
                         SmolAlertDialog(
                             title = { Text("Error", style = SmolTheme.alertDialogTitle()) },
                             text = {
-                                alertDialogMessage?.let {
+                                alertDialogMessage.value?.let {
                                     Text(
-                                        alertDialogMessage!!,
+                                        alertDialogMessage.value!!,
                                         style = SmolTheme.alertDialogBody()
                                     )
                                 }
                             },
-                            onDismissRequest = { alertDialogMessage = null },
-                            confirmButton = { Button(onClick = { alertDialogMessage = null }) { Text("Ok") } }
+                            onDismissRequest = { alertDialogMessage.value = null },
+                            confirmButton = { Button(onClick = { alertDialogMessage.value = null }) { Text("Ok") } }
                         )
                     }
 
@@ -116,9 +136,9 @@ fun AppState.settingsView(
 
                         item {
                             Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp)) {
-                                gamePath = gamePathSetting(gamePath)
-                                archivesPath = archivesPathSetting(archivesPath)
-                                stagingPath = stagingPathSetting(stagingPath)
+                                gamePath = gamePathSetting(gamePath, archivesPath, stagingPath)
+                                archivesPath = archivesPathSetting(gamePath, archivesPath, stagingPath)
+                                stagingPath = stagingPathSetting(gamePath, archivesPath, stagingPath)
                                 themeDropdown(Modifier.padding(start = 16.dp, top = 24.dp))
                             }
                         }
@@ -158,11 +178,13 @@ fun AppState.settingsView(
                         Modifier.fillMaxWidth().padding(bottom = SmolTheme.bottomBarHeight, end = 16.dp),
                         horizontalArrangement = Arrangement.End
                     ) {
-                        SmolButton(modifier = Modifier.padding(end = 16.dp), onClick = {
-                            if (saveSettings()) {
-                                router.pop()
-                            }
-                        }) { Text("Ok") }
+                        SmolButton(
+                            modifier = Modifier.padding(end = 16.dp),
+                            onClick = {
+                                if (saveSettings()) {
+                                    router.pop()
+                                }
+                            }) { Text("Ok") }
                         SmolSecondaryButton(
                             modifier = Modifier.padding(end = 16.dp),
                             onClick = { router.pop() }) { Text("Cancel") }
@@ -186,9 +208,13 @@ fun AppState.settingsView(
 }
 
 @Composable
-private fun AppState.gamePathSetting(gamePath: String): String {
+private fun AppState.gamePathSetting(gamePath: String, archivesPath: String, stagingPath: String): String {
     var newGamePath by remember { mutableStateOf(gamePath) }
-    var isGamePathError by remember { mutableStateOf(!SL.gamePath.isValidGamePath(newGamePath)) }
+    var isGamePathError by remember {
+        mutableStateOf(
+            SL.access.validatePaths(newGamePath = newGamePath.toPathOrNull()).any()
+        )
+    }
 
     Row {
         SmolTextField(
@@ -201,7 +227,15 @@ private fun AppState.gamePathSetting(gamePath: String): String {
             singleLine = true,
             onValueChange = {
                 newGamePath = it
-                isGamePathError = !SL.gamePath.isValidGamePath(it)
+                isGamePathError = kotlin.runCatching {
+                    SL.access.validatePaths(
+                        newGamePath = newGamePath.toPathOrNull(),
+                        newArchivesPath = archivesPath.toPathOrNull(),
+                        newStagingPath = stagingPath.toPathOrNull()
+                    ).any()
+                }
+                    .onFailure { ex -> Timber.w(ex) }
+                    .getOrElse { true }
             })
         SmolButton(
             modifier = Modifier
@@ -225,7 +259,7 @@ private fun AppState.gamePathSetting(gamePath: String): String {
 }
 
 @Composable
-private fun AppState.archivesPathSetting(archivesPath: String): String {
+private fun AppState.archivesPathSetting(gamePath: String, archivesPath: String, stagingPath: String): String {
     fun isValidArchivesPath(path: String) = !File(path).exists()
     var isArchivesPathError by remember { mutableStateOf(isValidArchivesPath(archivesPath)) }
     var archivesPathMutable by remember { mutableStateOf(archivesPath) }
@@ -241,7 +275,15 @@ private fun AppState.archivesPathSetting(archivesPath: String): String {
             singleLine = true,
             onValueChange = {
                 archivesPathMutable = it
-                isArchivesPathError = isValidArchivesPath(it)
+                isArchivesPathError = kotlin.runCatching {
+                    SL.access.validatePaths(
+                        newGamePath = gamePath.toPathOrNull(),
+                        newArchivesPath = archivesPathMutable.toPathOrNull(),
+                        newStagingPath = stagingPath.toPathOrNull()
+                    ).any()
+                }
+                    .onFailure { ex -> Timber.w(ex) }
+                    .getOrElse { true }
             })
         SmolButton(
             modifier = Modifier
@@ -265,10 +307,10 @@ private fun AppState.archivesPathSetting(archivesPath: String): String {
 }
 
 @Composable
-private fun AppState.stagingPathSetting(stagingPath: String): String {
+private fun AppState.stagingPathSetting(gamePath: String, archivesPath: String, stagingPath: String): String {
     fun isValidArchivesPath(path: String) = !File(path).exists()
     var stagingPathMutable by remember { mutableStateOf(stagingPath) }
-    var isStagingPathError = false
+    val stagingPathError = remember { mutableStateOf<List<String>?>(null) }
 
     Row {
         SmolTextField(
@@ -277,11 +319,19 @@ private fun AppState.stagingPathSetting(stagingPath: String): String {
                 .weight(1f)
                 .align(Alignment.CenterVertically),
             label = { Text("Staging path") },
-            isError = isStagingPathError,
+            isError = !stagingPathError.value.isNullOrEmpty(),
             singleLine = true,
             onValueChange = {
                 stagingPathMutable = it
-//                isStagingPathError = isValidArchivesPath(it)
+                stagingPathError.value = kotlin.runCatching {
+                    SL.access.validatePaths(
+                        newGamePath = gamePath.toPathOrNull(),
+                        newArchivesPath = archivesPath.toPathOrNull(),
+                        newStagingPath = stagingPathMutable.toPathOrNull()
+                    )
+                }
+                    .onFailure { ex -> Timber.w(ex) }
+                    .getOrNull()
             })
         SmolButton(
             modifier = Modifier
@@ -297,8 +347,12 @@ private fun AppState.stagingPathSetting(stagingPath: String): String {
             Text("Open")
         }
     }
-    if (isStagingPathError) {
-        Text("Invalid path", color = MaterialTheme.colors.error)
+
+    if (!stagingPathError.value.isNullOrEmpty()) {
+        Text(
+            "Invalid path: ${stagingPathError.value?.joinToString(separator = "\n")}",
+            color = MaterialTheme.colors.error
+        )
     }
 
     return stagingPathMutable

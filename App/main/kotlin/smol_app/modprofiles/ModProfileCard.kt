@@ -35,6 +35,7 @@ import smol_access.business.SaveFile
 import smol_access.model.ModVariant
 import smol_access.model.SmolId
 import smol_access.model.UserProfile
+import smol_access.model.Version
 import smol_app.composables.SmolTextField
 import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipBackground
@@ -307,7 +308,8 @@ fun modList(
                                 fontSize = 14.sp,
                                 maxLines = 1,
 //                                overflow = TextOverflow.Ellipsis,
-                                text = modVariant?.modInfo?.version?.toString() ?: ""
+                                text = enabledModVariant.version?.raw
+                                    ?: modVariant?.modInfo?.version?.toString() ?: ""
                             )
                         }
                     }
@@ -479,7 +481,8 @@ private val mockModProfile = ModProfileCardInfo.EditableModProfileCardInfo(
     enabledModVariants = listOf(
         UserProfile.ModProfile.EnabledModVariant(
             modId = "mod_id",
-            smolVariantId = "23444"
+            smolVariantId = "23444",
+            version = null
         )
     )
 )
@@ -491,7 +494,8 @@ private val mockSaveModProfile = ModProfileCardInfo.SaveModProfileCardInfo(
     enabledModVariants = listOf(
         UserProfile.ModProfile.EnabledModVariant(
             modId = "mod_id",
-            smolVariantId = "23444"
+            smolVariantId = "23444",
+            version = Version.parse("1.2.3")
         )
     ),
     saveFile = SaveFile(

@@ -4,35 +4,20 @@ import com.sun.jna.platform.win32.Advapi32Util
 import com.sun.jna.platform.win32.WinReg
 import utilities.IOLock
 import timber.ktx.Timber
+import utilities.mountOf
 import utilities.toPathOrNull
+import utilities.walk
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
+import kotlin.io.path.exists
+import kotlin.io.path.nameWithoutExtension
 
 
 class GamePath internal constructor(
     private val appConfig: AppConfig
 ) {
     fun get() = appConfig.gamePath.toPathOrNull()
-
-    fun isValidGamePath(path: String): Boolean {
-        IOLock.read {
-            val file = File(path)
-
-            if (!file.exists()) return false
-
-            var hasGameExe = false
-            var hasGameCoreExe = false
-
-            file.walkTopDown().maxDepth(1)
-                .forEach {
-                    if (it.nameWithoutExtension == "starsector") hasGameExe = true
-                    if (it.nameWithoutExtension == "starsector-core") hasGameCoreExe = true
-                }
-
-            return hasGameExe && hasGameCoreExe
-        }
-    }
 
     fun getDefaultStarsectorPath(platform: Platform): File? =
         kotlin.runCatching {

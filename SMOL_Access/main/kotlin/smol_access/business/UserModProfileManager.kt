@@ -32,7 +32,11 @@ class UserModProfileManager internal constructor(
                                 if (profile.id == oldProfile.activeModProfileId) {
                                     profile.copy(enabledModVariants = newMods.mods
                                         .flatMap { it.enabledVariants }
-                                        .map { UserProfile.ModProfile.EnabledModVariant(it.mod(modLoader).id, it.smolId) })
+                                        .map { UserProfile.ModProfile.EnabledModVariant(
+                                            modId = it.mod(modLoader).id,
+                                            smolVariantId = it.smolId,
+                                            version = it.modInfo.version
+                                        ) })
                                 } else
                                     profile
                             }

@@ -12,11 +12,9 @@ import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
-import java.lang.reflect.Modifier
 import java.nio.file.FileVisitOption
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.*
 import kotlin.io.path.*
 import kotlin.random.Random
 import kotlin.streams.asSequence
@@ -211,4 +209,17 @@ suspend fun Path.awaitWrite(timeoutMillis: Long = 1000): Path {
     } else {
         throw RuntimeException("Timed out waiting ${timeoutMillis}ms for write access to $this.")
     }
+}
+
+@Throws(IOException::class)
+fun Path.mountOf(): Path? {
+    val fs = Files.getFileStore(this)
+    var temp = this.toAbsolutePath()
+    var mountp = temp
+
+    while (temp.parent.also { temp = it } != null && fs == Files.getFileStore(temp)) {
+        mountp = temp
+    }
+
+    return mountp
 }

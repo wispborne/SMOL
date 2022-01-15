@@ -135,7 +135,8 @@ fun AppState.ProfilesView(
                                         enabledModVariants = saveFile.mods.map {
                                             UserProfile.ModProfile.EnabledModVariant(
                                                 modId = it.id,
-                                                smolVariantId = ModVariant.createSmolId(it.id, it.version)
+                                                smolVariantId = ModVariant.createSmolId(it.id, it.version),
+                                                version = it.version
                                             )
                                         },
                                         saveFile = saveFile

@@ -8,6 +8,7 @@ import smol_access.business.ModListUpdate
 import smol_access.business.ModLoader
 import smol_access.business.Staging
 import smol_access.config.AppConfig
+import smol_access.config.GamePath
 import smol_access.config.Platform
 import smol_access.model.Mod
 import smol_access.model.ModId
@@ -21,39 +22,107 @@ import java.nio.file.StandardCopyOption
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
+import kotlin.io.path.nameWithoutExtension
 
 class Access internal constructor(
     private val staging: Staging,
     private val config: AppConfig,
     private val modLoader: ModLoader,
-    private val archives: Archives
+    private val archives: Archives,
+    private val appConfig: AppConfig,
+    private val gamePath: GamePath
 ) {
 
     /**
      * Checks the /mods, archives, and staging paths and sets them to null if they don't exist.
      */
     fun checkAndSetDefaultPaths(platform: Platform) {
-        val uiConfig: AppConfig = SL.appConfig
+//        if (!gamePath.isValidGamePath(appConfig.gamePath ?: "")) {
+//            appConfig.gamePath = gamePath.getDefaultStarsectorPath(platform)?.absolutePath
+//        }
 
-        if (!SL.gamePath.isValidGamePath(uiConfig.gamePath ?: "")) {
-            uiConfig.gamePath = SL.gamePath.getDefaultStarsectorPath(platform)?.absolutePath
+        if (appConfig.archivesPath.toPathOrNull()?.exists() != true) {
+            appConfig.archivesPath = Constants.ARCHIVES_FOLDER_DEFAULT.absolutePathString()
         }
 
-        if (uiConfig.archivesPath.toFileOrNull()?.exists() != true) {
-            uiConfig.archivesPath = Constants.ARCHIVES_FOLDER_DEFAULT.absolutePathString()
-        }
-
-        SL.archives.getArchivesManifest()
+        archives.getArchivesManifest()
             .also { Timber.i { "Archives folder manifest: ${it?.manifestItems?.keys?.joinToString()}" } }
 
-        if (uiConfig.stagingPath.toFileOrNull()?.exists() != true) {
-            uiConfig.stagingPath = Constants.STAGING_FOLDER_DEFAULT.absolutePathString()
+        if (appConfig.stagingPath.toPathOrNull()?.exists() != true) {
+            appConfig.stagingPath = Constants.STAGING_FOLDER_DEFAULT.absolutePathString()
         }
 
-        Timber.i { "Game: ${uiConfig.gamePath}" }
-        Timber.i { "Archives: ${uiConfig.archivesPath}" }
-        Timber.i { "Staging: ${uiConfig.stagingPath}" }
+        Timber.i { "Game: ${appConfig.gamePath}" }
+        Timber.i { "Archives: ${appConfig.archivesPath}" }
+        Timber.i { "Staging: ${appConfig.stagingPath}" }
     }
+
+    /**
+     *
+     *
+     * @return A list of errors, or empty if no errors.
+     */
+    fun validatePaths(
+        newGamePath: Path? = gamePath.get(),
+        newArchivesPath: Path? = appConfig.archivesPath?.toPathOrNull(),
+        newStagingPath: Path? = appConfig.stagingPath?.toPathOrNull()
+    ): List<String> {
+        val errors = mutableListOf<String>()
+
+        IOLock.read {
+            // Game path
+            if (newGamePath?.exists() != true) {
+                errors += "Game path '$newGamePath' doesn't exist!"
+            } else {
+                var hasGameExe = false
+                var hasGameCoreExe = false
+
+                newGamePath.walk(maxDepth = 1)
+                    .forEach {
+                        if (it.nameWithoutExtension == "starsector") hasGameExe = true
+                        if (it.nameWithoutExtension == "starsector-core") hasGameCoreExe = true
+                    }
+
+                if (!hasGameExe) {
+                    errors += "Folder 'starsector' doesn't exist!"
+                }
+
+                if (!hasGameCoreExe) {
+                    errors += "Folder 'starsector-core' doesn't exist!"
+                }
+            }
+
+
+            // Archives path
+            if (newArchivesPath?.exists() != true) {
+                errors += "Archives path '$newArchivesPath' doesn't exist!"
+            }
+
+
+            // Staging path
+            if (newStagingPath?.exists() != true) {
+                errors += "Staging path '$newStagingPath' doesn't exist!"
+            }
+
+            // Ensure that the two folders with hardlinks, /mods and staging, are on the same partition.
+            kotlin.runCatching {
+                val folders =
+                    listOfNotNull(newGamePath, newStagingPath)
+
+                if (folders.size > 1) {
+                    if (folders.distinctBy { it.mountOf() }.size > 1) {
+                        // There should only be a single mount point, aka partition, for hardlinked folders.
+                        Timber.e { "/mods and staging are on separate partitions. Folders: ${folders.joinToString()}." }
+                        errors += "The staging folder must be on the same drive (partition) as your Starsector mods folder."
+                    }
+                }
+            }
+                .onFailure { Timber.w(it) }
+        }
+
+        return errors
+    }
+
 
     /**
      * Gets the current staging folder path.

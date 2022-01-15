@@ -24,7 +24,8 @@ data class UserProfile(
     ) {
         data class EnabledModVariant(
             val modId: String,
-            val smolVariantId: String
+            val smolVariantId: String,
+            val version: Version?
         )
     }
 

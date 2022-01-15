@@ -35,6 +35,7 @@ import smol_app.util.replaceAllUsingDifference
 import smol_app.util.vmParamsManager
 import utilities.IOLock
 import utilities.equalsAny
+import utilities.toPathOrNull
 
 
 @OptIn(
@@ -122,7 +123,7 @@ fun AppState.homeView(
             }
         }, content = {
             Box {
-                if (SL.gamePath.isValidGamePath(SL.appConfig.gamePath ?: "")) {
+                if (SL.access.validatePaths(newGamePath = SL.appConfig.gamePath?.toPathOrNull()).none()) {
                     ModGridView(
                         modifier = Modifier.fillMaxWidth().fillMaxHeight().padding(bottom = 40.dp),
                         mods = (if (shownMods.isEmpty()) mods else shownMods) as SnapshotStateList<Mod?>
