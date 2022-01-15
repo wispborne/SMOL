@@ -30,11 +30,14 @@ class UpdateApp(
 ) {
     companion object {
         fun writeLocalUpdateConfig(onlineUrl: String, localPath: Path): Configuration? {
+            val gitFolderPath = Path.of(".git")
+
             val config = Configuration.builder()
                 .baseUri(onlineUrl)
                 .basePath(Path.of("").absolutePathString())
                 .files(
                     FileMetadata.streamDirectory(localPath)
+                        .filter { !it.source.contains(gitFolderPath) }
                         .asSequence()
                         .onEach { r -> r.classpath(r.source.toString().endsWith(".jar")) }
                         .toList())
