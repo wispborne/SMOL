@@ -1,4 +1,4 @@
-package smol_app.views
+package smol_app.settings
 
 import AppState
 import androidx.compose.animation.core.animateFloatAsState
@@ -26,6 +26,7 @@ import smol_access.SL
 import smol_access.business.JreEntry
 import smol_access.business.JreManager
 import smol_app.composables.SmolButton
+import smol_app.composables.SmolText
 import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
 import smol_app.util.openAsUriInBrowser
@@ -39,13 +40,30 @@ fun AppState.jreSwitcher(
     recomposer: RecomposeScope,
     jresFound: SnapshotStateList<JreEntry>
 ) {
-    Column(modifier = modifier.padding(start = 16.dp)) {
+    Column(modifier = modifier.padding(start = 16.dp, bottom = 4.dp)) {
         if (jresFound.size > 1) {
-            Text(
-                text = "Select a Java Runtime (JRE)",
-                modifier = Modifier.padding(bottom = 8.dp),
-                style = MaterialTheme.typography.subtitle1
-            )
+            Row(Modifier) {
+                Text(
+                    text = "Java Runtime (JRE)",
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                    style = SettingsView.settingLabelStyle()
+                )
+
+                SmolTooltipArea(
+                    tooltip = {
+                        SmolTooltipText(
+                            "Starsector uses Java 7 by default, but switching to Java 8 may increase performance and prevent a sudden slowdown that can happen after battles." +
+                                    "\nIn case of issues, switching back to Java 7 is always possible."
+                        )
+                    }
+                ) {
+                    Icon(
+                        painter = painterResource("icon-help-circled.svg"),
+                        modifier = Modifier.padding(start = 8.dp).align(Alignment.CenterVertically),
+                        contentDescription = null
+                    )
+                }
+            }
         }
 
         jresFound.forEach { jreEntry ->
@@ -83,6 +101,14 @@ fun AppState.jreSwitcher(
                 }
             }
         }
+
+        SmolText(
+            text = "If the launcher and game are zoomed in or off-center, right-click your Starsector shortcut, " +
+                    "then go to Properties, Compatibility, Change high DPI settings, and tick the checkbox for \"Override...Scaling performed by Application\"\n" +
+                    "Thanks to Normal Dude for this fix.",
+            style = MaterialTheme.typography.caption,
+            modifier = Modifier.padding(top = 4.dp)
+        )
     }
 }
 

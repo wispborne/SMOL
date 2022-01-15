@@ -1,4 +1,4 @@
-package smol_app.views
+package smol_app.settings
 
 import AppState
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -10,6 +10,7 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -30,17 +31,43 @@ import kotlin.math.roundToInt
 @Composable
 fun AppState.ramButton(modifier: Modifier = Modifier) {
     val showVmParamsMenu = remember { mutableStateOf(false) }
-    SmolTooltipArea(
-        tooltip = { SmolTooltipText("Adjust the RAM allocated to the game. Modifies vmparams.") },
-        delayMillis = SmolTooltipArea.shortDelay
+    Column(
+        modifier = modifier.padding(start = 16.dp, bottom = 8.dp)
     ) {
-        SmolButton(
-            onClick = { showVmParamsMenu.value = true },
-            modifier = modifier.padding(start = 16.dp)
+        Row(Modifier.padding(bottom = 4.dp)) {
+            Text(
+                text = "Assigned RAM",
+                style = SettingsView.settingLabelStyle(),
+                modifier = Modifier.align(Alignment.CenterVertically)
+            )
+            SmolTooltipArea(
+                tooltip = {
+                    SmolTooltipText(
+                        "Starsector is only able to use as much RAM, or memory, as you allow. The amount required increases with more mods." +
+                                "\n\nNote: RAM is different from VRAM, which is not customizable."
+                    )
+                }
+            ) {
+                Icon(
+                    painter = painterResource("icon-help-circled.svg"),
+                    modifier = Modifier.padding(start = 8.dp).align(Alignment.CenterVertically),
+                    contentDescription = null
+                )
+            }
+        }
+
+        SmolTooltipArea(
+            tooltip = { SmolTooltipText("Adjust the RAM allocated to the game. Modifies vmparams.") },
+            delayMillis = SmolTooltipArea.shortDelay
         ) {
-            Text(text = "Set RAM")
+            SmolButton(
+                onClick = { showVmParamsMenu.value = true }
+            ) {
+                Text(text = "Click to Set")
+            }
         }
     }
+
     vmParamsContextMenu(showVmParamsMenu)
 }
 
@@ -123,14 +150,26 @@ fun vmParamsContextMenu(
                     }
 
                     if (presetGb == recommendation) {
-                        Text(
-                            text = "Suggested",
-                            style = MaterialTheme.typography.caption,
-                            fontWeight = FontWeight.Bold,
+                        Column(
                             modifier = Modifier
-                                .align(Alignment.CenterHorizontally)
                                 .offset(y = (-4).dp)
-                        )
+                                .align(Alignment.CenterHorizontally)
+                        ) {
+                            Text(
+                                text = "Suggested",
+                                style = MaterialTheme.typography.caption,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier
+                                    .align(Alignment.CenterHorizontally)
+                            )
+                            Text(
+                                text = "for you",
+                                style = MaterialTheme.typography.caption,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier
+                                    .align(Alignment.CenterHorizontally)
+                            )
+                        }
                     }
                 }
             }

@@ -1,7 +1,9 @@
 package smol_app
 
+import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.awt.ComposeWindow
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.DpSize
@@ -22,14 +24,19 @@ import smol_app.navigation.rememberRouter
 import smol_app.util.SmolPair
 import smol_app.util.SmolWindowState
 import smol_app.util.currentPlatform
+import smol_app.util.hexToColor
 import timber.LogLevel
 import timber.ktx.Timber
 import utilities.makeFinite
+import javax.swing.UIManager
+import javax.swing.plaf.ColorUIResource
 
 
 var safeMode = false
 
 fun main() = application {
+    fixWhiteFlashOnStartup()
+
     // Logger
     kotlin.runCatching {
         Logging.logLevel =
@@ -124,6 +131,17 @@ private fun ApplicationScope.onQuit() {
 }
 
 fun doUpdateStuff() {
+}
+
+@Composable
+private fun fixWhiteFlashOnStartup() {
+    // doesn't actually work
+    val background = MaterialTheme.colors.background
+    remember(background) {
+        UIManager.getDefaults().apply {
+//            put()
+        }.putDefaults(arrayOf("control", ColorUIResource(background.toArgb())))
+    }
 }
 
 @Composable

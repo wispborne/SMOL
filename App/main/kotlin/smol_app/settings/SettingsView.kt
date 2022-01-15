@@ -3,10 +3,8 @@ package smol_app.settings
 import AppState
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.mouseClickable
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -17,23 +15,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.arkivanov.decompose.pop
-import smol_access.Constants
 import smol_access.SL
 import smol_access.business.JreEntry
 import smol_app.composables.*
 import smol_app.themes.SmolTheme
-import smol_app.themes.SmolTheme.toColors
 import smol_app.toolbar.*
-import smol_app.util.openInDesktop
-import smol_app.views.jre8DownloadButton
-import smol_app.views.jreSwitcher
-import smol_app.views.ramButton
 import timber.ktx.Timber
 import utilities.rootCause
 import utilities.toPathOrNull
 import java.io.File
 import javax.swing.JFileChooser
 import kotlin.random.Random
+
+object SettingsView {
+    @Composable
+    fun settingLabelStyle() = MaterialTheme.typography.body1
+}
 
 @OptIn(
     ExperimentalMaterialApi::class,
@@ -154,10 +151,10 @@ fun AppState.settingsView(
                                 fontSize = 13.sp
                             )
                         }
-                        item { ramButton(modifier = Modifier.padding(start = 8.dp, top = 16.dp)) }
+                        item { ramButton(modifier = Modifier.padding(start = 16.dp, top = 16.dp)) }
                         item {
                             jreSwitcher(
-                                modifier = Modifier.padding(start = 8.dp, top = 24.dp),
+                                modifier = Modifier.padding(start = 16.dp, top = 24.dp),
                                 recomposer = recomposer,
                                 jresFound = jresFound
                             )
@@ -165,7 +162,7 @@ fun AppState.settingsView(
                         if (true) {  //|| javasFound.none { it.version == 8 }) {
                             item {
                                 jre8DownloadButton(
-                                    modifier = Modifier.padding(start = 8.dp, top = 24.dp),
+                                    modifier = Modifier.padding(start = 16.dp, top = 8.dp),
                                     jresFound = jresFound,
                                     recomposer = recomposer
                                 )
@@ -356,79 +353,6 @@ private fun AppState.stagingPathSetting(gamePath: String, archivesPath: String, 
     }
 
     return stagingPathMutable
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun AppState.themeDropdown(modifier: Modifier = Modifier): String {
-    var themeName by remember { mutableStateOf(SL.themeManager.activeTheme.value.first) }
-    val themes = SL.themeManager.getThemes()
-    val recomposeScope = currentRecomposeScope
-
-    Column(modifier) {
-        Text(text = "Theme")
-        Row {
-            SmolDropdownWithButton(
-                modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
-                items = themes
-                    .map { entry ->
-                        val colors = entry.value.toColors()
-                        SmolDropdownMenuItemCustom(
-                            backgroundColor = colors.surface,
-                            onClick = {
-                                themeName = entry.key
-                                SL.themeManager.setActiveTheme(entry.key)
-                            },
-                            customItemContent = { isMenuButton ->
-                                val height = 24.dp
-                                Text(
-                                    text = entry.key,
-                                    modifier = Modifier
-                                        .run { if (!isMenuButton) this.weight(1f) else this }
-                                        .align(Alignment.CenterVertically),
-                                    fontWeight = FontWeight.Bold,
-                                    color = colors.onSurface
-                                )
-                                Box(
-                                    modifier = Modifier
-                                        .padding(start = 16.dp)
-                                        .width(height * 3)
-                                        .height(height)
-                                        .background(color = colors.primary)
-                                )
-                                Box(
-                                    modifier = Modifier
-                                        .padding(start = 8.dp)
-                                        .width(height)
-                                        .height(height)
-                                        .background(color = colors.secondary)
-                                )
-                            }
-                        )
-                    },
-                initiallySelectedIndex = themes.keys.indexOf(themeName).coerceAtLeast(0),
-                canSelectItems = true
-            )
-            SmolLinkText(
-                modifier = Modifier
-                    .padding(start = 16.dp)
-                    .align(Alignment.CenterVertically)
-                    .mouseClickable { Constants.THEME_CONFIG_PATH.openInDesktop() }, text = "Edit"
-            )
-            SmolLinkText(
-                modifier = Modifier
-                    .padding(start = 16.dp)
-                    .align(Alignment.CenterVertically)
-                    .mouseClickable {
-                        SL.themeManager.reloadThemes()
-                        recomposeScope.invalidate()
-                    },
-                text = "Refresh"
-            )
-        }
-    }
-
-    return themeName
 }
 
 private fun pickFolder(initialPath: String, window: ComposeWindow): String? {
