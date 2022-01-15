@@ -11,8 +11,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
 import appView
 import com.arkivanov.decompose.Router
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.withContext
 import net.sf.sevenzipjbinding.SevenZip
 import org.cef.CefApp
 import org.tinylog.Logger
@@ -21,14 +23,13 @@ import smol_access.SL
 import smol_app.browser.chromium.CefBrowserPanel
 import smol_app.navigation.Screen
 import smol_app.navigation.rememberRouter
-import smol_app.updater.UpdateApp
 import smol_app.util.SmolPair
 import smol_app.util.SmolWindowState
 import smol_app.util.currentPlatform
+import smol_app.util.isJCEFEnabled
 import timber.LogLevel
 import timber.ktx.Timber
 import utilities.makeFinite
-import java.nio.file.Path
 import javax.swing.UIManager
 import javax.swing.plaf.ColorUIResource
 
@@ -48,16 +49,18 @@ fun main() = application {
         .onFailure { println(it) }
 
     LaunchedEffect(Unit) {
-        UpdateApp.writeLocalUpdateConfig(
-            onlineUrl = SL.UI.updater.getUpdateConfigUrl(),
-            localPath = Path.of("dist\\main\\app\\SMOL")
-        )
-        val remoteConfig = SL.UI.updater.getRemoteConfig()
+        withContext(Dispatchers.IO) {
+//            UpdateApp.writeLocalUpdateConfig(
+//                onlineUrl = SL.UI.updater.getUpdateConfigUrl(),
+//                localPath = Path.of("dist\\main\\app\\SMOL")
+//            )
+            val remoteConfig = SL.UI.updater.getRemoteConfig()
 
-        if (remoteConfig == null) {
-            Timber.w { "Unable to fetch remote config, aborting update check." }
-        } else {
-            SL.UI.updater.update(remoteConfig)
+            if (remoteConfig == null) {
+                Timber.w { "Unable to fetch remote config, aborting update check." }
+            } else {
+                SL.UI.updater.update(remoteConfig)
+            }
         }
     }
 
@@ -131,14 +134,16 @@ fun main() = application {
 }
 
 private fun ApplicationScope.onQuit() {
-    kotlin.runCatching {
-        Timber.i { "Shutting down JCEF..." }
-        CefApp.getInstance().dispose()
-        CefBrowserPanel.browser?.close(true)
-        CefBrowserPanel.cefApp?.dispose()
-        Timber.i { "Shut down JCEF." }
+    if (Constants.isJCEFEnabled()) {
+        kotlin.runCatching {
+            Timber.i { "Shutting down JCEF..." }
+            CefApp.getInstance().dispose()
+            CefBrowserPanel.browser?.close(true)
+            CefBrowserPanel.cefApp?.dispose()
+            Timber.i { "Shut down JCEF." }
+        }
+            .onFailure { Timber.e(it) }
     }
-        .onFailure { Timber.e(it) }
 
     exitApplication()
 }

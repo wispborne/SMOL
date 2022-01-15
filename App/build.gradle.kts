@@ -97,6 +97,8 @@ compose.desktop {
             outputBaseDir.set(project.projectDir.resolve("dist"))
             packageName = "SMOL"
             packageVersion = "1.0.0"
+            val exePath = "main/app/SMOL/"
+            val looseFiles = listOf("SMOL_Themes.json")
 
             windows {
                 println("OS: Windows")
@@ -127,6 +129,16 @@ compose.desktop {
                 "jdk.unsupported"
             )
 //            includeAllModules = true
+
+            looseFiles
+                .map { projectDir.resolve(it) }
+                .forEach {
+                    if (it.exists()) {
+                        it.copyTo(outputBaseDir.get().asFile.resolve(exePath + it.name), overwrite = true)
+                    } else {
+                        println("Couldn't find ${it.absolutePath}.")
+                    }
+                }
         }
     }
 }

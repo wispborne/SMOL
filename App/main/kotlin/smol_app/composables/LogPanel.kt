@@ -86,11 +86,11 @@ fun AppState.logPanel(
                         ) {
                             items(log) {
                                 Text(
-                                    text = it,
+                                    text = it.replaceFirst("\r", "    "),
                                     softWrap = false,
                                     fontFamily = SmolTheme.fireCodeFont,
                                     fontSize = 14.sp,
-                                    color = when (it.trim().firstOrNull()?.lowercase()) {
+                                    color = when (it.trim().substringAfter(' ').firstOrNull()?.lowercase()) {
                                         "v" -> MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.disabled)
                                         "d" -> MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium)
                                         "i" -> MaterialTheme.colors.onSurface

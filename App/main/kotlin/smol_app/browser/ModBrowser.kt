@@ -349,7 +349,7 @@ private fun AppState.embeddedBrowser(
                                     Timber.d { "" }
                                     runBlocking {
                                         if (progressBytes != null)
-                                            download.progress.emit(progressBytes)
+                                            download.progressBytes.emit(progressBytes)
                                         if (speedBps != null)
                                             download.bitsPerSecond.emit(speedBps)
                                     }
@@ -380,7 +380,7 @@ private fun AppState.embeddedBrowser(
                                 ?.let { download ->
                                     runBlocking {
                                         if (download.totalBytes.value != null)
-                                            download.progress.emit(download.totalBytes.value ?: 0)
+                                            download.progressBytes.emit(download.totalBytes.value ?: 0)
                                         download.status.emit(DownloadItem.Status.Completed)
                                     }
 

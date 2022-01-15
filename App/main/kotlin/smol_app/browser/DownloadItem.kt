@@ -8,8 +8,9 @@ data class DownloadItem(
     val path: MutableStateFlow<Path?> = MutableStateFlow(null),
     val totalBytes: MutableStateFlow<Long?> = MutableStateFlow(null),
 ) {
-    val progress: MutableStateFlow<Long> = MutableStateFlow(0L)
-    val bitsPerSecond: MutableStateFlow<Long?> = MutableStateFlow(0L)
+    val fractionDone: MutableStateFlow<Float?> = MutableStateFlow(null)
+    val progressBytes: MutableStateFlow<Long?> = MutableStateFlow(null)
+    val bitsPerSecond: MutableStateFlow<Long?> = MutableStateFlow(null)
     val status: MutableStateFlow<Status> = MutableStateFlow(Status.NotStarted)
 
     sealed class Status {
@@ -22,7 +23,7 @@ data class DownloadItem(
     }
 
     override fun toString(): String {
-        return "DownloadItem(id='$id', path=${path.value}, totalBytes=${totalBytes.value}, progress=${progress.value}, bitsPerSecond=${bitsPerSecond.value}, status=${status.value})"
+        return "DownloadItem(id='$id', path=${path.value}, totalBytes=${totalBytes.value}, progress=${progressBytes.value}, bitsPerSecond=${bitsPerSecond.value}, status=${status.value})"
     }
 
     companion object {
@@ -30,7 +31,7 @@ data class DownloadItem(
             .apply {
                 this.path.value = Path.of("C:/temp/perseanchronicles.7z")
                 this.totalBytes.value = 1000
-                this.progress.value = 750
+                this.progressBytes.value = 750
                 this.bitsPerSecond.value = 512000
                 this.status.value = DownloadItem.Status.Downloading
             }

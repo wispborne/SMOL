@@ -1,6 +1,7 @@
 package smol_app.updater
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.withContext
 import org.update4j.Configuration
 import org.update4j.FileMetadata
@@ -12,6 +13,7 @@ import java.net.URI
 import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.io.path.absolutePathString
+import kotlin.io.path.pathString
 import kotlin.io.path.writer
 import kotlin.streams.asSequence
 
@@ -25,19 +27,21 @@ fun main() {
     )
 }
 
+private const val SMOL_UPDATE_ZIP = "smol-update.zip"
+
 class UpdateApp(
     private val appConfig: AppConfig
 ) {
     companion object {
         fun writeLocalUpdateConfig(onlineUrl: String, localPath: Path): Configuration? {
-            val gitFolderPath = Path.of(".git")
+            val excludes = listOf(".git", ".log")
 
             val config = Configuration.builder()
                 .baseUri(onlineUrl)
                 .basePath(Path.of("").absolutePathString())
                 .files(
                     FileMetadata.streamDirectory(localPath)
-                        .filter { !it.source.contains(gitFolderPath) }
+                        .filter { file -> excludes.none { exclude -> file.source.pathString.contains(exclude) } }
                         .asSequence()
                         .onEach { r -> r.classpath(r.source.toString().endsWith(".jar")) }
                         .toList())
@@ -54,6 +58,11 @@ class UpdateApp(
         }
     }
 
+    /**
+     * Percent of download done between 0 and 1.
+     */
+    val updateDownloadFraction = MutableStateFlow<Float?>(null)
+
     suspend fun getRemoteConfig(
         channel: UpdateChannel = getUpdateChannelSetting()
     ): Configuration? {
@@ -61,6 +70,7 @@ class UpdateApp(
             "${getUpdateConfigUrl(channel)}/$UPDATE_CONFIG_XML"
         ).toURL()
 
+        Timber.i { "Fetching SMOL update-config.xml from ${remoteConfigUrl}." }
         val remoteConfig = withContext(Dispatchers.IO) {
             runCatching {
                 remoteConfigUrl.openStream().use { stream ->
@@ -75,8 +85,23 @@ class UpdateApp(
     }
 
     fun update(remoteConfig: Configuration) {
+        Timber.i { "Fetching SMOL update from ${remoteConfig.baseUri}." }
         kotlin.runCatching {
-            remoteConfig.update(UpdateOptions.archive(Paths.get("update.zip")))
+            remoteConfig.update(
+                UpdateOptions
+                    .archive(Paths.get(SMOL_UPDATE_ZIP))
+                    .updateHandler(object : SmolUpdateHandler() {
+                        override fun updateDownloadFileProgress(file: FileMetadata?, frac: Float) {
+                            super.updateDownloadFileProgress(file, frac)
+                            updateDownloadFraction.value = frac
+                        }
+
+                        override fun stop() {
+                            super.stop()
+                            updateDownloadFraction.value = null
+                        }
+                    })
+            )
         }
             .onFailure { Timber.w(it) }
     }

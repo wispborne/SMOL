@@ -13,9 +13,7 @@ import java.nio.file.*
 import java.nio.file.StandardWatchEventKinds.*
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.concurrent.TimeUnit
-import kotlin.io.path.absolutePathString
-import kotlin.io.path.isDirectory
-import kotlin.io.path.isRegularFile
+import kotlin.io.path.*
 
 /**
  * Watches directory. If file is supplied it will use parent directory. If it's an intent to watch just file,
@@ -30,13 +28,19 @@ fun Path.asWatchChannel(
     tag: Any? = null,
     scope: CoroutineScope,
     ignorePatterns: List<Regex> = listOf(Regex(".*\\.bak"))
-) = KWatchChannel(
-    file = this,
-    mode = mode ?: if (isRegularFile()) KWatchChannel.Mode.SingleFile else KWatchChannel.Mode.Recursive,
-    scope = scope,
-    tag = tag,
-    ignorePatterns = ignorePatterns
-)
+): KWatchChannel? {
+    if (!this.exists() || !this.isReadable()) {
+        Timber.w { "Cannot read ${this.absolutePathString()}. Ensure that it exists and that SMOL has permission to read it." }
+        return null
+    }
+    return KWatchChannel(
+        file = this,
+        mode = mode ?: if (isRegularFile()) KWatchChannel.Mode.SingleFile else KWatchChannel.Mode.Recursive,
+        scope = scope,
+        tag = tag,
+        ignorePatterns = ignorePatterns
+    )
+}
 
 /**
  * Channel based wrapper for Java's WatchService

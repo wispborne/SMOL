@@ -41,15 +41,20 @@ fun downloadToast(
     requestToastDismissal: () -> Unit
 ) {
     val status = download.status.collectAsState().value
-    val progress = download.progress.collectAsState().value
+    val progressBytes = download.progressBytes.collectAsState().value
     val bitsPerSecond = download.bitsPerSecond.collectAsState().value
-    val total = download.totalBytes
+    val totalBytes = download.totalBytes
 
-    val progressPercent: Float = if (total.value != null)
-        (progress.toFloat() / total.value!!.toFloat())
-    else 0f
-    val progressMiB = progress.bytesAsShortReadableMiB
-    val totalMiB = total.value?.bytesAsShortReadableMiB
+    val progressPercent: Float =
+        if (download.fractionDone.value != null)
+            download.fractionDone.value ?: 0f
+        else if (totalBytes.value != null && progressBytes != null) {
+            (progressBytes.toFloat() / totalBytes.value!!.toFloat())
+        } else {
+            0f
+        }
+    val progressMiB = progressBytes?.bytesAsShortReadableMiB
+    val totalMiB = totalBytes.value?.bytesAsShortReadableMiB
 
     val statusText = when (status) {
         is DownloadItem.Status.NotStarted -> "Starting"

@@ -24,8 +24,10 @@ import smol_access.business.asWatchChannel
 import smol_app.IWindowState
 import smol_app.UI
 import smol_app.WindowState
+import smol_app.browser.DownloadItem
 import smol_app.browser.ModBrowserView
 import smol_app.home.homeView
+import smol_app.modprofiles.ProfilesView
 import smol_app.navigation.Screen
 import smol_app.settings.settingsView
 import smol_app.themes.SmolTheme
@@ -35,10 +37,10 @@ import smol_app.toasts.downloadToast
 import smol_app.toasts.toastInstalledCard
 import smol_app.toasts.toaster
 import smol_app.views.FileDropper
-import smol_app.modprofiles.ProfilesView
 import timber.ktx.Timber
 import utilities.IOLock
 import utilities.toPathOrNull
+import java.nio.file.Path
 import kotlin.io.path.exists
 
 @OptIn(ExperimentalStdlibApi::class, ExperimentalDecomposeApi::class)
@@ -87,12 +89,12 @@ fun WindowState.appView() {
 //                        }
 //                    }
 
-                    LaunchedEffect(Unit) {
+                    LaunchedEffect(1) {
                         SL.access.mods.collect { modListUpdate ->
                             val addedModVariants = modListUpdate?.added ?: return@collect
 
                             if (addedModVariants == modListUpdate.mods.flatMap { it.variants }) {
-                                Timber.i { "Added mods are the same as existing mods, this is probably startup. Not adding 'mod found' toasts." }
+                                Timber.d { "Added mods are the same as existing mods, this is probably startup. Not adding 'mod found' toasts." }
                                 return@collect
                             }
 
@@ -119,7 +121,7 @@ fun WindowState.appView() {
 
                     }
 
-                    LaunchedEffect(Unit) {
+                    LaunchedEffect(1) {
                         val items = SL.UI.toaster.items
                         SL.UI.downloadManager.downloads.collect { downloads ->
                             downloads
@@ -138,6 +140,30 @@ fun WindowState.appView() {
                                 .also {
                                     SL.UI.toaster.addItems(it)
                                 }
+                        }
+                    }
+
+                    LaunchedEffect(1) {
+                        val updater = SL.UI.updater
+                        val updateToastId = "download-update"
+
+                        updater.updateDownloadFraction.collectLatest { downloadFraction ->
+                            if (downloadFraction != null) {
+                                var downloadItem =
+                                    SL.UI.downloadManager.downloads.value.firstOrNull { it.id == updateToastId }
+
+                                if (downloadItem == null) {
+                                    downloadItem = DownloadItem(
+                                        id = updateToastId,
+                                        path = MutableStateFlow(Path.of("Downloading update")),
+                                        totalBytes = MutableStateFlow(1L)
+                                    )
+                                    SL.UI.downloadManager.addDownload(downloadItem)
+                                }
+
+                                downloadItem.status.value = DownloadItem.Status.Downloading
+                                downloadItem.fractionDone.value = downloadFraction
+                            }
                         }
                     }
                 }
@@ -182,7 +208,7 @@ class AppState(windowState: WindowState) : IWindowState by windowState {
 
 @OptIn(ExperimentalCoroutinesApi::class)
 private suspend fun watchDirsAndReloadOnChange(scope: CoroutineScope) {
-    val NSA: List<Flow<KWatchEvent?>> = listOf(
+    val NSA: List<Flow<KWatchEvent?>> = listOfNotNull(
         SL.access.getStagingPath()?.toPathOrNull()?.asWatchChannel(scope = scope) ?: emptyFlow(),
         SL.access.getStagingPath()?.toPathOrNull()
             ?.resolve(Archives.ARCHIVE_MANIFEST_FILENAME) // Watch manifest.json

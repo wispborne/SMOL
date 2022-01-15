@@ -121,11 +121,11 @@ class DownloadManager(
                             conn.getInputStream().transferTo(
                                 outs,
                                 onProgressUpdated = { progress ->
-                                    downloadItem.progress.tryEmit(progress)
+                                    downloadItem.progressBytes.tryEmit(progress)
                                 })
 
                             // Download complete!
-                            if (downloadSize != null) downloadItem.progress.emit(downloadSize)
+                            if (downloadSize != null) downloadItem.progressBytes.emit(downloadSize)
                             downloadItem.status.emit(DownloadItem.Status.Completed)
                             Timber.i { "Downloaded $filename to $file." }
                         }
