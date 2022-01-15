@@ -150,10 +150,6 @@ fun String.acronym(): String =
         .filter { it.isNotBlank() }
         .joinToString(separator = "") { it.firstOrNull()?.toString() ?: "" }
 
-// TODO These should be injected via an actual DI framework or something
-val ServiceLocator.vmParamsManager: VmParamsManager
-    get() = VmParamsManager(gamePath, currentPlatform)
-
 @Composable
 fun smolPreview(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     MaterialTheme(

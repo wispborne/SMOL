@@ -33,9 +33,9 @@ object Constants {
         "https://raw.githubusercontent.com/davidwhitman/StarsectorModRepo/main/moddingSubforum.json"
 
     // Updater
-    val baseUpdateUrl = "https://raw.githubusercontent.com/davidwhitman/SMOLDist/"
-    val unstableUpdateUrl = "$baseUpdateUrl/unstable/"
-    val stableUpdateUrl = "$baseUpdateUrl/main/"
+    private const val baseUpdateUrl = "https://raw.githubusercontent.com/davidwhitman/SMOL_Dist"
+    const val UPDATE_URL_UNSTABLE = "$baseUpdateUrl/unstable/"
+    const val UPDATE_URL_STABLE = "$baseUpdateUrl/main/"
 
     val TEMP_DIR = System.getProperty("java.io.tmpdir")?.let { Path.of(it) } ?: APP_FOLDER_DEFAULT
 

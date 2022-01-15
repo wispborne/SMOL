@@ -17,12 +17,12 @@ import androidx.compose.ui.unit.sp
 import org.tinylog.kotlin.Logger
 import oshi.SystemInfo
 import smol_access.SL
+import smol_app.UI
 import smol_app.composables.SmolButton
 import smol_app.composables.SmolTextField
 import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
 import smol_app.themes.SmolTheme
-import smol_app.util.vmParamsManager
 import kotlin.math.floor
 import kotlin.math.roundToInt
 
@@ -79,7 +79,7 @@ fun vmParamsContextMenu(
     val cellMinWidth = 88.dp
     val width = cellMinWidth * 2
     val gridHeight = 200.dp
-    var assignedRam by remember { mutableStateOf(SL.vmParamsManager.read()?.xmx) }
+    var assignedRam by remember { mutableStateOf(SL.UI.vmParamsManager.read()?.xmx) }
     val presetsInGb = 2..6
 
     val availableSystemRam = runCatching { SystemInfo().hardware.memory.available }
@@ -139,8 +139,8 @@ fun vmParamsContextMenu(
                         modifier = Modifier.wrapContentWidth().wrapContentHeight().align(Alignment.CenterHorizontally),
                         shape = SmolTheme.smolFullyClippedButtonShape(),
                         onClick = {
-                            SL.vmParamsManager.update { it?.run { withGb(presetGb) } }
-                            assignedRam = SL.vmParamsManager.read()?.xmx
+                            SL.UI.vmParamsManager.update { it?.run { withGb(presetGb) } }
+                            assignedRam = SL.UI.vmParamsManager.read()?.xmx
                         }
                     ) {
                         Text(
@@ -197,8 +197,8 @@ fun vmParamsContextMenu(
             enabled = mb.toIntOrNull() != null,
             onClick = {
                 if (mb.toIntOrNull() != null) {
-                    SL.vmParamsManager.update { it?.run { withMb(mb.toInt()) } }
-                    assignedRam = SL.vmParamsManager.read()?.xmx
+                    SL.UI.vmParamsManager.update { it?.run { withMb(mb.toInt()) } }
+                    assignedRam = SL.UI.vmParamsManager.read()?.xmx
                 }
             }
         ) {

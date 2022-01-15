@@ -21,13 +21,14 @@ import smol_access.SL
 import smol_app.browser.chromium.CefBrowserPanel
 import smol_app.navigation.Screen
 import smol_app.navigation.rememberRouter
+import smol_app.updater.UpdateApp
 import smol_app.util.SmolPair
 import smol_app.util.SmolWindowState
 import smol_app.util.currentPlatform
-import smol_app.util.hexToColor
 import timber.LogLevel
 import timber.ktx.Timber
 import utilities.makeFinite
+import java.nio.file.Path
 import javax.swing.UIManager
 import javax.swing.plaf.ColorUIResource
 
@@ -46,7 +47,19 @@ fun main() = application {
     }
         .onFailure { println(it) }
 
-    doUpdateStuff()
+    LaunchedEffect(Unit) {
+        UpdateApp.writeLocalUpdateConfig(
+            onlineUrl = SL.UI.updater.getUpdateConfigUrl(),
+            localPath = Path.of("dist\\main\\app\\SMOL")
+        )
+        val remoteConfig = SL.UI.updater.getRemoteConfig()
+
+        if (remoteConfig == null) {
+            Timber.w { "Unable to fetch remote config, aborting update check." }
+        } else {
+            SL.UI.updater.update(remoteConfig)
+        }
+    }
 
     var appWindowState = rememberWindowState()
 
@@ -128,9 +141,6 @@ private fun ApplicationScope.onQuit() {
         .onFailure { Timber.e(it) }
 
     exitApplication()
-}
-
-fun doUpdateStuff() {
 }
 
 @Composable

@@ -20,11 +20,11 @@ import com.arkivanov.decompose.push
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.tinylog.Logger
 import smol_access.SL
 import smol_access.model.Mod
+import smol_app.UI
 import smol_app.cli.SmolCLI
 import smol_app.composables.*
 import smol_app.navigation.Screen
@@ -32,7 +32,6 @@ import smol_app.themes.SmolTheme
 import smol_app.toolbar.*
 import smol_app.util.filterModGrid
 import smol_app.util.replaceAllUsingDifference
-import smol_app.util.vmParamsManager
 import utilities.IOLock
 import utilities.equalsAny
 import utilities.toPathOrNull
@@ -189,7 +188,7 @@ private fun AppState.consoleTextField(
                                 SmolCLI(
                                     userManager = SL.userManager,
                                     userModProfileManager = SL.userModProfileManager,
-                                    vmParamsManager = SL.vmParamsManager,
+                                    vmParamsManager = SL.UI.vmParamsManager,
                                     access = SL.access,
                                     gamePath = SL.gamePath
                                 )

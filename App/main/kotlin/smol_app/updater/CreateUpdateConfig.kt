@@ -16,7 +16,7 @@ class CreateUpdateConfig {
     fun writeLocalUpdateConfig(): Configuration? {
         val localPath = Path.of("dist\\main\\app\\SMOL")
         val config = Configuration.builder()
-            .baseUri(Constants.unstableUpdateUrl)
+            .baseUri(Constants.UPDATE_URL_UNSTABLE)
             .basePath(localPath.toAbsolutePath().toString())
             .files(
                 FileMetadata.streamDirectory(localPath)
