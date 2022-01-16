@@ -9,7 +9,7 @@ import utilities.Jsanity
 import java.net.URI
 import java.nio.file.Path
 
-internal val CONFIG_FOLDER_DEFAULT = Path.of(System.getProperty("user.home"), "SMOL/")
+internal val CONFIG_FOLDER_DEFAULT = Path.of("")
 
 fun main(args: Array<String>) {
     val jsanity = Jsanity(Gson(), JsonMapper())

@@ -131,6 +131,7 @@ class Access internal constructor(
                         // There should only be a single mount point, aka partition, for hardlinked folders.
                         Timber.e { "/mods and staging are on separate partitions. Folders: ${folders.joinToString()}." }
                         errors[SettingsPath.Staging]?.add("The staging folder must be on the same drive (partition) as your Starsector mods folder.")
+                        errors[SettingsPath.Game]?.add("The Starsector mods folder must be on the same drive (partition) as your staging folder.")
                     }
                 }
             }

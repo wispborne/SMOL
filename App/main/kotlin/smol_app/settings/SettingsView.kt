@@ -3,8 +3,11 @@ package smol_app.settings
 import AppState
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -55,12 +58,24 @@ fun AppState.settingsView(
         }
     },
         content = {
-            Box(modifier) {
-                Column(Modifier.padding(top = 16.dp, bottom = 16.dp)) {
+            Row(
+                modifier
+                    .padding(top = 16.dp, bottom = 16.dp)
+            ) {
+                Column {
                     var gamePath by remember { mutableStateOf(SL.appConfig.gamePath ?: "") }
                     var archivesPath by remember { mutableStateOf(SL.appConfig.archivesPath ?: "") }
                     var stagingPath by remember { mutableStateOf(SL.appConfig.stagingPath ?: "") }
                     val alertDialogMessage = remember { mutableStateOf<String?>(null) }
+                    val settingsPathErrors = remember {
+                        mutableStateOf(
+                            SL.access.validatePaths(
+                                newGamePath = gamePath.toPathOrNull(),
+                                newArchivesPath = archivesPath.toPathOrNull(),
+                                newStagingPath = stagingPath.toPathOrNull()
+                            ).failure
+                        )
+                    }
 
                     fun saveSettings(): Boolean {
                         val errors = kotlin.runCatching {
@@ -72,11 +87,12 @@ fun AppState.settingsView(
                         }
                             .recover {
                                 Timber.w(it)
-                                listOfNotNull(it.message)
+                                mapOf(SettingsPath.Game to listOf(it.message))
                             }
                             .getOrNull()
+                            ?.get(SettingsPath.Game)
 
-                        if (errors != null && errors) {
+                        if (errors != null && errors.any()) {
                             alertDialogMessage.value = errors.joinToString(separator = "\n")
                             return false
                         } else {
@@ -121,54 +137,71 @@ fun AppState.settingsView(
                                 .sortedBy { it.versionString })
                     }
 
-                    LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(vertical = 8.dp)) {
-                        item {
-                            Text(
-                                text = "Application Settings",
-                                modifier = Modifier.padding(bottom = 8.dp, start = 16.dp, end = 16.dp),
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = SmolTheme.orbitronSpaceFont,
-                                fontSize = 13.sp
-                            )
-                        }
+                    Row(
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        val listState = rememberLazyListState()
 
-                        item {
-                            Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp)) {
-                                gamePath = gamePathSetting(gamePath, archivesPath, stagingPath)
-                                archivesPath = archivesPathSetting(gamePath, archivesPath, stagingPath)
-                                stagingPath = stagingPathSetting(gamePath, archivesPath, stagingPath)
-                                themeDropdown(Modifier.padding(start = 16.dp, top = 24.dp))
-                            }
-                        }
-
-                        item { Divider(modifier = Modifier.padding(top = 32.dp, bottom = 8.dp)) }
-
-                        item {
-                            Text(
-                                text = "Game Settings",
-                                modifier = Modifier.padding(bottom = 8.dp, top = 8.dp, start = 16.dp, end = 16.dp),
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = SmolTheme.orbitronSpaceFont,
-                                fontSize = 13.sp
-                            )
-                        }
-                        item { ramButton(modifier = Modifier.padding(start = 16.dp, top = 16.dp)) }
-                        item {
-                            jreSwitcher(
-                                modifier = Modifier.padding(start = 16.dp, top = 24.dp),
-                                recomposer = recomposer,
-                                jresFound = jresFound
-                            )
-                        }
-                        if (true) {  //|| javasFound.none { it.version == 8 }) {
+                        LazyColumn(
+                            modifier = Modifier.weight(1f),
+                            contentPadding = PaddingValues(vertical = 8.dp),
+                            state = listState
+                        ) {
                             item {
-                                jre8DownloadButton(
-                                    modifier = Modifier.padding(start = 16.dp, top = 8.dp),
-                                    jresFound = jresFound,
-                                    recomposer = recomposer
+                                Text(
+                                    text = "Application Settings",
+                                    modifier = Modifier.padding(bottom = 8.dp, start = 16.dp, end = 16.dp),
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = SmolTheme.orbitronSpaceFont,
+                                    fontSize = 13.sp
                                 )
                             }
+
+                            item {
+                                Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp)) {
+                                    gamePath = gamePathSetting(gamePath, archivesPath, stagingPath, settingsPathErrors)
+                                    archivesPath =
+                                        archivesPathSetting(gamePath, archivesPath, stagingPath, settingsPathErrors)
+                                    stagingPath =
+                                        stagingPathSetting(gamePath, archivesPath, stagingPath, settingsPathErrors)
+                                    themeDropdown(Modifier.padding(start = 16.dp, top = 24.dp))
+                                }
+                            }
+
+                            item { Divider(modifier = Modifier.padding(top = 32.dp, bottom = 8.dp)) }
+
+                            item {
+                                Text(
+                                    text = "Game Settings",
+                                    modifier = Modifier.padding(bottom = 8.dp, top = 8.dp, start = 16.dp, end = 16.dp),
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = SmolTheme.orbitronSpaceFont,
+                                    fontSize = 13.sp
+                                )
+                            }
+                            item { ramButton(modifier = Modifier.padding(start = 16.dp, top = 16.dp)) }
+                            item {
+                                jreSwitcher(
+                                    modifier = Modifier.padding(start = 16.dp, top = 24.dp),
+                                    recomposer = recomposer,
+                                    jresFound = jresFound
+                                )
+                            }
+                            if (true) {  //|| javasFound.none { it.version == 8 }) {
+                                item {
+                                    jre8DownloadButton(
+                                        modifier = Modifier.padding(start = 16.dp, top = 8.dp),
+                                        jresFound = jresFound,
+                                        recomposer = recomposer
+                                    )
+                                }
+                            }
                         }
+
+                        VerticalScrollbar(
+                            adapter = rememberScrollbarAdapter(listState),
+                            modifier = Modifier.width(8.dp).fillMaxHeight()
+                        )
                     }
 
                     // Confirm buttons
@@ -206,11 +239,14 @@ fun AppState.settingsView(
 }
 
 @Composable
-private fun AppState.gamePathSetting(gamePath: String, archivesPath: String, stagingPath: String): String {
+private fun AppState.gamePathSetting(
+    gamePath: String,
+    archivesPath: String,
+    stagingPath: String,
+    settingsPathErrors: MutableState<Map<SettingsPath, List<String>>?>
+): String {
     var newGamePath by remember { mutableStateOf(gamePath) }
-    var isGamePathError: List<String>? by remember {
-        mutableStateOf(SL.access.validatePaths(newGamePath = newGamePath.toPathOrNull()).failure?.get(SettingsPath.Game))
-    }
+    val errors = settingsPathErrors.value?.get(SettingsPath.Game)
 
     Row {
         SmolTextField(
@@ -218,20 +254,20 @@ private fun AppState.gamePathSetting(gamePath: String, archivesPath: String, sta
             modifier = Modifier
                 .weight(1f)
                 .align(Alignment.CenterVertically),
-            label = { Text("Game path") },
-            isError = isGamePathError?.any() ?: false,
+            label = { Text("Starsector folder") },
+            isError = errors?.any() ?: false,
             singleLine = true,
             onValueChange = {
                 newGamePath = it
-                isGamePathError = kotlin.runCatching {
+                settingsPathErrors.value = kotlin.runCatching {
                     SL.access.validatePaths(
-                        newGamePath = newGamePath.toPathOrNull(),
+                        newGamePath = it.toPathOrNull(),
                         newArchivesPath = archivesPath.toPathOrNull(),
                         newStagingPath = stagingPath.toPathOrNull()
-                    ).failure?.get(SettingsPath.Game)
+                    ).failure
                 }
                     .onFailure { ex -> Timber.w(ex) }
-                    .getOrElse { emptyList() }
+                    .getOrElse { emptyMap() }
             })
         SmolButton(
             modifier = Modifier
@@ -240,17 +276,18 @@ private fun AppState.gamePathSetting(gamePath: String, archivesPath: String, sta
             onClick = {
                 newGamePath =
                     pickFolder(initialPath = newGamePath.ifBlank { null }
-                        ?: System.getProperty("user.home"),
+                        ?: "",
                         window = window)
                         ?: newGamePath
             }) {
             Text("Open")
         }
     }
-    if (!isGamePathError.isNullOrEmpty()) {
+    if (!errors.isNullOrEmpty()) {
         Text(
-            text = isGamePathError?.joinToString(separator = "\n") ?: "Invalid game path",
-            color = MaterialTheme.colors.error
+            text = errors.joinToString(separator = "\n"),
+            color = MaterialTheme.colors.error,
+            modifier = Modifier.padding(start = 16.dp)
         )
     }
 
@@ -258,9 +295,13 @@ private fun AppState.gamePathSetting(gamePath: String, archivesPath: String, sta
 }
 
 @Composable
-private fun AppState.archivesPathSetting(gamePath: String, archivesPath: String, stagingPath: String): String {
-    fun isValidArchivesPath(path: String) = !File(path).exists()
-    var isArchivesPathError by remember { mutableStateOf(isValidArchivesPath(archivesPath)) }
+private fun AppState.archivesPathSetting(
+    gamePath: String,
+    archivesPath: String,
+    stagingPath: String,
+    settingsPathErrors: MutableState<Map<SettingsPath, List<String>>?>
+): String {
+    val errors = settingsPathErrors.value?.get(SettingsPath.Archives)
     var archivesPathMutable by remember { mutableStateOf(archivesPath) }
 
     Row {
@@ -269,20 +310,20 @@ private fun AppState.archivesPathSetting(gamePath: String, archivesPath: String,
             modifier = Modifier
                 .weight(1f)
                 .align(Alignment.CenterVertically),
-            label = { Text("Archive storage path") },
-            isError = isArchivesPathError,
+            label = { Text("Archive storage folder") },
+            isError = errors?.any() ?: false,
             singleLine = true,
             onValueChange = {
                 archivesPathMutable = it
-                isArchivesPathError = kotlin.runCatching {
+                settingsPathErrors.value = kotlin.runCatching {
                     SL.access.validatePaths(
                         newGamePath = gamePath.toPathOrNull(),
-                        newArchivesPath = archivesPathMutable.toPathOrNull(),
+                        newArchivesPath = it.toPathOrNull(),
                         newStagingPath = stagingPath.toPathOrNull()
-                    ).isFailure
+                    ).failure
                 }
                     .onFailure { ex -> Timber.w(ex) }
-                    .getOrElse { true }
+                    .getOrElse { emptyMap() }
             })
         SmolButton(
             modifier = Modifier
@@ -290,26 +331,35 @@ private fun AppState.archivesPathSetting(gamePath: String, archivesPath: String,
                 .padding(start = 16.dp),
             onClick = {
                 archivesPathMutable =
-                    pickFolder(initialPath = archivesPathMutable.ifBlank { null }
-                        ?: System.getProperty("user.home"),
+                    pickFolder(
+                        initialPath = archivesPathMutable.ifBlank { null }
+                            ?: "",
                         window = window)
                         ?: archivesPathMutable
             }) {
             Text("Open")
         }
     }
-    if (isArchivesPathError) {
-        Text("Invalid path", color = MaterialTheme.colors.error)
+    if (errors?.any() == true) {
+        Text(
+            text = errors.joinToString(separator = "\n"),
+            color = MaterialTheme.colors.error,
+            modifier = Modifier.padding(start = 16.dp)
+        )
     }
 
     return archivesPathMutable
 }
 
 @Composable
-private fun AppState.stagingPathSetting(gamePath: String, archivesPath: String, stagingPath: String): String {
-    fun isValidArchivesPath(path: String) = !File(path).exists()
+private fun AppState.stagingPathSetting(
+    gamePath: String,
+    archivesPath: String,
+    stagingPath: String,
+    settingsPathErrors: MutableState<Map<SettingsPath, List<String>>?>
+): String {
     var stagingPathMutable by remember { mutableStateOf(stagingPath) }
-    val stagingPathError = remember { mutableStateOf<List<String>?>(null) }
+    val errors = settingsPathErrors.value?.get(SettingsPath.Staging)
 
     Row {
         SmolTextField(
@@ -317,20 +367,20 @@ private fun AppState.stagingPathSetting(gamePath: String, archivesPath: String, 
             modifier = Modifier
                 .weight(1f)
                 .align(Alignment.CenterVertically),
-            label = { Text("Staging path") },
-            isError = !stagingPathError.value.isNullOrEmpty(),
+            label = { Text("Staging folder") },
+            isError = errors?.any() ?: false,
             singleLine = true,
             onValueChange = {
                 stagingPathMutable = it
-                stagingPathError.value = kotlin.runCatching {
+                settingsPathErrors.value = kotlin.runCatching {
                     SL.access.validatePaths(
                         newGamePath = gamePath.toPathOrNull(),
                         newArchivesPath = archivesPath.toPathOrNull(),
-                        newStagingPath = stagingPathMutable.toPathOrNull()
-                    )
+                        newStagingPath = it.toPathOrNull()
+                    ).failure
                 }
                     .onFailure { ex -> Timber.w(ex) }
-                    .getOrNull()
+                    .getOrElse { emptyMap() }
             })
         SmolButton(
             modifier = Modifier
@@ -339,7 +389,7 @@ private fun AppState.stagingPathSetting(gamePath: String, archivesPath: String, 
             onClick = {
                 stagingPathMutable =
                     pickFolder(initialPath = stagingPathMutable.ifBlank { null }
-                        ?: System.getProperty("user.home"),
+                        ?: "",
                         window = window)
                         ?: stagingPathMutable
             }) {
@@ -347,10 +397,11 @@ private fun AppState.stagingPathSetting(gamePath: String, archivesPath: String, 
         }
     }
 
-    if (!stagingPathError.value.isNullOrEmpty()) {
+    if (errors?.any() == true) {
         Text(
-            "Invalid path: ${stagingPathError.value?.joinToString(separator = "\n")}",
-            color = MaterialTheme.colors.error
+            text = errors.joinToString(separator = "\n"),
+            color = MaterialTheme.colors.error,
+            modifier = Modifier.padding(start = 16.dp)
         )
     }
 
