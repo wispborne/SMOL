@@ -161,6 +161,11 @@ gradle-app.setting
 
 # End of https://www.toptal.com/developers/gitignore/api/intellij,kotlin,gradle
 
+# Wisp additions
+
 # Profiling
 *.jfr
 dist/
+
+# Don't commit the data that's user-specific
+SMOL-data

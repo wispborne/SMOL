@@ -31,7 +31,6 @@ internal class Staging(
     var linkMethod = LinkMethod.HardLink
 
 
-
     /**
      * Disables the mod.
      * - Removes it from /mods.
@@ -109,6 +108,12 @@ internal class Staging(
 
     suspend fun enableModVariant(modVariant: ModVariant): Result<Unit> {
         Timber.i { "Enabling mod variant ${modVariant.smolId}." }
+        val modsFolderPath = gamePath.getModsPath()
+
+        if (modsFolderPath?.exists() != true) {
+            Timber.w { "Game mods path doesn't exist, unable to continue enabling ${modVariant.smolId}." }
+            return Result.failure(NullPointerException())
+        }
 
         kotlin.runCatching {
             if (modVariant.mod(modLoader).isEnabled(modVariant)) {
@@ -122,7 +127,7 @@ internal class Staging(
             }
 
         if (modVariant.modsFolderInfo == null) {
-            val result = linkFromStagingToGameMods(modVariant)
+            val result = linkFromStagingToGameMods(modVariant, modsFolderPath)
 
             if (result != Result.success(Unit)) {
                 Timber.w(result.exceptionOrNull()) { "Error enabling ${modVariant.smolId}." }
@@ -175,7 +180,7 @@ internal class Staging(
     /**
      * Creates (hard)links from the staging folder to the /mods folder for the specified [ModVariant].
      */
-    private suspend fun linkFromStagingToGameMods(modToEnable: ModVariant): Result<Unit> {
+    private suspend fun linkFromStagingToGameMods(modToEnable: ModVariant, modsFolderPath: Path): Result<Unit> {
         var mod = modToEnable
         Timber.i { "Linking ${modToEnable.smolId} to /mods." }
 
@@ -205,7 +210,7 @@ internal class Staging(
             return failLogging("Staging folder doesn't exist. ${sourceFolder.pathString}, $mod")
         }
 
-        val destFolder = gamePath.getModsPath().resolve(sourceFolder.name)
+        val destFolder = modsFolderPath.resolve(sourceFolder.name)
         return linkFolders(sourceFolder, destFolder)
     }
 

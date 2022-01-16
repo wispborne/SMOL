@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.sp
 import com.arkivanov.decompose.pop
 import smol_access.SL
 import smol_access.business.JreEntry
+import smol_access.config.SettingsPath
 import smol_app.composables.*
 import smol_app.themes.SmolTheme
 import smol_app.toolbar.*
@@ -67,7 +68,7 @@ fun AppState.settingsView(
                                 newGamePath = gamePath.toPathOrNull(),
                                 newArchivesPath = archivesPath.toPathOrNull(),
                                 newStagingPath = stagingPath.toPathOrNull()
-                            )
+                            ).failure
                         }
                             .recover {
                                 Timber.w(it)
@@ -75,7 +76,7 @@ fun AppState.settingsView(
                             }
                             .getOrNull()
 
-                        if (errors != null && errors.isNotEmpty()) {
+                        if (errors != null && errors) {
                             alertDialogMessage.value = errors.joinToString(separator = "\n")
                             return false
                         } else {
@@ -207,10 +208,8 @@ fun AppState.settingsView(
 @Composable
 private fun AppState.gamePathSetting(gamePath: String, archivesPath: String, stagingPath: String): String {
     var newGamePath by remember { mutableStateOf(gamePath) }
-    var isGamePathError by remember {
-        mutableStateOf(
-            SL.access.validatePaths(newGamePath = newGamePath.toPathOrNull()).any()
-        )
+    var isGamePathError: List<String>? by remember {
+        mutableStateOf(SL.access.validatePaths(newGamePath = newGamePath.toPathOrNull()).failure?.get(SettingsPath.Game))
     }
 
     Row {
@@ -220,7 +219,7 @@ private fun AppState.gamePathSetting(gamePath: String, archivesPath: String, sta
                 .weight(1f)
                 .align(Alignment.CenterVertically),
             label = { Text("Game path") },
-            isError = isGamePathError,
+            isError = isGamePathError?.any() ?: false,
             singleLine = true,
             onValueChange = {
                 newGamePath = it
@@ -229,10 +228,10 @@ private fun AppState.gamePathSetting(gamePath: String, archivesPath: String, sta
                         newGamePath = newGamePath.toPathOrNull(),
                         newArchivesPath = archivesPath.toPathOrNull(),
                         newStagingPath = stagingPath.toPathOrNull()
-                    ).any()
+                    ).failure?.get(SettingsPath.Game)
                 }
                     .onFailure { ex -> Timber.w(ex) }
-                    .getOrElse { true }
+                    .getOrElse { emptyList() }
             })
         SmolButton(
             modifier = Modifier
@@ -248,8 +247,11 @@ private fun AppState.gamePathSetting(gamePath: String, archivesPath: String, sta
             Text("Open")
         }
     }
-    if (isGamePathError) {
-        Text("Invalid game path", color = MaterialTheme.colors.error)
+    if (!isGamePathError.isNullOrEmpty()) {
+        Text(
+            text = isGamePathError?.joinToString(separator = "\n") ?: "Invalid game path",
+            color = MaterialTheme.colors.error
+        )
     }
 
     return newGamePath
@@ -277,7 +279,7 @@ private fun AppState.archivesPathSetting(gamePath: String, archivesPath: String,
                         newGamePath = gamePath.toPathOrNull(),
                         newArchivesPath = archivesPathMutable.toPathOrNull(),
                         newStagingPath = stagingPath.toPathOrNull()
-                    ).any()
+                    ).isFailure
                 }
                     .onFailure { ex -> Timber.w(ex) }
                     .getOrElse { true }

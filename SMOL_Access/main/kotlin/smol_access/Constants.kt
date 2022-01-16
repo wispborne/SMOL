@@ -17,8 +17,8 @@ object Constants {
     const val FORUM_MODDING_SUBFORUM_URL = "$FORUM_URL?board=3.0"
     const val FORUM_HOSTNAME = "fractalsoftworks.com"
 
-    const val APP_FOLDER_NAME = "SMOL"
-    val APP_FOLDER_DEFAULT: Path = Path(System.getProperty("user.home"), APP_FOLDER_NAME)
+    const val APP_FOLDER_NAME = "SMOL-data"
+    val APP_FOLDER_DEFAULT: Path = Path("", APP_FOLDER_NAME)
     val ARCHIVES_FOLDER_DEFAULT: Path = APP_FOLDER_DEFAULT.resolve("archives")
     val STAGING_FOLDER_DEFAULT: Path = APP_FOLDER_DEFAULT.resolve("staging")
     val UI_CONFIG_PATH: Path = APP_FOLDER_DEFAULT.resolve("SMOL_UIConfig.json")

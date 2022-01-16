@@ -5,8 +5,8 @@ import org.hjson.JsonObject
 import smol_access.Constants.ENABLED_MODS_FILENAME
 import smol_access.config.GamePath
 import smol_access.model.ModInfo
-import utilities.IOLock
 import timber.ktx.Timber
+import utilities.IOLock
 import utilities.Jsanity
 import java.nio.file.Path
 import kotlin.io.path.copyTo
@@ -18,10 +18,10 @@ class GameEnabledMods(
     private val gson: Jsanity,
     private val gamePath: GamePath
 ) {
-    fun getEnabledMods(): EnabledMods =
+    fun getEnabledMods(): EnabledMods? =
         kotlin.runCatching {
             IOLock.write {
-                val enabledModsFile = getEnabledModsFile()
+                val enabledModsFile = getEnabledModsFile() ?: return null
 
                 if (!enabledModsFile.exists()) {
                     enabledModsFile.writer().use { outStream ->
@@ -40,17 +40,20 @@ class GameEnabledMods(
             .onFailure { Timber.w(it) }
             .getOrThrow()
 
-    fun areModsEnabled(modInfos: List<ModInfo>) =
-        getEnabledMods()
+    fun areModsEnabled(modInfos: List<ModInfo>): List<ModInfo> {
+        return (getEnabledMods() ?: return emptyList())
             .run {
                 modInfos
                     .filter { it.id in this.enabledMods }
             }
+    }
 
     fun enable(modId: String) {
         updateEnabledModsFile { enabledModsObj ->
-            enabledModsObj.copy(
-                enabledMods = enabledModsObj
+            val prevEnabled = enabledModsObj ?: EnabledMods()
+
+            prevEnabled.copy(
+                enabledMods = prevEnabled
                     .enabledMods
                     .toMutableList()
                     .apply { add(modId) }
@@ -64,7 +67,9 @@ class GameEnabledMods(
 
     fun disable(modId: String) {
         updateEnabledModsFile { enabledModsObj ->
-            enabledModsObj.copy(enabledMods = enabledModsObj.enabledMods.toMutableList()
+            val prevEnabled = enabledModsObj ?: EnabledMods()
+
+            prevEnabled.copy(enabledMods = prevEnabled.enabledMods.toMutableList()
                 .apply {
                     // If nothing to remove, bail. No reason to write file again.
                     if (!remove(modId)) {
@@ -77,11 +82,11 @@ class GameEnabledMods(
         Timber.i { "Disabled mod for game: $modId" }
     }
 
-    private fun updateEnabledModsFile(mutator: (EnabledMods) -> EnabledMods?) {
+    private fun updateEnabledModsFile(mutator: (EnabledMods?) -> EnabledMods?) {
         kotlin.runCatching {
             IOLock.write {
                 val enabledModsFile = getEnabledModsFile()
-                createBackupFileIfDoesntExist(enabledModsFile)
+                createBackupFileIfDoesntExist(enabledModsFile ?: return)
                 val prevEnabledMods = getEnabledMods()
 
                 enabledModsFile.writer().use { outStream ->
@@ -96,16 +101,16 @@ class GameEnabledMods(
 
     private fun createBackupFileIfDoesntExist(enabledModsFile: Path) {
         IOLock.write {
-            val backupFile = gamePath.getModsPath().resolve("$ENABLED_MODS_FILENAME.bak")
+            val backupFile = gamePath.getModsPath()?.resolve("$ENABLED_MODS_FILENAME.bak")
 
             // Make a backup before modifying it for the first time
-            if (!backupFile.exists()) {
+            if (backupFile != null && !backupFile.exists()) {
                 enabledModsFile.copyTo(backupFile)
             }
         }
     }
 
-    private fun getEnabledModsFile() = gamePath.getModsPath().resolve(ENABLED_MODS_FILENAME)
+    private fun getEnabledModsFile() = gamePath.getModsPath()?.resolve(ENABLED_MODS_FILENAME)
 }
 
 data class EnabledMods(

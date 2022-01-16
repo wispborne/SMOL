@@ -10,6 +10,7 @@ import smol_access.business.Staging
 import smol_access.config.AppConfig
 import smol_access.config.GamePath
 import smol_access.config.Platform
+import smol_access.config.SettingsPath
 import smol_access.model.Mod
 import smol_access.model.ModId
 import smol_access.model.ModVariant
@@ -19,10 +20,7 @@ import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
-import kotlin.io.path.absolutePathString
-import kotlin.io.path.deleteIfExists
-import kotlin.io.path.exists
-import kotlin.io.path.nameWithoutExtension
+import kotlin.io.path.*
 
 class Access internal constructor(
     private val staging: Staging,
@@ -37,12 +35,19 @@ class Access internal constructor(
      * Checks the /mods, archives, and staging paths and sets them to null if they don't exist.
      */
     fun checkAndSetDefaultPaths(platform: Platform) {
-//        if (!gamePath.isValidGamePath(appConfig.gamePath ?: "")) {
-//            appConfig.gamePath = gamePath.getDefaultStarsectorPath(platform)?.absolutePath
-//        }
+        if (appConfig.gamePath == null) {
+            appConfig.gamePath = gamePath.getDefaultStarsectorPath(platform)?.absolutePath
+        }
 
         if (appConfig.archivesPath.toPathOrNull()?.exists() != true) {
             appConfig.archivesPath = Constants.ARCHIVES_FOLDER_DEFAULT.absolutePathString()
+
+            IOLock.write(IOLocks.everythingLock) {
+                kotlin.runCatching {
+                    appConfig.archivesPath.toPathOrNull()?.createDirectories()
+                }
+                    .onFailure { Timber.w(it) }
+            }
         }
 
         archives.getArchivesManifest()
@@ -50,6 +55,13 @@ class Access internal constructor(
 
         if (appConfig.stagingPath.toPathOrNull()?.exists() != true) {
             appConfig.stagingPath = Constants.STAGING_FOLDER_DEFAULT.absolutePathString()
+
+            IOLock.write(IOLocks.everythingLock) {
+                kotlin.runCatching {
+                    appConfig.stagingPath.toPathOrNull()?.createDirectories()
+                }
+                    .onFailure { Timber.w(it) }
+            }
         }
 
         Timber.i { "Game: ${appConfig.gamePath}" }
@@ -66,42 +78,47 @@ class Access internal constructor(
         newGamePath: Path? = gamePath.get(),
         newArchivesPath: Path? = appConfig.archivesPath?.toPathOrNull(),
         newStagingPath: Path? = appConfig.stagingPath?.toPathOrNull()
-    ): List<String> {
-        val errors = mutableListOf<String>()
+    ): SmolResult<Unit, Map<SettingsPath, List<String>>> {
+        val errors: Map<SettingsPath, MutableList<String>> = mapOf(
+            SettingsPath.Game to mutableListOf(),
+            SettingsPath.Archives to mutableListOf(),
+            SettingsPath.Staging to mutableListOf()
+        )
 
         IOLock.read {
             // Game path
             if (newGamePath?.exists() != true) {
-                errors += "Game path '$newGamePath' doesn't exist!"
+                errors[SettingsPath.Game]?.add("Game path '$newGamePath' doesn't exist!")
             } else {
                 var hasGameExe = false
                 var hasGameCoreExe = false
 
                 newGamePath.walk(maxDepth = 1)
+                    .map { it.nameWithoutExtension.lowercase() }
                     .forEach {
-                        if (it.nameWithoutExtension == "starsector") hasGameExe = true
-                        if (it.nameWithoutExtension == "starsector-core") hasGameCoreExe = true
+                        if (it == "starsector") hasGameExe = true
+                        if (it == "starsector-core") hasGameCoreExe = true
                     }
 
                 if (!hasGameExe) {
-                    errors += "Folder 'starsector' doesn't exist!"
+                    errors[SettingsPath.Game]?.add("Folder 'starsector' doesn't exist!")
                 }
 
                 if (!hasGameCoreExe) {
-                    errors += "Folder 'starsector-core' doesn't exist!"
+                    errors[SettingsPath.Game]?.add("Folder 'starsector-core' doesn't exist!")
                 }
             }
 
 
             // Archives path
             if (newArchivesPath?.exists() != true) {
-                errors += "Archives path '$newArchivesPath' doesn't exist!"
+                errors[SettingsPath.Archives]?.add("Archives path '$newArchivesPath' doesn't exist!")
             }
 
 
             // Staging path
             if (newStagingPath?.exists() != true) {
-                errors += "Staging path '$newStagingPath' doesn't exist!"
+                errors[SettingsPath.Staging]?.add("Staging path '$newStagingPath' doesn't exist!")
             }
 
             // Ensure that the two folders with hardlinks, /mods and staging, are on the same partition.
@@ -113,14 +130,15 @@ class Access internal constructor(
                     if (folders.distinctBy { it.mountOf() }.size > 1) {
                         // There should only be a single mount point, aka partition, for hardlinked folders.
                         Timber.e { "/mods and staging are on separate partitions. Folders: ${folders.joinToString()}." }
-                        errors += "The staging folder must be on the same drive (partition) as your Starsector mods folder."
+                        errors[SettingsPath.Staging]?.add("The staging folder must be on the same drive (partition) as your Starsector mods folder.")
                     }
                 }
             }
                 .onFailure { Timber.w(it) }
         }
 
-        return errors
+        return if (errors.values.none()) SmolResult.Success(Unit)
+        else SmolResult.Failure(errors)
     }
 
 

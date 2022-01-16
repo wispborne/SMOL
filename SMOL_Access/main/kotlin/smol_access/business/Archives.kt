@@ -45,31 +45,54 @@ class Archives internal constructor(
 
     fun getArchivesPath() = config.archivesPath
 
-    fun getArchivesManifest(): ArchivesManifest? =
-        kotlin.runCatching {
-            gson.fromJson<ArchivesManifest>(
-                json = File(config.archivesPath!!, ARCHIVE_MANIFEST_FILENAME).readText(),
-                shouldStripComments = false
-            )
+    fun getArchivesManifest(): ArchivesManifest? {
+        val archivesFolder = config.archivesPath?.toPathOrNull()
+
+        return kotlin.runCatching {
+            if (archivesFolder?.exists() != true) {
+                Timber.w { "Archives path not set or nonexistent." }
+                return@runCatching null
+            }
+
+            val archivesManifestFile = archivesFolder.resolve(ARCHIVE_MANIFEST_FILENAME)
+
+            if (!archivesManifestFile.exists()) {
+                Timber.i { "Archives manifest file doesn't exist, creating." }
+                IOLock.write(IOLocks.archivesFolderLock) {
+                    archivesManifestFile.createFile()
+                }
+            }
+
+            IOLock.read(IOLocks.archivesFolderLock) {
+                gson.fromJson<ArchivesManifest>(
+                    json = archivesManifestFile.readText(),
+                    shouldStripComments = false
+                )
+            }
         }
             .onFailure { Timber.w(it) }
             .recover {
                 IOLock.write {
                     // Make a backup of the file before we overwrite it with a blank one.
-                    val file = config.archivesPath?.let { File(it, ARCHIVE_MANIFEST_FILENAME) }
-                    if (file?.exists() == true) {
-                        kotlin.runCatching {
-                            val backupManifestFile = file.parentFile.resolve(file.name + ".bak")
-                            if (!backupManifestFile.exists()) file.copyTo(backupManifestFile, overwrite = false)
-                        }
-                            .onFailure { Timber.e(it) }
+                    kotlin.runCatching {
+                        val archivesManifestFile =
+                            config.archivesPath?.toPathOrNull()?.resolve(ARCHIVE_MANIFEST_FILENAME)!!
+                        val backupManifestFile = archivesManifestFile.parent.resolve(archivesManifestFile.name + ".bak")
+
+                        if (!backupManifestFile.exists())
+                            archivesManifestFile.copyTo(
+                                target = backupManifestFile,
+                                overwrite = false
+                            )
                     }
+                        .onFailure { Timber.e(it) }
                 }
 
                 // Then return an empty manifest so it'll be created anew
                 ArchivesManifest()
             }
             .getOrDefault(ArchivesManifest())
+    }
 
     /**
      * Given an arbitrary file, find and install the associated mod into the given folder.

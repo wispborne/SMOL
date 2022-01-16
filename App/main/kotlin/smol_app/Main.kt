@@ -59,7 +59,8 @@ fun main() = application {
             if (remoteConfig == null) {
                 Timber.w { "Unable to fetch remote config, aborting update check." }
             } else {
-                SL.UI.updater.update(remoteConfig)
+                // Let's get update on demand, after permission, not every run lol.
+//                SL.UI.updater.update(remoteConfig)
             }
         }
     }

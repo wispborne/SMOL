@@ -28,10 +28,12 @@ class VramCheckerManager(
 
         Timber.i { "Refreshing VRAM use of ${modIdsToUpdate.count()} mods." }
 
+        val modsPath = gamePath.getModsPath()
+
         val results = VramChecker(
             enabledModIds = mods.filter { it.hasEnabledVariant }.map { it.id },
             modIdsToCheck = modIdsToUpdate,
-            foldersToCheck = listOf(gamePath.getModsPath(), Constants.STAGING_FOLDER_DEFAULT),
+            foldersToCheck = listOfNotNull(modsPath, Constants.STAGING_FOLDER_DEFAULT),
             showGfxLibDebugOutput = false,
             showPerformance = false,
             showSkippedFiles = false,

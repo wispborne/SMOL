@@ -40,18 +40,18 @@ class GamePath internal constructor(
             }
             .getOrNull()
 
-    fun getModsPath(): Path {
+    fun getModsPath(): Path? {
         val starsectorPathStr = appConfig.gamePath
             ?: kotlin.run {
                 val ex = NullPointerException("Game path not found. AppConfig: $appConfig")
                 Timber.e(ex)
-                throw ex
+                return null
             }
         val starsectorPath: Path = starsectorPathStr.toPathOrNull()
             ?: kotlin.run {
                 val ex = NullPointerException("Game path cannot be converted to a Path. AppConfig: $appConfig")
                 Timber.e(ex)
-                throw ex
+                return null
             }
         val mods = starsectorPath.resolve("mods")
 

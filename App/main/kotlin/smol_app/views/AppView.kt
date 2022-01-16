@@ -213,9 +213,9 @@ private suspend fun watchDirsAndReloadOnChange(scope: CoroutineScope) {
         SL.access.getStagingPath()?.toPathOrNull()
             ?.resolve(Archives.ARCHIVE_MANIFEST_FILENAME) // Watch manifest.json
             ?.run { if (this.exists()) this.asWatchChannel(scope = scope) else emptyFlow() } ?: emptyFlow(),
-        SL.gamePath.getModsPath().asWatchChannel(scope = scope),
-        SL.gamePath.getModsPath().resolve(Constants.ENABLED_MODS_FILENAME) // Watch enabled_mods.json
-            .run { if (this.exists()) this.asWatchChannel(scope = scope) else emptyFlow() },
+        SL.gamePath.getModsPath()?.asWatchChannel(scope = scope),
+        SL.gamePath.getModsPath()?.resolve(Constants.ENABLED_MODS_FILENAME) // Watch enabled_mods.json
+            .run { if (this?.exists() == true) this.asWatchChannel(scope = scope) else emptyFlow() },
         SL.archives.getArchivesPath()?.toPathOrNull()?.asWatchChannel(scope = scope) ?: emptyFlow(),
     )
     Timber.i {

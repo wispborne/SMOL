@@ -4,7 +4,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import smol_access.Constants
@@ -58,10 +57,13 @@ internal class ModLoader internal constructor(
             isReloadingMutable.emit(true)
             trace({ mods, time ->
                 Timber.tag(Constants.TAG_TRACE)
-                    .i { "Time to load and merge all ${mods.mods.count()} mod info files: ${time}ms" }
+                    .i { "Time to load and merge all ${mods?.mods?.count()} mod info files: ${time}ms" }
             }) {
                 withContext(Dispatchers.IO) {
-                    val enabledModIds = gameEnabledMods.getEnabledMods().enabledMods
+                    val enabledModIds = gameEnabledMods.getEnabledMods()?.enabledMods ?: run {
+                        Timber.w { "Couldn't get enabled mods, cannot load mods." }
+                        return@withContext null
+                    }
 
                     // Get items in archives
                     val archivedMods = archives.getArchivesManifest()?.manifestItems?.values
@@ -115,7 +117,10 @@ internal class ModLoader internal constructor(
                             .onEach { Timber.v { "Found staged/installed mod $it" } }
 
                     // Get items in /mods folder
-                    val modsFolder = gamePath.getModsPath()
+                    val modsFolder = gamePath.getModsPath() ?: run {
+                        Timber.w { "No mods path set, cannot load mods." }
+                        return@withContext null
+                    }
                     val modsFolderMods =
                         modInfoLoader.readModDataFilesFromFolderOfMods(
                             modsFolder,

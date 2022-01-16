@@ -29,12 +29,13 @@ class AppConfig(gson: Jsanity) :
 
     override fun toString(): String {
         return "AppConfig(" +
+                "updateChannel=$updateChannel, " +
                 "gamePath=$gamePath, " +
                 "archivesPath=$archivesPath, " +
                 "stagingPath=$stagingPath, " +
                 "lastFilePickerDirectory=$lastFilePickerDirectory, " +
+                "jre8Url=$jre8Url, " +
                 "userProfile=$userProfile" +
                 ")"
     }
-
 }

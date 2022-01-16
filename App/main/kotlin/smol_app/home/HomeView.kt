@@ -50,7 +50,6 @@ fun AppState.homeView(
     val shownMods: SnapshotStateList<Mod?> = mods.toMutableStateList()
     val isWriteLocked = IOLock.stateFlow.collectAsState()
 
-
     LaunchedEffect(Unit) {
         withContext(Dispatchers.Default) {
             SL.access.mods.collectLatest { freshMods ->
@@ -62,7 +61,6 @@ fun AppState.homeView(
             }
         }
     }
-
 
 //    var showConfirmMigrateDialog: Boolean by remember { mutableStateOf(false) }
     val showLogPanel = remember { mutableStateOf(false) }
@@ -122,7 +120,7 @@ fun AppState.homeView(
             }
         }, content = {
             Box {
-                if (SL.access.validatePaths(newGamePath = SL.appConfig.gamePath?.toPathOrNull()).none()) {
+                if (SL.access.validatePaths(newGamePath = SL.appConfig.gamePath?.toPathOrNull()).isSuccess) {
                     ModGridView(
                         modifier = Modifier.fillMaxWidth().fillMaxHeight().padding(bottom = 40.dp),
                         mods = (if (shownMods.isEmpty()) mods else shownMods) as SnapshotStateList<Mod?>
@@ -134,7 +132,7 @@ fun AppState.homeView(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(text = "I can't find any mods! Did you set your game path yet?")
-                        OutlinedButton(
+                        SmolButton(
                             onClick = { router.push(Screen.Settings) },
                             modifier = Modifier.padding(top = 8.dp)
                         ) {
