@@ -81,7 +81,7 @@ class SmolCLI(
     }
 
     inner class ModProfileSet : CliktCommand(name = "modprofile-set", help = "Set active mod profile") {
-        val profileId by option().int().required()
+        val profileId by option().required()
 
         override fun run() {
             GlobalScope.launch {
@@ -93,7 +93,7 @@ class SmolCLI(
     }
 
     inner class ModProfileRemove : CliktCommand(name = "modprofile-remove", help = "Remove a mod profile") {
-        val profileId by option().int().required()
+        val profileId by option().required()
 
         override fun run() {
             userManager.removeModProfile(profileId)

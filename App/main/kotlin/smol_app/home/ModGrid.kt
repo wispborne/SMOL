@@ -65,7 +65,7 @@ fun AppState.ModGridView(
     val selectedRow = remember { mutableStateOf<ModRow?>(null) }
     val checkedRows = remember { mutableStateListOf<Mod>() }
     val modInDebugDialog = remember { mutableStateOf<Mod?>(null) }
-    val largestVramUsage = remember { mutableStateOf(SL.vramChecker.vramUsage.value?.values?.maxOf { it.bytesForMod }) }
+    val largestVramUsage = remember { mutableStateOf(SL.vramChecker.vramUsage.value?.values?.maxOfOrNull { it.bytesForMod }) }
     val profile = SL.userManager.activeProfile.collectAsState()
     val activeSortField = profile.value.modGridPrefs.sortField?.let {
         kotlin.runCatching { ModGridSortField.valueOf(it) }.getOrNull()

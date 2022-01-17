@@ -85,7 +85,7 @@ private class GenericGPUInfo : LwjglGpuInfo() {
 // Use OSHI to get VRAM
 private class OshiGPUInfo : GPUInfo() {
     override fun getFreeVRAM(): Long =
-        SystemInfo().hardware.graphicsCards.maxOf { it.vRam }
+        SystemInfo().hardware.graphicsCards.maxOfOrNull { it.vRam } ?: 0L
 
     override fun getGPUString(): List<String>? {
         val gpu = SystemInfo().hardware.graphicsCards.maxByOrNull { it.vRam } ?: return null

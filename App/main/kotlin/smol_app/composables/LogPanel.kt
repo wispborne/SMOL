@@ -19,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.flow.collect
 import smol_app.Logging
 import smol_app.themes.SmolTheme
 import timber.LogLevel
@@ -38,7 +37,7 @@ fun AppState.logPanel(
         shape = RectangleShape
     ) {
         val linesToShow = 200
-        val log = remember { mutableStateListOf<String>() }
+        val log = remember { mutableStateListOf<Logging.LogMessage>() }
 
         LaunchedEffect(Unit) {
             Logging.logFlow.collect {
@@ -85,17 +84,17 @@ fun AppState.logPanel(
                             state = lazyListState
                         ) {
                             items(log) {
-                                Text(
-                                    text = it.replaceFirst("\r", "    "),
+                                SmolText(
+                                    text = it.message.replace("\t", "    "),
                                     softWrap = false,
                                     fontFamily = SmolTheme.fireCodeFont,
                                     fontSize = 14.sp,
-                                    color = when (it.trim().substringAfter(' ').firstOrNull()?.lowercase()) {
-                                        "v" -> MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.disabled)
-                                        "d" -> MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium)
-                                        "i" -> MaterialTheme.colors.onSurface
-                                        "w" -> MaterialTheme.colors.error.copy(alpha = ContentAlpha.high)
-                                        "e" -> MaterialTheme.colors.error
+                                    color = when (it.logLevel) {
+                                        LogLevel.VERBOSE -> MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.disabled)
+                                        LogLevel.DEBUG -> MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium)
+                                        LogLevel.INFO -> MaterialTheme.colors.onSurface
+                                        LogLevel.WARN -> MaterialTheme.colors.error.copy(alpha = ContentAlpha.high)
+                                        LogLevel.ERROR -> MaterialTheme.colors.error
                                         else -> MaterialTheme.colors.onSurface
                                     }
                                 )

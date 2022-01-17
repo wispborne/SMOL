@@ -46,7 +46,7 @@ class UserModProfileManager internal constructor(
         }
     }
 
-    suspend fun switchModProfile(newModProfileId: Int) {
+    suspend fun switchModProfile(newModProfileId: String) {
         try {
             isModProfileSwitching = true
             val newModProfile = userManager.activeProfile.value.modProfiles.firstOrNull { it.id == newModProfileId }

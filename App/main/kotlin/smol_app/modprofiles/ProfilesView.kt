@@ -25,6 +25,7 @@ import smol_app.composables.*
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.lighten
 import smol_app.toolbar.*
+import java.util.*
 
 @OptIn(
     ExperimentalMaterialApi::class,
@@ -36,7 +37,6 @@ fun AppState.ProfilesView(
     modifier: Modifier = Modifier
 ) {
     val recomposer = currentRecomposeScope
-    val modProfileIdShowingDeleteConfirmation = remember { mutableStateOf<Int?>(null) }
     val userProfile = SL.userManager.activeProfile.collectAsState().value
     val saveGames = SL.saveReader.saves.collectAsState()
     val showLogPanel = remember { mutableStateOf(false) }
@@ -102,7 +102,6 @@ fun AppState.ProfilesView(
                                 ModProfileCard(
                                     userProfile,
                                     modProfile,
-                                    modProfileIdShowingDeleteConfirmation,
                                     modVariants
                                 )
                             }
@@ -128,7 +127,7 @@ fun AppState.ProfilesView(
                                 .sortedByDescending { it.saveDate }
                                 .mapIndexed { index, saveFile ->
                                     ModProfileCardInfo.SaveModProfileCardInfo(
-                                        id = 1337 + index,
+                                        id = UUID.randomUUID().toString(),
                                         name = saveFile.characterName,
                                         description = "",
                                         sortOrder = 1337 + index,
@@ -146,7 +145,6 @@ fun AppState.ProfilesView(
                                 ModProfileCard(
                                     userProfile,
                                     modProfile,
-                                    modProfileIdShowingDeleteConfirmation,
                                     modVariants
                                 )
                             }
@@ -167,35 +165,6 @@ fun AppState.ProfilesView(
             }
         }
     )
-
-    if (modProfileIdShowingDeleteConfirmation.value != null) {
-        val profile =
-            userProfile.modProfiles.firstOrNull { it.id == modProfileIdShowingDeleteConfirmation.value }
-        SmolAlertDialog(
-            modifier = Modifier,
-            onDismissRequest = { modProfileIdShowingDeleteConfirmation.value = null },
-            title = { Text("Confirm deletion", style = SmolTheme.alertDialogTitle()) },
-            text = {
-                Text("Are you sure you want to delete \"${profile?.name}\"?", style = SmolTheme.alertDialogBody())
-            },
-            confirmButton = {
-                SmolButton(onClick = {
-                    SL.userManager.removeModProfile(
-                        modProfileIdShowingDeleteConfirmation.value ?: run {
-                            modProfileIdShowingDeleteConfirmation.value = null
-
-                            return@SmolButton
-                        })
-                    modProfileIdShowingDeleteConfirmation.value = null
-                }) { Text("Delete") }
-            },
-            dismissButton = {
-                SmolSecondaryButton(onClick = { modProfileIdShowingDeleteConfirmation.value = null }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
 }
 
 @Composable
@@ -222,14 +191,13 @@ private fun NewModProfileCard(onProfileCreated: () -> Unit) {
             SmolButton(
                 modifier = Modifier.padding(top = 16.dp),
                 onClick = {
-                    if (newProfileName.isNotBlank()) {
-                        SL.userManager.createModProfile(
-                            name = newProfileName,
-                            sortOrder = SL.userManager.activeProfile.value.modProfiles.maxOf { it.sortOrder } + 1
-                        )
-                        newProfileName = ""
-                        onProfileCreated.invoke()
-                    }
+                    SL.userManager.createModProfile(
+                        name = newProfileName.ifBlank { "Unnamed Profile" },
+                        sortOrder = (SL.userManager.activeProfile.value.modProfiles.maxOfOrNull { it.sortOrder }
+                            ?: 0) + 1
+                    )
+                    newProfileName = ""
+                    onProfileCreated.invoke()
                 }) {
                 Icon(
                     modifier = Modifier
@@ -247,14 +215,14 @@ private fun NewModProfileCard(onProfileCreated: () -> Unit) {
 }
 
 sealed class ModProfileCardInfo(
-    val id: Int,
+    val id: String,
     val name: String,
     val description: String,
     val sortOrder: Int,
     val enabledModVariants: List<UserProfile.ModProfile.EnabledModVariant>
 ) {
     class EditableModProfileCardInfo(
-        id: Int,
+        id: String,
         name: String,
         description: String,
         sortOrder: Int,
@@ -268,7 +236,7 @@ sealed class ModProfileCardInfo(
     )
 
     class SaveModProfileCardInfo(
-        id: Int,
+        id: String,
         name: String,
         description: String,
         sortOrder: Int,

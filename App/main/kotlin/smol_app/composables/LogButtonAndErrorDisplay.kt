@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.collectLatest
 import smol_app.Logging
 import smol_app.themes.SmolTheme
 import smol_app.util.smolPreview
+import timber.LogLevel
 
 @Composable
 @Preview
@@ -38,7 +39,10 @@ fun logButtonAndErrorDisplay(modifier: Modifier = Modifier, showLogPanel: Mutabl
             IconToggleButton(
                 checked = showLogPanel.value,
                 modifier = Modifier.padding(start = 8.dp).run {
-                    if (showLogPanel.value) this.background(color = Color.White.copy(alpha = 0.20f), shape = CircleShape)
+                    if (showLogPanel.value) this.background(
+                        color = Color.White.copy(alpha = 0.20f),
+                        shape = CircleShape
+                    )
                     else this
                 },
                 onCheckedChange = { showLogPanel.value = it }
@@ -54,12 +58,12 @@ fun logButtonAndErrorDisplay(modifier: Modifier = Modifier, showLogPanel: Mutabl
         var newestLogLine by remember { mutableStateOf("") }
         LaunchedEffect(Unit) {
             Logging.logFlow.collectLatest {
-                if (it.trim().startsWith("E/", ignoreCase = true)) {
-                    newestLogLine = it
+                if (it.logLevel >= LogLevel.ERROR) {
+                    newestLogLine = it.message
                 }
             }
         }
-        Text(
+        SmolText(
             text = newestLogLine,
             maxLines = 1,
             modifier = Modifier.padding(start = 8.dp).align(Alignment.CenterVertically)

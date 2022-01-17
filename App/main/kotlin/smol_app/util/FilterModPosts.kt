@@ -24,7 +24,7 @@ internal fun filterModPosts(query: String, mods: List<ScrapedMod>): List<Scraped
                     )
                 }
                 .filter { it.second.any { it.value > 70 } }
-                .sortedWith(compareByDescending<Pair<ScrapedMod, Map<String, Int>>> { it.second.maxOf { it.value } }
+                .sortedWith(compareByDescending<Pair<ScrapedMod, Map<String, Int>>> { it.second.maxOfOrNull { it.value } }
                     .thenByDescending {
                         it.first.name
                     }) // Sort by highest match

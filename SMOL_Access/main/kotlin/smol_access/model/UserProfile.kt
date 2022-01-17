@@ -3,7 +3,7 @@ package smol_access.model
 data class UserProfile(
     val id: Int,
     val username: String,
-    val activeModProfileId: Int,
+    val activeModProfileId: String,
     val versionCheckerIntervalMillis: Long?,
     val modProfiles: List<ModProfile>,
     val profileVersion: Int,
@@ -16,7 +16,7 @@ data class UserProfile(
 
 
     data class ModProfile(
-        val id: Int,
+        val id: String,
         val name: String,
         val description: String,
         val sortOrder: Int,

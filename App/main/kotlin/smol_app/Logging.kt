@@ -2,7 +2,6 @@ package smol_app
 
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.newSingleThreadContext
 import org.tinylog.Level
 import org.tinylog.Logger
 import org.tinylog.configuration.Configuration
@@ -12,11 +11,13 @@ import kotlin.properties.Delegates
 
 object Logging {
     private var wasTinyLogConfigured = false // Dumb library doesn't let you reconfigure and crashes if you try.
-    val logFlow = MutableSharedFlow<String>(
+    val logFlow = MutableSharedFlow<LogMessage>(
         replay = 200,
         extraBufferCapacity = 200,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
+
+    data class LogMessage(val logLevel: LogLevel, val message: String)
 
     var logLevel by Delegates.observable(LogLevel.DEBUG) { _, _, _ ->
         setup()
@@ -66,7 +67,14 @@ object Logging {
             Timber.DebugTree(
                 logLevel = logLevel,
                 appenders = listOf(
-                    { _, formattedMessage -> logFlow.tryEmit(formattedMessage) },
+                    { level, formattedMessage ->
+                        logFlow.tryEmit(
+                            LogMessage(
+                                logLevel = level,
+                                message = formattedMessage
+                            )
+                        )
+                    },
                     { priority, formattedMessage ->
                         when (priority) {
                             LogLevel.VERBOSE -> Logger.trace { formattedMessage }

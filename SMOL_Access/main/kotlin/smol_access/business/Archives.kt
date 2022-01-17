@@ -24,9 +24,7 @@ import utilities.*
 import java.io.File
 import java.io.FileWriter
 import java.io.RandomAccessFile
-import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.StandardCopyOption
 import java.util.*
 import kotlin.io.path.*
 
@@ -630,7 +628,8 @@ class Archives internal constructor(
 
                 newFolder.mkdirsIfNotExist()
 
-                Files.move(oldFolder.toPath(), newFolder.toPath(), StandardCopyOption.REPLACE_EXISTING)
+                // Not gonna bother with moving files, too error-prone, user can just do it themselves.
+//                Files.move(oldFolder.toPath(), newFolder.toPath(), StandardCopyOption.REPLACE_EXISTING)
 
                 config.archivesPath = newPath
             }

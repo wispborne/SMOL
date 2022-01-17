@@ -142,7 +142,7 @@ class Access internal constructor(
                 .onFailure { Timber.w(it) }
         }
 
-        return if (errors.values.none()) SmolResult.Success(Unit)
+        return if (errors.flatMap { it.value }.none()) SmolResult.Success(Unit)
         else SmolResult.Failure(errors)
     }
 
@@ -163,7 +163,8 @@ class Access internal constructor(
 
                 newFolder.mkdirsIfNotExist()
 
-                Files.move(oldFolder.toPath(), newFolder.toPath(), StandardCopyOption.REPLACE_EXISTING)
+                // Not gonna bother with moving files, too error-prone, user can just do it themselves.
+//                Files.move(oldFolder.toPath(), newFolder.toPath(), StandardCopyOption.REPLACE_EXISTING)
 
                 config.stagingPath = newPath
             }

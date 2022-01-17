@@ -1,5 +1,6 @@
 package smol_app.modprofiles
 
+import AppState
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateColorAsState
@@ -36,10 +37,8 @@ import smol_access.model.ModVariant
 import smol_access.model.SmolId
 import smol_access.model.UserProfile
 import smol_access.model.Version
-import smol_app.composables.SmolTextField
-import smol_app.composables.SmolTooltipArea
-import smol_app.composables.SmolTooltipBackground
-import smol_app.composables.SmolTooltipText
+import smol_app.WindowState
+import smol_app.composables.*
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.lighten
 import smol_app.util.smolPreview
@@ -51,10 +50,9 @@ import java.time.format.FormatStyle
 @Composable
 @Preview
 fun ModProfileCardPreview() = smolPreview {
-    ModProfileCard(
+    AppState(WindowState()).ModProfileCard(
         userProfile = mockUserProfile,
         modProfile = mockModProfile,
-        modProfileIdShowingDeleteConfirmation = mutableStateOf(null),
         modVariants = mutableStateOf(emptyMap())
     )
 }
@@ -63,16 +61,16 @@ private val dateFormat = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIU
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalAnimationApi::class, ExperimentalComposeUiApi::class)
 @Composable
-fun ModProfileCard(
+fun AppState.ModProfileCard(
     userProfile: UserProfile,
     modProfile: ModProfileCardInfo,
-    modProfileIdShowingDeleteConfirmation: MutableState<Int?>,
     modVariants: MutableState<Map<SmolId, ModVariant>>
 ) {
-    val isActiveProfile = remember { userProfile.activeModProfileId == modProfile.id }
+    val isActiveProfile = userProfile.activeModProfileId == modProfile.id
     val isUserMade = modProfile is ModProfileCardInfo.EditableModProfileCardInfo
     val isEditMode = remember { mutableStateOf(false) }
     val modProfileName = remember { mutableStateOf(modProfile.name) }
+    modProfileName.value = modProfile.name
     var isExpanded by remember { mutableStateOf(false) }
 
     var isBeingHovered by remember { mutableStateOf(false) }
@@ -102,118 +100,105 @@ fun ModProfileCard(
     ) {
         Box {
             Column {
-                SmolTooltipArea(
-                    tooltip = {
-                        SmolTooltipBackground {
-                            modList(
-                                modifier = Modifier.widthIn(max = 400.dp),
-                                modVariants = modVariants,
-                                modProfile = modProfile
-                            )
-                        }
-                    },
-                    delayMillis = SmolTooltipArea.shortDelay
+                Column(
+                    modifier = Modifier.padding(
+                        start = 16.dp,
+                        top = 8.dp,
+                        end = 2.dp,
+                        bottom = 16.dp
+                    )
                 ) {
-                    Column(
-                        modifier = Modifier.padding(
-                            start = 16.dp,
-                            top = 8.dp,
-                            end = 2.dp,
-                            bottom = 16.dp
-                        )
-                    ) {
-                        SelectionContainer {
-                            Row {
-                                if (!isEditMode.value) {
-                                    Text(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .padding(end = 16.dp)
-                                            .align(Alignment.CenterVertically),
-                                        fontSize = 18.sp,
-                                        fontFamily = SmolTheme.orbitronSpaceFont,
-                                        text = modProfileName.value
-                                    )
-                                } else {
-                                    SmolTextField(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .padding(end = 16.dp)
-                                            .align(Alignment.CenterVertically),
-                                        value = modProfileName.value,
-                                        label = { Text(text = "Profile Name") },
-                                        singleLine = true,
-                                        textStyle = TextStyle.Default.copy(fontFamily = SmolTheme.orbitronSpaceFont),
-                                        onValueChange = { newValue ->
-                                            modProfileName.value = newValue
-                                            SL.userManager.updateUserProfile { old ->
-                                                old.copy(modProfiles = old.modProfiles.map { profile ->
-                                                    if (profile.id == modProfile.id) {
-                                                        profile.copy(name = newValue)
-                                                    } else profile
-                                                })
-                                            }
+                    SelectionContainer {
+                        Row {
+                            if (!isEditMode.value) {
+                                Text(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .padding(end = 16.dp)
+                                        .align(Alignment.CenterVertically),
+                                    fontSize = 18.sp,
+                                    fontFamily = SmolTheme.orbitronSpaceFont,
+                                    text = modProfileName.value
+                                )
+                            } else {
+                                SmolTextField(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .padding(end = 16.dp)
+                                        .align(Alignment.CenterVertically),
+                                    value = modProfileName.value,
+                                    label = { Text(text = "Profile Name") },
+                                    singleLine = true,
+                                    textStyle = TextStyle.Default.copy(fontFamily = SmolTheme.orbitronSpaceFont),
+                                    onValueChange = { newValue ->
+                                        modProfileName.value = newValue
+                                        SL.userManager.updateUserProfile { old ->
+                                            old.copy(modProfiles = old.modProfiles.map { profile ->
+                                                if (profile.id == modProfile.id) {
+                                                    profile.copy(name = newValue)
+                                                } else profile
+                                            })
                                         }
-                                    )
-                                }
+                                    }
+                                )
+                            }
 
-                                if (isUserMade) {
-                                    SmolTooltipArea(tooltip = { SmolTooltipText(text = "Edit name.") }) {
-                                        IconToggleButton(
-                                            modifier = Modifier
-                                                .align(Alignment.CenterVertically)
-                                                .run {
-                                                    if (isEditMode.value) this.border(
-                                                        width = 2.dp,
-                                                        color = MaterialTheme.colors.onSurface.lighten(),
-                                                        shape = SmolTheme.smolNormalButtonShape()
-                                                    ) else this
-                                                }
-                                                .height(20.dp),
-                                            checked = isEditMode.value,
-                                            onCheckedChange = { isEditMode.value = !isEditMode.value }
-                                        ) {
-                                            val alphaOfHoverDimmedElements =
-                                                animateFloatAsState(if (isBeingHovered) 0.8f else 0.5f)
-                                            Icon(
-                                                painter = painterResource("pencil-outline.svg"),
-                                                modifier = Modifier,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colors.onSurface.copy(alpha = alphaOfHoverDimmedElements.value)
-                                            )
-                                        }
+                            if (isUserMade) {
+                                SmolTooltipArea(tooltip = { SmolTooltipText(text = "Edit name.") }) {
+                                    IconToggleButton(
+                                        modifier = Modifier
+                                            .align(Alignment.CenterVertically)
+                                            .run {
+                                                if (isEditMode.value) this.border(
+                                                    width = 2.dp,
+                                                    color = MaterialTheme.colors.onSurface.lighten(),
+                                                    shape = SmolTheme.smolNormalButtonShape()
+                                                ) else this
+                                            }
+                                            .height(20.dp),
+                                        checked = isEditMode.value,
+                                        onCheckedChange = { isEditMode.value = !isEditMode.value }
+                                    ) {
+                                        val alphaOfHoverDimmedElements =
+                                            animateFloatAsState(if (isBeingHovered) 0.8f else 0.5f)
+                                        Icon(
+                                            painter = painterResource("pencil-outline.svg"),
+                                            modifier = Modifier,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colors.onSurface.copy(alpha = alphaOfHoverDimmedElements.value)
+                                        )
                                     }
                                 }
                             }
                         }
+                    }
 
-                        Row {
-                            val count = modProfile.enabledModVariants.count()
-                            Text(
-                                modifier = Modifier.padding(top = 8.dp),
-                                text = "$count ${if (count == 1) "mod" else "mods"}",
-                                fontFamily = SmolTheme.fireCodeFont,
-                                fontSize = 12.sp,
-                            )
-
-                            if (modProfile is ModProfileCardInfo.SaveModProfileCardInfo) {
-                                Text(
-                                    modifier = Modifier.padding(top = 8.dp),
-                                    text = " • level ${modProfile.saveFile.characterLevel}",
-                                    fontFamily = SmolTheme.fireCodeFont,
-                                    fontSize = 12.sp,
-                                )
-                            }
-                        }
+                    Row {
+                        val count = modProfile.enabledModVariants.count()
+                        Text(
+                            modifier = Modifier.padding(top = 8.dp),
+                            text = "$count ${if (count == 1) "mod" else "mods"}",
+                            fontFamily = SmolTheme.fireCodeFont,
+                            fontSize = 12.sp,
+                        )
 
                         if (modProfile is ModProfileCardInfo.SaveModProfileCardInfo) {
                             Text(
                                 modifier = Modifier.padding(top = 8.dp),
-                                text = dateFormat.format(modProfile.saveFile.saveDate),
+                                text = " • level ${modProfile.saveFile.characterLevel}",
                                 fontFamily = SmolTheme.fireCodeFont,
                                 fontSize = 12.sp,
                             )
                         }
+                    }
+
+                    if (modProfile is ModProfileCardInfo.SaveModProfileCardInfo) {
+                        Text(
+                            modifier = Modifier.padding(top = 8.dp),
+                            text = dateFormat.format(modProfile.saveFile.saveDate),
+                            fontFamily = SmolTheme.fireCodeFont,
+                            fontSize = 12.sp,
+                        )
                     }
                 }
 
@@ -239,18 +224,32 @@ fun ModProfileCard(
                                 .padding(top = 4.dp, start = 4.dp, end = 4.dp)
                                 .weight(1f)
                         ) {
-                            Box(Modifier.fillMaxWidth()) {
-                                val alphaOfHoverDimmedElements =
-                                    animateFloatAsState(if (isBeingHovered) 0.8f else 0.5f).value
-                                Icon(
-                                    painter = painterResource(
-                                        if (isExpanded) "icon-collapse.svg"
-                                        else "icon-expand.svg"
-                                    ),
-                                    tint = MaterialTheme.colors.onSurface.copy(alpha = alphaOfHoverDimmedElements),
-                                    modifier = Modifier.align(Alignment.CenterStart),
-                                    contentDescription = null
-                                )
+                            SmolTooltipArea(
+                                tooltip = {
+                                    if (!isExpanded) {
+                                        SmolTooltipBackground {
+                                            modList(
+                                                modifier = Modifier.widthIn(max = 400.dp),
+                                                modVariants = modVariants,
+                                                modProfile = modProfile
+                                            )
+                                        }
+                                    }
+                                }
+                            ) {
+                                Box(Modifier.fillMaxWidth()) {
+                                    val alphaOfHoverDimmedElements =
+                                        animateFloatAsState(if (isBeingHovered) 0.8f else 0.5f).value
+                                    Icon(
+                                        painter = painterResource(
+                                            if (isExpanded) "icon-collapse.svg"
+                                            else "icon-expand.svg"
+                                        ),
+                                        tint = MaterialTheme.colors.onSurface.copy(alpha = alphaOfHoverDimmedElements),
+                                        modifier = Modifier.align(Alignment.CenterStart),
+                                        contentDescription = null
+                                    )
+                                }
                             }
                         }
 
@@ -258,7 +257,6 @@ fun ModProfileCard(
                         if (isUserMade) {
                             profileControls(
                                 modifier = Modifier.padding(top = 10.dp),
-                                modProfileIdShowingDeleteConfirmation = modProfileIdShowingDeleteConfirmation,
                                 modProfile = modProfile,
                                 isActiveProfile = isActiveProfile,
                                 modVariants = modVariants,
@@ -328,10 +326,9 @@ fun modList(
 
 @Preview
 @Composable
-fun profileControlsPreview() = smolPreview {
+fun AppState.profileControlsPreview() = smolPreview {
     Column {
         profileControls(
-            modProfileIdShowingDeleteConfirmation = mutableStateOf(null),
             modProfile = mockModProfile,
             isActiveProfile = false,
             modVariants = mutableStateOf(emptyMap()),
@@ -340,11 +337,10 @@ fun profileControlsPreview() = smolPreview {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
 @Composable
-fun profileControls(
+fun AppState.profileControls(
     modifier: Modifier = Modifier,
-    modProfileIdShowingDeleteConfirmation: MutableState<Int?>,
     modProfile: ModProfileCardInfo,
     isActiveProfile: Boolean,
     modVariants: MutableState<Map<SmolId, ModVariant>>,
@@ -426,7 +422,51 @@ fun profileControls(
                     .height(SmolTheme.iconHeightWidth())
                     .width(SmolTheme.iconHeightWidth()),
                 onClick = {
-                    modProfileIdShowingDeleteConfirmation.value = modProfile.id
+                    if (isActiveProfile) {
+                        alertDialogSetter.invoke {
+                            SmolAlertDialog(
+                                onDismissRequest = { alertDialogSetter.invoke(null) },
+                                confirmButton = { SmolButton(onClick = { alertDialogSetter.invoke(null) }) { Text("Oops") } },
+                                title = {
+                                    Text(
+                                        text = "Cannot disable active profile",
+                                        style = SmolTheme.alertDialogTitle()
+                                    )
+                                },
+                                text = {
+                                    Text(
+                                        text = "Set another profile as active before disabling this one.",
+                                        style = SmolTheme.alertDialogBody()
+                                    )
+                                }
+                            )
+                        }
+                    } else {
+                        alertDialogSetter.invoke {
+                            val profile = modProfile
+                            SmolAlertDialog(
+                                onDismissRequest = { alertDialogSetter.invoke(null) },
+                                title = { Text("Confirm deletion", style = SmolTheme.alertDialogTitle()) },
+                                text = {
+                                    Text(
+                                        "Are you sure you want to delete \"${profile.name}\"?",
+                                        style = SmolTheme.alertDialogBody()
+                                    )
+                                },
+                                confirmButton = {
+                                    SmolButton(onClick = {
+                                        SL.userManager.removeModProfile(profile.id)
+                                        alertDialogSetter.invoke(null)
+                                    }) { Text("Delete") }
+                                },
+                                dismissButton = {
+                                    SmolSecondaryButton(onClick = { alertDialogSetter.invoke(null) }) {
+                                        Text("Cancel")
+                                    }
+                                }
+                            )
+                        }
+                    }
                 }
             ) {
                 val alphaOfHoverDimmedElements = animateFloatAsState(if (isBeingHovered) 0.8f else 0.5f).value
@@ -474,7 +514,7 @@ fun saveGameProfileControls(
 }
 
 private val mockModProfile = ModProfileCardInfo.EditableModProfileCardInfo(
-    id = 0,
+    id = "0",
     name = "test profile",
     description = "desc",
     sortOrder = 0,
@@ -487,7 +527,7 @@ private val mockModProfile = ModProfileCardInfo.EditableModProfileCardInfo(
     )
 )
 private val mockSaveModProfile = ModProfileCardInfo.SaveModProfileCardInfo(
-    id = 0,
+    id = "0",
     name = "test profile",
     description = "desc",
     sortOrder = 0,
@@ -511,7 +551,7 @@ private val mockSaveModProfile = ModProfileCardInfo.SaveModProfileCardInfo(
 private val mockUserProfile = UserProfile(
     id = 1337,
     username = "user",
-    activeModProfileId = 0,
+    activeModProfileId = "0",
     versionCheckerIntervalMillis = null,
     modProfiles = emptyList(), //listOf(modProfile),
     profileVersion = 1,

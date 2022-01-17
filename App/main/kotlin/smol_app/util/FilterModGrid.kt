@@ -38,7 +38,7 @@ internal fun filterModGrid(query: String, mods: List<Mod>, access: Access): List
                     )
                 }
                 .filter { it.second.any { it.value > 70 } }
-                .sortedWith(compareByDescending<Pair<Mod, Map<String, Int>>> { it.second.maxOf { it.value } }
+                .sortedWith(compareByDescending<Pair<Mod, Map<String, Int>>> { it.second.maxOfOrNull { it.value } }
                     .thenByDescending {
                         it.first.findHighestVersion?.modInfo?.name ?: it.first.id
                     }) // Sort by highest match

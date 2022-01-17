@@ -257,6 +257,7 @@ private fun AppState.gamePathSetting(
             label = { Text("Starsector folder") },
             isError = errors?.any() ?: false,
             singleLine = true,
+            maxLines = 1,
             onValueChange = {
                 newGamePath = it
                 settingsPathErrors.value = kotlin.runCatching {
@@ -313,6 +314,7 @@ private fun AppState.archivesPathSetting(
             label = { Text("Archive storage folder") },
             isError = errors?.any() ?: false,
             singleLine = true,
+            maxLines = 1,
             onValueChange = {
                 archivesPathMutable = it
                 settingsPathErrors.value = kotlin.runCatching {
@@ -370,6 +372,7 @@ private fun AppState.stagingPathSetting(
             label = { Text("Staging folder") },
             isError = errors?.any() ?: false,
             singleLine = true,
+            maxLines = 1,
             onValueChange = {
                 stagingPathMutable = it
                 settingsPathErrors.value = kotlin.runCatching {

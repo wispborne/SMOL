@@ -8,13 +8,14 @@ import kotlinx.coroutines.launch
 import smol_access.config.AppConfig
 import smol_access.model.UserProfile
 import timber.ktx.Timber
+import java.util.*
 
 class UserManager internal constructor(
     private val appConfig: AppConfig,
 ) {
     companion object {
         val defaultModProfile = UserProfile.ModProfile(
-            id = 0,
+            id = UUID.randomUUID().toString(),
             name = "default",
             description = "Default profile",
             sortOrder = 0,
@@ -62,10 +63,10 @@ class UserManager internal constructor(
     ): UserProfile {
         return updateUserProfile { userProfile ->
             val newModProfile = UserProfile.ModProfile(
-                id = userProfile.modProfiles.maxOf { it.id } + 1, // New id is the previous highest id +1
+                id = UUID.randomUUID().toString(),
                 name = name,
                 description = description,
-                sortOrder = sortOrder ?: (userProfile.modProfiles.maxOf { it.sortOrder } + 1),
+                sortOrder = sortOrder ?: ((userProfile.modProfiles.maxOfOrNull { it.sortOrder } ?: 0) + 1),
                 enabledModVariants = enabledModVariants
             )
             userProfile.copy(modProfiles = userProfile.modProfiles + newModProfile)
@@ -73,7 +74,7 @@ class UserManager internal constructor(
         }
     }
 
-    fun removeModProfile(modProfileId: Int) {
+    fun removeModProfile(modProfileId: String) {
         updateUserProfile { oldProfile ->
             val profileToRemove = oldProfile.modProfiles.firstOrNull { it.id == modProfileId }
 
