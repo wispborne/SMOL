@@ -11,8 +11,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ExperimentalGraphicsApi
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.unit.dp
 import org.jetbrains.skia.impl.Stats.enabled
 import smol_app.themes.SmolTheme
+import smol_app.themes.SmolTheme.darken
 import smol_app.util.hexToColor
 
 @Composable
@@ -24,7 +26,7 @@ fun SmolSecondaryButton(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     elevation: ButtonElevation? = ButtonDefaults.elevation(),
     shape: Shape? = null,
-    border: BorderStroke? = null,
+    border: BorderStroke? = BorderStroke(2.dp, SmolTheme.grey().darken(amount = -10)),
     colors: ButtonColors = ButtonDefaults.buttonColors(
         backgroundColor = SmolTheme.grey(),
 //        contentColor = MaterialTheme.colors.onPrimary.copy(alpha = ContentAlpha.high)

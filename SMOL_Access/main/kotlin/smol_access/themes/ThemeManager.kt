@@ -4,7 +4,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import smol_access.business.UserManager
 import timber.ktx.Timber
-import java.awt.Color
 
 class ThemeManager(
     private val userManager: UserManager,
@@ -59,7 +58,10 @@ class ThemeManager(
     }
 
     fun reloadThemes() {
-        themeConfig.reload()
+        kotlin.runCatching {
+            themeConfig.reload()
+        }
+            .onFailure { Timber.w(it) }
         activeThemeInner.value = getActiveTheme()
     }
 }

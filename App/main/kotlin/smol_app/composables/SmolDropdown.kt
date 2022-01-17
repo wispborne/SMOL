@@ -1,19 +1,16 @@
 package smol_app.composables
 
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -23,20 +20,28 @@ import smol_app.themes.SmolTheme
 abstract class SmolDropdownMenuItem(
     val onClick: () -> Unit,
     val backgroundColor: Color? = null,
-)
+    val border: Border? = null,
+) {
+    data class Border(
+        val borderStroke: BorderStroke,
+        val shape: Shape
+    )
+}
 
 class SmolDropdownMenuItemTemplate(
     val text: String,
     backgroundColor: Color? = null,
+    border: Border? = null,
     val contentColor: Color? = null,
     onClick: () -> Unit,
-) : SmolDropdownMenuItem(onClick, backgroundColor)
+) : SmolDropdownMenuItem(onClick, backgroundColor, border)
 
 class SmolDropdownMenuItemCustom(
     onClick: () -> Unit,
     backgroundColor: Color? = null,
+    border: Border? = null,
     val customItemContent: @Composable RowScope.(isMenuButton: Boolean) -> Unit
-) : SmolDropdownMenuItem(onClick, backgroundColor)
+) : SmolDropdownMenuItem(onClick, backgroundColor, border)
 
 @Composable
 fun SmolPopupMenu(
@@ -112,7 +117,11 @@ fun SmolDropdownWithButton(
             items.forEachIndexed { index, item ->
                 if (shouldShowSelectedItemInMenu || index != selectedIndex || !canSelectItems) {
                     DropdownMenuItem(
-                        modifier = Modifier.let { if (item.backgroundColor != null) it.background(item.backgroundColor) else it },
+                        modifier = Modifier.let {
+                            if (item.backgroundColor != null)
+                                it.background(item.backgroundColor) else it
+                        }
+                            .run { if (item.border != null) this.border(item.border.borderStroke, item.border.shape) else this },
                         onClick = {
                             if (canSelectItems) {
                                 selectedIndex = index
@@ -142,7 +151,11 @@ fun SmolDropdownWithButton(
 }
 
 @Composable
-fun SmolDropdownArrow(modifier: Modifier = Modifier, expanded: Boolean, colorFilter: ColorFilter = ColorFilter.tint(SmolTheme.dimmedIconColor())) {
+fun SmolDropdownArrow(
+    modifier: Modifier = Modifier,
+    expanded: Boolean,
+    colorFilter: ColorFilter = ColorFilter.tint(SmolTheme.dimmedIconColor())
+) {
     val arrowAngle by animateFloatAsState(if (expanded) 180f else 0f)
     Image(
         modifier = modifier
