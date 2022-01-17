@@ -111,7 +111,7 @@ fun toaster(
 @Composable
 private fun renderToast(toast: Toast) {
     if ((toast.timeoutMillis ?: 1) > 0) {
-        Row(Modifier.fillMaxHeight()) {
+        Row {
             Box(Modifier.align(Alignment.Bottom)) {
                 if (toast.useStandardToastFrame) {
                     Card(

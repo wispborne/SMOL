@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import timber.ktx.Timber
 import java.util.prefs.Preferences
 import kotlin.reflect.KProperty
 
@@ -25,8 +26,11 @@ class InMemoryPrefStorage(private val wrapped: Config.PrefStorage) : Config.Pref
     @OptIn(ExperimentalStdlibApi::class)
     override fun <T> put(key: String, value: T?, property: KProperty<T>) {
         memory[key] = value
-        scope.launch(Dispatchers.Default) {
-            wrapped.put(key, value, property)
+        scope.launch(Dispatchers.IO) {
+            kotlin.runCatching {
+                wrapped.put(key, value, property)
+            }
+                .onFailure { Timber.w(it) }
         }
     }
 

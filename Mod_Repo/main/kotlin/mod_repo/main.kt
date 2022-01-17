@@ -2,6 +2,8 @@ package mod_repo
 
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.google.gson.Gson
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.select.Elements
@@ -17,7 +19,7 @@ fun main(args: Array<String>) {
 
     // Mod Index
     scrapeModIndexLinks()
-        .onEach { println(it) }
+        .onEach { println(it.toString()) }
         .run {
             println("Saving mods to ${ModIndexCache.location.toAbsolutePath()}")
             modIndexCache.items = this
@@ -26,11 +28,15 @@ fun main(args: Array<String>) {
     // Modding Subforum
     val moddingSubforumCache = ModdingSubforumCache(jsanity)
     scrapeModdingForumLinks()
-        .onEach { println(it) }
+        .onEach { println(it.toString()) }
         .run {
             println("Saving mods to ${ModdingSubforumCache.location.toAbsolutePath()}")
             moddingSubforumCache.items = this
         }
+
+    runBlocking {
+        delay(1000)
+    }
 }
 
 internal fun scrapeModIndexLinks(): List<ScrapedMod> {
@@ -70,7 +76,7 @@ internal fun scrapeModdingForumLinks(): List<ScrapedMod> {
         .flatMap { page ->
             val doc: Document = Jsoup.connect("$baseUri?board=3.$page").get()
             val posts: Elements = doc.select("#messageindex tr")
-            val versionRegex = Regex("""[\[{](.*?)[]}]""")
+            val versionRegex = Regex("""[\[{](.*?\d.*?)[]}]""")
 
             posts
                 .map { postElement ->

@@ -66,7 +66,12 @@ fun scrapedModCard(mod: ScrapedMod, linkLoader: MutableState<((String) -> Unit)?
                     )
                 }
 
-                val tags = remember { mod.categories + mod.source.name.replaceFirstChar { it.uppercase() } }
+                val tags = remember {
+                    mod.categories + when (mod.source) {
+                        ModSource.Index -> "Index"
+                        ModSource.ModdingSubforum -> "Modding Subforum"
+                    }
+                }
                 if (tags.isNotEmpty()) {
                     Row(modifier = Modifier.padding(top = 12.dp)) {
                         Icon(

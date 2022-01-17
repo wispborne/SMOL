@@ -21,6 +21,7 @@ dependencies {
 // https://mvnrepository.com/artifact/org.jsoup/jsoup
     implementation("org.jsoup:jsoup:1.14.3")
 
+    implementation(project.property("coroutines")!!)
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
