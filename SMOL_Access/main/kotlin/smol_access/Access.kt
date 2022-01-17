@@ -87,7 +87,9 @@ class Access internal constructor(
 
         IOLock.read {
             // Game path
-            if (newGamePath?.exists() != true) {
+            if (newGamePath == null) {
+                errors[SettingsPath.Game]?.add("Game path not set!")
+            } else if (!newGamePath.exists()) {
                 errors[SettingsPath.Game]?.add("Game path '$newGamePath' doesn't exist!")
             } else {
                 var hasGameExe = false
@@ -109,16 +111,18 @@ class Access internal constructor(
                 }
             }
 
-
             // Archives path
             if (newArchivesPath?.exists() != true) {
                 errors[SettingsPath.Archives]?.add("Archives path '$newArchivesPath' doesn't exist!")
+            } else if (!newArchivesPath.isWritable()) {
+                errors[SettingsPath.Archives]?.add("Archives path '$newArchivesPath' is not writable! Try running as admin?")
             }
-
 
             // Staging path
             if (newStagingPath?.exists() != true) {
                 errors[SettingsPath.Staging]?.add("Staging path '$newStagingPath' doesn't exist!")
+            } else if (!newStagingPath.isWritable()) {
+                errors[SettingsPath.Staging]?.add("Staging path '$newStagingPath' is not writable! Try running as admin?")
             }
 
             // Ensure that the two folders with hardlinks, /mods and staging, are on the same partition.

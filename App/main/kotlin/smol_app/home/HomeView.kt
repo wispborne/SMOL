@@ -34,7 +34,6 @@ import smol_app.util.filterModGrid
 import smol_app.util.replaceAllUsingDifference
 import utilities.IOLock
 import utilities.equalsAny
-import utilities.toPathOrNull
 
 
 @OptIn(
@@ -120,7 +119,9 @@ fun AppState.homeView(
             }
         }, content = {
             Box {
-                if (SL.access.validatePaths(newGamePath = SL.appConfig.gamePath?.toPathOrNull()).isSuccess) {
+                val validationResult = SL.access.validatePaths()
+
+                if (validationResult.isSuccess) {
                     ModGridView(
                         modifier = Modifier.fillMaxWidth().fillMaxHeight().padding(bottom = 40.dp),
                         mods = (if (shownMods.isEmpty()) mods else shownMods) as SnapshotStateList<Mod?>
@@ -131,7 +132,11 @@ fun AppState.homeView(
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(text = "I can't find any mods! Did you set your game path yet?")
+                        val errors = validationResult.failure?.flatMap { it.value }
+
+                        if (errors?.any() == true) {
+                            Text(text = errors.joinToString(separator = "\n\n") { "Error: $it" })
+                        }
                         SmolButton(
                             onClick = { router.push(Screen.Settings) },
                             modifier = Modifier.padding(top = 8.dp)
