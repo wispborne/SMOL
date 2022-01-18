@@ -2,7 +2,7 @@ import org.jetbrains.compose.compose
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.io.FileOutputStream
-import java.util.Properties
+import java.util.*
 
 
 plugins {
@@ -100,7 +100,7 @@ compose.desktop {
             packageName = "SMOL"
             packageVersion = "1.0.0"
             val exePath = "main/app/SMOL/"
-            val looseFiles = listOf("SMOL_Themes.json")
+            val looseFiles = listOf("SMOL_Themes.json", "version.properties")
 
             windows {
                 println("OS: Windows")
@@ -132,11 +132,12 @@ compose.desktop {
             )
 //            includeAllModules = true
 
+            val appDir = outputBaseDir.get().asFile.resolve(exePath)
             looseFiles
                 .map { projectDir.resolve(it) }
                 .forEach {
                     if (it.exists()) {
-                        it.copyTo(outputBaseDir.get().asFile.resolve(exePath + it.name), overwrite = true)
+                        it.copyTo(appDir.resolve(it.name), overwrite = true)
                     } else {
                         println("Couldn't find ${it.absolutePath}.")
                     }
