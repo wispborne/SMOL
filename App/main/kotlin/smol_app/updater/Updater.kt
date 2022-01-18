@@ -90,6 +90,8 @@ class Updater(
 
                         override fun failed(t: Throwable) {
                             super.failed(t)
+                            totalDownloadFraction.value = null
+                            currentFileDownload.value = null
                             throw t
                         }
                     })
