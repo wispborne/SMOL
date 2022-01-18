@@ -39,7 +39,6 @@ import smol_app.composables.SmolSecondaryButton
 import smol_app.themes.SmolTheme
 import smol_app.util.bytesAsShortReadableMiB
 import smol_app.util.uiEnabled
-import smol_app.views.detailsPanel
 import timber.ktx.Timber
 import utilities.calculateFileSize
 import kotlin.io.path.absolutePathString

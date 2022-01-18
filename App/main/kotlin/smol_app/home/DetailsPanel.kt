@@ -1,4 +1,4 @@
-package smol_app.views
+package smol_app.home
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.*
@@ -30,7 +30,6 @@ import smol_access.SL
 import smol_access.model.Mod
 import smol_app.composables.SmolLinkText
 import smol_app.composables.TiledImage
-import smol_app.home.ModRow
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.withAdjustedBrightness
 import smol_app.util.imageResource

@@ -11,10 +11,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
 import appView
 import com.arkivanov.decompose.Router
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.withContext
 import net.sf.sevenzipjbinding.SevenZip
 import org.cef.CefApp
 import org.tinylog.Logger
@@ -47,23 +45,6 @@ fun main() = application {
         Logging.setup()
     }
         .onFailure { println(it) }
-
-    LaunchedEffect(Unit) {
-        withContext(Dispatchers.IO) {
-//            UpdateApp.writeLocalUpdateConfig(
-//                onlineUrl = SL.UI.updater.getUpdateConfigUrl(),
-//                localPath = Path.of("dist\\main\\app\\SMOL")
-//            )
-            val remoteConfig = SL.UI.updater.getRemoteConfig()
-
-            if (remoteConfig == null) {
-                Timber.w { "Unable to fetch remote config, aborting update check." }
-            } else {
-                // Let's get update on demand, after permission, not every run lol.
-//                SL.UI.updater.update(remoteConfig)
-            }
-        }
-    }
 
     var appWindowState = rememberWindowState()
 

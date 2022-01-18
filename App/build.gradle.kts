@@ -1,6 +1,8 @@
 import org.jetbrains.compose.compose
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.io.FileOutputStream
+import java.util.Properties
 
 
 plugins {
@@ -9,7 +11,7 @@ plugins {
 }
 
 group = "com.wisp"
-version = "1.0.0-prerelease1" // TODO don't forget to change default channel to "stable" in AppConfig for release.
+version = "1.0.0-prerelease2" // TODO don't forget to change default channel to "stable" in AppConfig for release.
 
 repositories {
     google()
@@ -141,4 +143,19 @@ compose.desktop {
                 }
         }
     }
+}
+
+tasks.register("generateVersionProperties") {
+    doLast {
+        val propertiesFile = file("version.properties")
+        propertiesFile.parentFile.mkdirs()
+        val properties = Properties()
+        properties.setProperty("smol-version", "$version")
+        val out = FileOutputStream(propertiesFile)
+        properties.store(out, null)
+    }
+}
+
+tasks.named("processResources") {
+    dependsOn("generateVersionProperties")
 }

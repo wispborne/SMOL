@@ -4,6 +4,7 @@ import org.update4j.Configuration
 import org.update4j.FileMetadata
 import smol_access.Constants
 import java.nio.file.Path
+import kotlin.io.path.absolutePathString
 import kotlin.io.path.writer
 import kotlin.streams.asSequence
 
@@ -26,9 +27,10 @@ class CreateUpdateConfig {
             .build()
 
 
-        Path.of("update-config.xml").writer().use {
+        val updateConfigPath = Path.of("update-config.xml")
+        updateConfigPath.writer().use {
             config.write(it)
-            println("Wrote config to $it")
+            println("Wrote config to ${updateConfigPath.absolutePathString()}")
         }
         return config
     }

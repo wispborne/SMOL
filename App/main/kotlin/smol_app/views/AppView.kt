@@ -24,7 +24,6 @@ import smol_access.business.asWatchChannel
 import smol_app.IWindowState
 import smol_app.UI
 import smol_app.WindowState
-import smol_app.browser.DownloadItem
 import smol_app.browser.ModBrowserView
 import smol_app.home.homeView
 import smol_app.modprofiles.ProfilesView
@@ -36,11 +35,11 @@ import smol_app.toasts.Toast
 import smol_app.toasts.downloadToast
 import smol_app.toasts.toastInstalledCard
 import smol_app.toasts.toaster
+import smol_app.updater.UpdateSmolToast
 import smol_app.views.FileDropper
 import timber.ktx.Timber
 import utilities.IOLock
 import utilities.toPathOrNull
-import java.nio.file.Path
 import kotlin.io.path.exists
 
 @OptIn(ExperimentalStdlibApi::class, ExperimentalDecomposeApi::class)
@@ -54,6 +53,28 @@ fun WindowState.appView() {
         mutableStateOf(AppState(this).apply {
             this.alertDialogSetter = { alertDialogBuilder = it }
         })
+    }
+
+    LaunchedEffect("runonce") {
+        withContext(Dispatchers.IO) {
+//            UpdateApp.writeLocalUpdateConfig(
+//                onlineUrl = SL.UI.updater.getUpdateConfigUrl(),
+//                localPath = Path.of("dist\\main\\app\\SMOL")
+//            )
+            val remoteConfig = SL.UI.updater.getRemoteConfig()
+
+            if (remoteConfig == null) {
+                Timber.w { "Unable to fetch remote config, aborting update check." }
+            } else {
+                UpdateSmolToast().createIfNeeded(
+                    updateConfig = remoteConfig,
+                    toasterState = SL.UI.toaster,
+                    updater = SL.UI.updater
+                )
+                // Let's get update on demand, after permission, not every run lol.
+//                SL.UI.updater.update(remoteConfig)
+            }
+        }
     }
 
     MaterialTheme(
@@ -140,30 +161,6 @@ fun WindowState.appView() {
                                 .also {
                                     SL.UI.toaster.addItems(it)
                                 }
-                        }
-                    }
-
-                    LaunchedEffect(1) {
-                        val updater = SL.UI.updater
-                        val updateToastId = "download-update"
-
-                        updater.updateDownloadFraction.collectLatest { downloadFraction ->
-                            if (downloadFraction != null) {
-                                var downloadItem =
-                                    SL.UI.downloadManager.downloads.value.firstOrNull { it.id == updateToastId }
-
-                                if (downloadItem == null) {
-                                    downloadItem = DownloadItem(
-                                        id = updateToastId,
-                                        path = MutableStateFlow(Path.of("Downloading update")),
-                                        totalBytes = MutableStateFlow(1L)
-                                    )
-                                    SL.UI.downloadManager.addDownload(downloadItem)
-                                }
-
-                                downloadItem.status.value = DownloadItem.Status.Downloading
-                                downloadItem.fractionDone.value = downloadFraction
-                            }
                         }
                     }
                 }

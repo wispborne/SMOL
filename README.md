@@ -44,6 +44,10 @@ Did this really need to be built? Absolutely not, but it has been fun to work on
 
 SMOL uses 7zip, so anything 7zip supports: AR, ARJ, CAB, CHM, CPIO, CramFS, DMG, EXT, FAT, GPT, HFS, IHEX, ISO, LZH, LZMA, MBR, MSI, NSIS, NTFS, QCOW2, RAR, RPM, SquashFS, UDF, UEFI, VDI, VHD, VMDK, WIM, XAR and Z
 
+# Known Issues
+
+- JCEF, the Chromium Embedded Framework that's used in the Mod Browser, sometimes doesn't shut down with SMOL (despite being told to), and sits in the background, using CPU.
+
 ## Under the Hood
 
 Mod folders are named using the mod version and a unique id generated from the mod id and the version, which allows different versions of the same mod to be placed in the same folder.
