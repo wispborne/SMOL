@@ -58,40 +58,42 @@ class Updater(
     suspend fun update(remoteConfig: Configuration) {
         Timber.i { "Fetching SMOL update from ${remoteConfig.baseUri}." }
         withContext(Dispatchers.IO) {
-            kotlin.runCatching {
-                remoteConfig.update(
-                    UpdateOptions
-                        .archive(SMOL_UPDATE_ZIP)
-                        .updateHandler(object : SmolUpdateHandler() {
-                            override fun updateDownloadFileProgress(file: FileMetadata?, frac: Float) {
-                                if (!isActive) {
-                                    currentFileDownload.value = null
-                                    throw CancellationException("SMOL update coroutine was canceled.")
-                                }
-
-                                super.updateDownloadFileProgress(file, frac)
-                                currentFileDownload.value =
-                                    FileDownload(name = file?.path?.name ?: "(unknown)", progress = frac)
+            remoteConfig.update(
+                UpdateOptions
+                    .archive(SMOL_UPDATE_ZIP)
+                    .updateHandler(object : SmolUpdateHandler() {
+                        override fun updateDownloadFileProgress(file: FileMetadata?, frac: Float) {
+                            if (!isActive) {
+                                currentFileDownload.value = null
+                                throw CancellationException("SMOL update coroutine was canceled.")
                             }
 
-                            override fun updateDownloadProgress(frac: Float) {
-                                if (!isActive) {
-                                    totalDownloadFraction.value = null
-                                    throw CancellationException("SMOL update coroutine was canceled.")
-                                }
+                            super.updateDownloadFileProgress(file, frac)
+                            currentFileDownload.value =
+                                FileDownload(name = file?.path?.name ?: "(unknown)", progress = frac)
+                        }
 
-                                super.updateDownloadProgress(frac)
-                                totalDownloadFraction.value = frac
-                            }
-
-                            override fun stop() {
-                                super.stop()
+                        override fun updateDownloadProgress(frac: Float) {
+                            if (!isActive) {
                                 totalDownloadFraction.value = null
+                                throw CancellationException("SMOL update coroutine was canceled.")
                             }
-                        })
-                )
-            }
-                .onFailure { Timber.w(it) }
+
+                            super.updateDownloadProgress(frac)
+                            totalDownloadFraction.value = frac
+                        }
+
+                        override fun stop() {
+                            super.stop()
+                            totalDownloadFraction.value = null
+                        }
+
+                        override fun failed(t: Throwable) {
+                            super.failed(t)
+                            throw t
+                        }
+                    })
+            )
         }
     }
 

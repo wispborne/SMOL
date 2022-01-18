@@ -17,6 +17,7 @@ import smol_app.composables.SmolButton
 import smol_app.toasts.Toast
 import smol_app.toasts.ToasterState
 import smol_app.util.ellipsizeAfter
+import timber.ktx.Timber
 
 class UpdateSmolToast {
     private var job = CoroutineScope(Job())
@@ -81,8 +82,8 @@ class UpdateSmolToast {
                                                             updater.update(remoteConfig = updateConfig)
                                                             updateStage.value = UpdateStage.ReadyToInstall
                                                         } catch (e: Exception) {
+                                                            Timber.w(e)
                                                             updateStage.value = UpdateStage.DownloadFailed
-                                                            throw e
                                                         }
                                                     }
                                                 }
@@ -98,8 +99,8 @@ class UpdateSmolToast {
                                                             updater.installUpdate()
                                                             updateStage.value = UpdateStage.Done
                                                         } catch (e: Exception) {
+                                                            Timber.w(e)
                                                             updateStage.value = UpdateStage.InstallFailed
-                                                            throw e
                                                         }
                                                     }
                                                 }

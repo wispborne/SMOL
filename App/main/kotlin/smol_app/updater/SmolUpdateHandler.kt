@@ -63,7 +63,6 @@ open class SmolUpdateHandler : UpdateHandler {
     override fun failed(t: Throwable) {
         clearln()
         t.printStackTrace(out)
-        Timber.w(t)
     }
 
     override fun stop() {
