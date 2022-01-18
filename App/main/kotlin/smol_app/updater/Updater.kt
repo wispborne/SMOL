@@ -5,6 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
+import org.update4j.Archive
 import org.update4j.Configuration
 import org.update4j.FileMetadata
 import org.update4j.UpdateOptions
@@ -12,7 +13,7 @@ import smol_access.Constants
 import smol_access.config.AppConfig
 import timber.ktx.Timber
 import java.net.URI
-import java.nio.file.Paths
+import java.nio.file.Path
 import kotlin.io.path.name
 
 
@@ -22,7 +23,7 @@ class Updater(
     companion object {
         const val PROP_VERSION = "smol-version"
         const val UPDATE_CONFIG_XML = "update-config.xml"
-        const val SMOL_UPDATE_ZIP = "smol-update.zip"
+        val SMOL_UPDATE_ZIP = Path.of("smol-update.zip")
     }
 
     /**
@@ -60,7 +61,7 @@ class Updater(
             kotlin.runCatching {
                 remoteConfig.update(
                     UpdateOptions
-                        .archive(Paths.get(SMOL_UPDATE_ZIP))
+                        .archive(SMOL_UPDATE_ZIP)
                         .updateHandler(object : SmolUpdateHandler() {
                             override fun updateDownloadFileProgress(file: FileMetadata?, frac: Float) {
                                 if (!isActive) {
@@ -91,6 +92,12 @@ class Updater(
                 )
             }
                 .onFailure { Timber.w(it) }
+        }
+    }
+
+    suspend fun installUpdate() {
+        withContext(Dispatchers.IO) {
+            Archive.read(SMOL_UPDATE_ZIP).install()
         }
     }
 
