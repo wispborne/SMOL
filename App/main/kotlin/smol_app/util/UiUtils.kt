@@ -15,8 +15,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import dev.andrewbailey.diff.differenceOf
 import smol_access.Constants
-import smol_access.ServiceLocator
-import smol_access.business.VmParamsManager
 import smol_access.config.Platform
 import smol_access.model.Mod
 import smol_access.themes.ThemeManager

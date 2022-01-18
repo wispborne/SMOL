@@ -1,7 +1,9 @@
 package smol_app.updater
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import org.update4j.Configuration
 import org.update4j.FileMetadata
@@ -11,6 +13,7 @@ import smol_access.config.AppConfig
 import timber.ktx.Timber
 import java.net.URI
 import java.nio.file.Paths
+import kotlin.io.path.name
 
 
 class Updater(
@@ -25,7 +28,10 @@ class Updater(
     /**
      * Percent of download done between 0 and 1.
      */
-    val updateDownloadFraction = MutableStateFlow<Float?>(null)
+    val totalDownloadFraction = MutableStateFlow<Float?>(null)
+    val currentFileDownload = MutableStateFlow<FileDownload?>(null)
+
+    data class FileDownload(val name: String, val progress: Float)
 
     suspend fun getRemoteConfig(
         channel: UpdateChannel = getUpdateChannelSetting()
@@ -48,26 +54,44 @@ class Updater(
         return remoteConfig
     }
 
-    fun update(remoteConfig: Configuration) {
+    suspend fun update(remoteConfig: Configuration) {
         Timber.i { "Fetching SMOL update from ${remoteConfig.baseUri}." }
-        kotlin.runCatching {
-            remoteConfig.update(
-                UpdateOptions
-                    .archive(Paths.get(SMOL_UPDATE_ZIP))
-                    .updateHandler(object : SmolUpdateHandler() {
-                        override fun updateDownloadFileProgress(file: FileMetadata?, frac: Float) {
-                            super.updateDownloadFileProgress(file, frac)
-                            updateDownloadFraction.value = frac
-                        }
+        withContext(Dispatchers.IO) {
+            kotlin.runCatching {
+                remoteConfig.update(
+                    UpdateOptions
+                        .archive(Paths.get(SMOL_UPDATE_ZIP))
+                        .updateHandler(object : SmolUpdateHandler() {
+                            override fun updateDownloadFileProgress(file: FileMetadata?, frac: Float) {
+                                if (!isActive) {
+                                    currentFileDownload.value = null
+                                    throw CancellationException("SMOL update coroutine was canceled.")
+                                }
 
-                        override fun stop() {
-                            super.stop()
-                            updateDownloadFraction.value = null
-                        }
-                    })
-            )
+                                super.updateDownloadFileProgress(file, frac)
+                                currentFileDownload.value =
+                                    FileDownload(name = file?.path?.name ?: "(unknown)", progress = frac)
+                            }
+
+                            override fun updateDownloadProgress(frac: Float) {
+                                if (!isActive) {
+                                    totalDownloadFraction.value = null
+                                    throw CancellationException("SMOL update coroutine was canceled.")
+                                }
+
+                                super.updateDownloadProgress(frac)
+                                totalDownloadFraction.value = frac
+                            }
+
+                            override fun stop() {
+                                super.stop()
+                                totalDownloadFraction.value = null
+                            }
+                        })
+                )
+            }
+                .onFailure { Timber.w(it) }
         }
-            .onFailure { Timber.w(it) }
     }
 
     private fun getUpdateChannelSetting() =

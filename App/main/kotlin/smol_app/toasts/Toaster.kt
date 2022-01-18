@@ -118,7 +118,7 @@ private fun renderToast(toast: Toast) {
                         modifier = Modifier
                             .border(
                                 1.dp,
-                                MaterialTheme.colors.background.lighten(),
+                                MaterialTheme.colors.secondaryVariant,
                                 shape = MaterialTheme.shapes.medium
                             ),
                         backgroundColor = MaterialTheme.colors.background,
