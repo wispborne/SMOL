@@ -152,9 +152,7 @@ fun WindowState.appView() {
                                         downloadToast(
                                             download = it,
                                             requestToastDismissal = {
-                                                if (!SL.UI.toaster.timersByToastId.containsKey(it.id)) {
-                                                    SL.UI.toaster.timersByToastId[it.id] = 0
-                                                }
+                                                SL.UI.toaster.remove(it.id)
                                             })
                                     }
                                 }

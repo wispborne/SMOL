@@ -1,6 +1,6 @@
 package smol_app.util
 
-import dev.sphericalkat.sublimefuzzy.Fuzzy
+import com.github.androidpasswordstore.sublimefuzzy.Fuzzy
 import me.xdrop.fuzzywuzzy.FuzzySearch
 import smol_access.Access
 import smol_access.model.Mod

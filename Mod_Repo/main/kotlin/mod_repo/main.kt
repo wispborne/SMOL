@@ -1,6 +1,7 @@
 package mod_repo
 
 import com.fasterxml.jackson.databind.json.JsonMapper
+import com.github.androidpasswordstore.sublimefuzzy.Fuzzy
 import com.google.gson.Gson
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -12,26 +13,73 @@ import java.net.URI
 import java.nio.file.Path
 
 internal val CONFIG_FOLDER_DEFAULT = Path.of("")
+internal val FORUM_BASE_URL = "https://fractalsoftworks.com/forum/index.php"
+
+internal val isDebugMode = true
+
+private fun String.prepForMatching() = this.lowercase().filter { it.isLetter() }
 
 fun main(args: Array<String>) {
     val jsanity = Jsanity(Gson(), JsonMapper())
-    val modIndexCache = ModIndexCache(jsanity)
+    val modRepoCache = ModRepoCache(jsanity)
 
-    // Mod Index
     scrapeModIndexLinks()
-        .onEach { println(it.toString()) }
+        .plus(scrapeModdingForumLinks())
+        .plus(scrapeModForumLinks())
+        .sortedBy { it.name }
         .run {
-            println("Saving mods to ${ModIndexCache.location.toAbsolutePath()}")
-            modIndexCache.items = this
-        }
+            println("Deduplicating ${this.count()} mods...")
+            val modsToSkip = mutableListOf<ScrapedMod>()
 
-    // Modding Subforum
-    val moddingSubforumCache = ModdingSubforumCache(jsanity)
-    scrapeModdingForumLinks()
+            for (outer in this) {
+                if (outer in modsToSkip) {
+                    continue
+                }
+
+                this.minus(outer)
+                    .forEach { inner ->
+                        val nameResult = Fuzzy.fuzzyMatch(outer.name.prepForMatching(), inner.name.prepForMatching())
+                        val nameResultFlip =
+                            Fuzzy.fuzzyMatch(inner.name.prepForMatching(), outer.name.prepForMatching())
+                        val authorsResult =
+                            Fuzzy.fuzzyMatch(outer.authors.prepForMatching(), inner.authors.prepForMatching())
+                        val authorsResultFlip =
+                            Fuzzy.fuzzyMatch(inner.authors.prepForMatching(), outer.authors.prepForMatching())
+
+                        val isMatch =
+                            (nameResult.first && authorsResult.first)
+                                    || (nameResultFlip.first && authorsResultFlip.first)
+                                    || (nameResult.first && authorsResultFlip.first)
+                                    || (nameResultFlip.first && authorsResult.first)
+
+                        if (isDebugMode && (nameResult.second > 0 || nameResultFlip.second > 0 || authorsResult.second > 0 || authorsResultFlip.second > 0)) {
+                            println(buildString {
+                                appendLine("Compared '${outer.name}' to '${inner.name}':")
+                                appendLine("  '${outer.name.prepForMatching()}'<-->'${inner.name.prepForMatching()}'==>${nameResult.second}")
+                                appendLine("  '${inner.name.prepForMatching()}'<-->'${outer.name.prepForMatching()}'==>${nameResultFlip.second}")
+                                appendLine("  '${outer.authors.prepForMatching()}'<-->'${inner.authors.prepForMatching()}'==>${authorsResult.second}")
+                                append("  '${inner.authors.prepForMatching()}'<-->'${outer.authors.prepForMatching()}'==>${authorsResultFlip.second}")
+                            })
+                        }
+
+                        if (isMatch) {
+                            modsToSkip.add(
+                                if (outer.source == ModSource.Index) inner
+                                else if (inner.source == ModSource.Index) outer
+                                else inner
+                            )
+                        }
+                    }
+            }
+
+            val result = this - modsToSkip
+            println("Deduplicating ${this.count()} mods...done, removed ${this.count() - result.count()} mods.")
+            result
+        }
         .onEach { println(it.toString()) }
         .run {
-            println("Saving mods to ${ModdingSubforumCache.location.toAbsolutePath()}")
-            moddingSubforumCache.items = this
+            println("Saving ${this.count()} mods to ${ModRepoCache.location.toAbsolutePath()}")
+            modRepoCache.items = this
         }
 
     runBlocking {
@@ -70,11 +118,24 @@ internal fun scrapeModIndexLinks(): List<ScrapedMod> {
 
 internal fun scrapeModdingForumLinks(): List<ScrapedMod> {
     println("Scraping Modding Forum...")
-    val baseUri = "https://fractalsoftworks.com/forum/index.php"
+    return scrapeSubforumLinks(
+        forumBaseUrl = FORUM_BASE_URL,
+        subforumNumber = 3
+    )
+}
 
+internal fun scrapeModForumLinks(): List<ScrapedMod> {
+    println("Scraping Mod Forum...")
+    return scrapeSubforumLinks(
+        forumBaseUrl = FORUM_BASE_URL,
+        subforumNumber = 8
+    )
+}
+
+private fun scrapeSubforumLinks(forumBaseUrl: String, subforumNumber: Int): List<ScrapedMod> {
     return (0 until 80 step 20)
         .flatMap { page ->
-            val doc: Document = Jsoup.connect("$baseUri?board=3.$page").get()
+            val doc: Document = Jsoup.connect("$forumBaseUrl?board=$subforumNumber.$page").get()
             val posts: Elements = doc.select("#messageindex tr")
             val versionRegex = Regex("""[\[{](.*?\d.*?)[]}]""")
 

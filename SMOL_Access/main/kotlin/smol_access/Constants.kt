@@ -28,9 +28,7 @@ object Constants {
     val VRAM_CHECKER_RESULTS_PATH: Path = APP_FOLDER_DEFAULT.resolve("SMOL_VRAMCheckResults.json")
 
     // Mod Repo
-    const val indexUrl = "https://raw.githubusercontent.com/davidwhitman/StarsectorModRepo/main/modIndex.json"
-    const val moddingForumUrl =
-        "https://raw.githubusercontent.com/davidwhitman/StarsectorModRepo/main/moddingSubforum.json"
+    const val modRepoUrl = "https://raw.githubusercontent.com/davidwhitman/StarsectorModRepo/main/ModRepo.json"
 
     // Updater
     private const val baseUpdateUrl = "https://raw.githubusercontent.com/davidwhitman/SMOL_Dist"

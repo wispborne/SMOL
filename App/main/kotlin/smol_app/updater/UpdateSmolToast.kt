@@ -2,7 +2,11 @@ package smol_app.updater
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,9 +43,10 @@ class UpdateSmolToast {
         updater: Updater
     ) {
         if (updateConfig.requiresUpdate()) {
+            val updateToastId = "smol-update"
             toasterState.addItem(
                 toast = Toast(
-                    id = "smol-update",
+                    id = updateToastId,
                     timeoutMillis = null,
                     useStandardToastFrame = true,
                     content = {
@@ -139,29 +144,20 @@ class UpdateSmolToast {
                                 }
                             }
 
-//                            job.launch {
-//                                val updater = SL.UI.updater
-//                                val updateToastId = "download-update"
-//
-//                                updater.updateDownloadFraction.collectLatest { downloadFraction ->
-//                                    if (downloadFraction != null) {
-//                                        var downloadItem =
-//                                            SL.UI.downloadManager.downloads.value.firstOrNull { it.id == updateToastId }
-//
-//                                        if (downloadItem == null) {
-//                                            downloadItem = DownloadItem(
-//                                                id = updateToastId,
-//                                                path = MutableStateFlow(Path.of("Downloading update")),
-//                                                totalBytes = MutableStateFlow(1L)
-//                                            )
-//                                            SL.UI.downloadManager.addDownload(downloadItem)
-//                                        }
-//
-//                                        downloadItem.status.value = DownloadItem.Status.Downloading
-//                                        downloadItem.fractionDone.value = downloadFraction
-//                                    }
-//                                }
-//                            }
+
+                            Spacer(Modifier.weight(1f))
+
+                            IconButton(
+                                modifier = Modifier
+                                    .padding(start = 8.dp)
+                                    .align(Alignment.CenterVertically)
+                                    .size(16.dp),
+                                onClick = {
+                                    toasterState.remove(updateToastId)
+                                }
+                            ) {
+                                Icon(imageVector = Icons.Default.Close, contentDescription = null)
+                            }
                         }
                     }
                 )

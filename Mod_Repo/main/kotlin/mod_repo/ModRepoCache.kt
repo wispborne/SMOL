@@ -5,7 +5,7 @@ import utilities.InMemoryPrefStorage
 import utilities.Jsanity
 import utilities.JsonFilePrefStorage
 
-class ModIndexCache(gson: Jsanity) : Config(
+class ModRepoCache(gson: Jsanity) : Config(
     prefStorage = InMemoryPrefStorage(
         JsonFilePrefStorage(
             gson = gson,
@@ -14,7 +14,7 @@ class ModIndexCache(gson: Jsanity) : Config(
     )
 ) {
     companion object {
-        val location = CONFIG_FOLDER_DEFAULT.resolve("modIndex.json")
+        val location = CONFIG_FOLDER_DEFAULT.resolve("ModRepo.json")
     }
 
     var items by pref<List<ScrapedMod>>(prefKey = "items", defaultValue = emptyList())

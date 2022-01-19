@@ -1,6 +1,6 @@
 package smol_app.util
 
-import dev.sphericalkat.sublimefuzzy.Fuzzy
+import com.github.androidpasswordstore.sublimefuzzy.Fuzzy
 import me.xdrop.fuzzywuzzy.FuzzySearch
 import mod_repo.ScrapedMod
 import org.tinylog.Logger
@@ -18,7 +18,8 @@ internal fun filterModPosts(query: String, mods: List<ScrapedMod>): List<Scraped
                         fuzzyWuzzyModPostSearch(
                             query = query,
                             mod = mod
-                        ) else sublimeFuzzyModPostSearch(
+                        )
+                    else sublimeFuzzyModPostSearch(
                         query = query,
                         mod = mod
                     )

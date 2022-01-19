@@ -64,12 +64,8 @@ fun AppState.ModBrowserView(
     modifier: Modifier = Modifier,
     defaultUrl: String? = null
 ) {
-    val indexMods = remember { mutableStateListOf(elements = SL.modRepo.getModIndexItems().toTypedArray()) }
-    val moddingSubforumMods =
-        remember { mutableStateListOf(elements = SL.modRepo.getModdingSubforumItems().toTypedArray()) }
-    val shownIndexMods = remember { mutableStateListOf<ScrapedMod?>(elements = indexMods.toTypedArray()) }
-    val shownModdingSubforumMods =
-        remember { mutableStateListOf<ScrapedMod?>(elements = moddingSubforumMods.toTypedArray()) }
+    val scrapedMods = remember { mutableStateListOf(elements = SL.modRepo.getModIndexItems().toTypedArray()) }
+    val shownMods = remember { mutableStateListOf<ScrapedMod?>(elements = scrapedMods.toTypedArray()) }
 
     val browser = remember { mutableStateOf<ChromiumBrowser?>(null) }
     val linkLoader = remember { mutableStateOf<((String) -> Unit)?>(null) }
@@ -201,21 +197,13 @@ fun AppState.ModBrowserView(
                                             label = "Filter"
                                         ) { query ->
                                             if (query.isBlank()) {
-                                                shownIndexMods.replaceAllUsingDifference(
-                                                    indexMods,
-                                                    doesOrderMatter = false
-                                                )
-                                                shownModdingSubforumMods.replaceAllUsingDifference(
-                                                    moddingSubforumMods,
+                                                shownMods.replaceAllUsingDifference(
+                                                    scrapedMods,
                                                     doesOrderMatter = false
                                                 )
                                             } else {
-                                                shownIndexMods.replaceAllUsingDifference(
-                                                    filterModPosts(query, indexMods).ifEmpty { listOf(null) },
-                                                    doesOrderMatter = true
-                                                )
-                                                shownModdingSubforumMods.replaceAllUsingDifference(
-                                                    filterModPosts(query, moddingSubforumMods).ifEmpty { listOf(null) },
+                                                shownMods.replaceAllUsingDifference(
+                                                    filterModPosts(query, scrapedMods).ifEmpty { listOf(null) },
                                                     doesOrderMatter = true
                                                 )
                                             }
@@ -249,7 +237,7 @@ fun AppState.ModBrowserView(
                                             modifier = Modifier.weight(1f)
                                         ) {
                                             this.items(
-                                                items = (shownIndexMods + shownModdingSubforumMods)
+                                                items = shownMods
                                                     .filterNotNull()
                                                     .sortedWith(compareByDescending { it.name })
                                             ) { mod -> scrapedModCard(mod, linkLoader) }

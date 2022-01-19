@@ -1,8 +1,6 @@
 import org.jetbrains.compose.compose
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import java.io.FileOutputStream
-import java.util.*
 
 
 plugins {
@@ -11,7 +9,7 @@ plugins {
 }
 
 group = "com.wisp"
-version = "1.0.0-prerelease2" // TODO don't forget to change default channel to "stable" in AppConfig for release.
+version = "1.0.0-prerelease3" // TODO don't forget to change default channel to "stable" in AppConfig for release.
 
 repositories {
     google()
@@ -48,8 +46,9 @@ dependencies {
     // CLI builder, Kotlin
 //    implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.4")
 
-    // Fuzzy Search
-    implementation("me.xdrop:fuzzywuzzy:1.3.1")
+    // Fuzzy Search - not used
+    implementation("com.github.android-password-store:sublime-fuzzy:2.0.0")
+    implementation("me.xdrop:fuzzywuzzy:1.3.1") // This one not used
 
     // List diffing
     implementation("dev.andrewbailey.difference:difference:1.0.0")
@@ -128,7 +127,8 @@ compose.desktop {
                 "java.management",
                 "java.prefs",
                 "java.sql",
-                "jdk.unsupported"
+                "jdk.unsupported",
+                "jdk.zipfs"
             )
 //            includeAllModules = true
 
@@ -150,10 +150,7 @@ tasks.register("generateVersionProperties") {
     doLast {
         val propertiesFile = file("version.properties")
         propertiesFile.parentFile.mkdirs()
-        val properties = Properties()
-        properties.setProperty("smol-version", "$version")
-        val out = FileOutputStream(propertiesFile)
-        properties.store(out, null)
+        propertiesFile.writeText("smol-version=$version")
     }
 }
 

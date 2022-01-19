@@ -4,6 +4,7 @@ package smol_app.home
 
 import AppState
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.animateContentSize
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.VerticalScrollbar
@@ -91,7 +92,7 @@ fun AppState.ModGridView(
                 val isEnabledCollapsed = remember { mutableStateOf(false) }
                 val isDisabledCollapsed = remember { mutableStateOf(false) }
                 val listState = rememberLazyListState()
-                LazyColumn(Modifier.fillMaxWidth(), state = listState) {
+                LazyColumn(Modifier.fillMaxWidth().animateContentSize(), state = listState) {
                     mods
                         .filterNotNull()
                         .groupBy { it.uiEnabled }
