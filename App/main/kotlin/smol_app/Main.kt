@@ -1,5 +1,6 @@
 package smol_app
 
+import updater.WriteLocalUpdateConfig
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.awt.ComposeWindow
@@ -28,8 +29,11 @@ import smol_app.util.isJCEFEnabled
 import timber.LogLevel
 import timber.ktx.Timber
 import utilities.makeFinite
+import java.nio.file.Path
+import java.util.*
 import javax.swing.UIManager
 import javax.swing.plaf.ColorUIResource
+import kotlin.io.path.inputStream
 
 
 var safeMode = false
@@ -65,6 +69,17 @@ fun main() = application {
         SevenZip.initSevenZipFromPlatformJAR()
 
         kotlin.runCatching {
+            Path.of(WriteLocalUpdateConfig.VERSION_PROPERTIES_FILENAME).let {
+                val props = Properties()
+                props.load(it.inputStream())
+                props["smol-version"]?.toString()!!
+            }
+        }
+            .onFailure { Timber.w(it) }
+            .getOrNull()
+            ?.also { Constants.APP_VERSION = it }
+
+        kotlin.runCatching {
             val savedState = uiConfig.windowState!!
             rememberWindowState(
                 placement = WindowPlacement.valueOf(savedState.placement),
@@ -92,7 +107,7 @@ fun main() = application {
     Window(
         onCloseRequest = ::onQuit,
         state = appWindowState,
-        title = Constants.APP_NAME,
+        title = "${Constants.APP_NAME} ${Constants.APP_VERSION}",
         icon = painterResource("kotlin-icon.svg"),
         onPreviewKeyEvent = { event -> onKeyEventHandlers.any { it(event) } }
     ) {

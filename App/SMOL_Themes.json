@@ -165,6 +165,17 @@
       "surface": "#21000C",
       "background": "#21000C",
       "hyperlink": "#AEB3DA"
+    },
+    "Iron Shell": {
+      "isDark": true,
+      "primary": "#820023",
+      "primaryVariant": "#61001A",
+      "secondary": "#FFD586",
+      "secondaryVariant": "#DBAC55",
+      "onPrimary": "#FFCF8A",
+      "surface": "#3F0011",
+      "background": "#210506",
+      "hyperlink": "#FCAD3C"
     }
   }
 }

@@ -28,6 +28,7 @@ dependencies {
     implementation(fileTree("libs") { include("**/*.jar") })
     implementation(project(":SMOL_Access"))
     implementation(project(":VRAM_Checker"))
+    implementation(project(":Updater"))
     implementation(project(":Utilities"))
 
     // Logging
@@ -52,9 +53,6 @@ dependencies {
 
     // List diffing
     implementation("dev.andrewbailey.difference:difference:1.0.0")
-
-    // Auto-update
-    implementation("org.update4j:update4j:1.5.8")
 
     // Navigation
     val decomposeVer = "0.3.1"

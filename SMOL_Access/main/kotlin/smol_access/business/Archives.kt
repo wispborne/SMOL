@@ -523,7 +523,7 @@ class Archives internal constructor(
     /**
      * Idempotently reads all modinfos from all archives in /archives and rebuilds the manifest.
      */
-    suspend fun refreshArchivesManifest() {
+    suspend fun refreshArchivesManifest(forceRefresh: Boolean = false) {
         val startTime = System.currentTimeMillis()
         val archives = getArchivesPath().toPathOrNull() ?: return
         val files = archives.walk().toList()
@@ -546,7 +546,7 @@ class Archives internal constructor(
                                 val existingManifestItem =
                                     archivesManifest?.manifestItems?.entries?.firstOrNull { it.value.sha256HexCodeOfArchiveFile == hashCode }
 
-                                if (existingManifestItem != null) {
+                                if (existingManifestItem != null && !forceRefresh) {
                                     Timber.v { "Skipping search for mod_info.json in $archivePath because the file hashcode is present in the manifest already." }
                                     archivePath to DataFiles(
                                         modInfo = existingManifestItem.value.modInfo,

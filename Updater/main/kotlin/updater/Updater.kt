@@ -1,4 +1,4 @@
-package smol_app.updater
+package updater
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers

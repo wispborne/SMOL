@@ -1,7 +1,7 @@
-package smol_app.updater
+package updater
+
 import org.update4j.Configuration
 import org.update4j.FileMetadata
-import smol_access.Constants
 import timber.ktx.Timber
 import java.nio.file.Path
 import java.util.*
@@ -11,15 +11,12 @@ import kotlin.io.path.pathString
 import kotlin.io.path.writer
 import kotlin.streams.asSequence
 
-fun main() {
-    WriteLocalUpdateConfig.run(
-        onlineUrl = Constants.UPDATE_URL_UNSTABLE,
-        localPath = Path.of("App\\dist\\main\\app\\SMOL")
-    )
-}
 
 object WriteLocalUpdateConfig {
     const val PROP_VERSION = "smol-version"
+    val VERSION_PROPERTIES_FILENAME = "version.properties"
+
+    private val VERSION_PROPERTIES_FILE: Path = Path.of("App", VERSION_PROPERTIES_FILENAME)
 
     fun run(onlineUrl: String, localPath: Path): Configuration? {
         val excludes = listOf(".git", ".log")
@@ -27,9 +24,10 @@ object WriteLocalUpdateConfig {
         val config = Configuration.builder()
             .baseUri(onlineUrl)
             .basePath(Path.of("").absolutePathString())
-            .property(PROP_VERSION,
+            .property(
+                PROP_VERSION,
                 kotlin.runCatching {
-                    Path.of("App", "version.properties").let {
+                    VERSION_PROPERTIES_FILE.let {
                         val props = Properties()
                         props.load(it.inputStream())
                         props["smol-version"]?.toString()!!

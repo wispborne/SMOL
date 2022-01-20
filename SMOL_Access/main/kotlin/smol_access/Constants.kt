@@ -6,6 +6,7 @@ import kotlin.io.path.Path
 object Constants {
     const val APP_NAME = "SMOL"
     const val APP_NAME_LONG = "Starsector Mod Organizer and Launcher"
+    var APP_VERSION = "" // ok it's not a constant, sue me
 
     const val MOD_INFO_FILE = "mod_info.json"
     const val ENABLED_MODS_FILENAME = "enabled_mods.json"

@@ -17,11 +17,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import smol_access.SL
 import smol_access.model.Mod
 import smol_access.model.UserProfile
 import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
 import smol_app.util.replaceAllUsingDifference
+import timber.ktx.Timber
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -46,6 +48,10 @@ fun AppState.ModGridHeader(
         ) {
             refreshButton {
                 kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Default) {
+                    kotlin.runCatching {
+                        SL.archives.refreshArchivesManifest(forceRefresh = true)
+                    }
+                        .onFailure { Timber.w(it) }
                     reloadMods()
                 }
             }

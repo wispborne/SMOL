@@ -1,5 +1,6 @@
 package smol_app.updater
 
+import updater.Updater
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon

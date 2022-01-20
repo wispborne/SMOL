@@ -398,6 +398,7 @@ fun AppState.profileControls(
             }
 
             if (isActiveProfile) {
+                // Add glow
                 Box(
                     modifier = Modifier
                         .clipToBounds()

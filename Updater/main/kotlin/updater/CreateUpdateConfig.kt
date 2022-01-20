@@ -1,4 +1,4 @@
-package smol_app.updater
+package updater
 
 import org.update4j.Configuration
 import org.update4j.FileMetadata

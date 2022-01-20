@@ -19,6 +19,22 @@ sealed class ModInfo(
     abstract val dependencies: List<Dependency>
     val isUtilityMod = utilityString.toBooleanStrictOrNull() ?: false
 
+    override fun toString(): String {
+        return "ModInfo(" +
+                "id='$id', " +
+                "name='$name', " +
+                "version=$version, " +
+                "author='$author', " +
+                "utilityString='$utilityString', " +
+                "requiredMemoryMB=$requiredMemoryMB, " +
+                "gameVersion='$gameVersion', " +
+                "jars=$jars, " +
+                "modPlugin='$modPlugin', " +
+                "dependencies=$dependencies, " +
+                "description='$description', " +
+                ")"
+    }
+
     data class v091(
         private val _id: String = "",
         private val _name: String = "",
@@ -30,7 +46,9 @@ sealed class ModInfo(
         private val _description: String = "",
         private val _gameVersion: String = "",
         private val _jars: List<String> = emptyList(),
-        private val _modPlugin: String = ""
+        private val _modPlugin: String = "",
+        @SerializedName("dependencies")
+        @Json(name = "dependencies") private val _dependencies: List<Dependency>?
     ) : ModInfo(
         id = _id,
         name = _name,
@@ -45,7 +63,7 @@ sealed class ModInfo(
             get() = Version.parse(versionString)
 
         override val dependencies: List<Dependency>
-            get() = emptyList()
+            get() = _dependencies ?: emptyList()
 
         override fun toString() = super.toString()
     }
@@ -63,7 +81,7 @@ sealed class ModInfo(
         private val _jars: List<String> = emptyList(),
         private val _modPlugin: String = "",
         @SerializedName("dependencies")
-        @Json(name = "dependencies") private val _dependencies: List<Dependency>? = emptyList()
+        @Json(name = "dependencies") private val _dependencies: List<Dependency>?
     ) : ModInfo(
         id = _id,
         name = _name,
@@ -81,23 +99,6 @@ sealed class ModInfo(
 
         override fun toString() = super.toString()
     }
-
-    override fun toString(): String {
-        return "ModInfo(" +
-                "id='$id', " +
-                "name='$name', " +
-                "version=$version, " +
-                "author='$author', " +
-                "utilityString='$utilityString', " +
-                "requiredMemoryMB=$requiredMemoryMB, " +
-                "gameVersion='$gameVersion', " +
-                "jars=$jars, " +
-                "modPlugin='$modPlugin', " +
-                "dependencies=$dependencies, " +
-                "description='$description', " +
-                ")"
-    }
-
 }
 
 data class Version(
