@@ -18,7 +18,7 @@ object WriteLocalUpdateConfig {
 
     private val VERSION_PROPERTIES_FILE: Path = Path.of("App", VERSION_PROPERTIES_FILENAME)
 
-    fun run(onlineUrl: String, localPath: Path): Configuration? {
+    fun run(onlineUrl: String, directoryOfFilesToAddToManifest: Path): Configuration? {
         val excludes = listOf(".git", ".log")
 
         val config = Configuration.builder()
@@ -36,7 +36,7 @@ object WriteLocalUpdateConfig {
                     .onFailure { Timber.w(it) }
                     .getOrElse { "" })
             .files(
-                FileMetadata.streamDirectory(localPath)
+                FileMetadata.streamDirectory(directoryOfFilesToAddToManifest)
                     .filter { file -> excludes.none { exclude -> file.source.pathString.contains(exclude) } }
                     .asSequence()
                     .onEach { r -> r.classpath(r.source.toString().endsWith(".jar")) }
@@ -44,7 +44,7 @@ object WriteLocalUpdateConfig {
             .build()
 
 
-        localPath.resolve(Updater.UPDATE_CONFIG_XML).run {
+        directoryOfFilesToAddToManifest.resolve(Updater.UPDATE_CONFIG_XML).run {
             this.writer().use {
                 config.write(it)
                 println("Wrote config to ${this.absolutePathString()}")

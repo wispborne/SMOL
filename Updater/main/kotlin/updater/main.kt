@@ -1,11 +1,20 @@
 package updater
 
 import smol_access.Constants
+import utilities.toPathOrNull
 import java.nio.file.Path
 
-fun main() {
-    WriteLocalUpdateConfig.run(
-        onlineUrl = Constants.UPDATE_URL_UNSTABLE,
-        localPath = Path.of("App\\dist\\main\\app\\SMOL")
-    )
+class Main {
+    companion object {
+        /**
+         * First arg must be `directoryOfFilesToAddToManifest`.
+         */
+        @JvmStatic
+        fun main(args: Array<String>) {
+            WriteLocalUpdateConfig.run(
+                onlineUrl = Constants.UPDATE_URL_UNSTABLE,
+                directoryOfFilesToAddToManifest = args[0].toPathOrNull()!!
+            )
+        }
+    }
 }

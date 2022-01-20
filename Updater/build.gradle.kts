@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm")
+    application
 }
 
 group = "com.wisp"
@@ -20,6 +21,15 @@ dependencies {
 
     // Auto-update
     api("org.update4j:update4j:1.5.8")
+}
+
+application {
+    mainClass.set("updater.Main")
+}
+
+tasks.withType<JavaExec>().configureEach {
+    val directoryOfFilesToAddToManifest = "../App/dist/main/app/SMOL"
+    this.setArgsString(directoryOfFilesToAddToManifest)
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
