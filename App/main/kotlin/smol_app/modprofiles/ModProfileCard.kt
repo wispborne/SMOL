@@ -31,6 +31,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import smol_access.Access
 import smol_access.SL
 import smol_access.business.SaveFile
 import smol_access.model.ModVariant
@@ -351,13 +352,16 @@ fun AppState.profileControls(
     Row(
         modifier = modifier
     ) {
+        val modsModificationState = SL.access.modModificationState.collectAsState()
+        val areAllModsSettled = modsModificationState.value.all { it.value == Access.ModModificationState.Ready }
+
         IconButton(
             modifier = Modifier
                 .padding(start = 8.dp, end = 4.dp)
                 .align(Alignment.CenterVertically)
                 .height(SmolTheme.iconHeightWidth())
                 .width(SmolTheme.iconHeightWidth()),
-            enabled = !isActiveProfile,
+            enabled = !isActiveProfile && areAllModsSettled,
             onClick = {
                 if (!isActiveProfile) {
                     GlobalScope.launch(Dispatchers.Default) {
@@ -374,32 +378,41 @@ fun AppState.profileControls(
             Box {
                 SmolTooltipArea(tooltip = {
                     SmolTooltipText(
-                        text = if (isActiveProfile) "This is the active profile." else "Activate profile.",
+                        text = when {
+                            !areAllModsSettled -> listOf("Swapping loadout.", "Refitting", "Processing")
+                                .random()
+                            isActiveProfile -> "This is the active profile."
+                            else -> "Activate profile."
+                        },
                         // Is a dim color instead if I don't set custom color
                         color = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.high)
                     )
                 }) {
-                    Icon(
-                        painter = painterResource("icon-power.svg"),
-                        tint = animateColorAsState(
-                            if (isActiveProfile) {
-                                if (isBeingHovered)
-                                    MaterialTheme.colors.primary.lighten(40)
-                                else
-                                    MaterialTheme.colors.primary.lighten()
-                            } else {
-                                if (isBeingHovered)
-                                    LocalContentColor.current.copy(alpha = 1f)
-                                else
-                                    LocalContentColor.current.copy(alpha = .80f)
-                            }
-                        ).value,
-                        contentDescription = null
-                    )
+                    if (areAllModsSettled) {
+                        Icon(
+                            painter = painterResource("icon-power.svg"),
+                            tint = animateColorAsState(
+                                if (isActiveProfile) {
+                                    if (isBeingHovered)
+                                        MaterialTheme.colors.primary.lighten(40)
+                                    else
+                                        MaterialTheme.colors.primary.lighten()
+                                } else {
+                                    if (isBeingHovered)
+                                        LocalContentColor.current.copy(alpha = 1f)
+                                    else
+                                        LocalContentColor.current.copy(alpha = .80f)
+                                }
+                            ).value,
+                            contentDescription = null
+                        )
+                    } else {
+                        CircularProgressIndicator(Modifier.size(24.dp))
+                    }
                 }
             }
 
-            if (isActiveProfile) {
+            if (isActiveProfile && areAllModsSettled) {
                 // Add glow
                 Box(
                     modifier = Modifier
