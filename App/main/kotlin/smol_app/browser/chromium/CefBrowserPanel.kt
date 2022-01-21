@@ -12,7 +12,6 @@ import org.cef.browser.CefMessageRouter
 import org.cef.callback.CefBeforeDownloadCallback
 import org.cef.callback.CefDownloadItem
 import org.cef.callback.CefDownloadItemCallback
-import org.cef.handler.CefAppHandlerAdapter
 import org.cef.handler.CefDownloadHandler
 import org.cef.handler.CefLifeSpanHandlerAdapter
 import smol_app.browser.DownloadHander

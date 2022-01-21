@@ -12,5 +12,7 @@ RUN apt-get install -y dos2unix git binutils
 # Ensure the build script has LF line endings
 RUN dos2unix /build.sh
 
+RUN mkdir code
+VOLUME code
 
 CMD ["/build.sh"]
