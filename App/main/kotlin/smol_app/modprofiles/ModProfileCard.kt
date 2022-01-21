@@ -218,24 +218,26 @@ fun AppState.ModProfileCard(
                     }
 
                     Row {
-                        TextButton(
-                            onClick = { isExpanded = isExpanded.not() },
+                        SmolTooltipArea(
                             modifier = Modifier
-                                .padding(top = 4.dp, start = 4.dp, end = 4.dp)
-                                .weight(1f)
-                        ) {
-                            SmolTooltipArea(
-                                tooltip = {
-                                    if (!isExpanded) {
-                                        SmolTooltipBackground {
-                                            modList(
-                                                modifier = Modifier.widthIn(max = 400.dp),
-                                                modVariants = modVariants,
-                                                modProfile = modProfile
-                                            )
-                                        }
+                                .weight(1f),
+                            tooltip = {
+                                if (!isExpanded) {
+                                    SmolTooltipBackground {
+                                        modList(
+                                            modifier = Modifier.widthIn(max = 400.dp),
+                                            modVariants = modVariants,
+                                            modProfile = modProfile
+                                        )
                                     }
                                 }
+                            }
+                        ) {
+                            TextButton(
+                                onClick = { isExpanded = isExpanded.not() },
+                                modifier = Modifier
+                                    .padding(top = 4.dp, start = 4.dp, end = 4.dp)
+                                    .weight(1f)
                             ) {
                                 Box(Modifier.fillMaxWidth()) {
                                     val alphaOfHoverDimmedElements =
@@ -281,7 +283,7 @@ fun modList(
     // Mod list
 //    val modNameLength = 28
     SelectionContainer {
-        Row(modifier) {
+        Box(modifier) {
             if (modProfile.enabledModVariants.any()) {
                 Column {
                     modProfile.enabledModVariants.forEach { enabledModVariant ->
@@ -509,7 +511,10 @@ fun saveGameProfileControls(
                 )
             }
         ) {
-            Text("Create Profile")
+            Text(
+                text = "Create Profile",
+                color = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium)
+            )
         }
     }
 }

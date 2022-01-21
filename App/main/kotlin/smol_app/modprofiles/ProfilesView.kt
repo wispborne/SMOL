@@ -184,8 +184,13 @@ private fun NewModProfileCard(onProfileCreated: () -> Unit) {
         Column(Modifier.padding(16.dp).fillMaxWidth()) {
             SmolTextField(
                 value = newProfileName,
-                onValueChange = { newProfileName = it },
+                onValueChange = {
+                    if (it.length <= 35) {
+                        newProfileName = it
+                    }
+                },
                 singleLine = true,
+                maxLines = 1,
                 label = { Text("Name") }
             )
             SmolButton(

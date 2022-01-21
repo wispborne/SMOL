@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "com.wisp"
-version = "1.0.0-prerelease4" // TODO don't forget to change default channel to "stable" in AppConfig for release.
+version = "1.0.0-prerelease5" // TODO don't forget to change default channel to "stable" in AppConfig for release.
 
 repositories {
     google()
