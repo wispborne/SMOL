@@ -166,7 +166,7 @@ fun Constants.isJCEFEnabled() =
     kotlin.runCatching {
         Path.of("libs").listDirectoryEntries().any { it.name.startsWith("jcef") }
     }
-        .onFailure { Timber.w(it) }
+        .onFailure { Timber.d { it.message ?: "Couldn't find jcef" } }
         .getOrElse { false }
 
 

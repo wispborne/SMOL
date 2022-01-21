@@ -21,7 +21,7 @@ class Updater(
     private val appConfig: AppConfig
 ) {
     companion object {
-        const val PROP_VERSION = "smol-version"
+        const val PROP_VERSION_NAME = "smol-version-prop"
         const val UPDATE_CONFIG_XML = "update-config.xml"
         val SMOL_UPDATE_ZIP = Path.of("smol-update.zip")
     }

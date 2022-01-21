@@ -1,5 +1,6 @@
 package smol_access
 
+import utilities.toPathOrNull
 import java.nio.file.Path
 import kotlin.io.path.Path
 
@@ -7,6 +8,9 @@ object Constants {
     const val APP_NAME = "SMOL"
     const val APP_NAME_LONG = "Starsector Mod Organizer and Launcher"
     var APP_VERSION = "" // ok it's not a constant, sue me
+
+    // Only works when running from Compose app, not from a pure Java app.
+    private val resourcesDir = System.getProperty("compose.application.resources.dir")?.toPathOrNull()
 
     const val MOD_INFO_FILE = "mod_info.json"
     const val ENABLED_MODS_FILENAME = "enabled_mods.json"
@@ -24,7 +28,7 @@ object Constants {
     val STAGING_FOLDER_DEFAULT: Path = APP_FOLDER_DEFAULT.resolve("staging")
     val UI_CONFIG_PATH: Path = APP_FOLDER_DEFAULT.resolve("SMOL_UIConfig.json")
     val APP_CONFIG_PATH: Path = APP_FOLDER_DEFAULT.resolve("SMOL_AppConfig.json")
-    val THEME_CONFIG_PATH: Path = Path.of("SMOL_Themes.json")
+    val THEME_CONFIG_PATH: Path? = resourcesDir?.resolve("SMOL_Themes.json")
     val VERCHECK_CACHE_PATH: Path = APP_FOLDER_DEFAULT.resolve("SMOL_VerCheckCache.json")
     val VRAM_CHECKER_RESULTS_PATH: Path = APP_FOLDER_DEFAULT.resolve("SMOL_VRAMCheckResults.json")
 
@@ -32,6 +36,7 @@ object Constants {
     const val modRepoUrl = "https://raw.githubusercontent.com/davidwhitman/StarsectorModRepo/main/ModRepo.json"
 
     // Updater
+    val VERSION_PROPERTIES_FILE: Path? = resourcesDir?.resolve("version.properties")
     private const val baseUpdateUrl = "https://raw.githubusercontent.com/davidwhitman/SMOL_Dist"
     const val UPDATE_URL_UNSTABLE = "$baseUpdateUrl/unstable/"
     const val UPDATE_URL_STABLE = "$baseUpdateUrl/main/"

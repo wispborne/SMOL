@@ -11,7 +11,7 @@ class ThemeConfig(gson: Jsanity) :
         InMemoryPrefStorage(
             JsonFilePrefStorage(
                 gson = gson,
-                file = Constants.THEME_CONFIG_PATH
+                file = Constants.THEME_CONFIG_PATH!!
             )
         )
     ) {

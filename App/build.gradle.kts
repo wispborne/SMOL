@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "com.wisp"
-version = "1.0.0-prerelease3" // TODO don't forget to change default channel to "stable" in AppConfig for release.
+version = "1.0.0-prerelease4" // TODO don't forget to change default channel to "stable" in AppConfig for release.
 
 repositories {
     google()
@@ -130,23 +130,20 @@ compose.desktop {
             )
 //            includeAllModules = true
 
-            val appDir = outputBaseDir.get().asFile.resolve(exePath)
-            looseFiles
-                .map { projectDir.resolve(it) }
-                .forEach {
-                    if (it.exists()) {
-                        it.copyTo(appDir.resolve(it.name), overwrite = true)
-                    } else {
-                        println("Couldn't find ${it.absolutePath}.")
-                    }
-                }
+            val resources = project.projectDir.resolve("resources")
+            if (resources.exists()) {
+                appResourcesRootDir.set(resources)
+                System.out.println("Set resource path to ${resources.absolutePath}.")
+            } else {
+                System.err.println("Unable to find ${resources.absolutePath}.")
+            }
         }
     }
 }
 
 tasks.register("generateVersionProperties") {
     doLast {
-        val propertiesFile = file("version.properties")
+        val propertiesFile = file("resources/common/version.properties")
         propertiesFile.parentFile.mkdirs()
         propertiesFile.writeText("smol-version=$version")
     }

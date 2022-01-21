@@ -51,7 +51,7 @@ class UpdateSmolToast {
                     timeoutMillis = null,
                     useStandardToastFrame = true,
                     content = {
-                        val version = updateConfig.resolvedProperties[Updater.PROP_VERSION]
+                        val version = updateConfig.resolvedProperties[Updater.PROP_VERSION_NAME]
 
                         Row(modifier = Modifier
                             .let {
@@ -70,7 +70,7 @@ class UpdateSmolToast {
                                         UpdateStage.DownloadFailed -> "Download failed."
                                         UpdateStage.ReadyToInstall -> "Update downloaded."
                                         UpdateStage.Installing -> "Installing update."
-                                        else -> "${version ?: "A new version"} of SMOL is available."
+                                        else -> "${version?.ifBlank { null } ?: "A new version"} of SMOL is available."
                                     }
                                 )
 

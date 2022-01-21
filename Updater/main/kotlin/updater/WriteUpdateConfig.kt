@@ -2,6 +2,7 @@ package updater
 
 import org.update4j.Configuration
 import org.update4j.FileMetadata
+import smol_access.Constants
 import timber.ktx.Timber
 import java.nio.file.Path
 import java.util.*
@@ -13,28 +14,29 @@ import kotlin.streams.asSequence
 
 
 object WriteLocalUpdateConfig {
-    const val PROP_VERSION = "smol-version"
-    val VERSION_PROPERTIES_FILENAME = "version.properties"
-
-    private val VERSION_PROPERTIES_FILE: Path = Path.of("App", VERSION_PROPERTIES_FILENAME)
-
     fun run(onlineUrl: String, directoryOfFilesToAddToManifest: Path): Configuration? {
         val excludes = listOf(".git", ".log")
 
         val config = Configuration.builder()
             .baseUri(onlineUrl)
             .basePath(Path.of("").absolutePathString())
-            .property(
-                PROP_VERSION,
-                kotlin.runCatching {
-                    VERSION_PROPERTIES_FILE.let {
-                        val props = Properties()
-                        props.load(it.inputStream())
-                        props["smol-version"]?.toString()!!
-                    }
-                }
-                    .onFailure { Timber.w(it) }
-                    .getOrElse { "" })
+//            .property(
+//                Updater.PROP_VERSION_NAME,
+//                kotlin.runCatching {
+//                    // If not running from a Compose app, but running standalone, we won't have the Constant,
+//                    // so just use a hardcoded path because life is short.
+//                    (Constants.VERSION_PROPERTIES_FILE
+//                        ?: Path.of("../App/resources/common/version.properties")).let {
+//                        val props = Properties()
+//                        props.load(it.inputStream())
+//                        props["smol-version"]?.toString()!!
+//                    }
+//                }
+//                    .onFailure {
+//                        Timber.w(it)
+//                        System.err.println(it)
+//                    }
+//                    .getOrElse { "" })
             .files(
                 FileMetadata.streamDirectory(directoryOfFilesToAddToManifest)
                     .filter { file -> excludes.none { exclude -> file.source.pathString.contains(exclude) } }
@@ -44,6 +46,7 @@ object WriteLocalUpdateConfig {
             .build()
 
 
+        println("Creating config based on files in ${directoryOfFilesToAddToManifest.absolutePathString()}.")
         directoryOfFilesToAddToManifest.resolve(Updater.UPDATE_CONFIG_XML).run {
             this.writer().use {
                 config.write(it)

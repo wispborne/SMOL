@@ -1,6 +1,5 @@
 package smol_app
 
-import updater.WriteLocalUpdateConfig
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.awt.ComposeWindow
@@ -29,7 +28,6 @@ import smol_app.util.isJCEFEnabled
 import timber.LogLevel
 import timber.ktx.Timber
 import utilities.makeFinite
-import java.nio.file.Path
 import java.util.*
 import javax.swing.UIManager
 import javax.swing.plaf.ColorUIResource
@@ -69,7 +67,7 @@ fun main() = application {
         SevenZip.initSevenZipFromPlatformJAR()
 
         kotlin.runCatching {
-            Path.of(WriteLocalUpdateConfig.VERSION_PROPERTIES_FILENAME).let {
+            Constants.VERSION_PROPERTIES_FILE!!.let {
                 val props = Properties()
                 props.load(it.inputStream())
                 props["smol-version"]?.toString()!!
