@@ -137,89 +137,95 @@ fun ModVariantsDropdown(
                     )
                 }
                 val background = MaterialTheme.colors.background
-                DropdownMenu(
-                    expanded = expanded,
-                    modifier = Modifier
-                        .background(background)
-                        .border(1.dp, MaterialTheme.colors.primary, shape = SmolTheme.smolFullyClippedButtonShape()),
-                    onDismissRequest = { expanded = false }
-                ) {
-                    dropdownMenuItems.forEach { action ->
-                        Box {
-                            var isHovered by remember { mutableStateOf(false) }
+                MaterialTheme(shapes = Shapes(medium = SmolTheme.smolFullyClippedButtonShape())) {
+                    DropdownMenu(
+                        expanded = expanded,
+                        modifier = Modifier
+                            .background(background)
+                            .border(
+                                width = 1.dp,
+                                color = MaterialTheme.colors.primary,
+                                shape = SmolTheme.smolFullyClippedButtonShape()
+                            ),
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        dropdownMenuItems.forEach { action ->
+                            Box {
+                                var isHovered by remember { mutableStateOf(false) }
 
-                            DropdownMenuItem(
-                                modifier = Modifier.sizeIn(maxWidth = 400.dp)
-                                    .pointerMoveFilter(
-                                        onEnter = { isHovered = true; false },
-                                        onExit = { isHovered = false; false }
-                                    )
-                                    .background(background),
-                                onClick = {
-                                    expanded = false
-                                    Logger.debug { "Selected $action." }
+                                DropdownMenuItem(
+                                    modifier = Modifier.sizeIn(maxWidth = 400.dp)
+                                        .pointerMoveFilter(
+                                            onEnter = { isHovered = true; false },
+                                            onExit = { isHovered = false; false }
+                                        )
+                                        .background(background),
+                                    onClick = {
+                                        expanded = false
+                                        Logger.debug { "Selected $action." }
 
-                                    // Don't use composition scope, we don't want
-                                    // it to cancel an operation due to a UI recomposition.
-                                    // A two-step operation will trigger a mod refresh and therefore recomposition and cancel
-                                    // the second part of the operation!
-                                    GlobalScope.launch {
-                                        kotlin.runCatching {
-                                            // Change mod state
-                                            when (action) {
-                                                is DropdownAction.ChangeToVariant -> {
-                                                    SL.access.changeActiveVariant(mod, action.variant)
-                                                }
-                                                is DropdownAction.Disable -> {
-                                                    SL.access.disableModVariant(
-                                                        firstEnabledVariant ?: return@runCatching
-                                                    )
-                                                }
-                                                is DropdownAction.MigrateMod -> {
-                                                    // TODO
+                                        // Don't use composition scope, we don't want
+                                        // it to cancel an operation due to a UI recomposition.
+                                        // A two-step operation will trigger a mod refresh and therefore recomposition and cancel
+                                        // the second part of the operation!
+                                        GlobalScope.launch {
+                                            kotlin.runCatching {
+                                                // Change mod state
+                                                when (action) {
+                                                    is DropdownAction.ChangeToVariant -> {
+                                                        SL.access.changeActiveVariant(mod, action.variant)
+                                                    }
+                                                    is DropdownAction.Disable -> {
+                                                        SL.access.disableModVariant(
+                                                            firstEnabledVariant ?: return@runCatching
+                                                        )
+                                                    }
+                                                    is DropdownAction.MigrateMod -> {
+                                                        // TODO
 //                                                SL.archives.compressModsInFolder(
 //                                                    mod.modsFolderInfo?.folder ?: return@runCatching
 //                                                )
-                                                }
-                                                is DropdownAction.ResetToArchive -> {
-                                                    // TODO
+                                                    }
+                                                    is DropdownAction.ResetToArchive -> {
+                                                        // TODO
+                                                    }
                                                 }
                                             }
+                                                .onFailure { Logger.error(it) }
                                         }
-                                            .onFailure { Logger.error(it) }
-                                    }
-                                }) {
-                                Row {
-                                    Text(
-                                        modifier = Modifier
-                                            .align(Alignment.CenterVertically)
-                                            .weight(1f),
-                                        text = when (action) {
-                                            is DropdownAction.ChangeToVariant -> action.variant.modInfo.version.toString()
-                                            is DropdownAction.Disable -> "Disable"
-                                            is DropdownAction.MigrateMod -> "Migrate to ${Constants.APP_NAME}"
-                                            is DropdownAction.ResetToArchive -> "Reset to default"
-                                        },
-                                        fontWeight = FontWeight.Bold,
-                                        fontFamily = font
-                                    )
-
-                                    if (isHovered && action is DropdownAction.ChangeToVariant) {
-                                        SmolIconButton(
-                                            onClick = {
-                                                expanded = false
-                                                variantToConfirmDeletionOf.value = action.variant
-                                            },
+                                    }) {
+                                    Row {
+                                        Text(
                                             modifier = Modifier
-                                                .align(Alignment.CenterVertically),
-                                            rippleRadius = 20.dp
-                                        ) {
-                                            Icon(
-                                                painter = painterResource("icon-trash.svg"),
+                                                .align(Alignment.CenterVertically)
+                                                .weight(1f),
+                                            text = when (action) {
+                                                is DropdownAction.ChangeToVariant -> action.variant.modInfo.version.toString()
+                                                is DropdownAction.Disable -> "Disable"
+                                                is DropdownAction.MigrateMod -> "Migrate to ${Constants.APP_NAME}"
+                                                is DropdownAction.ResetToArchive -> "Reset to default"
+                                            },
+                                            fontWeight = FontWeight.Bold,
+                                            fontFamily = font
+                                        )
+
+                                        if (isHovered && action is DropdownAction.ChangeToVariant) {
+                                            SmolIconButton(
+                                                onClick = {
+                                                    expanded = false
+                                                    variantToConfirmDeletionOf.value = action.variant
+                                                },
                                                 modifier = Modifier
-                                                    .size(18.dp),
-                                                contentDescription = null
-                                            )
+                                                    .align(Alignment.CenterVertically),
+                                                rippleRadius = 20.dp
+                                            ) {
+                                                Icon(
+                                                    painter = painterResource("icon-trash.svg"),
+                                                    modifier = Modifier
+                                                        .size(18.dp),
+                                                    contentDescription = null
+                                                )
+                                            }
                                         }
                                     }
                                 }

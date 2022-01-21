@@ -394,9 +394,9 @@ fun AppState.profileControls(
                             tint = animateColorAsState(
                                 if (isActiveProfile) {
                                     if (isBeingHovered)
-                                        MaterialTheme.colors.primary.lighten(40)
+                                        LocalContentColor.current.lighten(40)
                                     else
-                                        MaterialTheme.colors.primary.lighten()
+                                        LocalContentColor.current.lighten()
                                 } else {
                                     if (isBeingHovered)
                                         LocalContentColor.current.copy(alpha = 1f)
@@ -420,7 +420,7 @@ fun AppState.profileControls(
                         .background(
                             brush = Brush.radialGradient(
                                 colors = listOf(
-                                    MaterialTheme.colors.primary.lighten(50).copy(alpha = 0.35f),
+                                    MaterialTheme.colors.secondary.lighten(50).copy(alpha = 0.40f),
                                     Color.Transparent
                                 )
                             )
