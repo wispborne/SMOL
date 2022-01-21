@@ -26,3 +26,10 @@ tasks.withType<proguard.gradle.ProGuardTask>().configureEach {
     configuration("../proguard.pro")
     dontoptimize()
 }
+
+tasks.register("buildSmolDist") {
+    dependsOn("App:createDistributable", "Updater:run")
+    doLast {
+
+    }
+}

@@ -8,8 +8,5 @@ cd SMOL
 
 chmod +x gradlew
 
-# Build SMOL
-./gradlew createDistributable
-
-# Create update-config.xml file
-./gradlew Updater:run
+# Build SMOL and create update-config.xml file
+./gradlew App:createDistributable Updater:run
