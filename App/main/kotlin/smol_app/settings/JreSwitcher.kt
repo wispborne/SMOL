@@ -164,7 +164,7 @@ fun AppState.jre8DownloadButton(
                 modifier = Modifier.padding(start = 4.dp)
             ) {
                 Icon(
-                    painter = painterResource("web.svg"),
+                    painter = painterResource("icon-web.svg"),
                     contentDescription = null
                 )
             }

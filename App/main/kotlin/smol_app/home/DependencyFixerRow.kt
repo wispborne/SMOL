@@ -83,7 +83,7 @@ fun DependencyFixerRow(
                         )
                         if (depState is DependencyFinder.DependencyState.Missing) {
                             Image(
-                                painter = painterResource("open-in-new.svg"),
+                                painter = painterResource("icon-open-in-new.svg"),
                                 colorFilter = ColorFilter.tint(SmolTheme.dimmedIconColor()),
                                 modifier = Modifier.padding(start = 8.dp),
                                 contentDescription = null

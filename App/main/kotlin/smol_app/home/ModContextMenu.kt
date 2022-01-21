@@ -145,7 +145,7 @@ private fun AppState.modGridSingleModMenu(
             },
         ) {
             Image(
-                painter = painterResource("web.svg"),
+                painter = painterResource("icon-web.svg"),
                 colorFilter = ColorFilter.tint(MaterialTheme.colors.onSurface),
                 modifier = Modifier.padding(end = 12.dp).size(24.dp),
                 contentDescription = null

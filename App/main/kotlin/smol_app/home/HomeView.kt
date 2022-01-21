@@ -179,7 +179,7 @@ private fun AppState.consoleTextField(
                 onValueChange = { newStr ->
                     consoleText = newStr
                 },
-                leadingIcon = { Icon(painter = painterResource("console-line.svg"), contentDescription = null) },
+                leadingIcon = { Icon(painter = painterResource("icon-console.svg"), contentDescription = null) },
                 modifier = Modifier
                     .onKeyEvent { event ->
                         return@onKeyEvent if (event.type == KeyEventType.KeyUp && (event.key.equalsAny(

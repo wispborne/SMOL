@@ -162,7 +162,7 @@ fun SmolDropdownArrow(
             .width(16.dp)
             .offset(x = 4.dp)
             .rotate(arrowAngle),
-        painter = painterResource("menu-down.svg"),
+        painter = painterResource("icon-menu-down.svg"),
         colorFilter = colorFilter,
         contentDescription = null
     )

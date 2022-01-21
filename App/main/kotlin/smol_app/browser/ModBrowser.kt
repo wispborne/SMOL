@@ -143,7 +143,7 @@ fun AppState.ModBrowserView(
                         }
                     ) {
                         Icon(
-                            painter = painterResource("web.svg"),
+                            painter = painterResource("icon-web.svg"),
                             contentDescription = null,
                             modifier = Modifier
                                 .width(24.dp)
@@ -410,7 +410,7 @@ fun browserIcon(modifier: Modifier = Modifier, mod: ScrapedMod) {
             modifier = modifier,
             tooltip = { SmolTooltipText(text = descText) }) {
             Icon(
-                painter = painterResource("web.svg"),
+                painter = painterResource("icon-web.svg"),
                 contentDescription = descText,
                 modifier = Modifier
                     .width(16.dp)

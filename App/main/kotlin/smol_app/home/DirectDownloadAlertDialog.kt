@@ -97,7 +97,7 @@ fun AppState.DirectDownloadAlertDialog(
                                 end = 8.dp
                             ),
                             painter = painterResource(
-                                "open-in-new.svg"
+                                "icon-open-in-new.svg"
                             ),
                             contentDescription = null
                         )

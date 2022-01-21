@@ -145,17 +145,15 @@ fun AppState.ModProfileCard(
                             }
 
                             if (isUserMade) {
-                                SmolTooltipArea(tooltip = { SmolTooltipText(text = "Edit name.") }) {
+                                SmolTooltipArea(tooltip = {
+                                    SmolTooltipText(
+                                        text = if (isEditMode.value) "Save profile name." else "Edit name."
+                                    )
+                                }) {
                                     IconToggleButton(
                                         modifier = Modifier
+                                            .padding(top = 8.dp)
                                             .align(Alignment.CenterVertically)
-                                            .run {
-                                                if (isEditMode.value) this.border(
-                                                    width = 2.dp,
-                                                    color = MaterialTheme.colors.onSurface.lighten(),
-                                                    shape = SmolTheme.smolNormalButtonShape()
-                                                ) else this
-                                            }
                                             .height(20.dp),
                                         checked = isEditMode.value,
                                         onCheckedChange = { isEditMode.value = !isEditMode.value }
@@ -163,8 +161,10 @@ fun AppState.ModProfileCard(
                                         val alphaOfHoverDimmedElements =
                                             animateFloatAsState(if (isBeingHovered) 0.8f else 0.5f)
                                         Icon(
-                                            painter = painterResource("pencil-outline.svg"),
-                                            modifier = Modifier,
+                                            painter = if (isEditMode.value)
+                                                painterResource("icon-done.svg")
+                                            else
+                                                painterResource("icon-edit.svg"),
                                             contentDescription = null,
                                             tint = MaterialTheme.colors.onSurface.copy(alpha = alphaOfHoverDimmedElements.value)
                                         )

@@ -122,7 +122,7 @@ fun AppState.ModGridHeader(
                         .align(androidx.compose.ui.Alignment.CenterVertically)
                 ) {
                     Icon(
-                        painter = painterResource("refresh.svg"),
+                        painter = painterResource("icon-refresh.svg"),
                         contentDescription = null
                     )
                 }

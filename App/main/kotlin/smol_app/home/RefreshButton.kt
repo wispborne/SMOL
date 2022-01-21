@@ -31,7 +31,7 @@ fun AppState.refreshButton(onRefresh: () -> Unit) {
         ) {
 
             Icon(
-                painter = painterResource("refresh.svg"),
+                painter = painterResource("icon-refresh.svg"),
                 modifier = Modifier
                     .run {
                         if (areModsLoading) {
