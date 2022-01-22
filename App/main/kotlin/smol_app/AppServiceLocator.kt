@@ -6,7 +6,7 @@ import smol_access.business.VmParamsManager
 import smol_app.browser.DownloadManager
 import smol_app.toasts.ToasterState
 import smol_app.util.currentPlatform
-import updater.Updater
+import updatestager.Updater
 
 var SL_UI = AppServiceLocator()
 

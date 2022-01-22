@@ -24,7 +24,7 @@ dependencies {
 }
 
 application {
-    mainClass.set("updater.Main")
+    mainClass.set("updatestager.Main")
 }
 
 tasks.withType<JavaExec>().configureEach {

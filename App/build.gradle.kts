@@ -9,7 +9,12 @@ plugins {
 }
 
 group = "com.wisp"
-version = "1.0.0-prerelease5" // TODO don't forget to change default channel to "stable" in AppConfig for release.
+val smolVersion =
+    "1.0.0-prerelease5" // TODO don't forget to change default channel to "stable" in AppConfig for release.
+
+// This gets appended to the app's jarfile, which means it has a unique name each time the app updates,
+// resulting in the file not getting removed. Keep a constant version here so user doesn't end up with a ton of outdated files.
+version = "1.0.0"
 
 repositories {
     google()
@@ -28,7 +33,7 @@ dependencies {
     implementation(fileTree("libs") { include("**/*.jar") })
     implementation(project(":SMOL_Access"))
     implementation(project(":VRAM_Checker"))
-    implementation(project(":Updater"))
+    implementation(project(":UpdateStager"))
     implementation(project(":Utilities"))
 
     // Logging
@@ -96,8 +101,6 @@ compose.desktop {
             outputBaseDir.set(project.projectDir.resolve("dist"))
             packageName = "SMOL"
             packageVersion = "1.0.0"
-            val exePath = "main/app/SMOL/"
-            val looseFiles = listOf("SMOL_Themes.json", "version.properties")
 
             windows {
                 println("OS: Windows")
@@ -146,7 +149,7 @@ tasks.register("generateVersionProperties") {
     doLast {
         val propertiesFile = file("resources/common/version.properties")
         propertiesFile.parentFile.mkdirs()
-        propertiesFile.writeText("smol-version=$version")
+        propertiesFile.writeText("smol-version=$smolVersion")
     }
 }
 

@@ -1,4 +1,4 @@
-package updater/*
+package updatestager/*
  * Copyright 2018 Mordechai Meisels
  * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not

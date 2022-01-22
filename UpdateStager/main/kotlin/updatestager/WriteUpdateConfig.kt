@@ -1,4 +1,4 @@
-package updater
+package updatestager
 
 import org.update4j.Configuration
 import org.update4j.FileMetadata

@@ -1,4 +1,4 @@
-package updater
+package updatestager
 
 import smol_access.Constants
 import utilities.toPathOrNull

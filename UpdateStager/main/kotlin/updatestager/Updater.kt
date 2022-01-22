@@ -1,4 +1,4 @@
-package updater
+package updatestager
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -99,6 +99,7 @@ class Updater(
         }
     }
 
+    @Deprecated("use client")
     suspend fun installUpdate() {
         withContext(Dispatchers.IO) {
             Archive.read(SMOL_UPDATE_ZIP).install()
