@@ -1,7 +1,6 @@
 package smol_access.business
 
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import smol_access.Access
 import smol_access.model.UserProfile
@@ -32,11 +31,14 @@ class UserModProfileManager internal constructor(
                                 if (profile.id == oldProfile.activeModProfileId) {
                                     profile.copy(enabledModVariants = newMods.mods
                                         .flatMap { it.enabledVariants }
-                                        .map { UserProfile.ModProfile.EnabledModVariant(
-                                            modId = it.mod(modLoader).id,
-                                            smolVariantId = it.smolId,
-                                            version = it.modInfo.version
-                                        ) })
+                                        .map {
+                                            UserProfile.ModProfile.ShallowModVariant(
+                                                modId = it.mod(modLoader).id,
+                                                modName = it.modInfo.name,
+                                                smolVariantId = it.smolId,
+                                                version = it.modInfo.version
+                                            )
+                                        })
                                 } else
                                     profile
                             }

@@ -30,12 +30,9 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import smol_access.Access
 import smol_access.SL
 import smol_access.business.SaveFile
-import smol_access.model.ModVariant
-import smol_access.model.SmolId
 import smol_access.model.UserProfile
 import smol_access.model.Version
 import smol_app.WindowState
@@ -43,6 +40,7 @@ import smol_app.composables.*
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.lighten
 import smol_app.util.smolPreview
+import utilities.copyToClipboard
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -54,7 +52,7 @@ fun ModProfileCardPreview() = smolPreview {
     AppState(WindowState()).ModProfileCard(
         userProfile = mockUserProfile,
         modProfile = mockModProfile,
-        modVariants = mutableStateOf(emptyMap())
+        modVariants = emptyList()
     )
 }
 
@@ -65,7 +63,7 @@ private val dateFormat = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIU
 fun AppState.ModProfileCard(
     userProfile: UserProfile,
     modProfile: ModProfileCardInfo,
-    modVariants: MutableState<Map<SmolId, ModVariant>>
+    modVariants: List<UserProfile.ModProfile.ShallowModVariant>,
 ) {
     val isActiveProfile = userProfile.activeModProfileId == modProfile.id
     val isUserMade = modProfile is ModProfileCardInfo.EditableModProfileCardInfo
@@ -214,7 +212,7 @@ fun AppState.ModProfileCard(
                         modList(
                             modifier = Modifier.padding(top = 16.dp, start = 8.dp, end = 8.dp),
                             modVariants = modVariants,
-                            modProfile = modProfile
+                            modVariantsToDisplay = modProfile.enabledModVariants
                         )
                     }
 
@@ -228,7 +226,7 @@ fun AppState.ModProfileCard(
                                         modList(
                                             modifier = Modifier.widthIn(max = 400.dp),
                                             modVariants = modVariants,
-                                            modProfile = modProfile
+                                            modVariantsToDisplay = modProfile.enabledModVariants
                                         )
                                     }
                                 }
@@ -262,7 +260,6 @@ fun AppState.ModProfileCard(
                                 modifier = Modifier.padding(top = 10.dp),
                                 modProfile = modProfile,
                                 isActiveProfile = isActiveProfile,
-                                modVariants = modVariants,
                                 isBeingHovered = isBeingHovered
                             )
                         } else {
@@ -278,17 +275,17 @@ fun AppState.ModProfileCard(
 @Composable
 fun modList(
     modifier: Modifier = Modifier,
-    modVariants: MutableState<Map<SmolId, ModVariant>>,
-    modProfile: ModProfileCardInfo
+    modVariants: List<UserProfile.ModProfile.ShallowModVariant>,
+    modVariantsToDisplay: List<UserProfile.ModProfile.ShallowModVariant>
 ) {
     // Mod list
 //    val modNameLength = 28
     SelectionContainer {
         Box(modifier) {
-            if (modProfile.enabledModVariants.any()) {
+            if (modVariantsToDisplay.any()) {
                 Column {
-                    modProfile.enabledModVariants.forEach { enabledModVariant ->
-                        val modVariant = modVariants.value[enabledModVariant.smolVariantId]
+                    modVariantsToDisplay.forEach { enabledModVariant ->
+                        val modVariant = modVariants.firstOrNull { it.smolVariantId == enabledModVariant.smolVariantId }
 
                         Row {
                             Text(
@@ -298,7 +295,7 @@ fun modList(
                                 fontSize = 14.sp,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
-                                text = modVariant?.modInfo?.name?.plus(": ")
+                                text = modVariant?.modName?.plus(": ")
                                     ?: "${enabledModVariant.modId} (missing)\n    ${enabledModVariant.smolVariantId}"
                             )
 
@@ -310,7 +307,7 @@ fun modList(
                                 maxLines = 1,
 //                                overflow = TextOverflow.Ellipsis,
                                 text = enabledModVariant.version?.raw
-                                    ?: modVariant?.modInfo?.version?.toString() ?: ""
+                                    ?: modVariant?.version?.toString() ?: ""
                             )
                         }
                     }
@@ -334,7 +331,6 @@ fun AppState.profileControlsPreview() = smolPreview {
         profileControls(
             modProfile = mockModProfile,
             isActiveProfile = false,
-            modVariants = mutableStateOf(emptyMap()),
             isBeingHovered = true
         )
     }
@@ -346,7 +342,6 @@ fun AppState.profileControls(
     modifier: Modifier = Modifier,
     modProfile: ModProfileCardInfo,
     isActiveProfile: Boolean,
-    modVariants: MutableState<Map<SmolId, ModVariant>>,
     isBeingHovered: Boolean
 ) {
     Row(
@@ -364,14 +359,65 @@ fun AppState.profileControls(
             enabled = !isActiveProfile && areAllModsSettled,
             onClick = {
                 if (!isActiveProfile) {
-                    GlobalScope.launch(Dispatchers.Default) {
-                        SL.userModProfileManager.switchModProfile(modProfile.id)
-                        withContext(Dispatchers.Main) {
-                            modVariants.value =
-                                (SL.access.mods.value?.mods ?: emptyList())
-                                    .flatMap { it.variants }
-                                    .associateBy { it.smolId }
+                    val allModVariantIds = SL.access.mods.value?.mods
+                        ?.flatMap { it.variants }
+                        ?.map { it.smolId } ?: emptyList()
+
+                    val missingVariants =
+                        modProfile.enabledModVariants.filter { it.smolVariantId !in allModVariantIds }
+
+                    if (missingVariants.any()) {
+                        alertDialogSetter.invoke {
+                            SmolAlertDialog(
+                                title = {
+                                    Text(
+                                        text = "Warning",
+                                        style = SmolTheme.alertDialogTitle()
+                                    )
+                                },
+                                text = {
+                                    Column {
+                                        Text(
+                                            text = "The following mods are missing:",
+                                            style = SmolTheme.alertDialogBody()
+                                        )
+                                        modList(
+                                            modifier = Modifier.padding(top = 16.dp),
+                                            modVariants = missingVariants,
+                                            modVariantsToDisplay = missingVariants
+                                        )
+                                        SmolButton(
+                                            modifier = Modifier.padding(top = 32.dp),
+                                            onClick = {
+                                                copyToClipboard(
+                                                    missingVariants.joinToString(separator = "\n") { "${it.modName} (${it.modId}) ${it.version}" }
+                                                )
+                                            }
+                                        ) {
+                                            Text("Copy to clipboard")
+                                        }
+                                    }
+                                },
+                                onDismissRequest = { alertDialogSetter.invoke(null) },
+                                confirmButton = {
+                                    SmolButton(
+                                        onClick = {
+                                            swapModProfile(modProfile)
+                                            alertDialogSetter.invoke(null)
+                                        }
+                                    ) {
+                                        Text("Swap without ${missingVariants.count()} mod${if (missingVariants.count() != 1) "s" else ""}")
+                                    }
+                                },
+                                dismissButton = {
+                                    SmolSecondaryButton(
+                                        onClick = { alertDialogSetter.invoke(null) }
+                                    ) { Text("Cancel") }
+                                }
+                            )
                         }
+                    } else {
+                        swapModProfile(modProfile)
                     }
                 }
             }) {
@@ -496,6 +542,12 @@ fun AppState.profileControls(
     }
 }
 
+private fun swapModProfile(modProfile: ModProfileCardInfo) {
+    GlobalScope.launch(Dispatchers.Default) {
+        SL.userModProfileManager.switchModProfile(modProfile.id)
+    }
+}
+
 @Preview
 @Composable
 fun saveGameProfileControlsPreview() = smolPreview {
@@ -538,8 +590,9 @@ private val mockModProfile = ModProfileCardInfo.EditableModProfileCardInfo(
     description = "desc",
     sortOrder = 0,
     enabledModVariants = listOf(
-        UserProfile.ModProfile.EnabledModVariant(
+        UserProfile.ModProfile.ShallowModVariant(
             modId = "mod_id",
+            modName = "Mod Name",
             smolVariantId = "23444",
             version = null
         )
@@ -551,8 +604,9 @@ private val mockSaveModProfile = ModProfileCardInfo.SaveModProfileCardInfo(
     description = "desc",
     sortOrder = 0,
     enabledModVariants = listOf(
-        UserProfile.ModProfile.EnabledModVariant(
+        UserProfile.ModProfile.ShallowModVariant(
             modId = "mod_id",
+            modName = "Mod Name",
             smolVariantId = "23444",
             version = Version.parse("1.2.3")
         )

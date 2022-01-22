@@ -20,11 +20,12 @@ data class UserProfile(
         val name: String,
         val description: String,
         val sortOrder: Int,
-        val enabledModVariants: List<EnabledModVariant>
+        val enabledModVariants: List<ShallowModVariant>
     ) {
-        data class EnabledModVariant(
+        data class ShallowModVariant(
             val modId: String,
-            val smolVariantId: String,
+            val modName: String,
+            val smolVariantId: SmolId,
             val version: Version?
         )
     }

@@ -20,6 +20,7 @@ import org.jetbrains.compose.splitpane.rememberSplitPaneState
 import smol_access.SL
 import smol_access.business.SaveFile
 import smol_access.model.ModVariant
+import smol_access.model.SmolId
 import smol_access.model.UserProfile
 import smol_app.composables.*
 import smol_app.themes.SmolTheme
@@ -40,11 +41,17 @@ fun AppState.ProfilesView(
     val userProfile = SL.userManager.activeProfile.collectAsState().value
     val saveGames = SL.saveReader.saves.collectAsState()
     val showLogPanel = remember { mutableStateOf(false) }
-    val modVariants = remember {
-        mutableStateOf(SL.access.mods.value?.mods
-            ?.flatMap { it.variants }
-            ?.associateBy { it.smolId }
-            ?: emptyMap())
+    val modVariants: Map<SmolId, ModVariant> = (SL.access.mods.collectAsState().value?.mods
+        ?.flatMap { it.variants }
+        ?.associateBy { it.smolId }
+        ?: emptyMap())
+    val shallowModVariants = modVariants.map {
+        UserProfile.ModProfile.ShallowModVariant(
+            modId = it.value.modInfo.id,
+            modName = it.value.modInfo.name,
+            smolVariantId = it.key,
+            version = it.value.modInfo.version
+        )
     }
     val splitPageState = rememberSplitPaneState(initialPositionPercentage = 0.50f)
 
@@ -100,9 +107,9 @@ fun AppState.ProfilesView(
                                 }
                             ) { modProfile ->
                                 ModProfileCard(
-                                    userProfile,
-                                    modProfile,
-                                    modVariants
+                                    userProfile = userProfile,
+                                    modProfile = modProfile,
+                                    modVariants = shallowModVariants
                                 )
                             }
                         }
@@ -132,8 +139,9 @@ fun AppState.ProfilesView(
                                         description = "",
                                         sortOrder = 1337 + index,
                                         enabledModVariants = saveFile.mods.map {
-                                            UserProfile.ModProfile.EnabledModVariant(
+                                            UserProfile.ModProfile.ShallowModVariant(
                                                 modId = it.id,
+                                                modName = it.name,
                                                 smolVariantId = ModVariant.createSmolId(it.id, it.version),
                                                 version = it.version
                                             )
@@ -143,9 +151,9 @@ fun AppState.ProfilesView(
                                 }
                             ) { modProfile ->
                                 ModProfileCard(
-                                    userProfile,
-                                    modProfile,
-                                    modVariants
+                                    userProfile = userProfile,
+                                    modProfile = modProfile,
+                                    modVariants = shallowModVariants
                                 )
                             }
                         }
@@ -224,14 +232,14 @@ sealed class ModProfileCardInfo(
     val name: String,
     val description: String,
     val sortOrder: Int,
-    val enabledModVariants: List<UserProfile.ModProfile.EnabledModVariant>
+    val enabledModVariants: List<UserProfile.ModProfile.ShallowModVariant>
 ) {
     class EditableModProfileCardInfo(
         id: String,
         name: String,
         description: String,
         sortOrder: Int,
-        enabledModVariants: List<UserProfile.ModProfile.EnabledModVariant>
+        enabledModVariants: List<UserProfile.ModProfile.ShallowModVariant>
     ) : ModProfileCardInfo(
         id = id,
         name = name,
@@ -245,7 +253,7 @@ sealed class ModProfileCardInfo(
         name: String,
         description: String,
         sortOrder: Int,
-        enabledModVariants: List<UserProfile.ModProfile.EnabledModVariant>,
+        enabledModVariants: List<UserProfile.ModProfile.ShallowModVariant>,
         val saveFile: SaveFile
     ) : ModProfileCardInfo(
         id = id,
