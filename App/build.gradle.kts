@@ -126,7 +126,8 @@ compose.desktop {
                 "java.prefs",
                 "java.sql",
                 "jdk.unsupported",
-                "jdk.zipfs"
+                "jdk.zipfs",
+                "jdk.accessibility"
             )
 //            includeAllModules = true
 
