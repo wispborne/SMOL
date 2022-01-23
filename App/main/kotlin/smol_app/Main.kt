@@ -106,7 +106,7 @@ fun main() = application {
         onCloseRequest = ::onQuit,
         state = appWindowState,
         title = "${Constants.APP_NAME} ${Constants.APP_VERSION}",
-        icon = painterResource("kotlin-icon.svg"),
+        icon = painterResource("smol.ico"),
         onPreviewKeyEvent = { event -> onKeyEventHandlers.any { it(event) } }
     ) {
         val router = rememberRouter<Screen>(

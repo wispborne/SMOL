@@ -2,7 +2,6 @@ package mod_repo
 
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.github.androidpasswordstore.sublimefuzzy.Fuzzy
-import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -12,6 +11,8 @@ import org.jsoup.select.Elements
 import utilities.Jsanity
 import java.net.URI
 import java.nio.file.Path
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 internal val CONFIG_FOLDER_DEFAULT = Path.of("")
 internal val FORUM_BASE_URL = "https://fractalsoftworks.com/forum/index.php"
@@ -81,6 +82,7 @@ fun main(args: Array<String>) {
         .run {
             println("Saving ${this.count()} mods to ${ModRepoCache.location.toAbsolutePath()}")
             modRepoCache.items = this
+            modRepoCache.lastUpdated = Instant.now().truncatedTo(ChronoUnit.MINUTES).toString()
         }
 
     runBlocking {
