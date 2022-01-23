@@ -16,6 +16,7 @@ import java.io.File
 import java.net.URI
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
+import kotlin.io.path.exists
 import kotlin.io.path.name
 
 
@@ -58,46 +59,51 @@ class Updater(
     }
 
     suspend fun update(remoteConfig: Configuration) {
-        Timber.i { "Fetching SMOL update from ${remoteConfig.baseUri}." }
-        withContext(Dispatchers.IO) {
-            remoteConfig.update(
-                UpdateOptions
-                    .archive(SMOL_UPDATE_ZIP)
-                    .updateHandler(object : SmolUpdateHandler() {
-                        override fun updateDownloadFileProgress(file: FileMetadata?, frac: Float) {
-                            if (!isActive) {
-                                currentFileDownload.value = null
-                                throw CancellationException("SMOL update coroutine was canceled.")
+        if (SMOL_UPDATE_ZIP.exists()) {
+            Timber.i { "SMOL update already exists." }
+            return
+        } else {
+            Timber.i { "Fetching SMOL update from ${remoteConfig.baseUri}." }
+            withContext(Dispatchers.IO) {
+                remoteConfig.update(
+                    UpdateOptions
+                        .archive(SMOL_UPDATE_ZIP)
+                        .updateHandler(object : SmolUpdateHandler() {
+                            override fun updateDownloadFileProgress(file: FileMetadata?, frac: Float) {
+                                if (!isActive) {
+                                    currentFileDownload.value = null
+                                    throw CancellationException("SMOL update coroutine was canceled.")
+                                }
+
+                                super.updateDownloadFileProgress(file, frac)
+                                currentFileDownload.value =
+                                    FileDownload(name = file?.path?.name ?: "(unknown)", progress = frac)
                             }
 
-                            super.updateDownloadFileProgress(file, frac)
-                            currentFileDownload.value =
-                                FileDownload(name = file?.path?.name ?: "(unknown)", progress = frac)
-                        }
+                            override fun updateDownloadProgress(frac: Float) {
+                                if (!isActive) {
+                                    totalDownloadFraction.value = null
+                                    throw CancellationException("SMOL update coroutine was canceled.")
+                                }
 
-                        override fun updateDownloadProgress(frac: Float) {
-                            if (!isActive) {
+                                super.updateDownloadProgress(frac)
+                                totalDownloadFraction.value = frac
+                            }
+
+                            override fun stop() {
+                                super.stop()
                                 totalDownloadFraction.value = null
-                                throw CancellationException("SMOL update coroutine was canceled.")
                             }
 
-                            super.updateDownloadProgress(frac)
-                            totalDownloadFraction.value = frac
-                        }
-
-                        override fun stop() {
-                            super.stop()
-                            totalDownloadFraction.value = null
-                        }
-
-                        override fun failed(t: Throwable) {
-                            super.failed(t)
-                            totalDownloadFraction.value = null
-                            currentFileDownload.value = null
-                            throw t
-                        }
-                    })
-            )
+                            override fun failed(t: Throwable) {
+                                super.failed(t)
+                                totalDownloadFraction.value = null
+                                currentFileDownload.value = null
+                                throw t
+                            }
+                        })
+                )
+            }
         }
     }
 
@@ -105,13 +111,15 @@ class Updater(
      * This will FAIL if the application is still running when the update starts, as it cannot update files in use.
      * Call this, then immediately close SMOL.
      */
-    fun installUpdate(jreFolder: Path) {
+    fun installUpdate() {
         val updateInstallerFilename = "UpdateInstaller-fat.jar"
+        val standaloneJrePath = Path.of("jre-min-win")
 
+        val command = "\"${
+            standaloneJrePath.resolve("bin/java.exe").absolutePathString()
+        }\" -jar $updateInstallerFilename '${SMOL_UPDATE_ZIP}'"
         openProgramInTerminal(
-            command = "${
-                jreFolder.resolve("bin/java.exe").absolutePathString()
-            } -jar $updateInstallerFilename \"${SMOL_UPDATE_ZIP.absolutePathString()}\"",
+            command = command,
             workingDirectory = File(".")
         )
     }

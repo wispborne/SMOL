@@ -13,7 +13,6 @@ repositories {
 
 dependencies {
     implementation(kotlin("stdlib"))
-    implementation(project.property("coroutines")!!)
 
     // Auto-update
     implementation("org.update4j:update4j:1.5.8")
@@ -39,10 +38,15 @@ tasks.register(name = "uberJar", type = Jar::class) {
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     kotlinOptions {
-        jvmTarget = "1.6"
+        jvmTarget = "9"
         @Suppress("SuspiciousCollectionReassignment")
         freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
     }
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_9
+    targetCompatibility = JavaVersion.VERSION_1_9
 }
 
 kotlin.sourceSets.main {

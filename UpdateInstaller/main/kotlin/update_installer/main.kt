@@ -1,11 +1,8 @@
 package update_installer
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import org.update4j.Archive
 import java.io.File
+import kotlin.concurrent.thread
 
 class Main {
     companion object {
@@ -14,9 +11,9 @@ class Main {
          */
         @JvmStatic
         fun main(args: Array<String>) {
-            val updateZipUri = args.getOrNull(0)
+            val updateZipUri = args.getOrNull(0)?.removeSurrounding("\'")
                 ?: kotlin.run {
-                    System.err.println("First argument must be the absolute path to update.zip.")
+                    System.err.println("First argument must be the relative path to the update zip.")
                     return
                 }
             val updateZipPath = File(updateZipUri)
@@ -27,16 +24,32 @@ class Main {
             }
 
             println("Found update zip at ${updateZipPath.absolutePath}.")
+            var isThreadDone = false
 
-            runBlocking {
-                println("Waiting 5 seconds for SMOL to quit and release file locks.")
-                delay(5000)
+            thread {
+                try {
+                    println("Waiting 5 seconds for SMOL to quit and release file locks.")
+                    Thread.sleep(5000)
 
-                withContext(Dispatchers.IO) {
                     println("Installing ${updateZipPath.absolutePath}...")
-                    Archive.read(updateZipPath.absolutePath).install()
-                    println("Done.")
+                    kotlin.runCatching {
+                        Archive.read(updateZipPath.absolutePath).install()
+                    }
+                        .onFailure {
+                            System.err.println("Error installing $updateZipPath.")
+                            System.err.println(it.message)
+                            it.printStackTrace()
+                        }
+                        .onSuccess {
+                            println("Done.")
+                        }
+                } finally {
+                    isThreadDone = true
                 }
+            }
+
+            while (!isThreadDone) {
+                Thread.sleep(500)
             }
         }
     }
