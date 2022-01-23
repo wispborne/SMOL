@@ -26,7 +26,7 @@ import smol_app.composables.SmolTooltipText
 import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
 import smol_app.util.isJCEFEnabled
-import smol_app.util.openProgramInTerminal
+import utilities.openProgramInTerminal
 import utilities.toFileOrNull
 import utilities.toPathOrNull
 import utilities.weightedRandom

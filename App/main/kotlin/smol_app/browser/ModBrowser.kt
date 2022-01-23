@@ -38,7 +38,6 @@ import org.jetbrains.compose.splitpane.rememberSplitPaneState
 import org.tinylog.kotlin.Logger
 import smol_access.Constants
 import smol_access.SL
-import smol_access.config.Platform
 import smol_app.ModBrowserState
 import smol_app.UI
 import smol_app.browser.chromium.CefBrowserPanel
@@ -46,8 +45,13 @@ import smol_app.browser.chromium.ChromiumBrowser
 import smol_app.composables.*
 import smol_app.themes.SmolTheme
 import smol_app.toolbar.*
-import smol_app.util.*
+import smol_app.util.filterModPosts
+import smol_app.util.openAsUriInBrowser
+import smol_app.util.parseHtml
+import smol_app.util.replaceAllUsingDifference
 import timber.ktx.Timber
+import utilities.Platform
+import utilities.currentPlatform
 import java.awt.Cursor
 import java.nio.file.Path
 import java.util.*

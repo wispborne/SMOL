@@ -47,7 +47,7 @@ dependencies {
     implementation("com.github.salomonbrys.kotson:kotson:2.5.0")
 
     // CLI builder, Clikt
-    implementation("com.github.ajalt.clikt:clikt:3.3.0")
+    implementation("com.github.ajalt.clikt:clikt:3.4.0")
 
     // CLI builder, Kotlin
 //    implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.4")
@@ -98,7 +98,7 @@ compose.desktop {
         mainClass = "smol_app.MainKt"
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Exe, TargetFormat.Deb)
-            outputBaseDir.set(project.projectDir.resolve("dist"))
+            outputBaseDir.set(rootProject.projectDir.resolve("dist"))
             packageName = "SMOL"
             packageVersion = "1.0.0"
 

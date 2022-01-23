@@ -1,6 +1,9 @@
 package update_installer
 
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.update4j.Archive
 import java.io.File
 
@@ -25,7 +28,10 @@ class Main {
 
             println("Found update zip at ${updateZipPath.absolutePath}.")
 
-            CoroutineScope(Job()).launch {
+            runBlocking {
+                println("Waiting 5 seconds for SMOL to quit and release file locks.")
+                delay(5000)
+
                 withContext(Dispatchers.IO) {
                     println("Installing ${updateZipPath.absolutePath}...")
                     Archive.read(updateZipPath.absolutePath).install()

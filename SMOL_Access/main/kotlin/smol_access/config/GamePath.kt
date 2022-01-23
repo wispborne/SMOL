@@ -2,16 +2,11 @@ package smol_access.config
 
 import com.sun.jna.platform.win32.Advapi32Util
 import com.sun.jna.platform.win32.WinReg
-import utilities.IOLock
 import timber.ktx.Timber
-import utilities.mountOf
-import utilities.toPathOrNull
-import utilities.walk
+import utilities.*
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
-import kotlin.io.path.exists
-import kotlin.io.path.nameWithoutExtension
 
 
 class GamePath internal constructor(

@@ -25,7 +25,8 @@ application {
 
 // Create uber jar with all dependencies inside.
 tasks.register(name = "uberJar", type = Jar::class) {
-    archiveBaseName.set("${project.name}-fat")
+    archiveFileName.set("${project.name}-fat.jar")
+    destinationDirectory.set(File("dist"))
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {
         attributes["Implementation-Title"] = "SMOL Update Installer"

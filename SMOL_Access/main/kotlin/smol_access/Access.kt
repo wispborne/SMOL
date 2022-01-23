@@ -9,7 +9,7 @@ import smol_access.business.ModLoader
 import smol_access.business.Staging
 import smol_access.config.AppConfig
 import smol_access.config.GamePath
-import smol_access.config.Platform
+import utilities.Platform
 import smol_access.config.SettingsPath
 import smol_access.model.Mod
 import smol_access.model.ModId
@@ -17,9 +17,7 @@ import smol_access.model.ModVariant
 import timber.ktx.Timber
 import utilities.*
 import java.io.File
-import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.StandardCopyOption
 import kotlin.io.path.*
 
 class Access internal constructor(

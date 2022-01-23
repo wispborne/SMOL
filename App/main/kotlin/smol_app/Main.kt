@@ -23,7 +23,7 @@ import smol_app.navigation.Screen
 import smol_app.navigation.rememberRouter
 import smol_app.util.SmolPair
 import smol_app.util.SmolWindowState
-import smol_app.util.currentPlatform
+import utilities.currentPlatform
 import smol_app.util.isJCEFEnabled
 import timber.LogLevel
 import timber.ktx.Timber

@@ -1,4 +1,4 @@
-package smol_access.config
+package utilities
 
 enum class Platform {
     Windows,

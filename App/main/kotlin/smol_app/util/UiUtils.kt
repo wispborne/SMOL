@@ -15,7 +15,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import dev.andrewbailey.diff.differenceOf
 import smol_access.Constants
-import smol_access.config.Platform
+import utilities.Platform
 import smol_access.model.Mod
 import smol_access.themes.ThemeManager
 import smol_app.themes.SmolTheme
@@ -78,26 +78,6 @@ val Long.bytesAsReadableMiB: String
  */
 val Long.bytesAsShortReadableMiB: String
     get() = "%.2f MiB".format(this.bitsToMiB)
-
-/**
- * From [https://github.com/JetBrains/skija/blob/ebd63708b35e23667c1bf65845182430d0cf0860/shared/java/impl/Platform.java].
- */
-val currentPlatform: Platform
-    get() {
-        val os = System.getProperty("os.name").lowercase()
-
-        return if (os.contains("mac") || os.contains("darwin")) {
-            if ("aarch64" == System.getProperty("os.arch"))
-                Platform.MacOS
-            else Platform.MacOS
-        } else if (os.contains("windows"))
-            Platform.Windows
-        else if (os.contains("nux") || os.contains("nix"))
-            Platform.Linux
-        else throw RuntimeException(
-            "Unsupported platform: $os"
-        )
-    }
 
 /**
  * Synchronously load an image file stored in resources for the application.
@@ -169,18 +149,5 @@ fun Constants.isJCEFEnabled() =
         .onFailure { Timber.d { it.message ?: "Couldn't find jcef" } }
         .getOrElse { false }
 
-
-fun openProgramInTerminal(command: String, workingDirectory: File?) {
-    val commands = when (currentPlatform) {
-        Platform.Windows -> arrayOf("cmd.exe", "/C")
-        else -> arrayOf("open")
-    }
-    Runtime.getRuntime()
-        .exec(
-            arrayOf(*commands, command),
-            null,
-            workingDirectory
-        )
-}
 
 fun createGoogleSearchFor(query: String) = "https://google.com/search?q=" + query.replace(' ', '+')

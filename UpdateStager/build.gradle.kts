@@ -28,8 +28,8 @@ application {
 }
 
 tasks.withType<JavaExec>().configureEach {
-    val directoryOfFilesToAddToManifest = "../App/dist/main/app/SMOL"
-    this.setArgsString(directoryOfFilesToAddToManifest)
+    val directoryOfFilesToAddToManifest = rootDir.resolve("dist/main/app/SMOL")
+    this.setArgsString(directoryOfFilesToAddToManifest.absolutePath)
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {

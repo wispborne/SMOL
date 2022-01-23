@@ -5,15 +5,17 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
-import org.update4j.Archive
 import org.update4j.Configuration
 import org.update4j.FileMetadata
 import org.update4j.UpdateOptions
 import smol_access.Constants
 import smol_access.config.AppConfig
 import timber.ktx.Timber
+import utilities.openProgramInTerminal
+import java.io.File
 import java.net.URI
 import java.nio.file.Path
+import kotlin.io.path.absolutePathString
 import kotlin.io.path.name
 
 
@@ -99,11 +101,19 @@ class Updater(
         }
     }
 
-    @Deprecated("use client")
-    suspend fun installUpdate() {
-        withContext(Dispatchers.IO) {
-            Archive.read(SMOL_UPDATE_ZIP).install()
-        }
+    /**
+     * This will FAIL if the application is still running when the update starts, as it cannot update files in use.
+     * Call this, then immediately close SMOL.
+     */
+    fun installUpdate(jreFolder: Path) {
+        val updateInstallerFilename = "UpdateInstaller-fat.jar"
+
+        openProgramInTerminal(
+            command = "${
+                jreFolder.resolve("bin/java.exe").absolutePathString()
+            } -jar $updateInstallerFilename \"${SMOL_UPDATE_ZIP.absolutePathString()}\"",
+            workingDirectory = File(".")
+        )
     }
 
     private fun getUpdateChannelSetting() =

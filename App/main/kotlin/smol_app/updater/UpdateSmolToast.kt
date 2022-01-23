@@ -1,6 +1,5 @@
 package smol_app.updater
 
-import updatestager.Updater
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
@@ -18,11 +17,15 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import org.update4j.Configuration
+import smol_access.SL
 import smol_app.composables.SmolButton
 import smol_app.toasts.Toast
 import smol_app.toasts.ToasterState
 import smol_app.util.ellipsizeAfter
 import timber.ktx.Timber
+import updatestager.Updater
+import kotlin.io.path.exists
+import kotlin.system.exitProcess
 
 class UpdateSmolToast {
     private var job = CoroutineScope(Job())
@@ -102,7 +105,15 @@ class UpdateSmolToast {
                                                     job.launch {
                                                         try {
                                                             updateStage.value = UpdateStage.Installing
-                                                            updater.installUpdate()
+                                                            val gamePath = SL.gamePath.get()?.resolve("jre")
+
+                                                            if (gamePath != null && gamePath.exists()) {
+                                                                // Start updater, then quit application so updater can replace files.
+                                                                updater.installUpdate(jreFolder = gamePath)
+                                                                exitProcess(status = 0)
+                                                            } else {
+                                                                Timber.e { "Unable to install update, as the Starsector path with 'jre' needed to run the updater is missing." }
+                                                            }
                                                             updateStage.value = UpdateStage.Done
                                                         } catch (e: Exception) {
                                                             Timber.w(e)

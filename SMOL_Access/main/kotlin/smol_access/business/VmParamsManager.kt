@@ -1,7 +1,7 @@
 package smol_access.business
 
 import smol_access.config.GamePath
-import smol_access.config.Platform
+import utilities.Platform
 import smol_access.model.Vmparams
 import utilities.IOLock
 import timber.ktx.Timber

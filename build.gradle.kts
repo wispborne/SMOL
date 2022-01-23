@@ -28,8 +28,14 @@ tasks.withType<proguard.gradle.ProGuardTask>().configureEach {
 }
 
 tasks.register("buildSmolDist") {
-    dependsOn("App:createDistributable", "Updater:run")
+    dependsOn("App:createDistributable", "UpdateStager:run", "UpdateInstaller:uberJar")
     doLast {
-
+        copy {
+            val source = rootProject.projectDir.resolve("UpdateInstaller/dist")
+            val dest = rootProject.projectDir.resolve("dist/main/app/SMOL")
+            println("Copying from $source to $dest.")
+            from(source)
+            into(dest)
+        }
     }
 }
