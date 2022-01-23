@@ -3,6 +3,7 @@ package mod_repo
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.github.androidpasswordstore.sublimefuzzy.Fuzzy
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.jsoup.Jsoup
@@ -20,7 +21,7 @@ internal val isDebugMode = true
 private fun String.prepForMatching() = this.lowercase().filter { it.isLetter() }
 
 fun main(args: Array<String>) {
-    val jsanity = Jsanity(Gson(), JsonMapper())
+    val jsanity = Jsanity(GsonBuilder().setPrettyPrinting().create(), JsonMapper())
     val modRepoCache = ModRepoCache(jsanity)
 
     scrapeModIndexLinks()
