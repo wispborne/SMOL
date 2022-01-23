@@ -1,2 +1,2 @@
 JAVA_VERSION="16.0.2.7.1"
-MODULES="java.base"
+MODULES="java.base java.xml jdk.zipfs"
