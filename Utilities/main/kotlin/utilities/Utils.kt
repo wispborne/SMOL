@@ -3,9 +3,17 @@ package utilities
 import timber.ktx.Timber
 import java.io.File
 
-fun openProgramInTerminal(command: String, workingDirectory: File?) {
+fun openProgramInTerminal(
+    command: String,
+    workingDirectory: File?,
+    launchInNewWindow: Boolean = false,
+    runAsync: Boolean = false
+) {
     val commands = when (currentPlatform) {
-        Platform.Windows -> arrayOf("cmd.exe", "/C")
+        Platform.Windows -> {
+            val cmd = "cmd.exe"// + (if (launchInNewWindow) " start" else "")
+            arrayOf(cmd, "/C")
+        }
         else -> arrayOf("open")
     }
     Timber.i { "Running terminal command: '$command'." }
@@ -15,8 +23,10 @@ fun openProgramInTerminal(command: String, workingDirectory: File?) {
             null,
             workingDirectory
         ).apply {
-            this.inputStream.transferTo(System.out)
-            this.errorStream.transferTo(System.err)
+            if (!runAsync) {
+                this.inputStream.transferTo(System.out)
+                this.errorStream.transferTo(System.err)
+            }
         }
 }
 

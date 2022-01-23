@@ -120,7 +120,9 @@ class Updater(
         }\" -jar $updateInstallerFilename '${SMOL_UPDATE_ZIP}'"
         openProgramInTerminal(
             command = command,
-            workingDirectory = File(".")
+            workingDirectory = File("."),
+            launchInNewWindow = true,
+            runAsync = true
         )
     }
 

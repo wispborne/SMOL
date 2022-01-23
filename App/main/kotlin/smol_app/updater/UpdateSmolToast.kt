@@ -23,6 +23,7 @@ import smol_app.toasts.ToasterState
 import smol_app.util.ellipsizeAfter
 import timber.ktx.Timber
 import updatestager.Updater
+import kotlin.system.exitProcess
 
 class UpdateSmolToast {
     private var job = CoroutineScope(Job())
@@ -104,7 +105,7 @@ class UpdateSmolToast {
                                                             updateStage.value = UpdateStage.Installing
                                                             // Start updater, then quit application so updater can replace files.
                                                             updater.installUpdate()
-//                                                                exitProcess(status = 0)
+                                                            exitProcess(status = 0)
                                                             updateStage.value = UpdateStage.Done
                                                         } catch (e: Exception) {
                                                             Timber.w(e)

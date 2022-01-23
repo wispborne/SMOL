@@ -121,8 +121,8 @@ fun AppState.launchButton() {
                 val gameLauncher = SL.appConfig.gamePath.toPathOrNull()?.resolve("starsector.exe")
                 Logger.info { "Launching ${gameLauncher?.absolutePathString()} with working dir ${SL.appConfig.gamePath}." }
                 openProgramInTerminal(
-                    gameLauncher?.absolutePathString() ?: "missing",
-                    SL.appConfig.gamePath.toFileOrNull()
+                    command = gameLauncher?.absolutePathString() ?: "missing",
+                    workingDirectory = SL.appConfig.gamePath.toFileOrNull()
                 )
             },
             colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.primary),
