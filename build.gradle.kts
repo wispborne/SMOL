@@ -31,10 +31,11 @@ tasks.register("buildSmolDist") {
     dependsOn("App:createDistributable", "UpdateStager:run", "UpdateInstaller:uberJar")
     doLast {
         copy {
-            val source = rootProject.projectDir.resolve("UpdateInstaller/dist")
+            val sourceDist = rootProject.projectDir.resolve("UpdateInstaller/dist")
+            val sourceJre = rootProject.projectDir.resolve("UpdateInstaller/jre")
             val dest = rootProject.projectDir.resolve("dist/main/app/SMOL")
-            println("Copying from $source to $dest.")
-            from(source)
+            println("Copying from $sourceDist, $sourceJre to $dest.")
+            from(sourceDist, sourceJre)
             into(dest)
         }
     }
