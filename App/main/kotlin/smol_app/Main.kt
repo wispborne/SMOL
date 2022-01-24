@@ -106,7 +106,7 @@ fun main() = application {
         onCloseRequest = ::onQuit,
         state = appWindowState,
         title = "${Constants.APP_NAME} ${Constants.APP_VERSION}",
-        icon = painterResource("smol.ico"),
+        icon = painterResource("smolslaught.png"),
         onPreviewKeyEvent = { event -> onKeyEventHandlers.any { it(event) } }
     ) {
         val router = rememberRouter<Screen>(
