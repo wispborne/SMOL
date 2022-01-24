@@ -7,14 +7,13 @@ import androidx.compose.material.IconButton
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import org.update4j.Configuration
 import smol_app.composables.SmolButton
@@ -27,7 +26,6 @@ import kotlin.system.exitProcess
 
 class UpdateSmolToast {
     private var job = CoroutineScope(Job())
-    private var updateStage = MutableStateFlow(UpdateStage.Idle)
 
     enum class UpdateStage {
         Idle,
@@ -53,10 +51,11 @@ class UpdateSmolToast {
                     useStandardToastFrame = true,
                     content = {
                         val version = updateConfig.resolvedProperties[Updater.PROP_VERSION_NAME]
+                        var updateStage by remember { mutableStateOf(UpdateStage.Idle) }
 
                         Row(modifier = Modifier
                             .let {
-                                if (updateStage.value != UpdateStage.Idle)
+                                if (updateStage != UpdateStage.Idle)
                                     it.width(400.dp)
                                 else it
                             }) {
@@ -64,7 +63,7 @@ class UpdateSmolToast {
 
                             Column {
                                 Text(
-                                    text = when (updateStage.value) {
+                                    text = when (updateStage) {
                                         UpdateStage.Downloading ->
                                             "Downloading ${version?.let { "$it: " } ?: ""}" +
                                                     "${fileProgress.value?.name?.ellipsizeAfter(30)}"
@@ -78,44 +77,44 @@ class UpdateSmolToast {
                                 Row {
                                     SmolButton(
                                         modifier = Modifier.padding(top = 4.dp).align(Alignment.CenterVertically),
-                                        enabled = updateStage.value != UpdateStage.Done,
+                                        enabled = updateStage != UpdateStage.Done,
                                         onClick = {
-                                            when (updateStage.value) {
+                                            when (updateStage) {
                                                 UpdateStage.Idle -> {
                                                     job = CoroutineScope(Job())
                                                     job.launch {
                                                         try {
-                                                            updateStage.value = UpdateStage.Downloading
+                                                            updateStage = UpdateStage.Downloading
                                                             updater.update(remoteConfig = updateConfig)
-                                                            updateStage.value = UpdateStage.ReadyToInstall
+                                                            updateStage = UpdateStage.ReadyToInstall
                                                         } catch (e: Exception) {
                                                             Timber.w(e)
-                                                            updateStage.value = UpdateStage.DownloadFailed
+                                                            updateStage = UpdateStage.DownloadFailed
                                                         }
                                                     }
                                                 }
                                                 UpdateStage.Downloading -> {
                                                     job.cancel()
-                                                    updateStage.value = UpdateStage.Idle
+                                                    updateStage = UpdateStage.Idle
                                                 }
                                                 UpdateStage.ReadyToInstall -> {
                                                     job = CoroutineScope(Job())
                                                     job.launch {
                                                         try {
-                                                            updateStage.value = UpdateStage.Installing
+                                                            updateStage = UpdateStage.Installing
                                                             // Start updater, then quit application so updater can replace files.
                                                             updater.installUpdate()
                                                             exitProcess(status = 0)
-                                                            updateStage.value = UpdateStage.Done
+                                                            updateStage = UpdateStage.Done
                                                         } catch (e: Exception) {
                                                             Timber.w(e)
-                                                            updateStage.value = UpdateStage.InstallFailed
+                                                            updateStage = UpdateStage.InstallFailed
                                                         }
                                                     }
                                                 }
                                                 UpdateStage.Installing -> {
                                                     job.cancel()
-                                                    updateStage.value = UpdateStage.ReadyToInstall
+                                                    updateStage = UpdateStage.ReadyToInstall
                                                 }
                                                 else -> {
                                                 }
@@ -123,7 +122,7 @@ class UpdateSmolToast {
                                         }
                                     ) {
                                         Text(
-                                            text = when (updateStage.value) {
+                                            text = when (updateStage) {
                                                 UpdateStage.Idle,
                                                 UpdateStage.DownloadFailed -> "Download"
                                                 UpdateStage.Downloading -> "Cancel"
