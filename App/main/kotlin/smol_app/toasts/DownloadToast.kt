@@ -59,7 +59,7 @@ fun downloadToast(
     val statusText = when (status) {
         is DownloadItem.Status.NotStarted -> "Starting"
         is DownloadItem.Status.Downloading -> {
-            "${if (bitsPerSecond != null) "${"%.1f Mbps".format(bitsPerSecond.bitsToMiB)}, " else ""}$progressMiB${if (totalMiB != null) " / $totalMiB" else ""}"
+            "${if (bitsPerSecond != null) "${"%.1f MiBps".format(bitsPerSecond.bitsToMiB)}, " else ""}$progressMiB${if (totalMiB != null) " / $totalMiB" else ""}"
         }
         is DownloadItem.Status.Completed -> "Completed, $progressMiB"
         is DownloadItem.Status.Failed -> "Failed: ${status.error}"

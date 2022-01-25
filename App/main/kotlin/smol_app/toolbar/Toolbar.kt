@@ -26,7 +26,7 @@ import smol_app.composables.SmolTooltipText
 import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
 import smol_app.util.isJCEFEnabled
-import utilities.openProgramInTerminal
+import utilities.runCommandInTerminal
 import utilities.toFileOrNull
 import utilities.toPathOrNull
 import utilities.weightedRandom
@@ -120,7 +120,7 @@ fun AppState.launchButton() {
             onClick = {
                 val gameLauncher = SL.appConfig.gamePath.toPathOrNull()?.resolve("starsector.exe")
                 Logger.info { "Launching ${gameLauncher?.absolutePathString()} with working dir ${SL.appConfig.gamePath}." }
-                openProgramInTerminal(
+                runCommandInTerminal(
                     command = gameLauncher?.absolutePathString() ?: "missing",
                     workingDirectory = SL.appConfig.gamePath.toFileOrNull()
                 )

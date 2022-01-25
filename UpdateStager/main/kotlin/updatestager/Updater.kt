@@ -11,7 +11,7 @@ import org.update4j.UpdateOptions
 import smol_access.Constants
 import smol_access.config.AppConfig
 import timber.ktx.Timber
-import utilities.openProgramInTerminal
+import utilities.runCommandInTerminal
 import java.io.File
 import java.net.URI
 import java.nio.file.Path
@@ -33,6 +33,8 @@ class Updater(
      * Percent of download done between 0 and 1.
      */
     val totalDownloadFraction = MutableStateFlow<Float?>(null)
+    val totalDownloadBytes = MutableStateFlow<Long?>(null)
+    val totalDownloadedBytes = MutableStateFlow<Long>(0)
     val currentFileDownload = MutableStateFlow<FileDownload?>(null)
 
     data class FileDownload(val name: String, val progress: Float)
@@ -55,11 +57,16 @@ class Updater(
                 .getOrNull()
         }
 
+        totalDownloadBytes.value = remoteConfig?.files
+            ?.filter { it?.requiresUpdate() ?: false }
+            ?.filterNotNull()
+            ?.sumOf { it.size }
+
         return remoteConfig
     }
 
     suspend fun update(remoteConfig: Configuration) {
-        if (SMOL_UPDATE_ZIP.exists()) {
+        if (isUpdatedDownloaded()) {
             Timber.i { "SMOL update already exists." }
             return
         } else {
@@ -90,6 +97,11 @@ class Updater(
                                 totalDownloadFraction.value = frac
                             }
 
+                            override fun doneDownloadFile(file: FileMetadata, tempFile: Path) {
+                                super.doneDownloadFile(file, tempFile)
+                                totalDownloadedBytes.value += file.size
+                            }
+
                             override fun stop() {
                                 super.stop()
                                 totalDownloadFraction.value = null
@@ -107,6 +119,8 @@ class Updater(
         }
     }
 
+    fun isUpdatedDownloaded() = SMOL_UPDATE_ZIP.exists()
+
     /**
      * This will FAIL if the application is still running when the update starts, as it cannot update files in use.
      * Call this, then immediately close SMOL.
@@ -118,11 +132,12 @@ class Updater(
         val command = "\"${
             standaloneJrePath.resolve("bin/java.exe").absolutePathString()
         }\" -jar $updateInstallerFilename '${SMOL_UPDATE_ZIP}'"
-        openProgramInTerminal(
+        runCommandInTerminal(
             command = command,
             workingDirectory = File("."),
+            runAsync = true,
             launchInNewWindow = true,
-            runAsync = true
+            newWindowTitle = "Installing SMOL update"
         )
     }
 

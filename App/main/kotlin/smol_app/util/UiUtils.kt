@@ -65,19 +65,25 @@ fun String.ellipsizeAfter(length: Int): String {
  * A mebibyte is 2^20 bytes (1024 KiB instead of 1000 KB).
  */
 val Long.bitsToMiB
+    get() = (this / 8388608)
+
+/**
+ * A mebibyte is 2^20 bytes (1024 KiB instead of 1000 KB).
+ */
+val Long.bytesToMiB
     get() = (this / 1048576f)
 
 /**
  * 0.111 MiB
  */
 val Long.bytesAsReadableMiB: String
-    get() = "%.3f MiB".format(this.bitsToMiB)
+    get() = "%.3f MiB".format(this.bytesToMiB)
 
 /**
  * 0.1 MiB
  */
 val Long.bytesAsShortReadableMiB: String
-    get() = "%.2f MiB".format(this.bitsToMiB)
+    get() = "%.2f MiB".format(this.bytesToMiB)
 
 /**
  * Synchronously load an image file stored in resources for the application.

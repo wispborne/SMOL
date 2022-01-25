@@ -3,23 +3,31 @@ package utilities
 import timber.ktx.Timber
 import java.io.File
 
-fun openProgramInTerminal(
+fun runCommandInTerminal(
     command: String,
     workingDirectory: File?,
+    runAsync: Boolean = false,
     launchInNewWindow: Boolean = false,
-    runAsync: Boolean = false
+    newWindowTitle: String? = null
 ) {
-    val commands = when (currentPlatform) {
+    val launcherCommand = when (currentPlatform) {
         Platform.Windows -> {
-            val cmd = "cmd.exe"// + (if (launchInNewWindow) " start" else "")
-            arrayOf(cmd, "/C")
+            "cmd /C ${
+                if (launchInNewWindow) {
+                    "start \"${newWindowTitle ?: "Running..."}\" "
+                } else {
+                    ""
+                }
+            }"
         }
-        else -> arrayOf("open")
+        else -> "open "
     }
-    Timber.i { "Running terminal command: '$command'." }
+
+    val finalCommand = launcherCommand + command
+    Timber.i { "Running terminal command: '$finalCommand'." }
     Runtime.getRuntime()
         .exec(
-            arrayOf(*commands, command),
+            finalCommand,
             null,
             workingDirectory
         ).apply {
@@ -29,6 +37,13 @@ fun openProgramInTerminal(
             }
         }
 }
+
+//Runtime.getRuntime()
+//.exec(
+//"cmd /C start \"Installing SMOL update...\" \"F:\\Code\\Starsector\\SMOL\\App\\jre-min-wi n\\bin\\java.exe\" -jar UpdateInstaller-fat.jar \"smol-update.zip\"",
+//null,
+//workingDirectory
+//)
 
 /**
  * From [https://github.com/JetBrains/skija/blob/ebd63708b35e23667c1bf65845182430d0cf0860/shared/java/impl/Platform.java].

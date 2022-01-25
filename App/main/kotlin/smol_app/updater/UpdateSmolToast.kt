@@ -19,6 +19,8 @@ import org.update4j.Configuration
 import smol_app.composables.SmolButton
 import smol_app.toasts.Toast
 import smol_app.toasts.ToasterState
+import smol_app.util.bytesAsShortReadableMiB
+import smol_app.util.bytesToMiB
 import smol_app.util.ellipsizeAfter
 import timber.ktx.Timber
 import updatestager.Updater
@@ -51,11 +53,16 @@ class UpdateSmolToast {
                     useStandardToastFrame = true,
                     content = {
                         val version = updateConfig.resolvedProperties[Updater.PROP_VERSION_NAME]
-                        var updateStage by remember { mutableStateOf(UpdateStage.Idle) }
+                        var updateStage by remember {
+                            mutableStateOf(
+                                if (updater.isUpdatedDownloaded())
+                                    UpdateStage.ReadyToInstall else UpdateStage.Idle
+                            )
+                        }
 
                         Row(modifier = Modifier
                             .let {
-                                if (updateStage != UpdateStage.Idle)
+                                if (updateStage == UpdateStage.Downloading)
                                     it.width(400.dp)
                                 else it
                             }) {
@@ -145,6 +152,15 @@ class UpdateSmolToast {
                                         progress = fileProgress.value?.progress ?: 0f
                                     )
                                 }
+
+                                val downloadTotal = updater.totalDownloadBytes.collectAsState().value
+                                val downloadedTotal =
+                                    if (updateStage >= UpdateStage.Downloading) downloadTotal
+                                    else updater.totalDownloadedBytes.collectAsState().value
+                                Text(
+                                    text = "${downloadedTotal?.let { "%.2f".format(it.bytesToMiB) } ?: "unknown"} / ${downloadTotal?.bytesAsShortReadableMiB ?: "unknown"}",
+                                    modifier = Modifier.padding(start = 8.dp)
+                                )
                             }
 
 
