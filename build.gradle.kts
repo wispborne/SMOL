@@ -27,8 +27,9 @@ tasks.withType<proguard.gradle.ProGuardTask>().configureEach {
     dontoptimize()
 }
 
-tasks.register("buildSmolDist") {
-    dependsOn("App:createDistributable", "UpdateStager:run", "UpdateInstaller:uberJar")
+tasks.register("buildSmol") {
+    dependsOn("App:createDistributable", "UpdateInstaller:uberJar")
+
     doLast {
         copy {
             val sourceDist = rootProject.projectDir.resolve("UpdateInstaller/dist")
@@ -39,4 +40,8 @@ tasks.register("buildSmolDist") {
             into(dest)
         }
     }
+}
+
+tasks.register("buildSmolDist") {
+    dependsOn("buildSmol", "UpdateStager:run")
 }
