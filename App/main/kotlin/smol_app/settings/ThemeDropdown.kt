@@ -90,7 +90,7 @@ fun AppState.themeDropdown(modifier: Modifier = Modifier): String {
                 modifier = Modifier
                     .padding(start = 16.dp)
                     .align(Alignment.CenterVertically)
-                    .mouseClickable { smol_access.Constants.THEME_CONFIG_PATH?.openInDesktop() }, text = "Edit"
+                    .mouseClickable { SL.themeManager.editTheme(SL.themeManager.activeTheme.value.first).openInDesktop() }, text = "Edit"
             )
             SmolLinkText(
                 modifier = Modifier

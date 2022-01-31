@@ -2,20 +2,15 @@ package updatestager
 
 import org.update4j.Configuration
 import org.update4j.FileMetadata
-import smol_access.Constants
-import timber.ktx.Timber
 import java.nio.file.Path
-import java.util.*
 import kotlin.io.path.absolutePathString
-import kotlin.io.path.inputStream
-import kotlin.io.path.pathString
 import kotlin.io.path.writer
 import kotlin.streams.asSequence
 
 
 object WriteLocalUpdateConfig {
     fun run(onlineUrl: String, directoryOfFilesToAddToManifest: Path): Configuration? {
-        val excludes = listOf(".git", ".log")
+        val dir = directoryOfFilesToAddToManifest
 
         val config = Configuration.builder()
             .baseUri(onlineUrl)
@@ -38,16 +33,21 @@ object WriteLocalUpdateConfig {
 //                    }
 //                    .getOrElse { "" })
             .files(
-                FileMetadata.streamDirectory(directoryOfFilesToAddToManifest)
-                    .filter { file -> excludes.none { exclude -> file.source.pathString.contains(exclude) } }
-                    .asSequence()
+                FileMetadata.streamDirectory(dir.resolve("app")).asSequence()
+                    .plus(FileMetadata.streamDirectory(dir.resolve("jre-min-win")).asSequence())
+                    .plus(FileMetadata.streamDirectory(dir.resolve("libs")).asSequence())
+                    .plus(FileMetadata.streamDirectory(dir.resolve("runtime")).asSequence())
+                    .plus(FileMetadata.readFrom(dir.resolve("SMOL.exe")))
+                    .plus(FileMetadata.readFrom(dir.resolve("SMOL.ico")))
+                    .plus(FileMetadata.readFrom(dir.resolve("update-config.xml")))
+                    .plus(FileMetadata.readFrom(dir.resolve("UpdateInstaller-fat.jar")))
                     .onEach { r -> r.classpath(r.source.toString().endsWith(".jar")) }
                     .toList())
             .build()
 
 
-        println("Creating config based on files in ${directoryOfFilesToAddToManifest.absolutePathString()}.")
-        directoryOfFilesToAddToManifest.resolve(Updater.UPDATE_CONFIG_XML).run {
+        println("Creating config based on files in ${dir.absolutePathString()}.")
+        dir.resolve(Updater.UPDATE_CONFIG_XML).run {
             this.writer().use {
                 config.write(it)
                 println("Wrote config to ${this.absolutePathString()}")

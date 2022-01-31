@@ -28,7 +28,8 @@ object Constants {
     val STAGING_FOLDER_DEFAULT: Path = APP_FOLDER_DEFAULT.resolve("staging")
     val UI_CONFIG_PATH: Path = APP_FOLDER_DEFAULT.resolve("SMOL_UIConfig.json")
     val APP_CONFIG_PATH: Path = APP_FOLDER_DEFAULT.resolve("SMOL_AppConfig.json")
-    val THEME_CONFIG_PATH: Path? = resourcesDir?.resolve("SMOL_Themes.json")
+    internal val BASE_THEME_CONFIG_PATH: Path? = resourcesDir?.resolve("SMOL_Themes.json")
+    internal val USER_THEME_CONFIG_PATH: Path? = APP_FOLDER_DEFAULT.resolve("SMOL_UserThemes.json")
     val VERCHECK_CACHE_PATH: Path = APP_FOLDER_DEFAULT.resolve("SMOL_VerCheckCache.json")
     val VRAM_CHECKER_RESULTS_PATH: Path = APP_FOLDER_DEFAULT.resolve("SMOL_VRAMCheckResults.json")
 

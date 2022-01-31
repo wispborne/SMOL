@@ -1,17 +1,17 @@
 package smol_access.themes
 
-import smol_access.Constants
 import utilities.Jsanity
 import utilities.Config
 import utilities.InMemoryPrefStorage
 import utilities.JsonFilePrefStorage
+import java.nio.file.Path
 
-class ThemeConfig(gson: Jsanity) :
+class ThemeConfig(gson: Jsanity, val path: Path) :
     Config(
         InMemoryPrefStorage(
             JsonFilePrefStorage(
                 gson = gson,
-                file = Constants.THEME_CONFIG_PATH!!
+                file = path
             )
         )
     ) {

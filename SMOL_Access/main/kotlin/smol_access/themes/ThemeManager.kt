@@ -2,12 +2,15 @@ package smol_access.themes
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import smol_access.Constants
 import smol_access.business.UserManager
 import timber.ktx.Timber
+import utilities.Jsanity
+import java.nio.file.Path
 
 class ThemeManager(
     private val userManager: UserManager,
-    private val themeConfig: ThemeConfig
+    jsanity: Jsanity
 ) {
     companion object {
         val defaultTheme = "Starfarer" to Theme(
@@ -23,6 +26,8 @@ class ThemeManager(
         )
     }
 
+    private val baseThemeConfig: ThemeConfig = ThemeConfig(gson = jsanity, path = Constants.BASE_THEME_CONFIG_PATH!!)
+    private val userThemeConfig: ThemeConfig = ThemeConfig(gson = jsanity, path = Constants.USER_THEME_CONFIG_PATH!!)
     private val activeThemeInner = MutableStateFlow(getActiveTheme())
     val activeTheme = activeThemeInner.asStateFlow()
 
@@ -38,7 +43,7 @@ class ThemeManager(
 
     fun getThemes(): Map<String, Theme> =
         kotlin.runCatching {
-            themeConfig.themes
+            baseThemeConfig.themes + userThemeConfig.themes
         }
             .onFailure { Timber.w(it) }
             .getOrElse { emptyMap() }
@@ -59,9 +64,24 @@ class ThemeManager(
 
     fun reloadThemes() {
         kotlin.runCatching {
-            themeConfig.reload()
+            baseThemeConfig.reload()
+            userThemeConfig.reload()
         }
             .onFailure { Timber.w(it) }
         activeThemeInner.value = getActiveTheme()
+    }
+
+    fun editTheme(themeKey: String): Path {
+        if (!userThemeConfig.themes.containsKey(themeKey)) {
+            kotlin.runCatching {
+                // Add the theme to the user config so they can edit it.
+                reloadThemes()
+                userThemeConfig.themes = (userThemeConfig.themes.toMutableMap()
+                    .apply { this[themeKey] = baseThemeConfig.themes[themeKey]!! })
+            }
+                .onFailure { Timber.w(it) }
+        }
+
+        return userThemeConfig.path
     }
 }

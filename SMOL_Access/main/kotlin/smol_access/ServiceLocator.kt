@@ -46,7 +46,6 @@ class ServiceLocator internal constructor(
 //        .addLast(KotlinJsonAdapterFactory())
 //        .build(),
     val jsanity: Jsanity = Jsanity(gson = buildGson(), jackson = buildJackson()),
-    internal val themeConfig: ThemeConfig = ThemeConfig(gson = jsanity),
     internal val versionCheckerCache: VersionCheckerCache = VersionCheckerCache(gson = jsanity),
     val appConfig: AppConfig = AppConfig(gson = jsanity),
     val userManager: UserManager = UserManager(
@@ -106,7 +105,7 @@ class ServiceLocator internal constructor(
     val userModProfileManager: UserModProfileManager = UserModProfileManager(
         userManager = userManager, access = access, modLoader = modLoader
     ),
-    val themeManager: ThemeManager = ThemeManager(userManager = userManager, themeConfig = themeConfig),
+    val themeManager: ThemeManager = ThemeManager(userManager = userManager, jsanity = jsanity),
     val modRepo: ModRepo = ModRepo(jsanity = jsanity, httpClientBuilder = httpClientBuilder)
 )
 

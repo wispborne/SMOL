@@ -477,33 +477,14 @@ fun AppState.profileControls(
             }
         }
 
-        SmolTooltipArea(tooltip = { SmolTooltipText(text = "Delete profile.") }) {
-            IconButton(
-                modifier = Modifier
-                    .align(Alignment.CenterVertically)
-                    .height(SmolTheme.iconHeightWidth())
-                    .width(SmolTheme.iconHeightWidth()),
-                onClick = {
-                    if (isActiveProfile) {
-                        alertDialogSetter.invoke {
-                            SmolAlertDialog(
-                                onDismissRequest = { alertDialogSetter.invoke(null) },
-                                confirmButton = { SmolButton(onClick = { alertDialogSetter.invoke(null) }) { Text("Oops") } },
-                                title = {
-                                    Text(
-                                        text = "Cannot disable active profile",
-                                        style = SmolTheme.alertDialogTitle()
-                                    )
-                                },
-                                text = {
-                                    Text(
-                                        text = "Set another profile as active before disabling this one.",
-                                        style = SmolTheme.alertDialogBody()
-                                    )
-                                }
-                            )
-                        }
-                    } else {
+        if (!isActiveProfile) {
+            SmolTooltipArea(tooltip = { SmolTooltipText(text = "Delete profile.") }) {
+                IconButton(
+                    modifier = Modifier
+                        .align(Alignment.CenterVertically)
+                        .height(SmolTheme.iconHeightWidth())
+                        .width(SmolTheme.iconHeightWidth()),
+                    onClick = {
                         alertDialogSetter.invoke {
                             val profile = modProfile
                             SmolAlertDialog(
@@ -529,14 +510,14 @@ fun AppState.profileControls(
                             )
                         }
                     }
+                ) {
+                    val alphaOfHoverDimmedElements = animateFloatAsState(if (isBeingHovered) 0.8f else 0.5f).value
+                    Icon(
+                        painter = painterResource("icon-trash.svg"),
+                        contentDescription = null,
+                        tint = MaterialTheme.colors.onSurface.copy(alpha = alphaOfHoverDimmedElements)
+                    )
                 }
-            ) {
-                val alphaOfHoverDimmedElements = animateFloatAsState(if (isBeingHovered) 0.8f else 0.5f).value
-                Icon(
-                    painter = painterResource("icon-trash.svg"),
-                    contentDescription = null,
-                    tint = MaterialTheme.colors.onSurface.copy(alpha = alphaOfHoverDimmedElements)
-                )
             }
         }
     }

@@ -5,10 +5,13 @@ import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.GridCells
 import androidx.compose.foundation.lazy.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -67,16 +70,18 @@ fun AppState.ProfilesView(
                 settingsButton()
             }
         }, content = {
+            val scrollState = rememberScrollState()
             HorizontalSplitPane(
                 modifier = modifier.padding(
                     start = 16.dp,
                     top = 16.dp,
                     end = 16.dp,
                     bottom = SmolTheme.bottomBarHeight
-                ),
+                )
+                    .scrollable(state = scrollState, orientation = Orientation.Vertical),
                 splitPaneState = splitPageState
             ) {
-                first {
+                first(minSize = 300.dp) {
                     Column {
                         Text(
                             text = "Profiles",
@@ -118,7 +123,7 @@ fun AppState.ProfilesView(
 
                 horizontalSplitter(modifier = Modifier.padding(start = 16.dp, end = 16.dp))
 
-                second {
+                second(minSize = 300.dp) {
                     Column {
                         Text(
                             text = "Saves",
