@@ -225,7 +225,7 @@ fun AppState.ModGridRow(
                         }, modifier = Modifier.mouseClickable {
                             if (this.buttons.isPrimaryPressed) {
                                 if (hasModThread) {
-                                    if (Constants.isJCEFEnabled()) {
+                                    if (Constants.isModBrowserEnabled()) {
                                         router.push(Screen.ModBrowser(modThreadId?.getModThreadUrl()))
                                     } else {
                                         kotlin.runCatching {

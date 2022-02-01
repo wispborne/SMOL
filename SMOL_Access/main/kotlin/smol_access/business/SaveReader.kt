@@ -21,7 +21,7 @@ class SaveReader(
     val saves = MutableStateFlow<List<SaveFile>>(emptyList())
 
     private val descriptorFileName = "descriptor.xml"
-    private val defaultSaveFolder = gamePath.get()?.resolve("saves")
+    private val defaultSaveFolder = gamePath.path.value?.resolve("saves")
     private val datePatterns = listOf("yyyy-MM-dd HH:mm:ss.SSS zzz", "yyyy-MM-dd HH:mm:ss.S zzz")
 
     fun readAllSaves(saveFolder: Path? = defaultSaveFolder) {

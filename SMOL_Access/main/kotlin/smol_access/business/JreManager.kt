@@ -34,7 +34,7 @@ class JreManager(
 
     fun findJREs(): List<JreEntry> {
         IOLock.read(IOLocks.gameMainFolderLock) {
-            return gamePath.get()?.listDirectoryEntries()
+            return gamePath.path.value?.listDirectoryEntries()
                 ?.mapNotNull { path ->
                     val javaExe = path.resolve("bin/java.exe")
                     if (!javaExe.exists()) return@mapNotNull null
@@ -66,7 +66,7 @@ class JreManager(
         IOLock.write(IOLocks.gameMainFolderLock) {
             runBlocking {
                 kotlin.runCatching {
-                    val gamePathNN = gamePath.get()!!
+                    val gamePathNN = gamePath.path.value!!
                     val currentJreSource = findJREs().firstOrNull { it.isUsedByGame }
                     var currentJreDest: Path? = null
                     val gameJrePath = kotlin.runCatching { gamePathNN.resolve(gameJreFolderName) }
@@ -130,7 +130,7 @@ class JreManager(
      */
     suspend fun downloadJre8() {
         kotlin.runCatching {
-            val gamePathNN = gamePath.get()!!
+            val gamePathNN = gamePath.path.value!!
             val gameJrePath = kotlin.runCatching { gamePathNN.resolve(gameJreFolderName) }
                 .onFailure { Timber.w(it) }
                 .getOrNull() ?: return@runCatching

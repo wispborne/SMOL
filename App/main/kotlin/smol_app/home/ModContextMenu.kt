@@ -114,7 +114,7 @@ private fun AppState.modGridSingleModMenu(
 
     val modThreadId = mod.getModThreadId()
 
-    if (Constants.isJCEFEnabled()) {
+    if (Constants.isModBrowserEnabled()) {
         if (modThreadId != null) {
             DropdownMenuItem(
                 onClick = {

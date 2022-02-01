@@ -15,14 +15,13 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import dev.andrewbailey.diff.differenceOf
 import smol_access.Constants
-import utilities.Platform
+import smol_access.SL
 import smol_access.model.Mod
 import smol_access.themes.ThemeManager
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.toColors
 import timber.ktx.Timber
 import java.awt.Desktop
-import java.io.File
 import java.net.URI
 import java.nio.file.Path
 import kotlin.io.path.listDirectoryEntries
@@ -155,5 +154,7 @@ fun Constants.isJCEFEnabled() =
         .onFailure { Timber.d { it.message ?: "Couldn't find jcef" } }
         .getOrElse { false }
 
+fun Constants.isModBrowserEnabled() = isJCEFEnabled() && SL.gamePath.exists()
+fun Constants.isModProfilesEnabled() = SL.gamePath.exists()
 
 fun createGoogleSearchFor(query: String) = "https://google.com/search?q=" + query.replace(' ', '+')

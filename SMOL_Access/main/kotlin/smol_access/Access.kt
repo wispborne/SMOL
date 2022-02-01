@@ -9,7 +9,6 @@ import smol_access.business.ModLoader
 import smol_access.business.Staging
 import smol_access.config.AppConfig
 import smol_access.config.GamePath
-import utilities.Platform
 import smol_access.config.SettingsPath
 import smol_access.model.Mod
 import smol_access.model.ModId
@@ -33,8 +32,10 @@ class Access internal constructor(
      * Checks the /mods, archives, and staging paths and sets them to null if they don't exist.
      */
     fun checkAndSetDefaultPaths(platform: Platform) {
-        if (appConfig.gamePath == null) {
-            appConfig.gamePath = gamePath.getDefaultStarsectorPath(platform)?.absolutePath
+        if (gamePath.path.value == null) {
+            gamePath.getDefaultStarsectorPath(platform)?.absolutePath?.run {
+                gamePath.set(this)
+            }
         }
 
         if (appConfig.archivesPath.toPathOrNull()?.exists() != true) {
@@ -73,7 +74,7 @@ class Access internal constructor(
      * @return A list of errors, or empty if no errors.
      */
     fun validatePaths(
-        newGamePath: Path? = gamePath.get(),
+        newGamePath: Path? = gamePath.path.value,
         newArchivesPath: Path? = appConfig.archivesPath?.toPathOrNull(),
         newStagingPath: Path? = appConfig.stagingPath?.toPathOrNull()
     ): SmolResult<Unit, Map<SettingsPath, List<String>>> {

@@ -17,7 +17,7 @@ class AppConfig(gson: Jsanity) :
         )
     ) {
     var updateChannel: String? by pref(prefKey = "updateChannel", defaultValue = "unstable")
-    var gamePath: String? by pref(prefKey = "gamePath", defaultValue = null)
+    internal var gamePath: String? by pref(prefKey = "gamePath", defaultValue = null)
     var archivesPath: String? by pref("archivesPath", defaultValue = null)
     var stagingPath: String? by pref(prefKey = "stagingPath", defaultValue = null)
     var lastFilePickerDirectory: String? by pref(prefKey = "lastFilePickerDirectory", defaultValue = null)

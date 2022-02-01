@@ -11,7 +11,7 @@ class VmParamsManager(
     gamePath: GamePath,
     private val platform: Platform
 ) {
-    private val path = gamePath.get()?.let {
+    private val path = gamePath.path.value?.let {
         when (platform) {
             Platform.Windows -> it.resolve("vmparams")
             Platform.MacOS -> TODO()
@@ -19,7 +19,7 @@ class VmParamsManager(
         }
     }
 
-    private val backupPath = gamePath.get()?.let {
+    private val backupPath = gamePath.path.value?.let {
         when (platform) {
             Platform.Windows -> it.resolve("vmparams.bak")
             Platform.MacOS -> TODO()

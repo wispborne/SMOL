@@ -26,9 +26,9 @@ import smol_app.composables.SmolTooltipText
 import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
 import smol_app.util.isJCEFEnabled
+import smol_app.util.isModBrowserEnabled
+import smol_app.util.isModProfilesEnabled
 import utilities.runCommandInTerminal
-import utilities.toFileOrNull
-import utilities.toPathOrNull
 import utilities.weightedRandom
 import java.awt.FileDialog
 import kotlin.io.path.absolutePathString
@@ -47,12 +47,15 @@ fun AppState.settingsButton() {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AppState.modBrowserButton() {
-    val isEnabled = Constants.isJCEFEnabled()
+    val isEnabled = Constants.isModBrowserEnabled()
     SmolTooltipArea(
         tooltip = {
             SmolTooltipText(
-                if (isEnabled) "View and install mods from the internet."
-                else "JCEF not found; add to /libs to enable the Mod Browser."
+                when {
+                    !Constants.isJCEFEnabled() -> "JCEF not found; add to /libs to enable the Mod Browser."
+                    !SL.gamePath.exists() -> "Set a valid game path."
+                    else -> "View and install mods from the internet."
+                }
             )
         },
         delayMillis = SmolTooltipArea.shortDelay
@@ -70,11 +73,19 @@ fun AppState.modBrowserButton() {
 @Composable
 fun AppState.profilesButton() {
     SmolTooltipArea(
-        tooltip = { SmolTooltipText("Create and swap between enabled mods.") },
+        tooltip = {
+            SmolTooltipText(
+                text = when {
+                    !SL.gamePath.exists() -> "Set a valid game path."
+                    else -> "Create and swap between enabled mods."
+                }
+            )
+        },
         delayMillis = SmolTooltipArea.shortDelay
     ) {
         SmolButton(
             onClick = { router.push(Screen.Profiles) },
+            enabled = Constants.isModProfilesEnabled(),
             modifier = Modifier.padding(start = 16.dp)
         ) {
             Text("Profiles")
@@ -118,11 +129,11 @@ fun AppState.launchButton() {
     ) {
         SmolButton(
             onClick = {
-                val gameLauncher = SL.appConfig.gamePath.toPathOrNull()?.resolve("starsector.exe")
-                Logger.info { "Launching ${gameLauncher?.absolutePathString()} with working dir ${SL.appConfig.gamePath}." }
+                val gameLauncher = SL.gamePath.path.value?.resolve("starsector.exe")
+                Logger.info { "Launching ${gameLauncher?.absolutePathString()} with working dir ${SL.gamePath.path.value}." }
                 runCommandInTerminal(
                     command = gameLauncher?.absolutePathString() ?: "missing",
-                    workingDirectory = SL.appConfig.gamePath.toFileOrNull()
+                    workingDirectory = SL.gamePath.path.value?.toFile()
                 )
             },
             colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.primary),

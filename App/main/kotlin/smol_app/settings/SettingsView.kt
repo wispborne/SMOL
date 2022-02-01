@@ -29,6 +29,7 @@ import utilities.rootCause
 import utilities.toPathOrNull
 import java.io.File
 import javax.swing.JFileChooser
+import kotlin.io.path.pathString
 import kotlin.random.Random
 
 object SettingsView {
@@ -63,7 +64,7 @@ fun AppState.settingsView(
                     .padding(top = 16.dp, bottom = 16.dp)
             ) {
                 Column {
-                    var gamePath by remember { mutableStateOf(SL.appConfig.gamePath ?: "") }
+                    var gamePath by remember { mutableStateOf(SL.gamePath.path.value?.pathString) }
                     var archivesPath by remember { mutableStateOf(SL.appConfig.archivesPath ?: "") }
                     var stagingPath by remember { mutableStateOf(SL.appConfig.stagingPath ?: "") }
                     val alertDialogMessage = remember { mutableStateOf<String?>(null) }
@@ -96,7 +97,7 @@ fun AppState.settingsView(
                             alertDialogMessage.value = errors.joinToString(separator = "\n")
                             return false
                         } else {
-                            SL.appConfig.gamePath = gamePath
+                            SL.gamePath.set(gamePath!!)
 
                             kotlin.runCatching {
                                 SL.archives.changePath(archivesPath)
@@ -159,41 +160,63 @@ fun AppState.settingsView(
 
                             item {
                                 Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp)) {
-                                    gamePath = gamePathSetting(gamePath, archivesPath, stagingPath, settingsPathErrors)
+                                    gamePath = gamePathSetting(
+                                        gamePath = gamePath ?: "",
+                                        archivesPath = archivesPath,
+                                        stagingPath = stagingPath,
+                                        settingsPathErrors = settingsPathErrors
+                                    )
                                     archivesPath =
-                                        archivesPathSetting(gamePath, archivesPath, stagingPath, settingsPathErrors)
+                                        archivesPathSetting(
+                                            gamePath = gamePath ?: "",
+                                            archivesPath = archivesPath,
+                                            stagingPath = stagingPath,
+                                            settingsPathErrors = settingsPathErrors
+                                        )
                                     stagingPath =
-                                        stagingPathSetting(gamePath, archivesPath, stagingPath, settingsPathErrors)
+                                        stagingPathSetting(
+                                            gamePath = gamePath ?: "",
+                                            archivesPath = archivesPath,
+                                            stagingPath = stagingPath,
+                                            settingsPathErrors = settingsPathErrors
+                                        )
                                     themeDropdown(Modifier.padding(start = 16.dp, top = 24.dp))
                                 }
                             }
 
                             item { Divider(modifier = Modifier.padding(top = 32.dp, bottom = 8.dp)) }
 
-                            item {
-                                Text(
-                                    text = "Game Settings",
-                                    modifier = Modifier.padding(bottom = 8.dp, top = 8.dp, start = 16.dp, end = 16.dp),
-                                    fontWeight = FontWeight.Bold,
-                                    fontFamily = SmolTheme.orbitronSpaceFont,
-                                    fontSize = 13.sp
-                                )
-                            }
-                            item { ramButton(modifier = Modifier.padding(start = 16.dp, top = 16.dp)) }
-                            item {
-                                jreSwitcher(
-                                    modifier = Modifier.padding(start = 16.dp, top = 24.dp),
-                                    recomposer = recomposer,
-                                    jresFound = jresFound
-                                )
-                            }
-                            if (true) {  //|| javasFound.none { it.version == 8 }) {
+                            if (SL.gamePath.exists()) {
                                 item {
-                                    jre8DownloadButton(
-                                        modifier = Modifier.padding(start = 16.dp, top = 8.dp),
-                                        jresFound = jresFound,
-                                        recomposer = recomposer
+                                    Text(
+                                        text = "Game Settings",
+                                        modifier = Modifier.padding(
+                                            bottom = 8.dp,
+                                            top = 8.dp,
+                                            start = 16.dp,
+                                            end = 16.dp
+                                        ),
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = SmolTheme.orbitronSpaceFont,
+                                        fontSize = 13.sp
                                     )
+                                }
+                                item { ramButton(modifier = Modifier.padding(start = 16.dp, top = 16.dp)) }
+                                item {
+                                    jreSwitcher(
+                                        modifier = Modifier.padding(start = 16.dp, top = 24.dp),
+                                        recomposer = recomposer,
+                                        jresFound = jresFound
+                                    )
+                                }
+                                if (true) {  //|| javasFound.none { it.version == 8 }) {
+                                    item {
+                                        jre8DownloadButton(
+                                            modifier = Modifier.padding(start = 16.dp, top = 8.dp),
+                                            jresFound = jresFound,
+                                            recomposer = recomposer
+                                        )
+                                    }
                                 }
                             }
                         }
