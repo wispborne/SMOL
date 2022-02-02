@@ -132,7 +132,7 @@ fun AppState.launchButton() {
                 val gameLauncher = SL.gamePath.path.value?.resolve("starsector.exe")
                 Logger.info { "Launching ${gameLauncher?.absolutePathString()} with working dir ${SL.gamePath.path.value}." }
                 runCommandInTerminal(
-                    command = gameLauncher?.absolutePathString() ?: "missing",
+                    command = ("\"${gameLauncher?.absolutePathString() ?: "missing game path"}\""),
                     workingDirectory = SL.gamePath.path.value?.toFile()
                 )
             },

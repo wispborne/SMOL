@@ -36,13 +36,13 @@ class VmParamsManager(
             }
         }
 
-    fun write(vmparams: Vmparams) =
+    fun write(vmparams: Vmparams) {
         IOLock.read {
-            path ?: return@write
+            path ?: return
 
             if (backupPath == null) {
                 Timber.e { "Backup path was null!" }
-                return@write
+                return
             }
 
             if (backupPath.notExists()) {
@@ -57,12 +57,19 @@ class VmParamsManager(
 
             IOLock.write {
                 if (!path.exists()) {
-                    path.createFile()
+                    kotlin.runCatching {
+                        path.createFile()
+                    }
+                        .onFailure { Timber.w(it) { "Unable to create a vmparams file. Ensure that SMOL has permission (run as admin?)." } }
                 }
 
-                path.writeText(vmparams.fullString)
+                kotlin.runCatching {
+                    path.writeText(vmparams.fullString)
+                }
+                    .onFailure { Timber.w(it) { "Unable to update vmparams file. Ensure that SMOL has permission (run as admin?)." } }
             }
         }
+    }
 
     fun update(mutator: (Vmparams?) -> Vmparams?): Vmparams? =
         mutator(read())?.also { write(it) }
