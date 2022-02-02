@@ -14,6 +14,7 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.nio.file.FileVisitOption
 import java.nio.file.Files
+import java.nio.file.LinkOption
 import java.nio.file.Path
 import kotlin.io.path.*
 import kotlin.random.Random
@@ -57,6 +58,7 @@ suspend fun Path.calculateFileSize() =
         }
     }
 
+fun Path?.exists(vararg options: LinkOption): Boolean = this?.let { Files.exists(this, *options) } == true
 
 fun Path.walk(maxDepth: Int = Int.MAX_VALUE, vararg options: FileVisitOption): Sequence<Path> =
     Files.walk(this, maxDepth, *options)

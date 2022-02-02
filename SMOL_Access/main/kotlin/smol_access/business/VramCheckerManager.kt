@@ -5,7 +5,7 @@ import VramChecker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import smol_access.Constants
-import smol_access.config.GamePath
+import smol_access.config.GamePathManager
 import smol_access.config.VramCheckerCache
 import smol_access.model.Mod
 import smol_access.model.ModVariant
@@ -14,7 +14,7 @@ import smol_access.model.Version
 import timber.ktx.Timber
 
 class VramCheckerManager(
-    private val gamePath: GamePath,
+    private val gamePathManager: GamePathManager,
     private val vramCheckerCache: VramCheckerCache
 ) {
     private val _vramUsage = MutableStateFlow(vramCheckerCache.bytesPerVariant)
@@ -28,7 +28,7 @@ class VramCheckerManager(
 
         Timber.i { "Refreshing VRAM use of ${modIdsToUpdate.count()} mods." }
 
-        val modsPath = gamePath.getModsPath()
+        val modsPath = gamePathManager.getModsPath()
 
         val results = VramChecker(
             enabledModIds = mods.filter { it.hasEnabledVariant }.map { it.id },

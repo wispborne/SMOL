@@ -11,7 +11,7 @@ import net.sf.sevenzipjbinding.util.ByteArrayStream
 import org.apache.commons.codec.digest.DigestUtils
 import smol_access.Constants
 import smol_access.config.AppConfig
-import smol_access.config.GamePath
+import smol_access.config.GamePathManager
 import smol_access.model.ModInfo
 import smol_access.model.ModVariant
 import smol_access.model.Version
@@ -31,7 +31,7 @@ import kotlin.io.path.*
 @OptIn(ExperimentalStdlibApi::class)
 class Archives internal constructor(
     private val config: AppConfig,
-    private val gamePath: GamePath,
+    private val gamePathManager: GamePathManager,
     private val gson: Jsanity,
     private val modInfoLoader: ModInfoLoader
 ) {

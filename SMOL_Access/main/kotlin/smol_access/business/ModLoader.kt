@@ -8,7 +8,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import smol_access.Constants
 import smol_access.config.AppConfig
-import smol_access.config.GamePath
+import smol_access.config.GamePathManager
 import smol_access.model.Mod
 import smol_access.model.ModId
 import smol_access.model.ModVariant
@@ -21,7 +21,7 @@ import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 
 internal class ModLoader internal constructor(
-    private val gamePath: GamePath,
+    private val gamePathManager: GamePathManager,
     private val config: AppConfig,
     private val archives: Archives,
     private val modInfoLoader: ModInfoLoader,
@@ -117,7 +117,7 @@ internal class ModLoader internal constructor(
                             .onEach { Timber.v { "Found staged/installed mod $it" } }
 
                     // Get items in /mods folder
-                    val modsFolder = gamePath.getModsPath() ?: run {
+                    val modsFolder = gamePathManager.getModsPath() ?: run {
                         Timber.w { "No mods path set, cannot load mods." }
                         return@withContext null
                     }

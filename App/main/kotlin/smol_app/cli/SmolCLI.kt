@@ -18,14 +18,14 @@ import smol_access.Constants
 import smol_access.business.UserManager
 import smol_access.business.UserModProfileManager
 import smol_access.business.VmParamsManager
-import smol_access.config.GamePath
+import smol_access.config.GamePathManager
 
 class SmolCLI(
     private val userManager: UserManager,
     private val userModProfileManager: UserModProfileManager,
     private val vmParamsManager: VmParamsManager,
     private val access: Access,
-    private val gamePath: GamePath,
+    private val gamePathManager: GamePathManager,
 ) {
     val chainOfCommand = Smol()
         .subcommands(
@@ -123,7 +123,7 @@ class SmolCLI(
                 VramChecker(
                     enabledModIds = access.reload()?.mods?.filter { it.hasEnabledVariant }?.map { it.id },
                     modIdsToCheck = null,
-                    foldersToCheck = listOfNotNull(gamePath.getModsPath(), Constants.STAGING_FOLDER_DEFAULT),
+                    foldersToCheck = listOfNotNull(gamePathManager.getModsPath(), Constants.STAGING_FOLDER_DEFAULT),
                     showGfxLibDebugOutput = false,
                     showPerformance = false,
                     showSkippedFiles = false,

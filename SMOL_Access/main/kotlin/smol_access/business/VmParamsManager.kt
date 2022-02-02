@@ -1,6 +1,6 @@
 package smol_access.business
 
-import smol_access.config.GamePath
+import smol_access.config.GamePathManager
 import utilities.Platform
 import smol_access.model.Vmparams
 import utilities.IOLock
@@ -8,10 +8,10 @@ import timber.ktx.Timber
 import kotlin.io.path.*
 
 class VmParamsManager(
-    gamePath: GamePath,
+    gamePathManager: GamePathManager,
     private val platform: Platform
 ) {
-    private val path = gamePath.path.value?.let {
+    private val path = gamePathManager.path.value?.let {
         when (platform) {
             Platform.Windows -> it.resolve("vmparams")
             Platform.MacOS -> TODO()
@@ -19,7 +19,7 @@ class VmParamsManager(
         }
     }
 
-    private val backupPath = gamePath.path.value?.let {
+    private val backupPath = gamePathManager.path.value?.let {
         when (platform) {
             Platform.Windows -> it.resolve("vmparams.bak")
             Platform.MacOS -> TODO()

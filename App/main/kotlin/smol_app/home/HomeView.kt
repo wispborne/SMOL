@@ -193,7 +193,7 @@ private fun AppState.consoleTextField(
                                     userModProfileManager = SL.userModProfileManager,
                                     vmParamsManager = SL.UI.vmParamsManager,
                                     access = SL.access,
-                                    gamePath = SL.gamePath
+                                    gamePathManager = SL.gamePathManager
                                 )
                                     .parse(consoleText)
                                 consoleText = ""

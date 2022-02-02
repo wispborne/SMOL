@@ -2,7 +2,7 @@ package smol_access.business
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import kotlinx.coroutines.flow.MutableStateFlow
-import smol_access.config.GamePath
+import smol_access.config.GamePathManager
 import smol_access.model.Version
 import timber.ktx.Timber
 import utilities.IOLock
@@ -16,12 +16,12 @@ import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
 
 class SaveReader(
-    gamePath: GamePath
+    gamePathManager: GamePathManager
 ) {
     val saves = MutableStateFlow<List<SaveFile>>(emptyList())
 
     private val descriptorFileName = "descriptor.xml"
-    private val defaultSaveFolder = gamePath.path.value?.resolve("saves")
+    private val defaultSaveFolder = gamePathManager.path.value?.resolve("saves")
     private val datePatterns = listOf("yyyy-MM-dd HH:mm:ss.SSS zzz", "yyyy-MM-dd HH:mm:ss.S zzz")
 
     fun readAllSaves(saveFolder: Path? = defaultSaveFolder) {

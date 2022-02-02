@@ -96,7 +96,7 @@ fun AppState.jreSwitcher(
                             ),
                         text = "<b>Java ${jreEntry.version}</b> (${jreEntry.versionString}) in folder <code>${
                             jreEntry.path.relativeTo(
-                                SL.gamePath.path.value!!
+                                SL.gamePathManager.path.value!!
                             )
                         }</code>".parseHtml()
                     )
@@ -128,7 +128,7 @@ fun AppState.jre8DownloadButton(
             tooltip = {
                 SmolTooltipText(
                     "Download JRE 8 to '<code>${
-                        SL.gamePath.path.value?.resolve(JreManager.gameJreFolderName)
+                        SL.gamePathManager.path.value?.resolve(JreManager.gameJreFolderName)
                     }</code>'.".parseHtml()
                 )
             },

@@ -3,7 +3,7 @@ package smol_access.business
 import com.google.gson.annotations.SerializedName
 import org.hjson.JsonObject
 import smol_access.Constants.ENABLED_MODS_FILENAME
-import smol_access.config.GamePath
+import smol_access.config.GamePathManager
 import smol_access.model.ModInfo
 import timber.ktx.Timber
 import utilities.IOLock
@@ -16,7 +16,7 @@ import kotlin.io.path.writer
 
 class GameEnabledMods(
     private val gson: Jsanity,
-    private val gamePath: GamePath
+    private val gamePathManager: GamePathManager
 ) {
     fun getEnabledMods(): EnabledMods? =
         kotlin.runCatching {
@@ -101,7 +101,7 @@ class GameEnabledMods(
 
     private fun createBackupFileIfDoesntExist(enabledModsFile: Path) {
         IOLock.write {
-            val backupFile = gamePath.getModsPath()?.resolve("$ENABLED_MODS_FILENAME.bak")
+            val backupFile = gamePathManager.getModsPath()?.resolve("$ENABLED_MODS_FILENAME.bak")
 
             // Make a backup before modifying it for the first time
             if (backupFile != null && !backupFile.exists()) {
@@ -110,7 +110,7 @@ class GameEnabledMods(
         }
     }
 
-    private fun getEnabledModsFile() = gamePath.getModsPath()?.resolve(ENABLED_MODS_FILENAME)
+    private fun getEnabledModsFile() = gamePathManager.getModsPath()?.resolve(ENABLED_MODS_FILENAME)
 }
 
 data class EnabledMods(

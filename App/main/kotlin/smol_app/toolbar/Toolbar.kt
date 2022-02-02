@@ -28,6 +28,7 @@ import smol_app.themes.SmolTheme
 import smol_app.util.isJCEFEnabled
 import smol_app.util.isModBrowserEnabled
 import smol_app.util.isModProfilesEnabled
+import utilities.exists
 import utilities.runCommandInTerminal
 import utilities.weightedRandom
 import java.awt.FileDialog
@@ -53,7 +54,7 @@ fun AppState.modBrowserButton() {
             SmolTooltipText(
                 when {
                     !Constants.isJCEFEnabled() -> "JCEF not found; add to /libs to enable the Mod Browser."
-                    !SL.gamePath.exists() -> "Set a valid game path."
+                    !SL.gamePathManager.path.value.exists() -> "Set a valid game path."
                     else -> "View and install mods from the internet."
                 }
             )
@@ -76,7 +77,7 @@ fun AppState.profilesButton() {
         tooltip = {
             SmolTooltipText(
                 text = when {
-                    !SL.gamePath.exists() -> "Set a valid game path."
+                    !SL.gamePathManager.path.value.exists() -> "Set a valid game path."
                     else -> "Create and swap between enabled mods."
                 }
             )
@@ -124,18 +125,23 @@ val sayings = listOf(
 fun AppState.launchButton() {
     val launchText = remember { sayings.weightedRandom() }
     SmolTooltipArea(
-        tooltip = { SmolTooltipText(launchText) },
+        tooltip = { SmolTooltipText(
+            when {
+                !SL.gamePathManager.path.value.exists() -> "Set a valid game path."
+                else -> launchText
+            }) },
         delayMillis = SmolTooltipArea.shortDelay
     ) {
         SmolButton(
             onClick = {
-                val gameLauncher = SL.gamePath.path.value?.resolve("starsector.exe")
-                Logger.info { "Launching ${gameLauncher?.absolutePathString()} with working dir ${SL.gamePath.path.value}." }
+                val gameLauncher = SL.gamePathManager.path.value?.resolve("starsector.exe")
+                Logger.info { "Launching ${gameLauncher?.absolutePathString()} with working dir ${SL.gamePathManager.path.value}." }
                 runCommandInTerminal(
                     command = ("\"${gameLauncher?.absolutePathString() ?: "missing game path"}\""),
-                    workingDirectory = SL.gamePath.path.value?.toFile()
+                    workingDirectory = SL.gamePathManager.path.value?.toFile()
                 )
             },
+            enabled = SL.gamePathManager.path.value.exists(),
             colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.primary),
             modifier = Modifier
                 .padding(start = 16.dp),

@@ -8,7 +8,7 @@ import smol_access.business.ModListUpdate
 import smol_access.business.ModLoader
 import smol_access.business.Staging
 import smol_access.config.AppConfig
-import smol_access.config.GamePath
+import smol_access.config.GamePathManager
 import smol_access.config.SettingsPath
 import smol_access.model.Mod
 import smol_access.model.ModId
@@ -25,16 +25,16 @@ class Access internal constructor(
     private val modLoader: ModLoader,
     private val archives: Archives,
     private val appConfig: AppConfig,
-    private val gamePath: GamePath
+    private val gamePathManager: GamePathManager
 ) {
 
     /**
      * Checks the /mods, archives, and staging paths and sets them to null if they don't exist.
      */
     fun checkAndSetDefaultPaths(platform: Platform) {
-        if (gamePath.path.value == null) {
-            gamePath.getDefaultStarsectorPath(platform)?.absolutePath?.run {
-                gamePath.set(this)
+        if (gamePathManager.path.value == null) {
+            gamePathManager.getDefaultStarsectorPath(platform)?.absolutePath?.run {
+                gamePathManager.set(this)
             }
         }
 
@@ -74,7 +74,7 @@ class Access internal constructor(
      * @return A list of errors, or empty if no errors.
      */
     fun validatePaths(
-        newGamePath: Path? = gamePath.path.value,
+        newGamePath: Path? = gamePathManager.path.value,
         newArchivesPath: Path? = appConfig.archivesPath?.toPathOrNull(),
         newStagingPath: Path? = appConfig.stagingPath?.toPathOrNull()
     ): SmolResult<Unit, Map<SettingsPath, List<String>>> {

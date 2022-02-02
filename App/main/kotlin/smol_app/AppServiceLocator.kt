@@ -14,7 +14,7 @@ class AppServiceLocator internal constructor(
     val downloadManager: DownloadManager = DownloadManager(SL.access),
     val uiConfig: UIConfig = UIConfig(SL.jsanity),
     val toaster: ToasterState = ToasterState(),
-    val vmParamsManager: VmParamsManager = VmParamsManager(gamePath = SL.gamePath, platform = currentPlatform),
+    val vmParamsManager: VmParamsManager = VmParamsManager(gamePathManager = SL.gamePathManager, platform = currentPlatform),
     val updater: Updater = Updater(appConfig = SL.appConfig)
 )
 

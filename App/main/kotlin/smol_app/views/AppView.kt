@@ -39,6 +39,7 @@ import smol_app.updater.UpdateSmolToast
 import smol_app.views.FileDropper
 import timber.ktx.Timber
 import utilities.IOLock
+import utilities.exists
 import utilities.toPathOrNull
 import kotlin.io.path.exists
 
@@ -93,7 +94,9 @@ fun WindowState.appView() {
                         is Screen.Profiles -> appState.ProfilesView()
                         is Screen.ModBrowser -> appState.ModBrowserView(defaultUrl = configuration.defaultUri)
                     }.run { }
-                    appState.FileDropper()
+                    if (SL.gamePathManager.path.value.exists()) {
+                        appState.FileDropper()
+                    }
 
                     // Toasts
                     toaster(
@@ -208,8 +211,8 @@ private suspend fun watchDirsAndReloadOnChange(scope: CoroutineScope) {
         SL.access.getStagingPath()?.toPathOrNull()
             ?.resolve(Archives.ARCHIVE_MANIFEST_FILENAME) // Watch manifest.json
             ?.run { if (this.exists()) this.asWatchChannel(scope = scope) else emptyFlow() } ?: emptyFlow(),
-        SL.gamePath.getModsPath()?.asWatchChannel(scope = scope),
-        SL.gamePath.getModsPath()?.resolve(Constants.ENABLED_MODS_FILENAME) // Watch enabled_mods.json
+        SL.gamePathManager.getModsPath()?.asWatchChannel(scope = scope),
+        SL.gamePathManager.getModsPath()?.resolve(Constants.ENABLED_MODS_FILENAME) // Watch enabled_mods.json
             .run { if (this?.exists() == true) this.asWatchChannel(scope = scope) else emptyFlow() },
         SL.archives.getArchivesPath()?.toPathOrNull()?.asWatchChannel(scope = scope) ?: emptyFlow(),
     )

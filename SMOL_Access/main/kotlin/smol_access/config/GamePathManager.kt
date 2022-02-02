@@ -14,12 +14,10 @@ import utilities.Platform
 import utilities.toPathOrNull
 import java.io.File
 import java.nio.file.Path
-import kotlin.io.path.createDirectories
-import kotlin.io.path.exists
-import kotlin.io.path.pathString
+import kotlin.io.path.*
 
 
-class GamePath internal constructor(
+class GamePathManager internal constructor(
     private val appConfig: AppConfig
 ) {
     private val value_ = MutableStateFlow(appConfig.gamePath.toPathOrNull())
@@ -33,9 +31,7 @@ class GamePath internal constructor(
             }
         }
 
-    fun exists() = path.value?.exists() == true
-
-    fun set(path: String) = value_.update { path.toPathOrNull() }
+    fun set(path: String) = path.toPathOrNull()?.run { set(this) }
     fun set(path: Path) = value_.update { path }
 
     fun getDefaultStarsectorPath(platform: Platform): File? =
@@ -60,22 +56,22 @@ class GamePath internal constructor(
             .getOrNull()
 
     fun getModsPath(): Path? {
-        val starsectorPathStr = path.value
+        val starsectorPath = path.value?.run { if (!this.exists()) null else this }
             ?: kotlin.run {
                 val ex = NullPointerException("Game path not found. AppConfig: $appConfig")
                 Timber.e(ex)
                 return null
             }
-        val starsectorPath: Path = starsectorPathStr
-            ?: kotlin.run {
-                val ex = NullPointerException("Game path cannot be converted to a Path. AppConfig: $appConfig")
-                Timber.e(ex)
-                return null
-            }
+
         val mods = starsectorPath.resolve("mods")
 
         IOLock.write {
-            mods.createDirectories()
+            if (!mods.isWritable()) {
+                Timber.e { "Unable to write to ${mods.absolutePathString()}. Ensure that it exists and SMOL has write permission (run as admin?)." }
+                return null
+            } else {
+                mods.createDirectories()
+            }
         }
 
         return mods

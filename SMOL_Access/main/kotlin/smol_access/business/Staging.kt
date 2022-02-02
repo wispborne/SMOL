@@ -2,7 +2,7 @@ package smol_access.business
 
 import smol_access.Constants
 import smol_access.config.AppConfig
-import smol_access.config.GamePath
+import smol_access.config.GamePathManager
 import smol_access.model.Mod
 import smol_access.model.ModVariant
 import smol_access.util.ManualReloadTrigger
@@ -17,7 +17,7 @@ import kotlin.io.path.*
 
 internal class Staging(
     private val config: AppConfig,
-    private val gamePath: GamePath,
+    private val gamePathManager: GamePathManager,
     private val modLoader: ModLoader,
     private val gameEnabledMods: GameEnabledMods,
     private val archives: Archives,
@@ -108,7 +108,7 @@ internal class Staging(
 
     suspend fun enableModVariant(modVariant: ModVariant): Result<Unit> {
         Timber.i { "Enabling mod variant ${modVariant.smolId}." }
-        val modsFolderPath = gamePath.getModsPath()
+        val modsFolderPath = gamePathManager.getModsPath()
 
         if (modsFolderPath?.exists() != true) {
             Timber.w { "Game mods path doesn't exist, unable to continue enabling ${modVariant.smolId}." }

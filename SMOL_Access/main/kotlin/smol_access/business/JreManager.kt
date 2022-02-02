@@ -13,7 +13,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import smol_access.HttpClientBuilder
 import smol_access.config.AppConfig
-import smol_access.config.GamePath
+import smol_access.config.GamePathManager
 import timber.ktx.Timber
 import utilities.*
 import java.nio.file.Path
@@ -22,7 +22,7 @@ import kotlin.io.path.*
 import kotlin.io.use
 
 class JreManager(
-    private val gamePath: GamePath,
+    private val gamePathManager: GamePathManager,
     private val appConfig: AppConfig,
     private val httpClientBuilder: HttpClientBuilder,
     private val archives: Archives
@@ -34,8 +34,13 @@ class JreManager(
 
     fun findJREs(): List<JreEntry> {
         IOLock.read(IOLocks.gameMainFolderLock) {
-            return gamePath.path.value?.listDirectoryEntries()
-                ?.mapNotNull { path ->
+            val gamePath = gamePathManager.path.value
+            if (gamePath?.isReadable() != true) {
+                Timber.w { "Unable to read $gamePath" }
+                return emptyList()
+            }
+            return gamePath.listDirectoryEntries()
+                .mapNotNull { path ->
                     val javaExe = path.resolve("bin/java.exe")
                     if (!javaExe.exists()) return@mapNotNull null
 
@@ -53,12 +58,12 @@ class JreManager(
                                     ?: lines.firstOrNull()
                             }
                     }
-                        .onFailure { timber.ktx.Timber.e(it) { "Error getting java version from '$path'." } }
+                        .onFailure { Timber.e(it) { "Error getting java version from '$path'." } }
                         .getOrNull() ?: return@mapNotNull null
 
                     return@mapNotNull JreEntry(versionString = versionString, path = path)
                 }
-                ?.toList() ?: emptyList()
+                .toList()
         }
     }
 
@@ -66,7 +71,7 @@ class JreManager(
         IOLock.write(IOLocks.gameMainFolderLock) {
             runBlocking {
                 kotlin.runCatching {
-                    val gamePathNN = gamePath.path.value!!
+                    val gamePathNN = gamePathManager.path.value!!
                     val currentJreSource = findJREs().firstOrNull { it.isUsedByGame }
                     var currentJreDest: Path? = null
                     val gameJrePath = kotlin.runCatching { gamePathNN.resolve(gameJreFolderName) }
@@ -130,7 +135,7 @@ class JreManager(
      */
     suspend fun downloadJre8() {
         kotlin.runCatching {
-            val gamePathNN = gamePath.path.value!!
+            val gamePathNN = gamePathManager.path.value!!
             val gameJrePath = kotlin.runCatching { gamePathNN.resolve(gameJreFolderName) }
                 .onFailure { Timber.w(it) }
                 .getOrNull() ?: return@runCatching

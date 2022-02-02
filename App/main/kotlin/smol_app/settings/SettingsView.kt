@@ -18,6 +18,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.arkivanov.decompose.pop
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import smol_access.SL
 import smol_access.business.JreEntry
 import smol_access.config.SettingsPath
@@ -25,6 +27,7 @@ import smol_app.composables.*
 import smol_app.themes.SmolTheme
 import smol_app.toolbar.*
 import timber.ktx.Timber
+import utilities.exists
 import utilities.rootCause
 import utilities.toPathOrNull
 import java.io.File
@@ -64,7 +67,7 @@ fun AppState.settingsView(
                     .padding(top = 16.dp, bottom = 16.dp)
             ) {
                 Column {
-                    var gamePath by remember { mutableStateOf(SL.gamePath.path.value?.pathString) }
+                    var gamePath by remember { mutableStateOf(SL.gamePathManager.path.value?.pathString) }
                     var archivesPath by remember { mutableStateOf(SL.appConfig.archivesPath ?: "") }
                     var stagingPath by remember { mutableStateOf(SL.appConfig.stagingPath ?: "") }
                     val alertDialogMessage = remember { mutableStateOf<String?>(null) }
@@ -97,7 +100,7 @@ fun AppState.settingsView(
                             alertDialogMessage.value = errors.joinToString(separator = "\n")
                             return false
                         } else {
-                            SL.gamePath.set(gamePath!!)
+                            SL.gamePathManager.set(gamePath!!)
 
                             kotlin.runCatching {
                                 SL.archives.changePath(archivesPath)
@@ -108,6 +111,10 @@ fun AppState.settingsView(
                                         "${ex.rootCause()::class.simpleName}\n${ex.rootCause().message}"
                                     return false
                                 }
+
+                            GlobalScope.launch {
+                                SL.access.reload()
+                            }
                         }
 
                         return true
@@ -186,7 +193,7 @@ fun AppState.settingsView(
 
                             item { Divider(modifier = Modifier.padding(top = 32.dp, bottom = 8.dp)) }
 
-                            if (SL.gamePath.exists()) {
+                            if (SL.gamePathManager.path.value.exists()) {
                                 item {
                                     Text(
                                         text = "Game Settings",

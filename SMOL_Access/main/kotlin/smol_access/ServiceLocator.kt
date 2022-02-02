@@ -14,11 +14,10 @@ import io.ktor.client.features.*
 import io.ktor.client.features.logging.*
 import smol_access.business.*
 import smol_access.config.AppConfig
-import smol_access.config.GamePath
+import smol_access.config.GamePathManager
 import smol_access.config.VersionCheckerCache
 import smol_access.config.VramCheckerCache
 import smol_access.model.ModInfo
-import smol_access.themes.ThemeConfig
 import smol_access.themes.ThemeManager
 import smol_access.util.ManualReloadTrigger
 import utilities.Jsanity
@@ -52,27 +51,27 @@ class ServiceLocator internal constructor(
         appConfig = appConfig
     ),
     internal val modInfoLoader: ModInfoLoader = ModInfoLoader(gson = jsanity),
-    val gamePath: GamePath = GamePath(appConfig = appConfig),
-    val saveReader: SaveReader = SaveReader(gamePath = gamePath),
+    val gamePathManager: GamePathManager = GamePathManager(appConfig = appConfig),
+    val saveReader: SaveReader = SaveReader(gamePathManager = gamePathManager),
     val vramChecker: VramCheckerManager = VramCheckerManager(
-        gamePath = gamePath,
+        gamePathManager = gamePathManager,
         vramCheckerCache = VramCheckerCache(gson = jsanity)
     ),
-    internal val gameEnabledMods: GameEnabledMods = GameEnabledMods(jsanity, gamePath),
+    internal val gameEnabledMods: GameEnabledMods = GameEnabledMods(jsanity, gamePathManager),
     val archives: Archives = Archives(
         config = appConfig,
-        gamePath = gamePath,
+        gamePathManager = gamePathManager,
         gson = jsanity,
         modInfoLoader = modInfoLoader
     ),
     val jreManager: JreManager = JreManager(
-        gamePath = gamePath,
+        gamePathManager = gamePathManager,
         appConfig = appConfig,
         httpClientBuilder = httpClientBuilder,
         archives = archives
     ),
     internal val modLoader: ModLoader = ModLoader(
-        gamePath = gamePath,
+        gamePathManager = gamePathManager,
         config = appConfig,
         archives = archives,
         modInfoLoader = modInfoLoader,
@@ -88,7 +87,7 @@ class ServiceLocator internal constructor(
     ),
     internal val staging: Staging = Staging(
         config = appConfig,
-        gamePath = gamePath,
+        gamePathManager = gamePathManager,
         modLoader = modLoader,
         gameEnabledMods = gameEnabledMods,
         archives = archives,
@@ -100,7 +99,7 @@ class ServiceLocator internal constructor(
         modLoader = modLoader,
         archives = archives,
         appConfig = appConfig,
-        gamePath = gamePath
+        gamePathManager = gamePathManager
     ),
     val userModProfileManager: UserModProfileManager = UserModProfileManager(
         userManager = userManager, access = access, modLoader = modLoader
