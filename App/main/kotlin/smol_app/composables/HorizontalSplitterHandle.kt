@@ -52,6 +52,5 @@ fun SplitPaneScope.horizontalSplitter(modifier: Modifier = Modifier) {
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
-//@Composable
-private fun Modifier.cursorForHorizontalResize(): Modifier =
+fun Modifier.cursorForHorizontalResize(): Modifier =
     pointerHoverIcon(PointerIcon(Cursor(Cursor.E_RESIZE_CURSOR)))

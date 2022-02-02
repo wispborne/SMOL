@@ -16,6 +16,7 @@ class UIConfig(gson: Jsanity) : Config(
 ) {
     var windowState: SmolWindowState? by pref(prefKey = "windowState", defaultValue = null)
     var modBrowserState: ModBrowserState? by pref(prefKey = "modBrowserState", defaultValue = null)
+    var logPanelWidthPercentage: Float by pref(prefKey = "logPanelWidthPercentage", defaultValue = 0.5f)
 }
 
 data class ModBrowserState(
