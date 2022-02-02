@@ -54,6 +54,10 @@ import utilities.Platform
 import utilities.currentPlatform
 import java.awt.Cursor
 import java.nio.file.Path
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.time.format.TextStyle
 import java.util.*
 
 private val modListMinWidthDp = 600.dp
@@ -68,7 +72,7 @@ fun AppState.ModBrowserView(
     modifier: Modifier = Modifier,
     defaultUrl: String? = null
 ) {
-    val scrapedMods = remember { mutableStateListOf(elements = SL.modRepo.getModIndexItems().toTypedArray()) }
+    val scrapedMods = remember { mutableStateListOf(elements = SL.modRepo.getItems().toTypedArray()) }
     val shownMods = remember { mutableStateListOf<ScrapedMod?>(elements = scrapedMods.toTypedArray()) }
 
     val browser = remember { mutableStateOf<ChromiumBrowser?>(null) }
@@ -213,22 +217,51 @@ fun AppState.ModBrowserView(
                                             }
                                         }
                                         Spacer(Modifier.weight(1f))
-                                        SmolSecondaryButton(
-                                            modifier = Modifier.padding(start = 8.dp).align(Alignment.CenterVertically),
-                                            onClick = { linkLoader.value?.invoke(Constants.FORUM_MOD_INDEX_URL) }
-                                        ) { Text("Index") }
-                                        SmolSecondaryButton(
-                                            modifier = Modifier.padding(start = 8.dp).align(Alignment.CenterVertically),
-                                            onClick = { linkLoader.value?.invoke(Constants.FORUM_MODDING_SUBFORUM_URL) }
-                                        ) { Text("Modding") }
-                                        IconButton(
-                                            modifier = Modifier.padding(start = 8.dp).align(Alignment.CenterVertically),
-                                            onClick = { browser.value?.goBack() }
-                                        ) { Icon(imageVector = Icons.Default.ArrowBack, contentDescription = null) }
-                                        IconButton(
-                                            modifier = Modifier.padding(start = 8.dp).align(Alignment.CenterVertically),
-                                            onClick = { browser.value?.goForward() }
-                                        ) { Icon(imageVector = Icons.Default.ArrowForward, contentDescription = null) }
+                                        Column {
+                                            Row {
+                                                SmolSecondaryButton(
+                                                    modifier = Modifier.padding(start = 8.dp)
+                                                        .align(Alignment.CenterVertically),
+                                                    onClick = { linkLoader.value?.invoke(Constants.FORUM_MOD_INDEX_URL) }
+                                                ) { Text("Index") }
+                                                SmolSecondaryButton(
+                                                    modifier = Modifier.padding(start = 8.dp)
+                                                        .align(Alignment.CenterVertically),
+                                                    onClick = { linkLoader.value?.invoke(Constants.FORUM_MODDING_SUBFORUM_URL) }
+                                                ) { Text("Modding") }
+                                                IconButton(
+                                                    modifier = Modifier.padding(start = 8.dp)
+                                                        .align(Alignment.CenterVertically),
+                                                    onClick = { browser.value?.goBack() }
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.ArrowBack,
+                                                        contentDescription = null
+                                                    )
+                                                }
+                                                IconButton(
+                                                    modifier = Modifier.padding(start = 8.dp, end = 8.dp)
+                                                        .align(Alignment.CenterVertically),
+                                                    onClick = { browser.value?.goForward() }
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.ArrowForward,
+                                                        contentDescription = null
+                                                    )
+                                                }
+                                            }
+                                            val lastUpdated = SL.modRepo.getLastUpdated()
+                                            Text(
+                                                modifier = Modifier.padding(start = 16.dp, top = 8.dp),
+                                                text = "Last updated: ${
+                                                    lastUpdated?.format(
+                                                        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
+                                                            .withZone(ZoneId.systemDefault())
+                                                    )?.plus(" " + ZoneId.systemDefault().getDisplayName(TextStyle.SHORT, Locale.getDefault())) ?: "unknown"
+                                                }",
+                                                style = MaterialTheme.typography.overline
+                                            )
+                                        }
                                     }
 
                                     val scrollState = rememberLazyListState()

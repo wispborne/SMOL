@@ -11,12 +11,19 @@ import mod_repo.ModRepoCache
 import mod_repo.ScrapedMod
 import timber.ktx.Timber
 import utilities.Jsanity
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 
 class ModRepo internal constructor(private val jsanity: Jsanity, private val httpClientBuilder: HttpClientBuilder) {
     private val modRepoCache = ModRepoCache(jsanity)
     private val scope = CoroutineScope(Job())
 
-    fun getModIndexItems(): List<ScrapedMod> = modRepoCache.items
+    fun getItems(): List<ScrapedMod> = modRepoCache.items
+    fun getLastUpdated(): ZonedDateTime? = modRepoCache.lastUpdated?.let { dateTimeStr ->
+        runCatching { ZonedDateTime.parse(dateTimeStr, DateTimeFormatter.ISO_DATE_TIME) }
+            .onFailure { Timber.w(it) }
+            .getOrNull()
+    }
 
     suspend fun refreshFromInternet() {
         withContext(Dispatchers.IO) {
@@ -32,8 +39,9 @@ class ModRepo internal constructor(private val jsanity: Jsanity, private val htt
                     .getOrNull()
 
                 if (freshIndexMods != null) {
-                    Timber.i { "Updated Index mods. Previous: ${modRepoCache.items.count()}, now: ${freshIndexMods.items.count()}" }
+                    Timber.i { "Updated scraped mods. Previous: ${modRepoCache.items.count()}, now: ${freshIndexMods.items.count()}" }
                     modRepoCache.items = freshIndexMods.items
+                    modRepoCache.lastUpdated = freshIndexMods.lastUpdated
                 }
             }
         }
@@ -41,5 +49,6 @@ class ModRepo internal constructor(private val jsanity: Jsanity, private val htt
 }
 
 data class ScrapedModsRepo(
-    val items: List<ScrapedMod>
+    val items: List<ScrapedMod>,
+    val lastUpdated: String,
 )
