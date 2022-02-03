@@ -31,7 +31,7 @@ fun AppState.themeDropdown(modifier: Modifier = Modifier): String {
     val recomposeScope = currentRecomposeScope
 
     Column(modifier) {
-        Text(text = "Theme", style = SettingsView.settingLabelStyle())
+        Text(text = "Theme", modifier = Modifier.padding(bottom = 8.dp), style = SettingsView.settingLabelStyle())
         Row {
             SmolDropdownWithButton(
                 modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),

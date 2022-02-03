@@ -17,7 +17,6 @@ import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.arkivanov.decompose.pop
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import smol_access.SL
@@ -66,7 +65,7 @@ fun AppState.settingsView(
         content = {
             Row(
                 modifier
-                    .padding(top = 16.dp, bottom = 16.dp)
+                    .padding(bottom = SmolTheme.bottomBarHeight - 16.dp)
             ) {
                 Column {
                     var gamePath by remember { mutableStateOf(SL.gamePathManager.path.value?.pathString) }
@@ -169,7 +168,12 @@ fun AppState.settingsView(
                             }
 
                             item {
-                                Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp)) {
+                                Column(modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp)) {
+                                    Text(
+                                        text = "Locations",
+                                        modifier = Modifier.padding(start = 16.dp),
+                                        style = SettingsView.settingLabelStyle()
+                                    )
                                     gamePath = gamePathSetting(
                                         gamePath = gamePath ?: "",
                                         archivesPath = archivesPath,
@@ -190,6 +194,14 @@ fun AppState.settingsView(
                                             stagingPath = stagingPath,
                                             settingsPathErrors = settingsPathErrors
                                         )
+
+                                    // Confirm buttons
+                                    Row(
+                                        Modifier.padding(start = 16.dp, end = 16.dp)
+                                    ) {
+                                        SmolButton(onClick = { saveSettings() }) { Text("Apply") }
+                                    }
+
                                     themeDropdown(Modifier.padding(start = 16.dp, top = 24.dp))
 
                                     Column(modifier = Modifier.padding(start = 16.dp, top = 24.dp)) {
@@ -261,24 +273,6 @@ fun AppState.settingsView(
                             modifier = Modifier.width(8.dp).fillMaxHeight()
                         )
                     }
-
-                    // Confirm buttons
-                    Row(
-                        Modifier.fillMaxWidth().padding(bottom = SmolTheme.bottomBarHeight, end = 16.dp),
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        SmolButton(
-                            modifier = Modifier.padding(end = 16.dp),
-                            onClick = {
-                                if (saveSettings()) {
-                                    router.pop()
-                                }
-                            }) { Text("Ok") }
-                        SmolSecondaryButton(
-                            modifier = Modifier.padding(end = 16.dp),
-                            onClick = { router.pop() }) { Text("Cancel") }
-                        SmolSecondaryButton(onClick = { saveSettings() }) { Text("Apply") }
-                    }
                 }
             }
 
@@ -328,7 +322,7 @@ private fun AppState.gamePathSetting(
                     .onFailure { ex -> Timber.w(ex) }
                     .getOrElse { emptyMap() }
             })
-        SmolButton(
+        SmolSecondaryButton(
             modifier = Modifier
                 .align(Alignment.CenterVertically)
                 .padding(start = 16.dp),
@@ -385,7 +379,7 @@ private fun AppState.archivesPathSetting(
                     .onFailure { ex -> Timber.w(ex) }
                     .getOrElse { emptyMap() }
             })
-        SmolButton(
+        SmolSecondaryButton(
             modifier = Modifier
                 .align(Alignment.CenterVertically)
                 .padding(start = 16.dp),
@@ -443,7 +437,7 @@ private fun AppState.stagingPathSetting(
                     .onFailure { ex -> Timber.w(ex) }
                     .getOrElse { emptyMap() }
             })
-        SmolButton(
+        SmolSecondaryButton(
             modifier = Modifier
                 .align(Alignment.CenterVertically)
                 .padding(start = 16.dp),

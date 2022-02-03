@@ -63,7 +63,7 @@ fun AppState.ramButton(modifier: Modifier = Modifier) {
             SmolButton(
                 onClick = { showVmParamsMenu.value = true }
             ) {
-                Text(text = "Click to Set")
+                Text(text = "Click to Set...")
             }
         }
     }
