@@ -24,8 +24,8 @@ import smol_app.UI
 import smol_app.browser.DownloadItem
 import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
-import smol_app.util.bitsToMiB
-import smol_app.util.bytesAsShortReadableMiB
+import smol_app.util.bitsToMB
+import smol_app.util.bytesAsShortReadableMB
 import smol_app.util.openInDesktop
 import smol_app.util.smolPreview
 import timber.ktx.Timber
@@ -53,15 +53,15 @@ fun downloadToast(
         } else {
             0f
         }
-    val progressMiB = progressBytes?.bytesAsShortReadableMiB
-    val totalMiB = totalBytes.value?.bytesAsShortReadableMiB
+    val progressMB = progressBytes?.bytesAsShortReadableMB
+    val totalMB = totalBytes.value?.bytesAsShortReadableMB
 
     val statusText = when (status) {
         is DownloadItem.Status.NotStarted -> "Starting"
         is DownloadItem.Status.Downloading -> {
-            "${if (bitsPerSecond != null) "${"%.1f MiBps".format(bitsPerSecond.bitsToMiB)}, " else ""}$progressMiB${if (totalMiB != null) " / $totalMiB" else ""}"
+            "${if (bitsPerSecond != null) "${"%.1f MBps".format(bitsPerSecond.bitsToMB)}, " else ""}$progressMB${if (totalMB != null) " / $totalMB" else ""}"
         }
-        is DownloadItem.Status.Completed -> "Completed, $progressMiB"
+        is DownloadItem.Status.Completed -> "Completed, $progressMB"
         is DownloadItem.Status.Failed -> "Failed: ${status.error}"
         DownloadItem.Status.Cancelled -> "Cancelled"
     }

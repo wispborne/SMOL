@@ -23,7 +23,7 @@ import smol_app.composables.SmolAlertDialog
 import smol_app.composables.SmolButton
 import smol_app.composables.dashedBorder
 import smol_app.themes.SmolTheme
-import smol_app.util.bytesAsShortReadableMiB
+import smol_app.util.bytesAsShortReadableMB
 import smol_app.util.parseHtml
 import timber.ktx.Timber
 import utilities.calculateFileSize
@@ -179,7 +179,7 @@ fun AppState.FileDropper(
                                 text = "<code>${
                                     if (fileSize == null)
                                         "calculating..."
-                                    else fileSize?.bytesAsShortReadableMiB
+                                    else fileSize?.bytesAsShortReadableMB
                                 }</code>".parseHtml(),
                                 fontSize = 16.sp,
                                 modifier = Modifier.align(Alignment.CenterHorizontally)

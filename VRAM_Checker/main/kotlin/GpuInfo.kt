@@ -49,7 +49,7 @@ internal abstract class LwjglGpuInfo : GPUInfo() {
             "GPU Model: ${trimVendorString(glGetString(GL_RENDERER) ?: run { return null })}",
             "Vendor: ${glGetString(GL_VENDOR)}",
             "Driver version: ${glGetString(GL_VERSION)}",
-            "Available VRAM: ${getFreeVRAM().bytesAsReadableMiB}"
+            "Available VRAM: ${getFreeVRAM().bytesAsReadableMB}"
         )
 }
 
@@ -60,9 +60,9 @@ private class NvidiaGPUInfo : LwjglGpuInfo() {
 
     override fun getGPUString(): List<String>? {
         val dedicatedVram =
-            (glGetInteger(NVXGpuMemoryInfo.GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX).toLong() * 1024).bytesAsReadableMiB
+            (glGetInteger(NVXGpuMemoryInfo.GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX).toLong() * 1024).bytesAsReadableMB
         val maxVram =
-            (glGetInteger(NVXGpuMemoryInfo.GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX).toLong() * 1024).bytesAsReadableMiB
+            (glGetInteger(NVXGpuMemoryInfo.GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX).toLong() * 1024).bytesAsReadableMB
         return super.getGPUString()?.plus(listOf("Dedicated VRAM: $dedicatedVram", "Maximum VRAM: $maxVram"))
     }
 }
@@ -93,7 +93,7 @@ private class OshiGPUInfo : GPUInfo() {
             "GPU Model: ${gpu.name}",
             "Vendor: ${gpu.vendor}",
             "Driver version: ${gpu.versionInfo}",
-            "Detected VRAM: ${gpu.vRam.bytesAsReadableMiB}"
+            "Detected VRAM: ${gpu.vRam.bytesAsReadableMB}"
         )
     }
 }

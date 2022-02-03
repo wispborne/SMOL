@@ -16,7 +16,7 @@ import smol_access.model.Mod
 import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
 import smol_app.themes.SmolTheme
-import smol_app.util.bytesAsReadableMiB
+import smol_app.util.bytesAsReadableMB
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -27,10 +27,10 @@ fun RowScope.vramBar(mod: Mod, largestVramUsage: Long?) {
     SmolTooltipArea(tooltip = {
         SmolTooltipText(
             text = when {
-                vramResult?.bytesForMod?.bytesAsReadableMiB != null -> {
+                vramResult?.bytesForMod?.bytesAsReadableMB != null -> {
                     buildString {
                         appendLine("Version: ${vramResult.version}\n")
-                        appendLine(vramResult.bytesForMod.bytesAsReadableMiB
+                        appendLine(vramResult.bytesForMod.bytesAsReadableMB
                             .let { if (vramResult.bytesForMod == 0L) "No impact" else it })
                         append("${vramResult.imageCount} images")
                     }
@@ -62,7 +62,7 @@ fun RowScope.vramBar(mod: Mod, largestVramUsage: Long?) {
         }
         Text(
             text =
-            vramResult?.bytesForMod?.bytesAsReadableMiB
+            vramResult?.bytesForMod?.bytesAsReadableMB
                 ?.let { if (vramResult.bytesForMod == 0L) "None" else it }
                 ?: "Unavailable",
             modifier = Modifier.fillMaxSize()

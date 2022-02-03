@@ -1,10 +1,10 @@
 package smol_access.business
 
 import smol_access.config.GamePathManager
-import utilities.Platform
 import smol_access.model.Vmparams
-import utilities.IOLock
 import timber.ktx.Timber
+import utilities.IOLock
+import utilities.Platform
 import kotlin.io.path.*
 
 class VmParamsManager(
@@ -37,7 +37,7 @@ class VmParamsManager(
         }
 
     fun write(vmparams: Vmparams) {
-        IOLock.read {
+        IOLock.write {
             path ?: return
 
             if (backupPath == null) {
@@ -46,28 +46,31 @@ class VmParamsManager(
             }
 
             if (backupPath.notExists()) {
-                backupPath.createFile()
-                read()?.fullString?.let { backupPath.writeText(it) }
+                kotlin.runCatching {
+                    backupPath.createFile()
+                    read()?.fullString?.let { backupPath.writeText(it) }
+                }
+                    .onFailure {
+                        Timber.w(it) { "Unable to create backup vmparams file. Try running as admin." }
+                    }
             }
 
             if (backupPath.notExists()) {
                 Timber.e { "No backup file ($backupPath), aborting write of $path!" }
-                return@read
+                return
             }
 
-            IOLock.write {
-                if (!path.exists()) {
-                    kotlin.runCatching {
-                        path.createFile()
-                    }
-                        .onFailure { Timber.w(it) { "Unable to create a vmparams file. Ensure that SMOL has permission (run as admin?)." } }
-                }
-
+            if (!path.exists()) {
                 kotlin.runCatching {
-                    path.writeText(vmparams.fullString)
+                    path.createFile()
                 }
-                    .onFailure { Timber.w(it) { "Unable to update vmparams file. Ensure that SMOL has permission (run as admin?)." } }
+                    .onFailure { Timber.w(it) { "Unable to create a vmparams file. Ensure that SMOL has permission (run as admin?)." } }
             }
+
+            kotlin.runCatching {
+                path.writeText(vmparams.fullString)
+            }
+                .onFailure { Timber.w(it) { "Unable to update vmparams file. Ensure that SMOL has permission (run as admin?)." } }
         }
     }
 

@@ -38,7 +38,7 @@ import smol_app.composables.SmolButton
 import smol_app.composables.SmolPopupMenu
 import smol_app.composables.SmolSecondaryButton
 import smol_app.themes.SmolTheme
-import smol_app.util.bytesAsShortReadableMiB
+import smol_app.util.bytesAsShortReadableMB
 import smol_app.util.uiEnabled
 import timber.ktx.Timber
 import utilities.calculateFileSize
@@ -227,7 +227,7 @@ fun AppState.ModGridView(
                                 Text(
                                     text = "${modVariantBeingRemoved.archiveInfo?.folder?.name} ${
                                         kotlin.runCatching { modVariantBeingRemoved.archiveInfo?.folder?.fileSize() }
-                                            .getOrNull()?.bytesAsShortReadableMiB?.let { "($it)" }
+                                            .getOrNull()?.bytesAsShortReadableMB?.let { "($it)" }
                                     }",
                                     modifier = Modifier.align(Alignment.CenterVertically),
                                     style = SmolTheme.alertDialogBody()
@@ -258,7 +258,7 @@ fun AppState.ModGridView(
                                             looseFilesToShow.calculateFileSize()
                                         }
                                             .onFailure { Timber.w(it) }
-                                            .getOrNull()?.bytesAsShortReadableMiB
+                                            .getOrNull()?.bytesAsShortReadableMB
                                     }
                                 }
 

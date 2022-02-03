@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.tinylog.kotlin.Logger
@@ -76,9 +77,9 @@ fun AppState.ramButton(modifier: Modifier = Modifier) {
 fun vmParamsContextMenu(
     showContextMenu: MutableState<Boolean>
 ) {
-    val cellMinWidth = 88.dp
+    val cellMinWidth = 100.dp
     val width = cellMinWidth * 2
-    val gridHeight = 200.dp
+    val gridHeight = 240.dp
     var assignedRam by remember { mutableStateOf(SL.UI.vmParamsManager.read()?.xmx) }
     val presetsInGb = 2..6
 
@@ -88,6 +89,7 @@ fun vmParamsContextMenu(
     val totalSystemRam = runCatching { SystemInfo().hardware.memory.total }
         .onFailure { Logger.warn(it) }
         .getOrNull()
+    // Use gibabytes here because that's how system ram is measured
     val bytesPerGibibyte = 1073741824
     val recommendation = if (availableSystemRam == null) null
     else {
@@ -114,7 +116,7 @@ fun vmParamsContextMenu(
         if (totalSystemRam != null) {
             Text(
                 modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp),
-                text = "System: ${"%.0f GiB".format(totalSystemRam.toFloat() / bytesPerGibibyte)}",
+                text = "System: ${"%.0f GB".format(totalSystemRam.toFloat() / bytesPerGibibyte)}",
                 fontFamily = SmolTheme.fireCodeFont,
                 fontSize = 12.sp
             )
@@ -122,7 +124,7 @@ fun vmParamsContextMenu(
         if (availableSystemRam != null) {
             Text(
                 modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp),
-                text = "Free: ${"%.1f GiB".format(availableSystemRam.toFloat() / bytesPerGibibyte)}",
+                text = "Free: ${"%.1f GB".format(availableSystemRam.toFloat() / bytesPerGibibyte)}",
                 fontFamily = SmolTheme.fireCodeFont,
                 fontSize = 12.sp
             )
@@ -144,7 +146,8 @@ fun vmParamsContextMenu(
                         }
                     ) {
                         Text(
-                            text = "$presetGb GB",
+                            text = "${presetGb * 1000} MB",
+                            textAlign = TextAlign.Center,
                             fontWeight = if (presetGb == recommendation) FontWeight.ExtraBold else FontWeight.Normal,
                         )
                     }
@@ -152,7 +155,7 @@ fun vmParamsContextMenu(
                     if (presetGb == recommendation) {
                         Column(
                             modifier = Modifier
-                                .offset(y = (-4).dp)
+//                                .offset(y = (-4).dp)
                                 .align(Alignment.CenterHorizontally)
                         ) {
                             Text(

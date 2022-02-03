@@ -209,7 +209,7 @@ class VramChecker(
                     "Finished calculating file sizes for ${mod.info.formattedName} in ${(Date().time - timeFinishedGettingFileData)} ms",
                     traceOut
                 )
-                progressText.appendAndPrint(mod.totalBytesForMod.bytesAsReadableMiB, traceOut)
+                progressText.appendAndPrint(mod.totalBytesForMod.bytesAsReadableMB, traceOut)
                 mod
             }
             .sortedByDescending { it.totalBytesForMod }
@@ -217,7 +217,7 @@ class VramChecker(
         mods.forEach { mod ->
             modTotals.appendLine()
             modTotals.appendLine("${mod.info.formattedName} - ${mod.images.count()} images - ${if (mod.isEnabled) "Enabled" else "Disabled"}")
-            modTotals.appendLine(mod.totalBytesForMod.bytesAsReadableMiB)
+            modTotals.appendLine(mod.totalBytesForMod.bytesAsReadableMB)
         }
 
         val enabledMods = mods.filter { mod -> mod.isEnabled }
@@ -266,11 +266,11 @@ class VramChecker(
             }
         summaryText.appendLine()
 
-        summaryText.appendLine("Enabled + Disabled Mods w/o Vanilla".padEnd(OUTPUT_LABEL_WIDTH) + totalBytes.bytesAsReadableMiB)
-        summaryText.appendLine("Enabled + Disabled Mods w/ Vanilla".padEnd(OUTPUT_LABEL_WIDTH) + (totalBytes + VANILLA_GAME_VRAM_USAGE_IN_BYTES).bytesAsReadableMiB)
+        summaryText.appendLine("Enabled + Disabled Mods w/o Vanilla".padEnd(OUTPUT_LABEL_WIDTH) + totalBytes.bytesAsReadableMB)
+        summaryText.appendLine("Enabled + Disabled Mods w/ Vanilla".padEnd(OUTPUT_LABEL_WIDTH) + (totalBytes + VANILLA_GAME_VRAM_USAGE_IN_BYTES).bytesAsReadableMB)
         summaryText.appendLine()
-        summaryText.appendLine("Enabled Mods w/o Vanilla".padEnd(OUTPUT_LABEL_WIDTH) + totalBytesOfEnabledMods.bytesAsReadableMiB)
-        summaryText.appendLine("Enabled Mods w/ Vanilla".padEnd(OUTPUT_LABEL_WIDTH) + (totalBytesOfEnabledMods + VANILLA_GAME_VRAM_USAGE_IN_BYTES).bytesAsReadableMiB)
+        summaryText.appendLine("Enabled Mods w/o Vanilla".padEnd(OUTPUT_LABEL_WIDTH) + totalBytesOfEnabledMods.bytesAsReadableMB)
+        summaryText.appendLine("Enabled Mods w/ Vanilla".padEnd(OUTPUT_LABEL_WIDTH) + (totalBytesOfEnabledMods + VANILLA_GAME_VRAM_USAGE_IN_BYTES).bytesAsReadableMB)
 
         summaryText.appendLine()
         summaryText.appendLine("** This is only an estimate of VRAM use and actual use may be higher or lower.")

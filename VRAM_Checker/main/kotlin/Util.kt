@@ -1,2 +1,2 @@
-internal val Long.bytesAsReadableMiB: String
-    get() = "%.3f MiB".format(this / 1048576f)
+internal val Long.bytesAsReadableMB: String
+    get() = "%.3f MB".format(this / 1000000f)

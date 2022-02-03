@@ -19,8 +19,8 @@ import org.update4j.Configuration
 import smol_app.composables.SmolButton
 import smol_app.toasts.Toast
 import smol_app.toasts.ToasterState
-import smol_app.util.bytesAsShortReadableMiB
-import smol_app.util.bytesToMiB
+import smol_app.util.bytesAsShortReadableMB
+import smol_app.util.bytesToMB
 import smol_app.util.ellipsizeAfter
 import timber.ktx.Timber
 import updatestager.Updater
@@ -158,7 +158,7 @@ class UpdateSmolToast {
                                     if (updateStage >= UpdateStage.Downloading) downloadTotal
                                     else updater.totalDownloadedBytes.collectAsState().value
                                 Text(
-                                    text = "${downloadedTotal?.let { "%.2f".format(it.bytesToMiB) } ?: "unknown"} / ${downloadTotal?.bytesAsShortReadableMiB ?: "unknown"}",
+                                    text = "${downloadedTotal?.let { "%.2f".format(it.bytesToMB) } ?: "unknown"} / ${downloadTotal?.bytesAsShortReadableMB ?: "unknown"}",
                                     modifier = Modifier.padding(start = 8.dp)
                                 )
                             }

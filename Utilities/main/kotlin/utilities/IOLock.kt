@@ -102,6 +102,8 @@ class ObservableReentrantReadWriteLock() {
     }
 
     /**
+     * WARNING: do not run any code that switches threads inside of this block. It will crash.
+     *
      * Executes the given [action] under the write lock of this lock.
      *
      * The function does upgrade from read to write lock if needed, but this upgrade is not atomic

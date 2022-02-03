@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.dp
 import smol_access.model.Mod
 import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
-import smol_app.util.bytesAsReadableMiB
+import smol_app.util.bytesAsReadableMB
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -74,7 +74,7 @@ fun ModGridSectionHeader(
             }
             val allImpacts = modsInGroup.map { getVramImpactForMod(it) }
             val totalBytes =
-                allImpacts.sumOf { it?.bytesForMod ?: 0L }.bytesAsReadableMiB
+                allImpacts.sumOf { it?.bytesForMod ?: 0L }.bytesAsReadableMB
             val totalImages = "${allImpacts.sumOf { it?.imageCount ?: 0 }} images"
             SmolTooltipArea(
                 tooltip = { SmolTooltipText(text = "All ${groupName.lowercase()} mods\n\n$totalBytes\n$totalImages") },
