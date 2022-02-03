@@ -209,6 +209,7 @@ fun ModVariantsDropdown(
                                             fontFamily = font
                                         )
 
+                                        val trashIconSize = 18.dp
                                         if (isHovered && action is DropdownAction.ChangeToVariant) {
                                             SmolIconButton(
                                                 onClick = {
@@ -222,10 +223,12 @@ fun ModVariantsDropdown(
                                                 Icon(
                                                     painter = painterResource("icon-trash.svg"),
                                                     modifier = Modifier
-                                                        .size(18.dp),
+                                                        .size(trashIconSize),
                                                     contentDescription = null
                                                 )
                                             }
+                                        } else {
+                                            Spacer(Modifier.padding(start = 12.dp).size(trashIconSize))
                                         }
                                     }
                                 }
