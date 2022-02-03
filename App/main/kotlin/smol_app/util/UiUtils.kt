@@ -64,13 +64,13 @@ fun String.ellipsizeAfter(length: Int): String {
 /**
  * A mebibyte is 2^20 bytes (1024 KiB instead of 1000 KB).
  */
-val Long.bitsToMiB
-    get() = (this / 8388608)
+val Long.bitsToMiB: Float
+    get() = (this / 8388608f)
 
 /**
  * A mebibyte is 2^20 bytes (1024 KiB instead of 1000 KB).
  */
-val Long.bytesToMiB
+val Long.bytesToMiB: Float
     get() = (this / 1048576f)
 
 /**

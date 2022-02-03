@@ -82,6 +82,9 @@ fun WindowState.appView() {
             button = TextStyle(fontFamily = SmolTheme.orbitronSpaceFont)
         )
     ) {
+        val scope = rememberCoroutineScope()
+        setUpToasts()
+
         Box(Modifier.background(MaterialTheme.colors.background)) {
             Children(router.state, animation = crossfade()) { screen ->
                 Box {
@@ -101,74 +104,10 @@ fun WindowState.appView() {
                         modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     )
-
-                    // Uncomment to clear out completed downloads after 10s.
-//                downloads.map { it to it.status.collectAsState() }
-//                    .filter { (_, status) -> status.value is DownloadItem.Status.Completed }
-//                    .forEach { (item, _) ->
-//                        if (!toasterState.timersByToastId.containsKey(item.id)) {
-//                            toasterState.timersByToastId[item.id] = Toaster.defaultTimeoutMillis
-//                        }
-//                    }
-
-                    LaunchedEffect(1) {
-                        SL.access.mods.collect { modListUpdate ->
-                            val addedModVariants = modListUpdate?.added ?: return@collect
-
-                            if (addedModVariants == modListUpdate.mods.flatMap { it.variants }) {
-                                Timber.d { "Added mods are the same as existing mods, this is probably startup. Not adding 'mod found' toasts." }
-                                return@collect
-                            }
-
-                            addedModVariants
-                                .forEach { newModVariant ->
-                                    Timber.i { "Found new mod ${newModVariant.modInfo.id} ${newModVariant.modInfo.version}." }
-                                    val id = "new-" + newModVariant.smolId
-                                    SL.UI.toaster.addItem(Toast(
-                                        id = id,
-                                        timeoutMillis = null,
-                                        useStandardToastFrame = true
-                                    ) {
-                                        toastInstalledCard(
-                                            modVariant = newModVariant,
-                                            requestToastDismissal = {
-                                                if (!SL.UI.toaster.timersByToastId.containsKey(id)) {
-                                                    SL.UI.toaster.timersByToastId[id] = 0
-                                                }
-                                            }
-                                        )
-                                    })
-                                }
-                        }
-
-                    }
-
-                    LaunchedEffect(1) {
-                        val items = SL.UI.toaster.items
-                        SL.UI.downloadManager.downloads.collect { downloads ->
-                            downloads
-                                .filter { it.id !in items.value.map { it.id } }
-                                .map {
-                                    Toast(id = it.id, timeoutMillis = null, useStandardToastFrame = true) {
-                                        downloadToast(
-                                            download = it,
-                                            requestToastDismissal = {
-                                                SL.UI.toaster.remove(it.id)
-                                            })
-                                    }
-                                }
-                                .also {
-                                    SL.UI.toaster.addItems(it)
-                                }
-                        }
-                    }
                 }
             }
 
-            val scope = rememberCoroutineScope()
-            var isRefreshingMods = false
             val refreshTrigger by remember { mutableStateOf(Unit) }
-            val onRefreshingMods = { refreshing: Boolean -> isRefreshingMods = refreshing }
 
             LaunchedEffect(refreshTrigger) {
                 scope.launch {
@@ -187,6 +126,69 @@ fun WindowState.appView() {
             if (alertDialogBuilder != null) {
                 alertDialogBuilder?.invoke { appState.alertDialogSetter(null) }
             }
+        }
+    }
+}
+
+@Composable
+private fun setUpToasts() {
+    // Uncomment to clear out completed downloads after 10s.
+//                downloads.map { it to it.status.collectAsState() }
+//                    .filter { (_, status) -> status.value is DownloadItem.Status.Completed }
+//                    .forEach { (item, _) ->
+//                        if (!toasterState.timersByToastId.containsKey(item.id)) {
+//                            toasterState.timersByToastId[item.id] = Toaster.defaultTimeoutMillis
+//                        }
+//                    }
+    LaunchedEffect(1) {
+        SL.access.mods.collect { modListUpdate ->
+            val addedModVariants = modListUpdate?.added ?: return@collect
+
+            if (addedModVariants == modListUpdate.mods.flatMap { it.variants }) {
+                Timber.d { "Added mods are the same as existing mods, this is probably startup. Not adding 'mod found' toasts." }
+                return@collect
+            }
+
+            addedModVariants
+                .forEach { newModVariant ->
+                    Timber.i { "Found new mod ${newModVariant.modInfo.id} ${newModVariant.modInfo.version}." }
+                    val id = "new-" + newModVariant.smolId
+                    SL.UI.toaster.addItem(Toast(
+                        id = id,
+                        timeoutMillis = null,
+                        useStandardToastFrame = true
+                    ) {
+                        toastInstalledCard(
+                            modVariant = newModVariant,
+                            requestToastDismissal = {
+                                if (!SL.UI.toaster.timersByToastId.containsKey(id)) {
+                                    SL.UI.toaster.timersByToastId[id] = 0
+                                }
+                            }
+                        )
+                    })
+                }
+        }
+
+    }
+
+    LaunchedEffect(1) {
+        val items = SL.UI.toaster.items
+        SL.UI.downloadManager.downloads.collect { downloads ->
+            downloads
+                .filter { it.id !in items.value.map { it.id } }
+                .map {
+                    Toast(id = it.id, timeoutMillis = null, useStandardToastFrame = true) {
+                        downloadToast(
+                            download = it,
+                            requestToastDismissal = {
+                                SL.UI.toaster.remove(it.id)
+                            })
+                    }
+                }
+                .also {
+                    SL.UI.toaster.addItems(it)
+                }
         }
     }
 }
