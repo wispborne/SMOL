@@ -72,8 +72,6 @@ fun WindowState.appView() {
                     toasterState = SL.UI.toaster,
                     updater = SL.UI.updater
                 )
-                // Let's get update on demand, after permission, not every run lol.
-//                SL.UI.updater.update(remoteConfig)
             }
         }
     }

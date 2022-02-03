@@ -23,9 +23,11 @@ import kotlinx.coroutines.launch
 import smol_access.SL
 import smol_access.business.JreEntry
 import smol_access.config.SettingsPath
+import smol_app.UI
 import smol_app.composables.*
 import smol_app.themes.SmolTheme
 import smol_app.toolbar.*
+import smol_app.updater.UpdateSmolToast
 import timber.ktx.Timber
 import utilities.exists
 import utilities.rootCause
@@ -71,6 +73,7 @@ fun AppState.settingsView(
                     var archivesPath by remember { mutableStateOf(SL.appConfig.archivesPath ?: "") }
                     var stagingPath by remember { mutableStateOf(SL.appConfig.stagingPath ?: "") }
                     val alertDialogMessage = remember { mutableStateOf<String?>(null) }
+                    val scope = rememberCoroutineScope()
                     val settingsPathErrors = remember {
                         mutableStateOf(
                             SL.access.validatePaths(
@@ -188,6 +191,33 @@ fun AppState.settingsView(
                                             settingsPathErrors = settingsPathErrors
                                         )
                                     themeDropdown(Modifier.padding(start = 16.dp, top = 24.dp))
+
+                                    Column(modifier = Modifier.padding(start = 16.dp, top = 24.dp)) {
+                                        Text(text = "Update", style = SettingsView.settingLabelStyle())
+                                        SmolSecondaryButton(
+                                            onClick = {
+                                                scope.launch {
+                                                    val remoteConfig = SL.UI.updater.getRemoteConfig()
+
+                                                    if (remoteConfig == null) {
+                                                        Timber.w { "Unable to fetch remote config, aborting update check." }
+                                                    } else {
+                                                        UpdateSmolToast().createIfNeeded(
+                                                            updateConfig = remoteConfig,
+                                                            toasterState = SL.UI.toaster,
+                                                            updater = SL.UI.updater
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        ) {
+                                            Text("Check for Update")
+                                        }
+                                        Text(
+                                            text = "If an update is found, a notification will be displayed.",
+                                            style = MaterialTheme.typography.caption
+                                        )
+                                    }
                                 }
                             }
 
@@ -216,14 +246,12 @@ fun AppState.settingsView(
                                         jresFound = jresFound
                                     )
                                 }
-                                if (true) {  //|| javasFound.none { it.version == 8 }) {
-                                    item {
-                                        jre8DownloadButton(
-                                            modifier = Modifier.padding(start = 16.dp, top = 8.dp),
-                                            jresFound = jresFound,
-                                            recomposer = recomposer
-                                        )
-                                    }
+                                item {
+                                    jre8DownloadButton(
+                                        modifier = Modifier.padding(start = 16.dp, top = 8.dp),
+                                        jresFound = jresFound,
+                                        recomposer = recomposer
+                                    )
                                 }
                             }
                         }
