@@ -24,7 +24,7 @@ data class UserProfile(
     ) {
         data class ShallowModVariant(
             val modId: String,
-            val modName: String,
+            val modName: String?,
             val smolVariantId: SmolId,
             val version: Version?
         )

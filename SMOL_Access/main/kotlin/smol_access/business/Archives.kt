@@ -24,6 +24,7 @@ import utilities.*
 import java.io.File
 import java.io.FileWriter
 import java.io.RandomAccessFile
+import java.nio.charset.Charset
 import java.nio.file.Path
 import java.util.*
 import kotlin.io.path.*
@@ -590,7 +591,7 @@ class Archives internal constructor(
 
                     IOLock.write {
                         val file = Path.of(config.archivesPath!!, ARCHIVE_MANIFEST_FILENAME)
-                        FileWriter(file.toFile()).use { writer ->
+                        FileWriter(file.toFile(), Charset.forName("utf-8")).use { writer ->
                             gson.toJson(this, writer)
                         }
                         Timber.i {

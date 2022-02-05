@@ -3,6 +3,7 @@ package smol_app.browser.chromium
 //import sun.tools.jconsole.inspector.XDataViewer
 
 import com.sun.java.accessibility.util.AWTEventMonitor
+import kotlinx.coroutines.flow.*
 import org.cef.CefApp
 import org.cef.CefClient
 import org.cef.CefSettings
@@ -14,6 +15,8 @@ import org.cef.callback.CefDownloadItem
 import org.cef.callback.CefDownloadItemCallback
 import org.cef.handler.CefDownloadHandler
 import org.cef.handler.CefLifeSpanHandlerAdapter
+import org.cef.handler.CefLoadHandler
+import org.cef.network.CefRequest
 import smol_app.browser.DownloadHander
 import tests.detailed.handler.MessageRouterHandler
 import tests.detailed.handler.MessageRouterHandlerEx
@@ -24,6 +27,7 @@ import java.awt.event.WindowEvent
 import javax.swing.JPanel
 import javax.swing.JTextField
 import kotlin.io.path.absolutePathString
+import kotlin.random.Random
 
 
 /**
@@ -195,10 +199,30 @@ class CefBrowserPanel
                 CefApp.getInstance().dispose()
             }
         })
+
+        client?.addLoadHandler(
+            object : CefLoadHandler {
+                override fun onLoadingStateChange(p0: CefBrowser?, p1: Boolean, p2: Boolean, p3: Boolean) = Unit
+
+                override fun onLoadStart(p0: CefBrowser?, p1: CefFrame?, p2: CefRequest.TransitionType?) {
+                    _currentUrl.value = (browser?.url ?: "") to Random.nextInt()
+                }
+
+                override fun onLoadEnd(p0: CefBrowser?, p1: CefFrame?, p2: Int) = Unit
+
+                override fun onLoadError(
+                    p0: CefBrowser?,
+                    p1: CefFrame?,
+                    p2: CefLoadHandler.ErrorCode?,
+                    p3: String?,
+                    p4: String?
+                ) = Unit
+            }
+        )
     }
 
-    override val currentUrl: String?
-        get() = browser?.url
+    private val _currentUrl = MutableStateFlow("" to 0)
+    override val currentUrl = _currentUrl.asStateFlow()
 
     override fun loadUrl(url: String) {
         browser?.loadURL(url)

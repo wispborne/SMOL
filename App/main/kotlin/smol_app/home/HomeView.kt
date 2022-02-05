@@ -13,7 +13,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.input.key.*
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.push
@@ -31,9 +30,9 @@ import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
 import smol_app.toolbar.*
 import smol_app.util.filterModGrid
+import smol_app.util.onSubmitKeyPress
 import smol_app.util.replaceAllUsingDifference
 import utilities.IOLock
-import utilities.equalsAny
 
 
 @OptIn(
@@ -181,26 +180,20 @@ private fun AppState.consoleTextField(
                 },
                 leadingIcon = { Icon(painter = painterResource("icon-console.svg"), contentDescription = null) },
                 modifier = Modifier
-                    .onKeyEvent { event ->
-                        return@onKeyEvent if (event.type == KeyEventType.KeyUp && (event.key.equalsAny(
-                                Key.Enter,
-                                Key.NumPadEnter
-                            ))
-                        ) {
-                            kotlin.runCatching {
-                                SmolCLI(
-                                    userManager = SL.userManager,
-                                    userModProfileManager = SL.userModProfileManager,
-                                    vmParamsManager = SL.UI.vmParamsManager,
-                                    access = SL.access,
-                                    gamePathManager = SL.gamePathManager
-                                )
-                                    .parse(consoleText)
-                                consoleText = ""
-                            }
-                                .onFailure { Logger.warn(it) }
-                            true
-                        } else false
+                    .onSubmitKeyPress {
+                        kotlin.runCatching {
+                            SmolCLI(
+                                userManager = SL.userManager,
+                                userModProfileManager = SL.userModProfileManager,
+                                vmParamsManager = SL.UI.vmParamsManager,
+                                access = SL.access,
+                                gamePathManager = SL.gamePathManager
+                            )
+                                .parse(consoleText)
+                            consoleText = ""
+                        }
+                            .onFailure { Logger.warn(it) }
+                        true
                     }
             )
         }

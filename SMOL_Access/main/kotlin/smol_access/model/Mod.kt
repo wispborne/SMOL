@@ -127,7 +127,7 @@ data class ModVariant(
     )
 
     private val systemFolderNameAllowedChars = Regex("""[^0-9a-zA-Z\\.\-_ ]""")
-    fun generateVariantFolderName() = "${modInfo.name.replace(systemFolderNameAllowedChars, "")}_${smolId}"
+    fun generateVariantFolderName() = "${modInfo.name?.replace(systemFolderNameAllowedChars, "")}_${smolId}"
 }
 
 typealias SmolId = String

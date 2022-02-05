@@ -34,7 +34,7 @@ class UserModProfileManager internal constructor(
                                         .map {
                                             UserProfile.ModProfile.ShallowModVariant(
                                                 modId = it.mod(modLoader).id,
-                                                modName = it.modInfo.name,
+                                                modName = it.modInfo.name ?: "",
                                                 smolVariantId = it.smolId,
                                                 version = it.modInfo.version
                                             )

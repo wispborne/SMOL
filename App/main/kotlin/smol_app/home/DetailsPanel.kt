@@ -108,7 +108,7 @@ fun BoxScope.detailsPanel(
                         fontSize = TextUnit(18f, TextUnitType.Sp)
                     )
                     Text(
-                        "${modInfo?.id ?: "(modid)"} ${modInfo?.version?.toString() ?: "no version"}",
+                        "${modInfo?.id ?: "(modid)"} ${modInfo?.version?.toString() ?: "(no version)"}",
                         modifier = Modifier.padding(top = 4.dp),
                         fontSize = TextUnit(12f, TextUnitType.Sp),
                         fontFamily = SmolTheme.fireCodeFont
@@ -130,7 +130,7 @@ fun BoxScope.detailsPanel(
                         )
                     }
                     Text("Author", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
-                    Text(modInfo?.author ?: "It's always Techpriest", modifier = Modifier.padding(top = 2.dp))
+                    Text(modInfo?.author ?: "(no author specified)", modifier = Modifier.padding(top = 2.dp))
                     Text("Description", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
                     Text(modInfo?.description ?: "", modifier = Modifier.padding(top = 2.dp))
                     val dependencies =

@@ -47,3 +47,7 @@ kotlin.sourceSets.main {
 java.sourceSets.main {
     this.java.setSrcDirs(listOf("main/kotlin"))
 }
+
+tasks.withType<Jar> {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}

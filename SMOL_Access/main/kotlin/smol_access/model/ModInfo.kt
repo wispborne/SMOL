@@ -6,18 +6,18 @@ import timber.ktx.Timber
 
 sealed class ModInfo(
     @Json(name = "id") val id: String,
-    @Json(name = "name") val name: String = "",
-    @Json(name = "author") val author: String = "",
-    @Json(name = "utility") val utilityString: String = "false",
-    @Json(name = "description") val description: String = "",
+    @Json(name = "name") val name: String? = "",
+    @Json(name = "author") val author: String? = "",
+    @Json(name = "utility") val utilityString: String? = "false",
+    @Json(name = "description") val description: String? = "",
     @Json(name = "requiredMemoryMB") val requiredMemoryMB: String? = null,
-    @Json(name = "gameVersion") val gameVersion: String,
+    @Json(name = "gameVersion") val gameVersion: String?,
     @Json(name = "jars") val jars: List<String> = emptyList(),
     @Json(name = "modPlugin") val modPlugin: String = "",
 ) {
     abstract val version: Version
     abstract val dependencies: List<Dependency>
-    val isUtilityMod = utilityString.toBooleanStrictOrNull() ?: false
+    val isUtilityMod = utilityString?.toBooleanStrictOrNull() ?: false
 
     override fun toString(): String {
         return "ModInfo(" +

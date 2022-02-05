@@ -6,9 +6,11 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.res.useResource
 import androidx.compose.ui.text.TextStyle
@@ -21,6 +23,7 @@ import smol_access.themes.ThemeManager
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.toColors
 import timber.ktx.Timber
+import utilities.equalsAny
 import utilities.exists
 import java.awt.Desktop
 import java.net.URI
@@ -133,6 +136,19 @@ fun String.acronym(): String =
         .split(" ")
         .filter { it.isNotBlank() }
         .joinToString(separator = "") { it.firstOrNull()?.toString() ?: "" }
+
+@OptIn(ExperimentalComposeUiApi::class)
+fun Modifier.onSubmitKeyPress(onKeyEvent: () -> Boolean): Modifier {
+    return this.onKeyEvent { event ->
+        if (event.type == KeyEventType.KeyUp && (event.key.equalsAny(
+                Key.Enter,
+                Key.NumPadEnter
+            ))
+        ) {
+            onKeyEvent.invoke()
+        } else false
+    }
+}
 
 @Composable
 fun smolPreview(modifier: Modifier = Modifier, content: @Composable () -> Unit) {

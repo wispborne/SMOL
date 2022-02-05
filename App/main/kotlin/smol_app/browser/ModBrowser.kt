@@ -29,6 +29,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import mod_repo.ScrapedMod
@@ -45,10 +46,7 @@ import smol_app.browser.chromium.ChromiumBrowser
 import smol_app.composables.*
 import smol_app.themes.SmolTheme
 import smol_app.toolbar.*
-import smol_app.util.filterModPosts
-import smol_app.util.openAsUriInBrowser
-import smol_app.util.parseHtml
-import smol_app.util.replaceAllUsingDifference
+import smol_app.util.*
 import timber.ktx.Timber
 import utilities.Platform
 import utilities.currentPlatform
@@ -145,7 +143,7 @@ fun AppState.ModBrowserView(
                     IconButton(
                         onClick = {
                             runCatching {
-                                browser.value?.currentUrl?.openAsUriInBrowser()
+                                browser.value?.currentUrl?.value?.first?.openAsUriInBrowser()
                             }
                                 .onFailure { Logger.warn(it) }
                         }
@@ -181,7 +179,7 @@ fun AppState.ModBrowserView(
             }
         }, content = {
             Column(Modifier.padding(bottom = SmolTheme.bottomBarHeight - 16.dp)) {
-                Row(modifier = Modifier.padding(start = 16.dp, bottom = 16.dp, top = 8.dp)) {
+                Row(modifier = Modifier.padding(start = 16.dp, top = 8.dp)) {
                     val splitterState = rememberSplitPaneState(
                         initialPositionPercentage = SL.UI.uiConfig.modBrowserState?.modListWidthPercent ?: 0f
                     )
@@ -200,7 +198,7 @@ fun AppState.ModBrowserView(
                                             modifier = Modifier
                                                 .focusRequester(searchFocusRequester())
                                                 .widthIn(max = 320.dp)
-                                                .padding(bottom = 16.dp, end = 16.dp),
+                                                .padding(end = 16.dp),
                                             tooltipText = "Hotkey: Ctrl-F",
                                             label = "Filter"
                                         ) { query ->
@@ -216,52 +214,23 @@ fun AppState.ModBrowserView(
                                                 )
                                             }
                                         }
-                                        Spacer(Modifier.weight(1f))
-                                        Column {
-                                            Row {
-                                                SmolSecondaryButton(
-                                                    modifier = Modifier.padding(start = 8.dp)
-                                                        .align(Alignment.CenterVertically),
-                                                    onClick = { linkLoader.value?.invoke(Constants.FORUM_MOD_INDEX_URL) }
-                                                ) { Text("Index") }
-                                                SmolSecondaryButton(
-                                                    modifier = Modifier.padding(start = 8.dp)
-                                                        .align(Alignment.CenterVertically),
-                                                    onClick = { linkLoader.value?.invoke(Constants.FORUM_MODDING_SUBFORUM_URL) }
-                                                ) { Text("Modding") }
-                                                IconButton(
-                                                    modifier = Modifier.padding(start = 8.dp)
-                                                        .align(Alignment.CenterVertically),
-                                                    onClick = { browser.value?.goBack() }
-                                                ) {
-                                                    Icon(
-                                                        imageVector = Icons.Default.ArrowBack,
-                                                        contentDescription = null
-                                                    )
-                                                }
-                                                IconButton(
-                                                    modifier = Modifier.padding(start = 8.dp, end = 8.dp)
-                                                        .align(Alignment.CenterVertically),
-                                                    onClick = { browser.value?.goForward() }
-                                                ) {
-                                                    Icon(
-                                                        imageVector = Icons.Default.ArrowForward,
-                                                        contentDescription = null
-                                                    )
-                                                }
-                                            }
-                                            val lastUpdated = SL.modRepo.getLastUpdated()
-                                            Text(
-                                                modifier = Modifier.padding(start = 16.dp, top = 8.dp),
-                                                text = "Last updated: ${
-                                                    lastUpdated?.format(
-                                                        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
-                                                            .withZone(ZoneId.systemDefault())
-                                                    )?.plus(" " + ZoneId.systemDefault().getDisplayName(TextStyle.SHORT, Locale.getDefault())) ?: "unknown"
-                                                }",
-                                                style = MaterialTheme.typography.overline
-                                            )
-                                        }
+                                    }
+
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                                        val lastUpdated = SL.modRepo.getLastUpdated()
+                                        Text(
+                                            modifier = Modifier.padding(vertical = 4.dp, horizontal = 16.dp),
+                                            text = "Last updated: ${
+                                                lastUpdated?.format(
+                                                    DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
+                                                        .withZone(ZoneId.systemDefault())
+                                                )?.plus(
+                                                    " " + ZoneId.systemDefault()
+                                                        .getDisplayName(TextStyle.SHORT, Locale.getDefault())
+                                                ) ?: "unknown"
+                                            }",
+                                            style = MaterialTheme.typography.overline
+                                        )
                                     }
 
                                     val scrollState = rememberLazyListState()
@@ -288,7 +257,59 @@ fun AppState.ModBrowserView(
                             }
                         }
                         second {
-                            embeddedBrowser(browser, linkLoader, defaultUrl ?: Constants.FORUM_MOD_INDEX_URL)
+                            Column {
+                                Row(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 8.dp)) {
+                                    SmolSecondaryButton(
+                                        modifier = Modifier.padding(start = 8.dp)
+                                            .align(Alignment.CenterVertically),
+                                        onClick = { linkLoader.value?.invoke(Constants.FORUM_MOD_INDEX_URL) }
+                                    ) { Text("Index") }
+                                    SmolSecondaryButton(
+                                        modifier = Modifier.padding(start = 8.dp)
+                                            .align(Alignment.CenterVertically),
+                                        onClick = { linkLoader.value?.invoke(Constants.FORUM_MODDING_SUBFORUM_URL) }
+                                    ) { Text("Modding") }
+                                    IconButton(
+                                        modifier = Modifier.padding(start = 8.dp)
+                                            .align(Alignment.CenterVertically),
+                                        onClick = { browser.value?.goBack() }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.ArrowBack,
+                                            contentDescription = null
+                                        )
+                                    }
+                                    IconButton(
+                                        modifier = Modifier.padding(start = 8.dp, end = 8.dp)
+                                            .align(Alignment.CenterVertically),
+                                        onClick = { browser.value?.goForward() }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.ArrowForward,
+                                            contentDescription = null
+                                        )
+                                    }
+                                    var enteredUrl by remember { mutableStateOf("") }
+                                    LaunchedEffect(Unit) {
+                                        Timber.i { "here" }
+                                        browser.value?.currentUrl?.collectLatest { enteredUrl = it.first }
+                                    }
+                                    SmolOutlinedTextField(
+                                        modifier = Modifier.weight(1f)
+                                            .align(Alignment.CenterVertically)
+                                            .onSubmitKeyPress {
+                                                browser.value?.loadUrl(enteredUrl)
+                                                true
+                                            },
+                                        value = enteredUrl,
+                                        onValueChange = { enteredUrl = it },
+                                        label = { Text("Address") },
+                                        maxLines = 1,
+                                        singleLine = true
+                                    )
+                                }
+                                embeddedBrowser(browser, linkLoader, defaultUrl ?: Constants.FORUM_MOD_INDEX_URL)
+                            }
                         }
                         horizontalSplitter()
                     }

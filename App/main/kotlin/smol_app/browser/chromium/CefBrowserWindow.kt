@@ -79,7 +79,7 @@ class CefBrowserWindow//                XDataViewer.dispose(null)// calling Syst
     useOSR: Boolean,
     isTransparent: Boolean,
     private val downloadHandler: DownloadHander?
-) : JFrame(), ChromiumBrowser {
+) : JFrame() {//, ChromiumBrowser {
     companion object {
         private const val serialVersionUID = -5570653778104813836L
     }
@@ -124,16 +124,16 @@ class CefBrowserWindow//                XDataViewer.dispose(null)// calling Syst
         })
     }
 
-    override val currentUrl: String?
+    val currentUrl: String?
         get() = browser.url
 
-    override fun loadUrl(url: String) = browser.loadURL(url)
+    fun loadUrl(url: String) = browser.loadURL(url)
 
-    override fun goBack() = browser.goBack()
+    fun goBack() = browser.goBack()
 
-    override fun goForward() = browser.goForward()
+    fun goForward() = browser.goForward()
 
-    override fun quit() {
+    fun quit() {
         CefApp.getInstance().dispose()
     }
 
