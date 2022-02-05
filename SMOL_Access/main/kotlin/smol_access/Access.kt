@@ -38,20 +38,6 @@ class Access internal constructor(
             }
         }
 
-        if (appConfig.archivesPath.toPathOrNull()?.exists() != true) {
-            appConfig.archivesPath = Constants.ARCHIVES_FOLDER_DEFAULT.absolutePathString()
-
-            IOLock.write(IOLocks.everythingLock) {
-                kotlin.runCatching {
-                    appConfig.archivesPath.toPathOrNull()?.createDirectories()
-                }
-                    .onFailure { Timber.w(it) }
-            }
-        }
-
-        archives.getArchivesManifest()
-            .also { Timber.i { "Archives folder manifest: ${it?.manifestItems?.keys?.joinToString()}" } }
-
         if (appConfig.stagingPath.toPathOrNull()?.exists() != true) {
             appConfig.stagingPath = Constants.STAGING_FOLDER_DEFAULT.absolutePathString()
 
@@ -64,7 +50,6 @@ class Access internal constructor(
         }
 
         Timber.i { "Game: ${appConfig.gamePath}" }
-        Timber.i { "Archives: ${appConfig.archivesPath}" }
         Timber.i { "Staging: ${appConfig.stagingPath}" }
     }
 
@@ -75,7 +60,6 @@ class Access internal constructor(
      */
     fun validatePaths(
         newGamePath: Path? = gamePathManager.path.value,
-        newArchivesPath: Path? = appConfig.archivesPath?.toPathOrNull(),
         newStagingPath: Path? = appConfig.stagingPath?.toPathOrNull()
     ): SmolResult<Unit, Map<SettingsPath, List<String>>> {
         val errors: Map<SettingsPath, MutableList<String>> = mapOf(
@@ -108,13 +92,6 @@ class Access internal constructor(
                 if (!hasGameCoreExe) {
                     errors[SettingsPath.Game]?.add("Folder 'starsector-core' doesn't exist!")
                 }
-            }
-
-            // Archives path
-            if (newArchivesPath?.exists() != true) {
-                errors[SettingsPath.Archives]?.add("Archives path '$newArchivesPath' doesn't exist!")
-            } else if (!newArchivesPath.isWritable()) {
-                errors[SettingsPath.Archives]?.add("Archives path '$newArchivesPath' is not writable! Try running as admin?")
             }
 
             // Staging path
@@ -193,14 +170,12 @@ class Access internal constructor(
      * Given an arbitrary file, find and install the associated mod into the given folder.
      * @param inputFile A file or folder to try to install.
      * @param destinationFolder The folder to place the result into. Not the mod folder, but the parent of that (eg /mods).
-     * @param shouldCompressModFolder If true, will compress the mod as needed and place the archive in the folder.
+     * Usually, this should be `gamePathManager.getModsPath()`.
      */
     suspend fun installFromUnknownSource(
         inputFile: Path,
-        destinationFolder: Path = archives.getArchivesPath().toPathOrNull()!!,
-        shouldCompressModFolder: Boolean
-    ) =
-        archives.installFromUnknownSource(inputFile, destinationFolder, shouldCompressModFolder)
+        destinationFolder: Path
+    ) = archives.installFromUnknownSource(inputFile, destinationFolder)
 
     /**
      * Changes the active mod variant, or disables all if `null` is set.
@@ -272,14 +247,6 @@ class Access internal constructor(
         }
     }
 
-    suspend fun stageModVariant(modVariant: ModVariant): Result<Unit> {
-        try {
-            return staging.stageInternal(modVariant)
-        } finally {
-            staging.manualReloadTrigger.trigger.emit("staged mod: $modVariant")
-        }
-    }
-
     suspend fun enableModVariant(modToEnable: ModVariant): Result<Unit> {
         try {
             modModificationState.update {
@@ -319,25 +286,12 @@ class Access internal constructor(
         }
     }
 
-    fun deleteVariant(modVariant: ModVariant, removeArchive: Boolean, removeUncompressedFolder: Boolean) {
-        Timber.i { "Deleting mod variant ${modVariant.smolId} folders. Remove archive? $removeArchive. Remove staging/mods files? $removeUncompressedFolder." }
+    fun deleteVariant(modVariant: ModVariant, removeUncompressedFolder: Boolean) {
+        Timber.i { "Deleting mod variant ${modVariant.smolId} folders. Remove staging/mods files? $removeUncompressedFolder." }
         trace(onFinished = { _, millis ->
-            Timber.i { "Deleted mod variant ${modVariant.smolId} folders in ${millis}ms. Remove archive? $removeArchive. Remove staging/mods files? $removeUncompressedFolder." }
+            Timber.i { "Deleted mod variant ${modVariant.smolId} folders in ${millis}ms. Remove staging/mods files? $removeUncompressedFolder." }
         }) {
             IOLock.write(IOLocks.modFilesLock) {
-                if (removeArchive) {
-                    val archiveFolder = modVariant.archiveInfo?.folder
-
-                    if (archiveFolder?.exists() != true) {
-                        Timber.e { "Unable to delete archive folder for variant ${modVariant.smolId}. File: $archiveFolder." }
-                    } else {
-                        kotlin.runCatching { archiveFolder.deleteIfExists() }
-                            .onFailure {
-                                Timber.e(it) { "Unable to delete archive folder for variant ${modVariant.smolId}." }
-                            }
-                    }
-                }
-
                 if (removeUncompressedFolder) {
                     val stagingFolder = modVariant.stagingInfo?.folder
 

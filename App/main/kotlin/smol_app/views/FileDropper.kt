@@ -89,10 +89,15 @@ fun AppState.FileDropper(
                 droppedFiles.firstOrNull()?.let {
                     scope.launch {
                         kotlin.runCatching {
-                            SL.access.installFromUnknownSource(
-                                inputFile = (it as File).toPath(),
-                                shouldCompressModFolder = true
-                            )
+                            val destinationFolder = SL.gamePathManager.getModsPath()
+
+                            if (destinationFolder != null) {
+                                SL.access.installFromUnknownSource(
+                                    inputFile = (it as File).toPath(),
+                                    destinationFolder = destinationFolder
+                                )
+                                SL.access.reload()
+                            }
                         }
                             .onFailure { throwable ->
                                 error = throwable

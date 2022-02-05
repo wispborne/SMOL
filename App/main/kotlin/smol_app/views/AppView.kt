@@ -18,7 +18,6 @@ import kotlinx.coroutines.flow.*
 import org.tinylog.Logger
 import smol_access.Constants
 import smol_access.SL
-import smol_access.business.Archives
 import smol_access.business.KWatchEvent
 import smol_access.business.asWatchChannel
 import smol_app.IWindowState
@@ -208,13 +207,9 @@ class AppState(windowState: WindowState) : IWindowState by windowState {
 private suspend fun watchDirsAndReloadOnChange(scope: CoroutineScope) {
     val NSA: List<Flow<KWatchEvent?>> = listOfNotNull(
         SL.access.getStagingPath()?.toPathOrNull()?.asWatchChannel(scope = scope) ?: emptyFlow(),
-        SL.access.getStagingPath()?.toPathOrNull()
-            ?.resolve(Archives.ARCHIVE_MANIFEST_FILENAME) // Watch manifest.json
-            ?.run { if (this.exists()) this.asWatchChannel(scope = scope) else emptyFlow() } ?: emptyFlow(),
         SL.gamePathManager.getModsPath()?.asWatchChannel(scope = scope),
         SL.gamePathManager.getModsPath()?.resolve(Constants.ENABLED_MODS_FILENAME) // Watch enabled_mods.json
             .run { if (this?.exists() == true) this.asWatchChannel(scope = scope) else emptyFlow() },
-        SL.archives.getArchivesPath()?.toPathOrNull()?.asWatchChannel(scope = scope) ?: emptyFlow(),
     )
     Timber.i {
         "Started watching folders ${
@@ -260,9 +255,6 @@ private suspend fun reloadModsInner() {
                             forceLookup = false,
                             mods = mods
                         )
-                    },
-                    async {
-                        SL.archives.refreshArchivesManifest()
                     },
                     async {
                         SL.saveReader.readAllSaves()

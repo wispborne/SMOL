@@ -59,9 +59,6 @@ class ServiceLocator internal constructor(
     ),
     internal val gameEnabledMods: GameEnabledMods = GameEnabledMods(jsanity, gamePathManager),
     val archives: Archives = Archives(
-        config = appConfig,
-        gamePathManager = gamePathManager,
-        gson = jsanity,
         modInfoLoader = modInfoLoader
     ),
     val jreManager: JreManager = JreManager(
@@ -86,11 +83,9 @@ class ServiceLocator internal constructor(
         httpClientBuilder = httpClientBuilder
     ),
     internal val staging: Staging = Staging(
-        config = appConfig,
         gamePathManager = gamePathManager,
         modLoader = modLoader,
         gameEnabledMods = gameEnabledMods,
-        archives = archives,
         manualReloadTrigger = manualReloadTrigger
     ),
     val access: Access = Access(

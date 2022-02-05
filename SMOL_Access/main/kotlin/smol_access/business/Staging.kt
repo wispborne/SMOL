@@ -1,7 +1,6 @@
 package smol_access.business
 
 import smol_access.Constants
-import smol_access.config.AppConfig
 import smol_access.config.GamePathManager
 import smol_access.model.Mod
 import smol_access.model.ModVariant
@@ -10,17 +9,18 @@ import timber.Timber
 import timber.ktx.i
 import timber.ktx.v
 import timber.ktx.w
-import utilities.*
+import utilities.IOLock
+import utilities.deleteRecursively
+import utilities.trace
+import utilities.walk
 import java.nio.file.AccessDeniedException
 import java.nio.file.Path
 import kotlin.io.path.*
 
 internal class Staging(
-    private val config: AppConfig,
     private val gamePathManager: GamePathManager,
     private val modLoader: ModLoader,
     private val gameEnabledMods: GameEnabledMods,
-    private val archives: Archives,
     val manualReloadTrigger: ManualReloadTrigger
 ) {
     enum class LinkMethod {
@@ -36,19 +36,8 @@ internal class Staging(
      * - Removes it from /mods.
      * - Removes it from `enabled_mods.json`.
      */
-    suspend fun disableModVariant(modVariant: ModVariant): Result<Unit> {
+    fun disableModVariant(modVariant: ModVariant): Result<Unit> {
         Timber.i { "Disabling variant ${modVariant.smolId}" }
-        // If it's not staged, stage it (to the staging folder) (but it'll stay disabled)
-        if (modVariant.stagingInfo == null) {
-            val stageResult = stageInternal(modVariant)
-
-            // If it isn't staged, stop here. Since it's not archived or staged, removing it will delete it entirely.
-            if (stageResult.isFailure) {
-                Timber.w(stageResult.exceptionOrNull()) { "Couldn't disable ${modVariant.smolId}, unable to stage." }
-                return stageResult
-            }
-        }
-
         if (modVariant.modsFolderInfo != null) {
             val result = removeFromModsFolder(modVariant)
 
@@ -68,42 +57,6 @@ internal class Staging(
 
         Timber.i { "Disabling ${modVariant.smolId}: success." }
         return Result.success((Unit))
-    }
-
-    suspend fun stageInternal(modVariant: ModVariant): Result<Unit> {
-        if (modVariant.stagingInfo?.folder?.exists() == true) {
-            Timber.i { "Mod already staged! $modVariant" }
-            return Result.success(Unit)
-        }
-
-        val stagingFolder = config.stagingPath.toPathOrNull()
-            ?: return failLogging("No staging folder: $modVariant")
-
-        kotlin.runCatching {
-            // Try to stage the mod by unzipping its archive
-            archives.extractMod(modVariant, stagingFolder)
-        }
-            .onFailure {
-                Timber.w(it) { "Tried to stage ${modVariant.smolId} by unzipping ${modVariant.archiveInfo?.folder} but it failed. Looking for it in the /mods folder, instead." }
-
-                // If we can't unzip the archive, see if it's in the /mods folder, we can get it from there.
-                if (modVariant.modsFolderInfo?.folder?.exists() == true) {
-                    val linkFoldersResult = linkFolders(
-                        sourceFolder = modVariant.modsFolderInfo.folder,
-                        destFolder = stagingFolder.resolve(modVariant.generateVariantFolderName())
-                    )
-
-                    if (linkFoldersResult.isFailure) {
-                        return failLogging(linkFoldersResult.exceptionOrNull()?.message ?: "")
-                    } else {
-                        Timber.i { "Mod staged from the /mods folder: $modVariant" }
-                    }
-                } else {
-                    return failLogging(it.message ?: "")
-                }
-            }
-
-        return Result.success(Unit)
     }
 
     suspend fun enableModVariant(modVariant: ModVariant): Result<Unit> {
@@ -148,66 +101,35 @@ internal class Staging(
         return Result.success((Unit))
     }
 
-    suspend fun disableMod(mod: Mod): Result<Unit> {
+    fun disableMod(mod: Mod): Result<Unit> {
         Timber.i { "Disabling mod ${mod.id}." }
         mod.variants.forEach { modVariant ->
-            if (modVariant.stagingInfo == null || !modVariant.stagingInfo.folder.exists()) {
+            if (modVariant.stagingInfo?.folder?.exists() != true) {
                 Timber.i { "Mod not staged! $modVariant" }
                 return@forEach
             }
 
-            if (modVariant.archiveInfo == null) {
-                Timber.w { "Cannot unstage mod not archived or else it'll be gone forever!: $modVariant" }
-                return@forEach
-            }
-
-            // Make sure it's disabled before unstaging
             disableModVariant(modVariant)
-
-            IOLock.write {
-                kotlin.runCatching {
-                    modVariant.stagingInfo.folder.deleteRecursively()
-                }
-                    .onFailure { Timber.e(it) }
-                    .getOrThrow()
-            }
         }
 
-        Timber.i { "Mod unstaged: $mod" }
+        Timber.i { "Mod disabled: $mod" }
         return Result.success(Unit)
     }
 
     /**
      * Creates (hard)links from the staging folder to the /mods folder for the specified [ModVariant].
      */
-    private suspend fun linkFromStagingToGameMods(modToEnable: ModVariant, modsFolderPath: Path): Result<Unit> {
-        var mod = modToEnable
+    private fun linkFromStagingToGameMods(modToEnable: ModVariant, modsFolderPath: Path): Result<Unit> {
         Timber.i { "Linking ${modToEnable.smolId} to /mods." }
 
-        // If it's not staged, stage it first (from the archive).
-        if (mod.stagingInfo == null || !mod.stagingInfo!!.folder.exists()) {
-            Timber.i { "Variant '${modToEnable.smolId}' was not staged, staging it first (from the archive)." }
-            stageInternal(mod)
-            // Then reload, to get the new staging path.
-            mod = (modLoader.reload()?.mods ?: emptyList())
-                .asSequence()
-                .flatMap { it.variants }
-                .firstOrNull { modV -> modV.smolId == modToEnable.smolId }
-                ?: return failLogging("Mod was removed: $mod")
-
-            if (mod.stagingInfo == null) {
-                return failLogging("Unable to stage mod $mod")
-            }
+        if (modToEnable.stagingInfo?.folder?.exists() != true) {
+            return failLogging("Mod is not staged $modToEnable")
         }
 
-        if (!mod.stagingInfo!!.folder.exists()) {
-            return failLogging("Mod is not staged $mod")
-        }
-
-        val sourceFolder = mod.stagingInfo!!.folder
+        val sourceFolder = modToEnable.stagingInfo.folder
 
         if (!sourceFolder.exists()) {
-            return failLogging("Staging folder doesn't exist. ${sourceFolder.pathString}, $mod")
+            return failLogging("Staging folder doesn't exist. ${sourceFolder.pathString}, $modToEnable")
         }
 
         val destFolder = modsFolderPath.resolve(sourceFolder.name)

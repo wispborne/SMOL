@@ -16,14 +16,13 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import smol_access.SL
 import smol_access.model.Mod
 import smol_access.model.UserProfile
 import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
 import smol_app.util.replaceAllUsingDifference
-import timber.ktx.Timber
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -43,15 +42,11 @@ fun AppState.ModGridHeader(
                 .align(androidx.compose.ui.Alignment.CenterVertically)
         )
         Box(
-            modifier = androidx.compose.ui.Modifier.width(smol_app.home.modGridViewDropdownWidth.dp)
+            modifier = androidx.compose.ui.Modifier.width(modGridViewDropdownWidth.dp)
                 .align(androidx.compose.ui.Alignment.CenterVertically)
         ) {
             refreshButton {
-                kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Default) {
-                    kotlin.runCatching {
-                        SL.archives.refreshArchivesManifest(forceRefresh = true)
-                    }
-                        .onFailure { Timber.w(it) }
+                GlobalScope.launch(kotlinx.coroutines.Dispatchers.Default) {
                     reloadMods()
                 }
             }
@@ -59,7 +54,7 @@ fun AppState.ModGridHeader(
 
         SortableHeader(
             modifier = androidx.compose.ui.Modifier.weight(1f).align(androidx.compose.ui.Alignment.CenterVertically),
-            columnSortField = smol_app.home.ModGridSortField.Name,
+            columnSortField = ModGridSortField.Name,
             activeSortField = activeSortField,
             profile = profile
         ) {
@@ -68,7 +63,7 @@ fun AppState.ModGridHeader(
 
         SortableHeader(
             modifier = androidx.compose.ui.Modifier.weight(1f).align(androidx.compose.ui.Alignment.CenterVertically),
-            columnSortField = smol_app.home.ModGridSortField.Author,
+            columnSortField = ModGridSortField.Author,
             activeSortField = activeSortField,
             profile = profile
         ) {
@@ -78,7 +73,7 @@ fun AppState.ModGridHeader(
         SmolTooltipArea(
             modifier = androidx.compose.ui.Modifier.weight(1f).align(androidx.compose.ui.Alignment.CenterVertically),
             tooltip = { SmolTooltipText(text = "The version(s) tracked by SMOL.") },
-            delayMillis = smol_app.composables.SmolTooltipArea.shortDelay
+            delayMillis = SmolTooltipArea.shortDelay
         ) {
             Text(text = "Version(s)", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
         }
@@ -94,10 +89,10 @@ fun AppState.ModGridHeader(
                                 "\nAll images are counted, even if not used by the game."
                     )
                 },
-                delayMillis = smol_app.composables.SmolTooltipArea.shortDelay
+                delayMillis = SmolTooltipArea.shortDelay
             ) {
                 SortableHeader(
-                    columnSortField = smol_app.home.ModGridSortField.VramImpact,
+                    columnSortField = ModGridSortField.VramImpact,
                     activeSortField = activeSortField,
                     profile = profile,
                     modifier = androidx.compose.ui.Modifier.align(androidx.compose.ui.Alignment.CenterVertically)
@@ -112,7 +107,7 @@ fun AppState.ModGridHeader(
                         text = "Calculate VRAM Impact for all mods."
                     )
                 },
-                delayMillis = smol_app.composables.SmolTooltipArea.shortDelay
+                delayMillis = SmolTooltipArea.shortDelay
             ) {
                 IconButton(
                     onClick = { showVramRefreshWarning.value = true },

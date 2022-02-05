@@ -66,10 +66,6 @@ fun debugDialog(
                                 modifier = Modifier.padding(top = 4.dp)
                             )
                             Text(
-                                "<b>/archives folder</b>: ${variant.archiveInfo?.folder}".parseHtml(),
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
-                            Text(
                                 "<b>/mods folder</b>: ${variant.modsFolderInfo?.folder}".parseHtml(),
                                 modifier = Modifier.padding(top = 4.dp)
                             )

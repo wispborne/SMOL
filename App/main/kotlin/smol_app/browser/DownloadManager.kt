@@ -9,15 +9,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import smol_access.Access
 import smol_access.Constants
-import utilities.IOLock
+import smol_access.config.GamePathManager
 import timber.ktx.Timber
+import utilities.IOLock
 import utilities.transferTo
 import java.net.URL
 import java.util.*
 import kotlin.io.path.*
 
 class DownloadManager(
-    private val access: Access
+    private val access: Access,
+    private val gamePathManager: GamePathManager
 ) {
     private val downloadsInner = MutableStateFlow<List<DownloadItem>>(emptyList())
 
@@ -135,8 +137,11 @@ class DownloadManager(
                 }
 
                 if (shouldInstallAfter) {
-                    access.installFromUnknownSource(inputFile = file, shouldCompressModFolder = true)
-                    access.reload()
+                    val destinationFolder = gamePathManager.getModsPath()
+                    if (destinationFolder != null) {
+                        access.installFromUnknownSource(inputFile = file, destinationFolder = destinationFolder)
+                        access.reload()
+                    }
                 }
             }
         } catch (e: CancellationException) {

@@ -90,28 +90,6 @@ private fun AppState.modGridSingleModMenu(
         }
     }
 
-    val archiveFolder = (mod.findFirstEnabled
-        ?: mod.findFirstDisabled)?.archiveInfo?.folder
-    if (archiveFolder?.exists() == true) {
-        DropdownMenuItem(onClick = {
-            runCatching {
-                archiveFolder.also {
-                    Desktop.getDesktop().open(it.toFile())
-                }
-            }
-                .onFailure { Logger.warn(it) { "Error trying to open file browser for $mod." } }
-            onShowContextMenuChange(false)
-        }) {
-            Image(
-                painter = painterResource("icon-archive.svg"),
-                colorFilter = ColorFilter.tint(MaterialTheme.colors.onSurface),
-                modifier = Modifier.padding(end = 12.dp).size(24.dp),
-                contentDescription = null
-            )
-            Text("Open Archive")
-        }
-    }
-
     val modThreadId = mod.getModThreadId()
 
     if (Constants.isModBrowserEnabled()) {

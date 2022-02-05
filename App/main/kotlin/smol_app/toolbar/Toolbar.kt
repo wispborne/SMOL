@@ -125,11 +125,14 @@ val sayings = listOf(
 fun AppState.launchButton() {
     val launchText = remember { sayings.weightedRandom() }
     SmolTooltipArea(
-        tooltip = { SmolTooltipText(
-            when {
-                !SL.gamePathManager.path.value.exists() -> "Set a valid game path."
-                else -> launchText
-            }) },
+        tooltip = {
+            SmolTooltipText(
+                when {
+                    !SL.gamePathManager.path.value.exists() -> "Set a valid game path."
+                    else -> launchText
+                }
+            )
+        },
         delayMillis = SmolTooltipArea.shortDelay
     ) {
         SmolButton(
@@ -188,7 +191,14 @@ fun AppState.installModsButton(modifier: Modifier = Modifier) {
                         .onEach { Logger.debug { "Chosen file: $it" } }
                         .forEach {
                             GlobalScope.launch {
-                                SL.access.installFromUnknownSource(inputFile = it, shouldCompressModFolder = true)
+                                val destinationFolder = SL.gamePathManager.getModsPath()
+                                if (destinationFolder != null) {
+                                    SL.access.installFromUnknownSource(
+                                        inputFile = it,
+                                        destinationFolder = destinationFolder
+                                    )
+                                    SL.access.reload()
+                                }
                             }
                         }
                 }

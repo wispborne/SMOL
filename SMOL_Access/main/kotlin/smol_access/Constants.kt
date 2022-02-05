@@ -24,7 +24,6 @@ object Constants {
 
     const val APP_FOLDER_NAME = "SMOL-data"
     val APP_FOLDER_DEFAULT: Path = Path("", APP_FOLDER_NAME)
-    val ARCHIVES_FOLDER_DEFAULT: Path = APP_FOLDER_DEFAULT.resolve("archives")
     val STAGING_FOLDER_DEFAULT: Path = APP_FOLDER_DEFAULT.resolve("staging")
     val UI_CONFIG_PATH: Path = APP_FOLDER_DEFAULT.resolve("SMOL_UIConfig.json")
     val APP_CONFIG_PATH: Path = APP_FOLDER_DEFAULT.resolve("SMOL_AppConfig.json")

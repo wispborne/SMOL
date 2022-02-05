@@ -17,7 +17,6 @@ import timber.ktx.i
 import utilities.asList
 import utilities.toPathOrNull
 import utilities.trace
-import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 
 internal class ModLoader internal constructor(
@@ -39,7 +38,7 @@ internal class ModLoader internal constructor(
     val isLoading = isReloadingMutable.asStateFlow()
 
     /**
-     * Reads all or specific mods from /mods, staging, and archive folders.
+     * Reads all or specific mods from /mods, staging folders.
      */
     @OptIn(ExperimentalStdlibApi::class)
     suspend fun reload(modIds: List<ModId>? = null): ModListUpdate? {
@@ -65,28 +64,6 @@ internal class ModLoader internal constructor(
                         return@withContext null
                     }
 
-                    // Get items in archives
-                    val archivedMods = archives.getArchivesManifest()?.manifestItems?.values
-                        ?.filter { modIds?.contains(it.modInfo.id) ?: true } // Filter to the selected mods, if not null
-                        ?.map { archivedItem ->
-                            Timber.v { "Archive: ${archivedItem.modInfo.name}" }
-
-                            val modVariant = ModVariant(
-                                modInfo = archivedItem.modInfo,
-                                versionCheckerInfo = archivedItem.versionCheckerInfo,
-                                modsFolderInfo = null,  // Will zip with mods items later to populate
-                                stagingInfo = null, // Will zip with staged items later to populate
-                                archiveInfo = ModVariant.ArchiveInfo(Path.of(archivedItem.archivePath)),
-                            )
-                            Mod(
-                                id = archivedItem.modInfo.id,
-                                isEnabledInGame = archivedItem.modInfo.id in enabledModIds,
-                                variants = listOf(modVariant)
-                            )
-                        }
-                        ?.onEach { Timber.v { "Found archived mod $it" } }
-                        ?: emptyList()
-
                     // Get items in staging
                     val stagingMods = config.stagingPath?.toPathOrNull()!!
 
@@ -104,8 +81,7 @@ internal class ModLoader internal constructor(
                                     modInfo = modInfo,
                                     versionCheckerInfo = dataFiles.versionCheckerInfo,
                                     modsFolderInfo = null,  // Will zip with mods items later to populate
-                                    stagingInfo = ModVariant.StagingInfo(folder = modFolder),
-                                    archiveInfo = null,
+                                    stagingInfo = ModVariant.StagingInfo(folder = modFolder)
                                 )
                                 Mod(
                                     id = modInfo.id,
@@ -135,8 +111,7 @@ internal class ModLoader internal constructor(
                                     modInfo = modInfo,
                                     versionCheckerInfo = dataFiles.versionCheckerInfo,
                                     modsFolderInfo = Mod.ModsFolderInfo(folder = modFolder),
-                                    stagingInfo = null,
-                                    archiveInfo = null,
+                                    stagingInfo = null
                                 )
                                 Mod(
                                     id = modInfo.id,
@@ -148,7 +123,7 @@ internal class ModLoader internal constructor(
                             .onEach { Timber.v { "Found /mods mod $it" } }
 
                     // Merge all items together, replacing nulls with data.
-                    val result = (archivedMods + stagedMods + modsFolderMods)
+                    val result = (stagedMods + modsFolderMods)
                         .groupingBy { it.id }
                         .reduce { _, accumulator, newElement ->
                             accumulator.copy(
@@ -163,7 +138,6 @@ internal class ModLoader internal constructor(
                                             mergedVariants[mergedVariants.indexOf(acc)] = acc.copy(
                                                 modsFolderInfo = acc.modsFolderInfo ?: element.modsFolderInfo,
                                                 stagingInfo = acc.stagingInfo ?: element.stagingInfo,
-                                                archiveInfo = acc.archiveInfo ?: element.archiveInfo,
                                                 versionCheckerInfo = acc.versionCheckerInfo
                                                     ?: element.versionCheckerInfo
                                             )

@@ -432,10 +432,14 @@ private fun AppState.embeddedBrowser(
 
                                     if (download.path.value != null) {
                                         GlobalScope.launch(Dispatchers.IO) {
-                                            SL.access.installFromUnknownSource(
-                                                inputFile = download.path.value!!,
-                                                shouldCompressModFolder = true
-                                            )
+                                            val destinationFolder = SL.gamePathManager.getModsPath()
+                                            if (destinationFolder != null) {
+                                                SL.access.installFromUnknownSource(
+                                                    inputFile = download.path.value!!,
+                                                    destinationFolder = destinationFolder
+                                                )
+                                                SL.access.reload()
+                                            }
                                         }
                                     }
                                 }

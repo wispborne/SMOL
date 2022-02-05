@@ -199,7 +199,6 @@ fun AppState.ModGridView(
 
         if (variantToConfirmDeletionOf.value != null) {
             val modVariantBeingRemoved = variantToConfirmDeletionOf.value!!
-            var shouldRemoveArchive by remember { mutableStateOf(true) }
             var shouldRemoveStagingAndMods by remember { mutableStateOf(true) }
 
             SmolAlertDialog(
@@ -216,26 +215,6 @@ fun AppState.ModGridView(
                             modifier = Modifier.padding(bottom = 8.dp),
                             style = SmolTheme.alertDialogBody()
                         )
-
-                        if (modVariantBeingRemoved.archiveInfo?.folder?.exists() == true) {
-                            Row {
-                                Checkbox(
-                                    modifier = Modifier.align(Alignment.CenterVertically),
-                                    checked = shouldRemoveArchive,
-                                    onCheckedChange = { shouldRemoveArchive = shouldRemoveArchive.not() }
-                                )
-                                Text(
-                                    text = "${modVariantBeingRemoved.archiveInfo?.folder?.name} ${
-                                        kotlin.runCatching { modVariantBeingRemoved.archiveInfo?.folder?.fileSize() }
-                                            .getOrNull()?.bytesAsShortReadableMB?.let { "($it)" }
-                                    }",
-                                    modifier = Modifier.align(Alignment.CenterVertically),
-                                    style = SmolTheme.alertDialogBody()
-                                )
-                            }
-                        } else {
-                            shouldRemoveArchive = false
-                        }
 
                         val looseFilesToShow = modVariantBeingRemoved.stagingInfo?.folder.let {
                             if (it?.exists() != true)
@@ -288,7 +267,6 @@ fun AppState.ModGridView(
                             variantToConfirmDeletionOf.value = null
                             SL.access.deleteVariant(
                                 modVariant = modVariantBeingRemoved,
-                                removeArchive = shouldRemoveArchive,
                                 removeUncompressedFolder = shouldRemoveStagingAndMods
                             )
                         }) {

@@ -63,8 +63,7 @@ data class Mod(
                     ),
                     versionCheckerInfo = null,
                     modsFolderInfo = null,
-                    stagingInfo = null,
-                    archiveInfo = null
+                    stagingInfo = ModVariant.StagingInfo(Path.of(""))
                 )
             )
         )
@@ -79,7 +78,6 @@ data class ModVariant(
     val versionCheckerInfo: VersionCheckerInfo?,
     val modsFolderInfo: Mod.ModsFolderInfo?,
     val stagingInfo: StagingInfo?,
-    val archiveInfo: ArchiveInfo?,
 ) {
     /**
      * Composite key: mod id + mod version.
@@ -115,7 +113,6 @@ data class ModVariant(
 
     val exists: Boolean
         get() = (stagingInfo != null && stagingInfo.folder.exists())
-                || (archiveInfo != null && archiveInfo.folder.exists())
                 || (modsFolderInfo != null && modsFolderInfo.folder.exists())
 
     data class ArchiveInfo(

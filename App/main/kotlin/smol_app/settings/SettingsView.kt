@@ -69,7 +69,6 @@ fun AppState.settingsView(
             ) {
                 Column {
                     var gamePath by remember { mutableStateOf(SL.gamePathManager.path.value?.pathString) }
-                    var archivesPath by remember { mutableStateOf(SL.appConfig.archivesPath ?: "") }
                     var stagingPath by remember { mutableStateOf(SL.appConfig.stagingPath ?: "") }
                     val alertDialogMessage = remember { mutableStateOf<String?>(null) }
                     val scope = rememberCoroutineScope()
@@ -77,7 +76,6 @@ fun AppState.settingsView(
                         mutableStateOf(
                             SL.access.validatePaths(
                                 newGamePath = gamePath.toPathOrNull(),
-                                newArchivesPath = archivesPath.toPathOrNull(),
                                 newStagingPath = stagingPath.toPathOrNull()
                             ).failure
                         )
@@ -87,7 +85,6 @@ fun AppState.settingsView(
                         val errors = kotlin.runCatching {
                             SL.access.validatePaths(
                                 newGamePath = gamePath.toPathOrNull(),
-                                newArchivesPath = archivesPath.toPathOrNull(),
                                 newStagingPath = stagingPath.toPathOrNull()
                             ).failure
                         }
@@ -105,7 +102,6 @@ fun AppState.settingsView(
                             SL.gamePathManager.set(gamePath!!)
 
                             kotlin.runCatching {
-                                SL.archives.changePath(archivesPath)
                                 SL.access.changeStagingPath(stagingPath)
                             }
                                 .onFailure { ex ->
@@ -176,21 +172,12 @@ fun AppState.settingsView(
                                     )
                                     gamePath = gamePathSetting(
                                         gamePath = gamePath ?: "",
-                                        archivesPath = archivesPath,
                                         stagingPath = stagingPath,
                                         settingsPathErrors = settingsPathErrors
                                     )
-                                    archivesPath =
-                                        archivesPathSetting(
-                                            gamePath = gamePath ?: "",
-                                            archivesPath = archivesPath,
-                                            stagingPath = stagingPath,
-                                            settingsPathErrors = settingsPathErrors
-                                        )
                                     stagingPath =
                                         stagingPathSetting(
                                             gamePath = gamePath ?: "",
-                                            archivesPath = archivesPath,
                                             stagingPath = stagingPath,
                                             settingsPathErrors = settingsPathErrors
                                         )
@@ -293,7 +280,6 @@ fun AppState.settingsView(
 @Composable
 private fun AppState.gamePathSetting(
     gamePath: String,
-    archivesPath: String,
     stagingPath: String,
     settingsPathErrors: MutableState<Map<SettingsPath, List<String>>?>
 ): String {
@@ -315,7 +301,6 @@ private fun AppState.gamePathSetting(
                 settingsPathErrors.value = kotlin.runCatching {
                     SL.access.validatePaths(
                         newGamePath = it.toPathOrNull(),
-                        newArchivesPath = archivesPath.toPathOrNull(),
                         newStagingPath = stagingPath.toPathOrNull()
                     ).failure
                 }
@@ -348,67 +333,8 @@ private fun AppState.gamePathSetting(
 }
 
 @Composable
-private fun AppState.archivesPathSetting(
-    gamePath: String,
-    archivesPath: String,
-    stagingPath: String,
-    settingsPathErrors: MutableState<Map<SettingsPath, List<String>>?>
-): String {
-    val errors = settingsPathErrors.value?.get(SettingsPath.Archives)
-    var archivesPathMutable by remember { mutableStateOf(archivesPath) }
-
-    Row {
-        SmolTextField(
-            value = archivesPathMutable,
-            modifier = Modifier
-                .weight(1f)
-                .align(Alignment.CenterVertically),
-            label = { Text("Archive storage folder") },
-            isError = errors?.any() ?: false,
-            singleLine = true,
-            maxLines = 1,
-            onValueChange = {
-                archivesPathMutable = it
-                settingsPathErrors.value = kotlin.runCatching {
-                    SL.access.validatePaths(
-                        newGamePath = gamePath.toPathOrNull(),
-                        newArchivesPath = it.toPathOrNull(),
-                        newStagingPath = stagingPath.toPathOrNull()
-                    ).failure
-                }
-                    .onFailure { ex -> Timber.w(ex) }
-                    .getOrElse { emptyMap() }
-            })
-        SmolSecondaryButton(
-            modifier = Modifier
-                .align(Alignment.CenterVertically)
-                .padding(start = 16.dp),
-            onClick = {
-                archivesPathMutable =
-                    pickFolder(
-                        initialPath = archivesPathMutable.ifBlank { null }
-                            ?: "",
-                        window = window)
-                        ?: archivesPathMutable
-            }) {
-            Text("Open")
-        }
-    }
-    if (errors?.any() == true) {
-        Text(
-            text = errors.joinToString(separator = "\n"),
-            color = MaterialTheme.colors.error,
-            modifier = Modifier.padding(start = 16.dp)
-        )
-    }
-
-    return archivesPathMutable
-}
-
-@Composable
 private fun AppState.stagingPathSetting(
     gamePath: String,
-    archivesPath: String,
     stagingPath: String,
     settingsPathErrors: MutableState<Map<SettingsPath, List<String>>?>
 ): String {
@@ -430,7 +356,6 @@ private fun AppState.stagingPathSetting(
                 settingsPathErrors.value = kotlin.runCatching {
                     SL.access.validatePaths(
                         newGamePath = gamePath.toPathOrNull(),
-                        newArchivesPath = archivesPath.toPathOrNull(),
                         newStagingPath = it.toPathOrNull()
                     ).failure
                 }
