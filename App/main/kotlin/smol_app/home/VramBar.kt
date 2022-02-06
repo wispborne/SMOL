@@ -35,7 +35,7 @@ fun RowScope.vramBar(mod: Mod, largestVramUsage: Long?) {
                         append("${vramResult.imageCount} images")
                     }
                 }
-                variant?.stagingInfo == null && variant?.modsFolderInfo == null ->
+                variant?.modsFolderInfo == null ->
                     "Install mod before checking VRAM.\nUnable to scan a compressed archive."
                 else -> "Not yet scanned."
             }

@@ -7,7 +7,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import smol_access.Constants
-import smol_access.config.AppConfig
 import smol_access.config.GamePathManager
 import smol_access.model.Mod
 import smol_access.model.ModId
@@ -15,14 +14,11 @@ import smol_access.model.ModVariant
 import timber.ktx.Timber
 import timber.ktx.i
 import utilities.asList
-import utilities.toPathOrNull
 import utilities.trace
 import kotlin.io.path.absolutePathString
 
 internal class ModLoader internal constructor(
     private val gamePathManager: GamePathManager,
-    private val config: AppConfig,
-    private val archives: Archives,
     private val modInfoLoader: ModInfoLoader,
     private val gameEnabledMods: GameEnabledMods
 ) {
@@ -64,34 +60,6 @@ internal class ModLoader internal constructor(
                         return@withContext null
                     }
 
-                    // Get items in staging
-                    val stagingMods = config.stagingPath?.toPathOrNull()!!
-
-                    val stagedMods =
-                        modInfoLoader.readModDataFilesFromFolderOfMods(
-                            folderWithMods = stagingMods,
-                            desiredFiles = listOf(ModInfoLoader.DataFile.VERSION_CHECKER)
-                        )
-                            .filter {
-                                modIds?.contains(it.second.modInfo.id) ?: true
-                            } // Filter to the selected mods, if not null
-                            .map { (modFolder, dataFiles) ->
-                                val modInfo = dataFiles.modInfo
-                                val modVariant = ModVariant(
-                                    modInfo = modInfo,
-                                    versionCheckerInfo = dataFiles.versionCheckerInfo,
-                                    modsFolderInfo = null,  // Will zip with mods items later to populate
-                                    stagingInfo = ModVariant.StagingInfo(folder = modFolder)
-                                )
-                                Mod(
-                                    id = modInfo.id,
-                                    isEnabledInGame = modInfo.id in enabledModIds,
-                                    variants = modVariant.asList()
-                                )
-                            }
-                            .toList()
-                            .onEach { Timber.v { "Found staged/installed mod $it" } }
-
                     // Get items in /mods folder
                     val modsFolder = gamePathManager.getModsPath() ?: run {
                         Timber.w { "No mods path set, cannot load mods." }
@@ -110,8 +78,7 @@ internal class ModLoader internal constructor(
                                 val modVariant = ModVariant(
                                     modInfo = modInfo,
                                     versionCheckerInfo = dataFiles.versionCheckerInfo,
-                                    modsFolderInfo = Mod.ModsFolderInfo(folder = modFolder),
-                                    stagingInfo = null
+                                    modsFolderInfo = Mod.ModsFolderInfo(folder = modFolder)
                                 )
                                 Mod(
                                     id = modInfo.id,
@@ -123,7 +90,7 @@ internal class ModLoader internal constructor(
                             .onEach { Timber.v { "Found /mods mod $it" } }
 
                     // Merge all items together, replacing nulls with data.
-                    val result = (stagedMods + modsFolderMods)
+                    val result = (modsFolderMods)
                         .groupingBy { it.id }
                         .reduce { _, accumulator, newElement ->
                             accumulator.copy(
@@ -137,7 +104,6 @@ internal class ModLoader internal constructor(
                                         if (acc != null) {
                                             mergedVariants[mergedVariants.indexOf(acc)] = acc.copy(
                                                 modsFolderInfo = acc.modsFolderInfo ?: element.modsFolderInfo,
-                                                stagingInfo = acc.stagingInfo ?: element.stagingInfo,
                                                 versionCheckerInfo = acc.versionCheckerInfo
                                                     ?: element.versionCheckerInfo
                                             )
@@ -151,18 +117,17 @@ internal class ModLoader internal constructor(
                         }
                         .values
                         .map { mod -> mod.copy(variants = mod.variants.sortedBy { it.modInfo.version }) }
-                        .filter { mod -> mod.variants.any { it.exists } }
                         .toList()
                         .onEach {
                             Timber.d { "Loaded mod: $it" }
 
-                            val variantsInModsFolder = it.variants.filter { variant -> variant.modsFolderInfo != null }
+                            val variantsInModsFolder = it.variants.filter { it.isModInfoEnabled }
 
                             if (variantsInModsFolder.size > 1) {
                                 Timber.w {
-                                    "${it.id} has multiple variants in /mods: ${
+                                    "${it.id} has multiple enabled variants in /mods: ${
                                         variantsInModsFolder.joinToString {
-                                            it.modsFolderInfo!!.folder.absolutePathString()
+                                            it.modsFolderInfo.folder.absolutePathString()
                                         }
                                     }"
                                 }

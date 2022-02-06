@@ -70,10 +70,6 @@ fun debugDialog(
                                 modifier = Modifier.padding(top = 4.dp)
                             )
                             Text(
-                                "<b>/staging folder</b>: ${variant.stagingInfo?.folder}".parseHtml(),
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
-                            Text(
                                 "<b>Mod Info</b>\n${variant.modInfo}".parseHtml(),
                                 modifier = Modifier.padding(top = 4.dp)
                             )

@@ -15,9 +15,7 @@ val IOLock = ObservableReentrantReadWriteLock()
 
 object IOLocks {
     val modFolderLock = ReentrantReadWriteLock()
-    val stagingFolderLock = ReentrantReadWriteLock()
-    val archivesFolderLock = ReentrantReadWriteLock()
-    val modFilesLock = modFolderLock + stagingFolderLock + archivesFolderLock
+    val modFilesLock = modFolderLock
     val configLock = ReentrantReadWriteLock()
     val gameMainFolderLock = ReentrantReadWriteLock()
     val defaultLock = configLock + modFilesLock

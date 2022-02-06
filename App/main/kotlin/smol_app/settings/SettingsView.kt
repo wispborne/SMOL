@@ -29,7 +29,6 @@ import smol_app.toolbar.*
 import smol_app.updater.UpdateSmolToast
 import timber.ktx.Timber
 import utilities.exists
-import utilities.rootCause
 import utilities.toPathOrNull
 import java.io.File
 import javax.swing.JFileChooser
@@ -69,14 +68,12 @@ fun AppState.settingsView(
             ) {
                 Column {
                     var gamePath by remember { mutableStateOf(SL.gamePathManager.path.value?.pathString) }
-                    var stagingPath by remember { mutableStateOf(SL.appConfig.stagingPath ?: "") }
                     val alertDialogMessage = remember { mutableStateOf<String?>(null) }
                     val scope = rememberCoroutineScope()
                     val settingsPathErrors = remember {
                         mutableStateOf(
                             SL.access.validatePaths(
-                                newGamePath = gamePath.toPathOrNull(),
-                                newStagingPath = stagingPath.toPathOrNull()
+                                newGamePath = gamePath.toPathOrNull()
                             ).failure
                         )
                     }
@@ -84,8 +81,7 @@ fun AppState.settingsView(
                     fun saveSettings(): Boolean {
                         val errors = kotlin.runCatching {
                             SL.access.validatePaths(
-                                newGamePath = gamePath.toPathOrNull(),
-                                newStagingPath = stagingPath.toPathOrNull()
+                                newGamePath = gamePath.toPathOrNull()
                             ).failure
                         }
                             .recover {
@@ -100,15 +96,6 @@ fun AppState.settingsView(
                             return false
                         } else {
                             SL.gamePathManager.set(gamePath!!)
-
-                            kotlin.runCatching {
-                                SL.access.changeStagingPath(stagingPath)
-                            }
-                                .onFailure { ex ->
-                                    alertDialogMessage.value =
-                                        "${ex.rootCause()::class.simpleName}\n${ex.rootCause().message}"
-                                    return false
-                                }
 
                             GlobalScope.launch {
                                 SL.access.reload()
@@ -172,15 +159,8 @@ fun AppState.settingsView(
                                     )
                                     gamePath = gamePathSetting(
                                         gamePath = gamePath ?: "",
-                                        stagingPath = stagingPath,
                                         settingsPathErrors = settingsPathErrors
                                     )
-                                    stagingPath =
-                                        stagingPathSetting(
-                                            gamePath = gamePath ?: "",
-                                            stagingPath = stagingPath,
-                                            settingsPathErrors = settingsPathErrors
-                                        )
 
                                     // Confirm buttons
                                     Row(
@@ -280,7 +260,6 @@ fun AppState.settingsView(
 @Composable
 private fun AppState.gamePathSetting(
     gamePath: String,
-    stagingPath: String,
     settingsPathErrors: MutableState<Map<SettingsPath, List<String>>?>
 ): String {
     var newGamePath by remember { mutableStateOf(gamePath) }
@@ -300,8 +279,7 @@ private fun AppState.gamePathSetting(
                 newGamePath = it
                 settingsPathErrors.value = kotlin.runCatching {
                     SL.access.validatePaths(
-                        newGamePath = it.toPathOrNull(),
-                        newStagingPath = stagingPath.toPathOrNull()
+                        newGamePath = it.toPathOrNull()
                     ).failure
                 }
                     .onFailure { ex -> Timber.w(ex) }
@@ -330,62 +308,6 @@ private fun AppState.gamePathSetting(
     }
 
     return newGamePath
-}
-
-@Composable
-private fun AppState.stagingPathSetting(
-    gamePath: String,
-    stagingPath: String,
-    settingsPathErrors: MutableState<Map<SettingsPath, List<String>>?>
-): String {
-    var stagingPathMutable by remember { mutableStateOf(stagingPath) }
-    val errors = settingsPathErrors.value?.get(SettingsPath.Staging)
-
-    Row {
-        SmolTextField(
-            value = stagingPathMutable,
-            modifier = Modifier
-                .weight(1f)
-                .align(Alignment.CenterVertically),
-            label = { Text("Staging folder") },
-            isError = errors?.any() ?: false,
-            singleLine = true,
-            maxLines = 1,
-            onValueChange = {
-                stagingPathMutable = it
-                settingsPathErrors.value = kotlin.runCatching {
-                    SL.access.validatePaths(
-                        newGamePath = gamePath.toPathOrNull(),
-                        newStagingPath = it.toPathOrNull()
-                    ).failure
-                }
-                    .onFailure { ex -> Timber.w(ex) }
-                    .getOrElse { emptyMap() }
-            })
-        SmolSecondaryButton(
-            modifier = Modifier
-                .align(Alignment.CenterVertically)
-                .padding(start = 16.dp),
-            onClick = {
-                stagingPathMutable =
-                    pickFolder(initialPath = stagingPathMutable.ifBlank { null }
-                        ?: "",
-                        window = window)
-                        ?: stagingPathMutable
-            }) {
-            Text("Open")
-        }
-    }
-
-    if (errors?.any() == true) {
-        Text(
-            text = errors.joinToString(separator = "\n"),
-            color = MaterialTheme.colors.error,
-            modifier = Modifier.padding(start = 16.dp)
-        )
-    }
-
-    return stagingPathMutable
 }
 
 private fun pickFolder(initialPath: String, window: ComposeWindow): String? {

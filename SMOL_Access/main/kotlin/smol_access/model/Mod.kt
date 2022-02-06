@@ -1,6 +1,7 @@
 package smol_access.model
 
 import smol_access.Access
+import smol_access.Constants
 import smol_access.business.ModLoader
 import java.nio.file.Path
 import java.util.*
@@ -19,7 +20,7 @@ data class Mod(
      * 2. Its mod folder is in the /mods folder.
      */
     fun isEnabled(modVariant: ModVariant) =
-        isEnabledInGame && modVariant.modsFolderInfo != null
+        isEnabledInGame && modVariant.modsFolderInfo.folder.resolve(Constants.MOD_INFO_FILE).exists()
 
     data class ModsFolderInfo(
         val folder: Path
@@ -62,22 +63,17 @@ data class Mod(
                         versionString = Version(raw = "1.0.0")
                     ),
                     versionCheckerInfo = null,
-                    modsFolderInfo = null,
-                    stagingInfo = ModVariant.StagingInfo(Path.of(""))
+                    modsFolderInfo = ModsFolderInfo(Path.of(""))
                 )
             )
         )
     }
 }
 
-/**
- * @param stagingInfo null if not installed, not null otherwise
- */
 data class ModVariant(
     val modInfo: ModInfo,
     val versionCheckerInfo: VersionCheckerInfo?,
-    val modsFolderInfo: Mod.ModsFolderInfo?,
-    val stagingInfo: StagingInfo?,
+    val modsFolderInfo: Mod.ModsFolderInfo
 ) {
     /**
      * Composite key: mod id + mod version.
@@ -111,17 +107,8 @@ data class ModVariant(
     internal fun mod(modLoader: ModLoader) = modLoader.mods.value?.mods!!.first { it.id == modInfo.id }
     fun mod(access: Access) = access.mods.value?.mods!!.first { it.id == modInfo.id }
 
-    val exists: Boolean
-        get() = (stagingInfo != null && stagingInfo.folder.exists())
-                || (modsFolderInfo != null && modsFolderInfo.folder.exists())
-
-    data class ArchiveInfo(
-        val folder: Path
-    )
-
-    data class StagingInfo(
-        val folder: Path
-    )
+    val isModInfoEnabled: Boolean
+        get() = modsFolderInfo.folder.resolve(Constants.MOD_INFO_FILE).exists()
 
     private val systemFolderNameAllowedChars = Regex("""[^0-9a-zA-Z\\.\-_ ]""")
     fun generateVariantFolderName() = "${modInfo.name?.replace(systemFolderNameAllowedChars, "")}_${smolId}"

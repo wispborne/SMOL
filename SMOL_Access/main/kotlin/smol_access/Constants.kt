@@ -13,6 +13,7 @@ object Constants {
     private val resourcesDir = System.getProperty("compose.application.resources.dir")?.toPathOrNull()
 
     const val MOD_INFO_FILE = "mod_info.json"
+    const val MOD_INFO_FILE_DISABLED = "mod_info.json.disabled"
     const val ENABLED_MODS_FILENAME = "enabled_mods.json"
     const val VERSION_CHECKER_CSV_PATH = "data/config/version/version_files.csv"
     const val VERSION_CHECKER_FILE_ENDING = ".version"

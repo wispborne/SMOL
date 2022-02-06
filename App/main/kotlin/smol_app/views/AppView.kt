@@ -206,7 +206,6 @@ class AppState(windowState: WindowState) : IWindowState by windowState {
 @OptIn(ExperimentalCoroutinesApi::class)
 private suspend fun watchDirsAndReloadOnChange(scope: CoroutineScope) {
     val NSA: List<Flow<KWatchEvent?>> = listOfNotNull(
-        SL.access.getStagingPath()?.toPathOrNull()?.asWatchChannel(scope = scope) ?: emptyFlow(),
         SL.gamePathManager.getModsPath()?.asWatchChannel(scope = scope),
         SL.gamePathManager.getModsPath()?.resolve(Constants.ENABLED_MODS_FILENAME) // Watch enabled_mods.json
             .run { if (this?.exists() == true) this.asWatchChannel(scope = scope) else emptyFlow() },

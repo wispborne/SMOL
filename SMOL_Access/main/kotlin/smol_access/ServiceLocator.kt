@@ -69,8 +69,6 @@ class ServiceLocator internal constructor(
     ),
     internal val modLoader: ModLoader = ModLoader(
         gamePathManager = gamePathManager,
-        config = appConfig,
-        archives = archives,
         modInfoLoader = modInfoLoader,
         gameEnabledMods = gameEnabledMods
     ),
@@ -90,7 +88,6 @@ class ServiceLocator internal constructor(
     ),
     val access: Access = Access(
         staging = staging,
-        config = appConfig,
         modLoader = modLoader,
         archives = archives,
         appConfig = appConfig,

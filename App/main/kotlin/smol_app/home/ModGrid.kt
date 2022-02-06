@@ -44,7 +44,6 @@ import timber.ktx.Timber
 import utilities.calculateFileSize
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.exists
-import kotlin.io.path.fileSize
 import kotlin.io.path.name
 
 const val modGridViewDropdownWidth = 180
@@ -65,7 +64,8 @@ fun AppState.ModGridView(
     val selectedRow = remember { mutableStateOf<ModRow?>(null) }
     val checkedRows = remember { mutableStateListOf<Mod>() }
     val modInDebugDialog = remember { mutableStateOf<Mod?>(null) }
-    val largestVramUsage = remember { mutableStateOf(SL.vramChecker.vramUsage.value?.values?.maxOfOrNull { it.bytesForMod }) }
+    val largestVramUsage =
+        remember { mutableStateOf(SL.vramChecker.vramUsage.value?.values?.maxOfOrNull { it.bytesForMod }) }
     val profile = SL.userManager.activeProfile.collectAsState()
     val activeSortField = profile.value.modGridPrefs.sortField?.let {
         kotlin.runCatching { ModGridSortField.valueOf(it) }.getOrNull()
@@ -216,11 +216,7 @@ fun AppState.ModGridView(
                             style = SmolTheme.alertDialogBody()
                         )
 
-                        val looseFilesToShow = modVariantBeingRemoved.stagingInfo?.folder.let {
-                            if (it?.exists() != true)
-                                modVariantBeingRemoved.modsFolderInfo?.folder
-                            else it
-                        }
+                        val looseFilesToShow = modVariantBeingRemoved.modsFolderInfo?.folder
 
                         if (looseFilesToShow?.exists() == true) {
                             Row {

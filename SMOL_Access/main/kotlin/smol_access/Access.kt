@@ -15,13 +15,12 @@ import smol_access.model.ModId
 import smol_access.model.ModVariant
 import timber.ktx.Timber
 import utilities.*
-import java.io.File
 import java.nio.file.Path
-import kotlin.io.path.*
+import kotlin.io.path.exists
+import kotlin.io.path.nameWithoutExtension
 
 class Access internal constructor(
     private val staging: Staging,
-    private val config: AppConfig,
     private val modLoader: ModLoader,
     private val archives: Archives,
     private val appConfig: AppConfig,
@@ -38,19 +37,7 @@ class Access internal constructor(
             }
         }
 
-        if (appConfig.stagingPath.toPathOrNull()?.exists() != true) {
-            appConfig.stagingPath = Constants.STAGING_FOLDER_DEFAULT.absolutePathString()
-
-            IOLock.write(IOLocks.everythingLock) {
-                kotlin.runCatching {
-                    appConfig.stagingPath.toPathOrNull()?.createDirectories()
-                }
-                    .onFailure { Timber.w(it) }
-            }
-        }
-
         Timber.i { "Game: ${appConfig.gamePath}" }
-        Timber.i { "Staging: ${appConfig.stagingPath}" }
     }
 
     /**
@@ -59,8 +46,7 @@ class Access internal constructor(
      * @return A list of errors, or empty if no errors.
      */
     fun validatePaths(
-        newGamePath: Path? = gamePathManager.path.value,
-        newStagingPath: Path? = appConfig.stagingPath?.toPathOrNull()
+        newGamePath: Path? = gamePathManager.path.value
     ): SmolResult<Unit, Map<SettingsPath, List<String>>> {
         val errors: Map<SettingsPath, MutableList<String>> = mapOf(
             SettingsPath.Game to mutableListOf(),
@@ -91,62 +77,13 @@ class Access internal constructor(
 
                 if (!hasGameCoreExe) {
                     errors[SettingsPath.Game]?.add("Folder 'starsector-core' doesn't exist!")
+                } else {
                 }
             }
-
-            // Staging path
-            if (newStagingPath?.exists() != true) {
-                errors[SettingsPath.Staging]?.add("Staging path '$newStagingPath' doesn't exist!")
-            } else if (!newStagingPath.isWritable()) {
-                errors[SettingsPath.Staging]?.add("Staging path '$newStagingPath' is not writable! Try running as admin?")
-            }
-
-            // Ensure that the two folders with hardlinks, /mods and staging, are on the same partition.
-            kotlin.runCatching {
-                val folders =
-                    listOfNotNull(newGamePath, newStagingPath)
-
-                if (folders.size > 1) {
-                    if (folders.distinctBy { it.mountOf() }.size > 1) {
-                        // There should only be a single mount point, aka partition, for hardlinked folders.
-                        Timber.e { "/mods and staging are on separate partitions. Folders: ${folders.joinToString()}." }
-                        errors[SettingsPath.Staging]?.add("The staging folder must be on the same drive (partition) as your Starsector mods folder.")
-                        errors[SettingsPath.Game]?.add("The Starsector mods folder must be on the same drive (partition) as your staging folder.")
-                    }
-                }
-            }
-                .onFailure { Timber.w(it) }
         }
 
         return if (errors.flatMap { it.value }.none()) SmolResult.Success(Unit)
         else SmolResult.Failure(errors)
-    }
-
-
-    /**
-     * Gets the current staging folder path.
-     */
-    fun getStagingPath() = config.stagingPath
-
-    /**
-     * @throws Exception
-     */
-    fun changeStagingPath(newPath: String) {
-        IOLock.write {
-            kotlin.runCatching {
-                val newFolder = File(newPath)
-                val oldFolder = File(config.stagingPath ?: return).also { if (!it.exists()) return }
-
-                newFolder.mkdirsIfNotExist()
-
-                // Not gonna bother with moving files, too error-prone, user can just do it themselves.
-//                Files.move(oldFolder.toPath(), newFolder.toPath(), StandardCopyOption.REPLACE_EXISTING)
-
-                config.stagingPath = newPath
-            }
-                .onFailure { Timber.e(it) }
-                .getOrThrow()
-        }
     }
 
     val mods: StateFlow<ModListUpdate?>
@@ -293,27 +230,10 @@ class Access internal constructor(
         }) {
             IOLock.write(IOLocks.modFilesLock) {
                 if (removeUncompressedFolder) {
-                    val stagingFolder = modVariant.stagingInfo?.folder
+                    val gameModsFolder = modVariant.modsFolderInfo.folder
 
-                    if (stagingFolder?.exists() != true) {
-                        if (stagingFolder != null) {
-                            // If staging folder is null, then it's fine not to delete it, we probably just want to delete the /mods folder.
-                            Timber.w { "Unable to delete staging folder for variant ${modVariant.smolId}. File: $stagingFolder." }
-                        }
-                    } else {
-                        kotlin.runCatching { stagingFolder.deleteRecursively() }
-                            .onFailure {
-                                Timber.e(it) { "Unable to delete staging folder for variant ${modVariant.smolId}." }
-                            }
-                    }
-
-                    val gameModsFolder = modVariant.modsFolderInfo?.folder
-
-                    if (gameModsFolder?.exists() != true) {
-                        if (gameModsFolder != null) {
-                            // If /mods folder is null, then it's fine not to delete it, we probably just want to delete the staging folder.
-                            Timber.w { "Unable to delete staging folder for variant ${modVariant.smolId}. File: $gameModsFolder." }
-                        }
+                    if (!gameModsFolder.exists()) {
+                        Timber.w { "Unable to delete staging folder for variant ${modVariant.smolId}. File: $gameModsFolder." }
                     } else {
                         kotlin.runCatching { gameModsFolder.deleteRecursively() }
                             .onFailure {

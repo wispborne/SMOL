@@ -5,8 +5,8 @@ import org.apache.commons.csv.CSVParser
 import smol_access.Constants
 import smol_access.model.ModInfo
 import smol_access.model.VersionCheckerInfo
-import utilities.IOLock
 import timber.ktx.Timber
+import utilities.IOLock
 import utilities.Jsanity
 import utilities.walk
 import java.nio.file.FileVisitOption
@@ -30,7 +30,7 @@ class ModInfoLoader(
                     var modInfo: ModInfo? = null
 
                     Timber.v {
-                        "Looking for mod_info.json and ${
+                        "Looking for mod_info.json[.disabled] and ${
                             if (desiredFiles.isEmpty())
                                 "nothing else"
                             else desiredFiles.joinToString()
@@ -41,7 +41,10 @@ class ModInfoLoader(
                         .forEach { file ->
                             Timber.v { "  File: ${file.name}" }
 
-                            if (modInfo == null && file.name.equals(Constants.MOD_INFO_FILE, ignoreCase = true)) {
+                            if (modInfo == null
+                                && (file.name.equals(Constants.MOD_INFO_FILE, ignoreCase = true)
+                                        || file.name.equals(Constants.MOD_INFO_FILE_DISABLED, ignoreCase = true))
+                            ) {
                                 modInfo = deserializeModInfoFile(file.readText())
                             }
                         }
