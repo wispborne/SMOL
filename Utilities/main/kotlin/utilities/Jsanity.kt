@@ -1,6 +1,5 @@
 package utilities
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.salomonbrys.kotson.typeToken
 import com.google.gson.Gson
 import com.google.gson.JsonElement
@@ -13,8 +12,7 @@ import java.lang.reflect.Type
 
 
 class Jsanity(
-    private val gson: Gson,
-    private val jackson: ObjectMapper
+    private val gson: Gson
 ) {
     @Throws(JsonSyntaxException::class)
     fun <T> fromJson(json: String, typeOfT: Type, shouldStripComments: Boolean): T {

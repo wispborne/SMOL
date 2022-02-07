@@ -5,9 +5,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-import com.github.salomonbrys.kotson.*
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonParser
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.features.*
@@ -17,7 +14,6 @@ import smol_access.config.AppConfig
 import smol_access.config.GamePathManager
 import smol_access.config.VersionCheckerCache
 import smol_access.config.VramCheckerCache
-import smol_access.model.ModInfo
 import smol_access.themes.ThemeManager
 import smol_access.util.ManualReloadTrigger
 import utilities.Jsanity
@@ -26,7 +22,6 @@ var SL = ServiceLocator()
 
 //private val basicMoshi = Moshi.Builder()
 //    .addLast(KotlinJsonAdapterFactory()).build()
-private val basicGson = GsonBuilder().create()
 
 typealias HttpClientBuilder = () -> HttpClient
 
@@ -44,7 +39,7 @@ class ServiceLocator internal constructor(
 //        .add(ModInfoAdapter())
 //        .addLast(KotlinJsonAdapterFactory())
 //        .build(),
-    val jsanity: Jsanity = Jsanity(gson = buildGson(), jackson = buildJackson()),
+    val jsanity: Jsanity = Jsanity(gson = GsonBuilder.buildGson(), buildJackson()),
     internal val versionCheckerCache: VersionCheckerCache = VersionCheckerCache(gson = jsanity),
     val appConfig: AppConfig = AppConfig(gson = jsanity),
     val userManager: UserManager = UserManager(
@@ -99,32 +94,6 @@ class ServiceLocator internal constructor(
     val themeManager: ThemeManager = ThemeManager(userManager = userManager, jsanity = jsanity),
     val modRepo: ModRepo = ModRepo(jsanity = jsanity, httpClientBuilder = httpClientBuilder)
 )
-
-private fun buildGson() = GsonBuilder()
-    .setPrettyPrinting()
-    .setLenient()
-    .serializeNulls()
-    .registerTypeAdapter<ModInfo> {
-        serialize { (src, _, _) ->
-            when (src) {
-                is ModInfo.v091 -> basicGson.toJson(src, ModInfo.v091::class.java).toJson()
-                is ModInfo.v095 -> basicGson.toJson(src, ModInfo.v095::class.java).toJson()
-            }
-        }
-        deserialize { arg: DeserializerArg ->
-            val json = if (arg.json.isJsonObject)
-                arg.json
-            else JsonParser().parse(arg.json.asString)
-
-            // Check for 0.95 format
-            if (json["version"].isJsonObject) {
-                basicGson.fromJson<ModInfo.v095>(json)
-            } else {
-                basicGson.fromJson<ModInfo.v091>(json)
-            }
-        }
-    }
-    .create()
 
 private fun buildJackson(): ObjectMapper =
     JsonMapper.builder().defaultLeniency(true)

@@ -142,8 +142,8 @@ fun BoxScope.detailsPanel(
                             dependencies
                                 .joinToString {
                                     val depName: String =
-                                        it.second?.findHighestVersion?.modInfo?.name ?: it.second?.id ?: it.first.id
-                                    depName + if (it.first.versionString != null) " v${it.first.versionString}" else ""
+                                        it.second?.findHighestVersion?.modInfo?.name ?: it.second?.id ?: it.first.id ?: ""
+                                    depName + if (it.first.version != null) " v${it.first.version?.raw}" else ""
                                 },
                             modifier = Modifier.padding(top = 2.dp)
                         )
@@ -235,8 +235,8 @@ fun BoxScope.detailsPanelGameStyled(
                         dependencies
                             .joinToString {
                                 val depName: String =
-                                    it.second?.findHighestVersion?.modInfo?.name ?: it.second?.id ?: it.first.id
-                                depName + if (it.first.versionString != null) " v${it.first.versionString}" else ""
+                                    it.second?.findHighestVersion?.modInfo?.name ?: it.second?.id ?: it.first.id ?: ""
+                                depName + if (it.first.version != null) " v${it.first.version?.raw}" else ""
                             },
                         modifier = Modifier.padding(top = 2.dp)
                     )

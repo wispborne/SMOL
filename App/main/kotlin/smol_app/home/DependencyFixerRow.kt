@@ -66,7 +66,7 @@ fun DependencyFixerRow(
                                 is DependencyFinder.DependencyState.Missing -> {
                                     GlobalScope.launch {
                                         depState.outdatedModIfFound?.getModThreadId()?.openModThread()
-                                            ?: createGoogleSearchFor("starsector ${depState.dependency.name ?: depState.dependency.id} ${depState.dependency.versionString}")
+                                            ?: createGoogleSearchFor("starsector ${depState.dependency.name ?: depState.dependency.id} ${depState.dependency.version?.raw}")
                                                 .openAsUriInBrowser()
                                     }
                                 }

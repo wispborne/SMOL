@@ -233,7 +233,7 @@ class Access internal constructor(
                     val gameModsFolder = modVariant.modsFolderInfo.folder
 
                     if (!gameModsFolder.exists()) {
-                        Timber.w { "Unable to delete staging folder for variant ${modVariant.smolId}. File: $gameModsFolder." }
+                        Timber.w { "Unable to delete folder for variant ${modVariant.smolId}. File: $gameModsFolder." }
                     } else {
                         kotlin.runCatching { gameModsFolder.deleteRecursively() }
                             .onFailure {

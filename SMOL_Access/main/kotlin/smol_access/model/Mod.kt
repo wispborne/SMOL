@@ -50,17 +50,18 @@ data class Mod(
             isEnabledInGame = true,
             variants = listOf(
                 ModVariant(
-                    modInfo = ModInfo.v095(
-                        _id = "mock",
-                        _name = "Mock Mod",
-                        _author = "Wisp",
-                        _utilityString = "false",
-                        _description = "An isolationist authoritarian Theocracy thrust into Persean politics by necessity, this high-tech faction utilises flexible pulse-based energy weapons and unique solar shielding.",
-                        _gameVersion = "0.95.1-RC15",
-                        _jars = listOf("jar.jar"),
-                        _modPlugin = "mod/plugin",
-                        _dependencies = listOf(Dependency(_id = "lw_lazylib", name = null, versionString = null)),
-                        versionString = Version(raw = "1.0.0")
+                    modInfo = ModInfo(
+                        id = "mock",
+                        name = "Mock Mod",
+                        author = "Wisp",
+                        isUtilityMod = false,
+                        description = "An isolationist authoritarian Theocracy thrust into Persean politics by necessity, this high-tech faction utilises flexible pulse-based energy weapons and unique solar shielding.",
+                        gameVersion = "0.95.1-RC15",
+                        jars = listOf("jar.jar"),
+                        modPlugin = "mod/plugin",
+                        dependencies = listOf(Dependency(id = "lw_lazylib", name = null, version = null)),
+                        version = Version(raw = "1.0.0"),
+                        requiredMemoryMB = null
                     ),
                     versionCheckerInfo = null,
                     modsFolderInfo = ModsFolderInfo(Path.of(""))
