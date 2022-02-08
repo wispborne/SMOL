@@ -24,11 +24,6 @@ dependencies {
         exclude("TinyLog")
     })
 
-    // JSON
-    val moshiVer = "1.12.0"
-    api("com.squareup.moshi:moshi-kotlin:$moshiVer")
-//    kapt("com.squareup.moshi:moshi-kotlin:$moshiVer")
-    implementation("com.squareup.moshi:moshi-adapters:$moshiVer")
     // CSV
     implementation("org.apache.commons:commons-csv:1.8")
     // API
@@ -47,11 +42,6 @@ dependencies {
     // To calculate checksum for archive files
     // https://mvnrepository.com/artifact/commons-codec/commons-codec
     implementation("commons-codec:commons-codec:1.15")
-
-    // Arrow
-    implementation(project.property("arrowCore")!!)
-    implementation(project.property("arrowOptics")!!)
-    implementation(project.property("arrowFxCoroutines")!!)
 
 }
 

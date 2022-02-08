@@ -22,7 +22,7 @@ internal val isDebugMode = true
 private fun String.prepForMatching() = this.lowercase().filter { it.isLetter() }
 
 fun main(args: Array<String>) {
-    val jsanity = Jsanity(GsonBuilder().setPrettyPrinting().create(), JsonMapper())
+    val jsanity = Jsanity(GsonBuilder().setPrettyPrinting().create())
     val modRepoCache = ModRepoCache(jsanity)
 
     scrapeModIndexLinks()

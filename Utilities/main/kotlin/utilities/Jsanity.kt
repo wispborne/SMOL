@@ -1,5 +1,6 @@
 package utilities
 
+import com.github.salomonbrys.kotson.get
 import com.github.salomonbrys.kotson.typeToken
 import com.google.gson.Gson
 import com.google.gson.JsonElement
@@ -88,3 +89,5 @@ class Jsanity(
         return json.replace(Regex("(\"*?\")*((?<!\")#.*(?!\"))", RegexOption.MULTILINE), "")
     }
 }
+
+fun JsonElement.getNullable(key: String): JsonElement? = kotlin.runCatching { this[key] }.getOrNull()

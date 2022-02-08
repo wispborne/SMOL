@@ -39,7 +39,7 @@ class ServiceLocator internal constructor(
 //        .add(ModInfoAdapter())
 //        .addLast(KotlinJsonAdapterFactory())
 //        .build(),
-    val jsanity: Jsanity = Jsanity(gson = GsonBuilder.buildGson(), buildJackson()),
+    val jsanity: Jsanity = Jsanity(gson = GsonBuilder.buildGson()),
     internal val versionCheckerCache: VersionCheckerCache = VersionCheckerCache(gson = jsanity),
     val appConfig: AppConfig = AppConfig(gson = jsanity),
     val userManager: UserManager = UserManager(

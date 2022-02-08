@@ -8,6 +8,7 @@ import smol_access.model.Dependency
 import smol_access.model.ModInfo
 import smol_access.model.Version
 import timber.ktx.Timber
+import utilities.getNullable
 
 private val basicGson = GsonBuilder().create()
 
@@ -79,5 +80,3 @@ object GsonBuilder {
             .getOrNull()
     }
 }
-
-fun JsonElement.getNullable(key: String): JsonElement? = kotlin.runCatching { this[key] }.getOrNull()

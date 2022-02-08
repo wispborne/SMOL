@@ -33,7 +33,6 @@ internal class Staging(
             kotlin.runCatching { modInfoFile.moveTo(modInfoFile.parent.resolve(Constants.MOD_INFO_FILE_DISABLED)) }
                 .onFailure {
                     Timber.w(it)
-                    return Result.failure(it)
                 }
         }
 
@@ -59,23 +58,16 @@ internal class Staging(
             return Result.failure(NullPointerException())
         }
 
-        kotlin.runCatching {
-            if (modVariant.mod(modLoader).isEnabled(modVariant)) {
-                Timber.i { "Already enabled!: $modVariant" }
-                return Result.success(Unit)
-            }
+        if (modVariant.mod(modLoader).isEnabled(modVariant)) {
+            Timber.i { "Already enabled!: $modVariant" }
+            return Result.success(Unit)
         }
-            .onFailure {
-                Timber.w(it)
-                return Result.failure(it)
-            }
 
         val modInfoFile = modVariant.modsFolderInfo.folder.resolve(Constants.MOD_INFO_FILE_DISABLED)
 
         kotlin.runCatching { modInfoFile.moveTo(modInfoFile.parent.resolve(Constants.MOD_INFO_FILE)) }
             .onFailure {
                 Timber.w(it)
-                return Result.failure(it)
             }
 
         Timber.i { "Enabled mod for SMOL: $modVariant" }
