@@ -65,10 +65,12 @@ internal class Staging(
 
         val modInfoFile = modVariant.modsFolderInfo.folder.resolve(Constants.MOD_INFO_FILE_DISABLED)
 
-        kotlin.runCatching { modInfoFile.moveTo(modInfoFile.parent.resolve(Constants.MOD_INFO_FILE)) }
-            .onFailure {
-                Timber.w(it)
-            }
+        if (!modVariant.isModInfoEnabled) {
+            kotlin.runCatching { modInfoFile.moveTo(modInfoFile.parent.resolve(Constants.MOD_INFO_FILE)) }
+                .onFailure {
+                    Timber.w(it)
+                }
+        }
 
         Timber.i { "Enabled mod for SMOL: $modVariant" }
 

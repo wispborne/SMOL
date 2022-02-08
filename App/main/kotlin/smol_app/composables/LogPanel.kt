@@ -1,6 +1,6 @@
 package smol_app.composables
 
-import AppState
+import AppScope
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -31,7 +31,7 @@ import timber.LogLevel
 
 @OptIn(ExperimentalSplitPaneApi::class)
 @Composable
-fun AppState.logPanel(
+fun AppScope.logPanel(
     modifier: Modifier = Modifier,
     onHideModPanel: () -> Unit
 ) {

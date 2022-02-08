@@ -2,7 +2,7 @@
 
 package smol_app.home
 
-import AppState
+import AppScope
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
@@ -41,7 +41,7 @@ import utilities.IOLock
 )
 @Composable
 @Preview
-fun AppState.homeView(
+fun AppScope.homeView(
     modifier: Modifier = Modifier
 ) {
     val mods: SnapshotStateList<Mod> = remember { mutableStateListOf() }
@@ -164,7 +164,7 @@ fun AppState.homeView(
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-private fun AppState.consoleTextField(
+private fun AppScope.consoleTextField(
     modifier: Modifier = Modifier
 ) {
     Column(modifier) {

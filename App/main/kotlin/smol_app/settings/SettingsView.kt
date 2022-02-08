@@ -1,6 +1,6 @@
 package smol_app.settings
 
-import AppState
+import AppScope
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.VerticalScrollbar
@@ -14,6 +14,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -46,7 +47,7 @@ object SettingsView {
 )
 @Composable
 @Preview
-fun AppState.settingsView(
+fun AppScope.settingsView(
     modifier: Modifier = Modifier
 ) {
     val showLogPanel = remember { mutableStateOf(false) }
@@ -154,7 +155,7 @@ fun AppState.settingsView(
                                 Column(modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp)) {
                                     Text(
                                         text = "Locations",
-                                        modifier = Modifier.padding(start = 16.dp),
+                                        modifier = Modifier.padding(start = 16.dp, bottom = 8.dp),
                                         style = SettingsView.settingLabelStyle()
                                     )
                                     gamePath = gamePathSetting(
@@ -258,7 +259,7 @@ fun AppState.settingsView(
 }
 
 @Composable
-private fun AppState.gamePathSetting(
+private fun AppScope.gamePathSetting(
     gamePath: String,
     settingsPathErrors: MutableState<Map<SettingsPath, List<String>>?>
 ): String {
@@ -269,7 +270,9 @@ private fun AppState.gamePathSetting(
         SmolTextField(
             value = newGamePath,
             modifier = Modifier
-                .weight(1f)
+                .padding(start = 16.dp)
+                .widthIn(max = 700.dp)
+                .fillMaxWidth()
                 .align(Alignment.CenterVertically),
             label = { Text("Starsector folder") },
             isError = errors?.any() ?: false,
@@ -285,10 +288,10 @@ private fun AppState.gamePathSetting(
                     .onFailure { ex -> Timber.w(ex) }
                     .getOrElse { emptyMap() }
             })
-        SmolSecondaryButton(
+        SmolIconButton(
             modifier = Modifier
                 .align(Alignment.CenterVertically)
-                .padding(start = 16.dp),
+                .padding(start = 16.dp, end = 16.dp),
             onClick = {
                 newGamePath =
                     pickFolder(initialPath = newGamePath.ifBlank { null }
@@ -296,7 +299,11 @@ private fun AppState.gamePathSetting(
                         window = window)
                         ?: newGamePath
             }) {
-            Text("Open")
+            Icon(
+                painter = painterResource("icon-open-folder.svg"),
+                tint = MaterialTheme.colors.onBackground,
+                contentDescription = null
+            )
         }
     }
     if (!errors.isNullOrEmpty()) {

@@ -50,7 +50,11 @@ fun DependencyFixerRow(
                         modifier = Modifier.align(Alignment.CenterVertically),
                         text = when (depState) {
                             is DependencyFinder.DependencyState.Disabled -> "Disabled dependency: ${depState.variant.modInfo.name} ${depState.variant.modInfo.version}"
-                            is DependencyFinder.DependencyState.Missing -> "Missing dependency: ${depState.dependency.name?.ifBlank { null } ?: depState.dependency.id}${depState.dependency.version?.let { " $it" }}"
+                            is DependencyFinder.DependencyState.Missing -> {
+                                val modNameToShow = depState.dependency.name?.ifBlank { null } ?: depState.dependency.id
+                                val modVersionToShow = depState.dependency.version?.let { " $it" }?.ifBlank { null } ?: ""
+                                "Missing dependency: $modNameToShow$modVersionToShow"
+                            }
                             is DependencyFinder.DependencyState.Enabled -> "you should never see this"
                         }
                     )
@@ -66,7 +70,7 @@ fun DependencyFixerRow(
                                 is DependencyFinder.DependencyState.Missing -> {
                                     GlobalScope.launch {
                                         depState.outdatedModIfFound?.getModThreadId()?.openModThread()
-                                            ?: createGoogleSearchFor("starsector ${depState.dependency.name ?: depState.dependency.id} ${depState.dependency.version?.raw}")
+                                            ?: createGoogleSearchFor("starsector ${depState.dependency.name ?: depState.dependency.id} ${depState.dependency.version?.raw?.ifBlank { null } ?: ""}")
                                                 .openAsUriInBrowser()
                                     }
                                 }

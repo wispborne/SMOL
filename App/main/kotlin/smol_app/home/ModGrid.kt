@@ -2,7 +2,7 @@
 
 package smol_app.home
 
-import AppState
+import AppScope
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.desktop.ui.tooling.preview.Preview
@@ -54,7 +54,7 @@ const val modGridViewDropdownWidth = 180
     ExperimentalComposeUiApi::class
 )
 @Composable
-fun AppState.ModGridView(
+fun AppScope.ModGridView(
     modifier: Modifier = Modifier,
     mods: SnapshotStateList<Mod?>
 ) {
@@ -280,7 +280,7 @@ fun getVramImpactForMod(mod: Mod) =
     )
 
 @Composable
-fun modGridBulkActionMenu(modifier: Modifier = Modifier, checkedRows: SnapshotStateList<Mod>) {
+fun AppScope.modGridBulkActionMenu(modifier: Modifier = Modifier, checkedRows: SnapshotStateList<Mod>) {
     SmolPopupMenu(
         modifier = modifier
             .padding(end = 8.dp)
@@ -292,7 +292,7 @@ fun modGridBulkActionMenu(modifier: Modifier = Modifier, checkedRows: SnapshotSt
 @Preview
 @Composable
 fun previewModGrid() {
-    AppState(WindowState())
+    AppScope(WindowState())
         .ModGridView(Modifier, SnapshotStateList())
 }
 

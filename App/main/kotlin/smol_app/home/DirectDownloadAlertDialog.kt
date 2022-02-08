@@ -1,6 +1,6 @@
 package smol_app.home
 
-import AppState
+import AppScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.ExperimentalMaterialApi
@@ -21,7 +21,7 @@ import smol_app.util.parseHtml
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun AppState.DirectDownloadAlertDialog(
+fun AppScope.DirectDownloadAlertDialog(
     ddUrl: String,
     mod: Mod,
     onlineVersion: VersionCheckerInfo.Version?

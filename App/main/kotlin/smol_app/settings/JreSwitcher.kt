@@ -1,6 +1,6 @@
 package smol_app.settings
 
-import AppState
+import AppScope
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
@@ -33,7 +33,7 @@ import kotlin.io.path.relativeTo
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun AppState.jreSwitcher(
+fun AppScope.jreSwitcher(
     modifier: Modifier = Modifier,
     recomposer: RecomposeScope,
     jresFound: SnapshotStateList<JreEntry>
@@ -116,7 +116,7 @@ fun AppState.jreSwitcher(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun AppState.jre8DownloadButton(
+fun AppScope.jre8DownloadButton(
     modifier: Modifier = Modifier,
     jresFound: SnapshotStateList<JreEntry>,
     recomposer: RecomposeScope
@@ -165,6 +165,7 @@ fun AppState.jre8DownloadButton(
             ) {
                 Icon(
                     painter = painterResource("icon-web.svg"),
+                    tint = MaterialTheme.colors.onBackground,
                     contentDescription = null
                 )
             }

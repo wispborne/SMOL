@@ -2,7 +2,7 @@
 
 package smol_app.toolbar
 
-import AppState
+import AppScope
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.padding
@@ -36,7 +36,7 @@ import kotlin.io.path.absolutePathString
 
 
 @Composable
-fun AppState.settingsButton() {
+fun AppScope.settingsButton() {
     SmolButton(
         onClick = { router.push(Screen.Settings) },
         modifier = Modifier.padding(start = 16.dp)
@@ -47,7 +47,7 @@ fun AppState.settingsButton() {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun AppState.modBrowserButton() {
+fun AppScope.modBrowserButton() {
     val isEnabled = Constants.isModBrowserEnabled()
     SmolTooltipArea(
         tooltip = {
@@ -72,7 +72,7 @@ fun AppState.modBrowserButton() {
 }
 
 @Composable
-fun AppState.profilesButton() {
+fun AppScope.profilesButton() {
     SmolTooltipArea(
         tooltip = {
             SmolTooltipText(
@@ -95,7 +95,7 @@ fun AppState.profilesButton() {
 }
 
 @Composable
-fun AppState.homeButton(modifier: Modifier = Modifier) {
+fun AppScope.homeButton(modifier: Modifier = Modifier) {
     SmolTooltipArea(
         tooltip = { SmolTooltipText("View and change mods.") },
         delayMillis = SmolTooltipArea.shortDelay
@@ -122,7 +122,7 @@ val sayings = listOf(
 )
 
 @Composable
-fun AppState.launchButton() {
+fun AppScope.launchButton() {
     val launchText = remember { sayings.weightedRandom() }
     SmolTooltipArea(
         tooltip = {
@@ -169,7 +169,7 @@ fun AppState.launchButton() {
 }
 
 @Composable
-fun AppState.installModsButton(modifier: Modifier = Modifier) {
+fun AppScope.installModsButton(modifier: Modifier = Modifier) {
     SmolTooltipArea(
         tooltip = { SmolTooltipText(text = "Select one or more mod archives or mod_info.json files.") },
         delayMillis = SmolTooltipArea.shortDelay

@@ -1,6 +1,6 @@
 package smol_app.home
 
-import AppState
+import AppScope
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.padding
@@ -19,7 +19,7 @@ import smol_app.composables.SmolTooltipText
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun AppState.refreshButton(onRefresh: () -> Unit) {
+fun AppScope.refreshButton(onRefresh: () -> Unit) {
     SmolTooltipArea(
         tooltip = { SmolTooltipText(text = "Refresh mod list.") },
         delayMillis = SmolTooltipArea.shortDelay

@@ -1,6 +1,6 @@
 package smol_app.settings
 
-import AppState
+import AppScope
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.GridCells
@@ -30,7 +30,7 @@ import kotlin.math.roundToInt
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun AppState.ramButton(modifier: Modifier = Modifier) {
+fun AppScope.ramButton(modifier: Modifier = Modifier) {
     val showVmParamsMenu = remember { mutableStateOf(false) }
     Column(
         modifier = modifier.padding(start = 16.dp, bottom = 8.dp)

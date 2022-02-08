@@ -1,6 +1,6 @@
 package smol_app.modprofiles
 
-import AppState
+import AppScope
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -37,7 +37,7 @@ import java.util.*
 )
 @Composable
 @Preview
-fun AppState.ProfilesView(
+fun AppScope.ProfilesView(
     modifier: Modifier = Modifier
 ) {
     val recomposer = currentRecomposeScope

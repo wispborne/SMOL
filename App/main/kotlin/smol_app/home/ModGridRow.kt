@@ -1,6 +1,6 @@
 package smol_app.home
 
-import AppState
+import AppScope
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -36,7 +36,7 @@ import timber.ktx.Timber
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
-fun AppState.ModGridRow(
+fun AppScope.ModGridRow(
     modRow: ModRow,
     checkedRows: SnapshotStateList<Mod>,
     selectedRow: MutableState<ModRow?>,

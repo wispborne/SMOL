@@ -1,6 +1,6 @@
 package smol_app.settings
 
-import AppState
+import AppScope
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -23,7 +23,7 @@ import smol_app.util.openInDesktop
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun AppState.themeDropdown(modifier: Modifier = Modifier): String {
+fun AppScope.themeDropdown(modifier: Modifier = Modifier): String {
     var themeName by remember { mutableStateOf(SL.themeManager.activeTheme.value.first) }
     val themes = SL.themeManager.getThemes()
         .entries

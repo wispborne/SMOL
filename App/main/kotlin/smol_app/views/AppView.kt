@@ -39,7 +39,6 @@ import smol_app.views.FileDropper
 import timber.ktx.Timber
 import utilities.IOLock
 import utilities.exists
-import utilities.toPathOrNull
 import kotlin.io.path.exists
 
 @OptIn(ExperimentalStdlibApi::class, ExperimentalDecomposeApi::class)
@@ -49,8 +48,8 @@ fun WindowState.appView() {
     val theme = SL.themeManager.activeTheme.collectAsState()
 
     var alertDialogBuilder: @Composable ((dismiss: () -> Unit) -> Unit)? by remember { mutableStateOf(null) }
-    val appState by remember {
-        mutableStateOf(AppState(this).apply {
+    val appScope by remember {
+        mutableStateOf(AppScope(this).apply {
             this.alertDialogSetter = { alertDialogBuilder = it }
         })
     }
@@ -89,13 +88,13 @@ fun WindowState.appView() {
                 Box {
                     val configuration = screen.configuration
                     when (configuration) {
-                        is Screen.Home -> appState.homeView()
-                        is Screen.Settings -> appState.settingsView()
-                        is Screen.Profiles -> appState.ProfilesView()
-                        is Screen.ModBrowser -> appState.ModBrowserView(defaultUrl = configuration.defaultUri)
+                        is Screen.Home -> appScope.homeView()
+                        is Screen.Settings -> appScope.settingsView()
+                        is Screen.Profiles -> appScope.ProfilesView()
+                        is Screen.ModBrowser -> appScope.ModBrowserView(defaultUrl = configuration.defaultUri)
                     }.run { }
                     if (SL.gamePathManager.path.value.exists()) {
-                        appState.FileDropper()
+                        appScope.FileDropper()
                     }
 
                     // Toasts
@@ -123,7 +122,7 @@ fun WindowState.appView() {
             }
 
             if (alertDialogBuilder != null) {
-                alertDialogBuilder?.invoke { appState.alertDialogSetter(null) }
+                alertDialogBuilder?.invoke { appScope.alertDialogSetter(null) }
             }
         }
     }
@@ -192,12 +191,14 @@ private fun setUpToasts() {
     }
 }
 
-class AppState(windowState: WindowState) : IWindowState by windowState {
+class AppScope(windowState: WindowState) : IWindowState by windowState {
 
     /**
      * Usage: alertDialogSetter.invoke { AlertDialog(...) }
      */
     lateinit var alertDialogSetter: (@Composable ((dismiss: () -> Unit) -> Unit)?) -> Unit
+
+    fun dismissAlertDialog() = alertDialogSetter.invoke(null)
 
     suspend fun reloadMods() = reloadModsInner()
 }

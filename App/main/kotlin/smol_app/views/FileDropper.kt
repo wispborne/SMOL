@@ -1,6 +1,6 @@
 package smol_app.views
 
-import AppState
+import AppScope
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -39,7 +39,7 @@ import kotlin.io.path.name
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun AppState.FileDropper(
+fun AppScope.FileDropper(
     modifier: Modifier = Modifier
 ) {
     var fileBeingHovered: Path? by remember { mutableStateOf(null) }

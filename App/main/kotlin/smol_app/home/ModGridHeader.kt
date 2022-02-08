@@ -1,6 +1,6 @@
 package smol_app.home
 
-import AppState
+import AppScope
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Checkbox
@@ -26,7 +26,7 @@ import smol_app.util.replaceAllUsingDifference
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun AppState.ModGridHeader(
+fun AppScope.ModGridHeader(
     favoritesWidth: Dp,
     activeSortField: ModGridSortField?,
     profile: State<UserProfile>,

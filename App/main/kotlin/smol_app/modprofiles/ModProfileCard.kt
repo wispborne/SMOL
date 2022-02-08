@@ -1,6 +1,6 @@
 package smol_app.modprofiles
 
-import AppState
+import AppScope
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateColorAsState
@@ -49,7 +49,7 @@ import java.time.format.FormatStyle
 @Composable
 @Preview
 fun ModProfileCardPreview() = smolPreview {
-    AppState(WindowState()).ModProfileCard(
+    AppScope(WindowState()).ModProfileCard(
         userProfile = mockUserProfile,
         modProfile = mockModProfile,
         modVariants = emptyList()
@@ -60,7 +60,7 @@ private val dateFormat = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIU
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalAnimationApi::class, ExperimentalComposeUiApi::class)
 @Composable
-fun AppState.ModProfileCard(
+fun AppScope.ModProfileCard(
     userProfile: UserProfile,
     modProfile: ModProfileCardInfo,
     modVariants: List<UserProfile.ModProfile.ShallowModVariant>,
@@ -326,7 +326,7 @@ fun modList(
 
 @Preview
 @Composable
-fun AppState.profileControlsPreview() = smolPreview {
+fun AppScope.profileControlsPreview() = smolPreview {
     Column {
         profileControls(
             modProfile = mockModProfile,
@@ -338,7 +338,7 @@ fun AppState.profileControlsPreview() = smolPreview {
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
 @Composable
-fun AppState.profileControls(
+fun AppScope.profileControls(
     modifier: Modifier = Modifier,
     modProfile: ModProfileCardInfo,
     isActiveProfile: Boolean,

@@ -1,6 +1,6 @@
 package smol_app.home
 
-import AppState
+import AppScope
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -20,8 +20,13 @@ import org.tinylog.Logger
 import smol_access.Constants
 import smol_access.SL
 import smol_access.model.Mod
+import smol_access.model.ModVariant
+import smol_app.composables.SmolAlertDialog
+import smol_app.composables.SmolButton
 import smol_app.composables.SmolDropdownMenuItemTemplate
+import smol_app.composables.SmolSecondaryButton
 import smol_app.navigation.Screen
+import smol_app.themes.SmolTheme
 import smol_app.util.*
 import utilities.parallelMap
 import java.awt.Desktop
@@ -29,7 +34,7 @@ import kotlin.io.path.exists
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun AppState.ModContextMenu(
+fun AppScope.ModContextMenu(
     showContextMenu: Boolean,
     onShowContextMenuChange: (Boolean) -> Unit,
     mod: Mod,
@@ -62,7 +67,7 @@ fun AppState.ModContextMenu(
 }
 
 @Composable
-private fun AppState.modGridSingleModMenu(
+private fun AppScope.modGridSingleModMenu(
     mod: Mod,
     onShowContextMenuChange: (Boolean) -> Unit,
     coroutineScope: CoroutineScope,
@@ -167,9 +172,48 @@ private fun AppState.modGridSingleModMenu(
     }
 }
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun modGridBulkActionMenuItems(checkedRows: SnapshotStateList<Mod>) =
+fun AppScope.modGridBulkActionMenuItems(checkedRows: SnapshotStateList<Mod>) =
     buildList {
+        add(SmolDropdownMenuItemTemplate(
+            text = "Enable All",
+            onClick = {
+                val allModVariants = SL.access.mods.value?.mods?.flatMap { it.variants }
+                val doAnyModsHaveMultipleVariants =
+                    allModVariants?.groupBy { it.modInfo.id }?.any { it.value.size > 1 } == true
+
+                if (doAnyModsHaveMultipleVariants) {
+                    alertDialogSetter.invoke {
+                        SmolAlertDialog(
+                            title = {
+                                Text(
+                                    text = "Warning",
+                                    style = SmolTheme.alertDialogTitle()
+                                )
+                            },
+                            text = {
+                                Text(
+                                    text = "This will enable multiple versions of one or more mods at the same time. Starsector will pick only one version of each mod to load." +
+                                            "\nAre you sure you want to do this?",
+                                    style = SmolTheme.alertDialogBody()
+                                )
+                            },
+                            onDismissRequest = ::dismissAlertDialog,
+                            confirmButton = {
+                                SmolButton(onClick = { enableAllDisabled(allModVariants) }) { Text("Enable All") }
+                            },
+                            dismissButton = {
+                                SmolSecondaryButton(onClick = ::dismissAlertDialog) { Text("Cancel") }
+                            },
+                        )
+                    }
+                } else {
+                    enableAllDisabled(allModVariants)
+                }
+            }
+        ))
+
         if (checkedRows.any { it.uiEnabled }) {
             add(SmolDropdownMenuItemTemplate(
                 text = "Disable All",
@@ -191,3 +235,11 @@ fun modGridBulkActionMenuItems(checkedRows: SnapshotStateList<Mod>) =
             }
         ))
     }
+
+private fun enableAllDisabled(modVariants: List<ModVariant>?) {
+    GlobalScope.launch(Dispatchers.IO) {
+        modVariants
+            ?.filter { !it.mod(SL.access).isEnabled(it) }
+            ?.parallelMap { SL.access.enableModVariant(it) }
+    }
+}

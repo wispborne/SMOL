@@ -1,6 +1,6 @@
 package smol_app.browser
 
-import AppState
+import AppScope
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollbarAdapter
@@ -66,7 +66,7 @@ private val modListMinWidthDp = 600.dp
 )
 @Composable
 @Preview
-fun AppState.ModBrowserView(
+fun AppScope.ModBrowserView(
     modifier: Modifier = Modifier,
     defaultUrl: String? = null
 ) {
@@ -220,7 +220,7 @@ fun AppState.ModBrowserView(
                                         val lastUpdated = SL.modRepo.getLastUpdated()
                                         Text(
                                             modifier = Modifier.padding(vertical = 4.dp, horizontal = 16.dp),
-                                            text = "Last updated: ${
+                                            text = "Mod list generated on: ${
                                                 lastUpdated?.format(
                                                     DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
                                                         .withZone(ZoneId.systemDefault())
@@ -345,7 +345,7 @@ fun AppState.ModBrowserView(
 }
 
 @Composable
-private fun AppState.embeddedBrowser(
+private fun AppScope.embeddedBrowser(
     browser: MutableState<ChromiumBrowser?>,
     linkLoader: MutableState<((String) -> Unit)?>,
     startUrl: String

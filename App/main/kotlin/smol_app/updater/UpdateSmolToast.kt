@@ -157,8 +157,10 @@ class UpdateSmolToast {
                                 val downloadedTotal =
                                     if (updateStage >= UpdateStage.Downloading) downloadTotal
                                     else updater.totalDownloadedBytes.collectAsState().value
+                                val downloadedAmountText =
+                                    "${downloadedTotal?.let { "%.2f".format(it.bytesToMB) } ?: "unknown"} / "
                                 Text(
-                                    text = "${downloadedTotal?.let { "%.2f".format(it.bytesToMB) } ?: "unknown"} / ${downloadTotal?.bytesAsShortReadableMB ?: "unknown"}",
+                                    text = "${if (updateStage >= UpdateStage.Downloading) downloadedAmountText else ""}${downloadTotal?.bytesAsShortReadableMB ?: "unknown"}",
                                     modifier = Modifier.padding(start = 8.dp)
                                 )
                             }

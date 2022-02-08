@@ -2,7 +2,7 @@
 
 package smol_app.composables
 
-import AppState
+import AppScope
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
@@ -46,7 +46,7 @@ fun smolSearchField(
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun AppState.searchFocusRequester(): FocusRequester {
+fun AppScope.searchFocusRequester(): FocusRequester {
     val focuser = remember { FocusRequester() }
     DisposableEffect(focuser) {
         val function: (KeyEvent) -> Boolean = { keyEvent ->
