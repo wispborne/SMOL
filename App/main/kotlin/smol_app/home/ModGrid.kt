@@ -30,8 +30,10 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import smol_access.SL
+import smol_access.config.VramCheckerCache
 import smol_access.model.Mod
 import smol_access.model.ModVariant
+import smol_access.model.SmolId
 import smol_app.WindowState
 import smol_app.composables.SmolAlertDialog
 import smol_app.composables.SmolButton
@@ -64,8 +66,9 @@ fun AppScope.ModGridView(
     val selectedRow = remember { mutableStateOf<ModRow?>(null) }
     val checkedRows = remember { mutableStateListOf<Mod>() }
     val modInDebugDialog = remember { mutableStateOf<Mod?>(null) }
+    val vramUsage = SL.vramChecker.vramUsage.collectAsState().value
     val largestVramUsage =
-        remember { mutableStateOf(SL.vramChecker.vramUsage.value?.values?.maxOfOrNull { it.bytesForMod }) }
+        remember { mutableStateOf(vramUsage?.values?.maxOfOrNull { it.bytesForMod }) }
     val profile = SL.userManager.activeProfile.collectAsState()
     val activeSortField = profile.value.modGridPrefs.sortField?.let {
         kotlin.runCatching { ModGridSortField.valueOf(it) }.getOrNull()
@@ -117,7 +120,10 @@ fun AppScope.ModGridView(
                                                         return when (activeSortField) {
                                                             ModGridSortField.Name -> modRow.mod.findFirstEnabledOrHighestVersion?.modInfo?.name?.lowercase()
                                                             ModGridSortField.Author -> modRow.mod.findFirstEnabledOrHighestVersion?.modInfo?.author?.lowercase()
-                                                            ModGridSortField.VramImpact -> getVramImpactForMod(modRow.mod)?.bytesForMod
+                                                            ModGridSortField.VramImpact -> getVramImpactForMod(
+                                                                modRow.mod,
+                                                                vramUsage
+                                                            )?.bytesForMod
                                                             else -> null
                                                         }
                                                     }
@@ -216,9 +222,9 @@ fun AppScope.ModGridView(
                             style = SmolTheme.alertDialogBody()
                         )
 
-                        val looseFilesToShow = modVariantBeingRemoved.modsFolderInfo?.folder
+                        val looseFilesToShow = modVariantBeingRemoved.modsFolderInfo.folder
 
-                        if (looseFilesToShow?.exists() == true) {
+                        if (looseFilesToShow.exists()) {
                             Row {
                                 Checkbox(
                                     modifier = Modifier.align(Alignment.CenterVertically),
@@ -274,8 +280,8 @@ fun AppScope.ModGridView(
     }
 }
 
-fun getVramImpactForMod(mod: Mod) =
-    SL.vramChecker.vramUsage.value?.get(
+fun getVramImpactForMod(mod: Mod, map: Map<SmolId, VramCheckerCache.Result>?) =
+    map?.get(
         mod.findFirstEnabledOrHighestVersion?.smolId
     )
 

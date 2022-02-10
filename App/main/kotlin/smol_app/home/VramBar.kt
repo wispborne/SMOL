@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -23,7 +24,7 @@ import smol_app.util.bytesAsReadableMB
 fun RowScope.vramBar(mod: Mod, largestVramUsage: Long?) {
     val variant = mod.findFirstEnabledOrHighestVersion
     val vramResult =
-        SL.vramChecker.vramUsage.value?.get(variant?.smolId)
+        SL.vramChecker.vramUsage.collectAsState().value?.get(variant?.smolId)
     SmolTooltipArea(tooltip = {
         SmolTooltipText(
             text = when {

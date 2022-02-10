@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,6 +25,7 @@ import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import smol_access.SL
 import smol_access.model.Mod
 import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
@@ -72,7 +74,8 @@ fun ModGridSectionHeader(
                     fontWeight = FontWeight.Bold
                 )
             }
-            val allImpacts = modsInGroup.map { getVramImpactForMod(it) }
+            val vramUsage = SL.vramChecker.vramUsage.collectAsState().value
+            val allImpacts = modsInGroup.map { getVramImpactForMod(it, vramUsage) }
             val totalBytes =
                 allImpacts.sumOf { it?.bytesForMod ?: 0L }.bytesAsReadableMB
             val totalImages = "${allImpacts.sumOf { it?.imageCount ?: 0 }} images"

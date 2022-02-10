@@ -108,22 +108,30 @@ fun AppScope.ModGridRow(
                 ) {
                     val isFavorited = mod.id in profile.value.favoriteMods
                     if (isFavorited || isRowHighlighted) {
-                        Icon(
-                            imageVector =
-                            (if (isFavorited)
-                                androidx.compose.material.icons.Icons.Default.Favorite
-                            else androidx.compose.material.icons.Icons.Default.FavoriteBorder),
-                            contentDescription = null,
-                            modifier = Modifier
+                        Box(
+                            Modifier
                                 .padding(end = 16.dp)
-                                .mouseClickable {
-                                    smol_access.SL.userManager.setModFavorited(
-                                        modId = mod.id,
-                                        newFavoriteValue = isFavorited.not()
-                                    )
-                                },
-                            tint = MaterialTheme.colors.primary
-                        )
+                        ) {
+                            Icon(
+                                imageVector =
+//                                (if (isFavorited)
+//                                    androidx.compose.material.icons.Icons.Default.Favorite
+                                androidx.compose.material.icons.Icons.Default.FavoriteBorder,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .align(Alignment.Center)
+                                    .mouseClickable {
+                                        smol_access.SL.userManager.setModFavorited(
+                                            modId = mod.id,
+                                            newFavoriteValue = isFavorited.not()
+                                        )
+                                    },
+                                tint =
+                                (if (isFavorited)
+                                    MaterialTheme.colors.secondary.copy(alpha = .6f)
+                                else MaterialTheme.colors.primary),
+                            )
+                        }
                     }
                 }
 
