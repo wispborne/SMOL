@@ -37,11 +37,17 @@ fun Mod.getModThreadId(): ModThreadId? =
     findFirstEnabled?.versionCheckerInfo?.modThreadId
         ?: findHighestVersion?.versionCheckerInfo?.modThreadId
 
+fun Mod.getNexusId(): ModThreadId? =
+    findFirstEnabled?.versionCheckerInfo?.modNexusId
+        ?: findHighestVersion?.versionCheckerInfo?.modNexusId
+
 fun ModThreadId.openModThread() {
     (Constants.FORUM_MOD_PAGE_URL + this).openAsUriInBrowser()
 }
 
 fun ModThreadId.getModThreadUrl(): String = Constants.FORUM_MOD_PAGE_URL + this
+
+fun String.getNexusModsUrl(): String = Constants.NEXUS_MODS_PAGE_URL + this
 
 fun String.openAsUriInBrowser() {
     Desktop.getDesktop().browse(URI(this))

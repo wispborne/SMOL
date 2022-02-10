@@ -141,6 +141,28 @@ private fun AppScope.modGridSingleModMenu(
         }
     }
 
+    val nexusId = mod.getNexusId()
+    if (nexusId != null) {
+        DropdownMenuItem(
+            onClick = {
+                nexusId.getNexusModsUrl().openAsUriInBrowser()
+                onShowContextMenuChange(false)
+            },
+        ) {
+            Image(
+                painter = painterResource("icon-nexus.svg"),
+                colorFilter = ColorFilter.tint(MaterialTheme.colors.onSurface),
+                modifier = Modifier.padding(end = 12.dp).size(24.dp),
+                contentDescription = null
+            )
+            Text(
+                text = "View NexusMods in browser",
+                maxLines = 1,
+                modifier = Modifier.align(Alignment.CenterVertically)
+            )
+        }
+    }
+
     DropdownMenuItem(onClick = {
         coroutineScope.launch {
             withContext(Dispatchers.Default) {

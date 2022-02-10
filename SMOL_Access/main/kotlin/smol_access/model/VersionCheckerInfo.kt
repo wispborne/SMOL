@@ -4,6 +4,7 @@ import com.google.gson.annotations.SerializedName
 
 data class VersionCheckerInfo(
     @SerializedName("masterVersionFile") val masterVersionFile: String?,
+    @SerializedName("modNexusId") val modNexusId: String?,
     @SerializedName("modThreadId") val modThreadId: String?,
     @SerializedName("modVersion") val modVersion: Version?,
     @SerializedName("directDownloadURL") val directDownloadURL: String?,

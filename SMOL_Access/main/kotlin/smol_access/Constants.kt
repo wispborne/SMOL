@@ -18,6 +18,7 @@ object Constants {
     const val VERSION_CHECKER_CSV_PATH = "data/config/version/version_files.csv"
     const val VERSION_CHECKER_FILE_ENDING = ".version"
     const val FORUM_URL = "https://fractalsoftworks.com/forum/index.php"
+    const val NEXUS_MODS_PAGE_URL = "https://www.nexusmods.com/starsector/mods/"
     const val FORUM_MOD_PAGE_URL = "$FORUM_URL?topic="
     const val FORUM_MOD_INDEX_URL = FORUM_MOD_PAGE_URL + "177"
     const val FORUM_MODDING_SUBFORUM_URL = "$FORUM_URL?board=3.0"

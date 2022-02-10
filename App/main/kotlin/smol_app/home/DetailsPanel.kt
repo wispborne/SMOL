@@ -32,8 +32,7 @@ import smol_app.composables.SmolLinkText
 import smol_app.composables.TiledImage
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.withAdjustedBrightness
-import smol_app.util.imageResource
-import smol_app.util.openModThread
+import smol_app.util.*
 
 
 @Composable
@@ -149,15 +148,30 @@ fun BoxScope.detailsPanel(
                         )
                     }
 
-                    val versionCheckerInfo = row.value?.mod?.findHighestVersion?.versionCheckerInfo
-                    if (versionCheckerInfo?.modThreadId != null) {
+                    val modThreadId = row.value?.mod?.getModThreadId()
+                    if (modThreadId != null) {
                         DisableSelection {
                             SmolLinkText(
                                 text = "Forum Thread",
                                 modifier = Modifier.padding(top = 16.dp)
                                     .mouseClickable {
                                         if (this.buttons.isPrimaryPressed) {
-                                            versionCheckerInfo.modThreadId!!.openModThread()
+                                            modThreadId.openModThread()
+                                        }
+                                    }
+                            )
+                        }
+                    }
+
+                    val nexusId = row.value?.mod?.getNexusId()
+                    if (nexusId != null) {
+                        DisableSelection {
+                            SmolLinkText(
+                                text = "NexusMods",
+                                modifier = Modifier.padding(top = 16.dp)
+                                    .mouseClickable {
+                                        if (this.buttons.isPrimaryPressed) {
+                                            nexusId.getNexusModsUrl().openAsUriInBrowser()
                                         }
                                     }
                             )
@@ -178,129 +192,144 @@ fun BoxScope.detailsPanel(
     }
 }
 
-@OptIn(
-    ExperimentalUnitApi::class,
-    androidx.compose.ui.ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class
-)
-@Composable
-fun BoxScope.detailsPanelGameStyled(
-    modifier: Modifier = Modifier,
-    selectedRow: ModRow?
-) {
-    val row = selectedRow ?: return
-    val allMods = SL.access.mods.value?.mods ?: emptyList()
-
-    Box(
-        modifier.width(400.dp)
-            .align(Alignment.CenterEnd)
-            .clickable(enabled = false) { }
-            .fillMaxHeight(),
-    ) {
-        TiledImage(
-            modifier = Modifier.align(Alignment.Center)
-                .fillMaxWidth()
-                .padding(24.dp)
-                .fillMaxHeight(),
-            imageBitmap = imageResource("panel00_center.png")
-        )
-        val state = rememberScrollState()
-        SelectionContainer {
-            Column(
-                Modifier.padding(36.dp).verticalScroll(state)
-            ) {
-                val modVariant = row.mod.findFirstEnabled ?: row.mod.findHighestVersion
-                val modInfo = modVariant?.modInfo
-                Text(
-                    modInfo?.name ?: "VNSector",
-                    fontWeight = FontWeight.ExtraBold,
-                    fontFamily = SmolTheme.orbitronSpaceFont,
-                    fontSize = TextUnit(18f, TextUnitType.Sp)
-                )
-                Text(
-                    "${modInfo?.id ?: "vnsector"} ${modInfo?.version?.toString() ?: "no version"}",
-                    modifier = Modifier.padding(top = 4.dp),
-                    fontSize = TextUnit(12f, TextUnitType.Sp),
-                    fontFamily = SmolTheme.fireCodeFont
-                )
-                Text("Author", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
-                Text(modInfo?.author ?: "It's always Techpriest", modifier = Modifier.padding(top = 2.dp, start = 8.dp))
-                Text("Description", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
-                Text(modInfo?.description ?: "", modifier = Modifier.padding(top = 2.dp))
-                val dependencies =
-                    modVariant?.run { SL.dependencyFinder.findDependencies(modVariant = this, mods = allMods) }
-                        ?: emptyList()
-                if (dependencies.isNotEmpty()) {
-                    Text("Dependencies", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
-                    Text(
-                        dependencies
-                            .joinToString {
-                                val depName: String =
-                                    it.second?.findHighestVersion?.modInfo?.name ?: it.second?.id ?: it.first.id ?: ""
-                                depName + if (it.first.version != null) " v${it.first.version?.raw}" else ""
-                            },
-                        modifier = Modifier.padding(top = 2.dp)
-                    )
-                }
-
-                val versionCheckerInfo = row.mod.findHighestVersion?.versionCheckerInfo
-                if (versionCheckerInfo?.modThreadId != null) {
-                    DisableSelection {
-                        SmolLinkText(
-                            text = "Forum Thread",
-                            modifier = Modifier.padding(top = 16.dp)
-                                .mouseClickable {
-                                    if (this.buttons.isPrimaryPressed) {
-                                        versionCheckerInfo.modThreadId!!.openModThread()
-                                    }
-                                }
-                        )
-                    }
-                }
-            }
-        }
-        TiledImage(
-            modifier = Modifier.align(Alignment.CenterStart).width(32.dp).fillMaxHeight()
-                .padding(top = 32.dp, bottom = 32.dp),
-            imageBitmap = imageResource("panel00_left.png")
-        )
-        TiledImage(
-            modifier = Modifier.align(Alignment.CenterEnd).width(32.dp).fillMaxHeight()
-                .padding(top = 32.dp, bottom = 32.dp),
-            imageBitmap = imageResource("panel00_right.png")
-        )
-        TiledImage(
-            modifier = Modifier.align(Alignment.TopCenter).height(32.dp).fillMaxWidth()
-                .padding(start = 32.dp, end = 32.dp),
-            imageBitmap = imageResource("panel00_top.png")
-        )
-        TiledImage(
-            modifier = Modifier.align(Alignment.BottomCenter).height(32.dp).fillMaxWidth()
-                .padding(start = 32.dp, end = 32.dp),
-            imageBitmap = imageResource("panel00_bot.png")
-        )
-        Image(
-            painter = painterResource("panel00_top_left.png"),
-            contentDescription = null,
-            modifier = Modifier.align(Alignment.TopStart).width(32.dp).height(32.dp),
-            contentScale = ContentScale.None
-        )
-        Image(
-            painter = painterResource("panel00_bot_left.png"),
-            contentDescription = null,
-            modifier = Modifier.align(Alignment.BottomStart).width(32.dp).height(32.dp),
-            contentScale = ContentScale.None
-        )
-        Image(
-            painter = painterResource("panel00_top_right.png"),
-            contentDescription = null,
-            modifier = Modifier.align(Alignment.TopEnd).width(32.dp).height(32.dp),
-            contentScale = ContentScale.None
-        )
-        Image(
-            painter = painterResource("panel00_bot_right.png"),
-            contentDescription = null,
-            modifier = Modifier.align(Alignment.BottomEnd).width(32.dp).height(32.dp),
-            contentScale = ContentScale.None
-        )
-    }
-}
+//@OptIn(
+//    ExperimentalUnitApi::class,
+//    androidx.compose.ui.ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class
+//)
+//@Composable
+//fun BoxScope.detailsPanelGameStyled(
+//    modifier: Modifier = Modifier,
+//    selectedRow: ModRow?
+//) {
+//    val row = selectedRow ?: return
+//    val allMods = SL.access.mods.value?.mods ?: emptyList()
+//
+//    Box(
+//        modifier.width(400.dp)
+//            .align(Alignment.CenterEnd)
+//            .clickable(enabled = false) { }
+//            .fillMaxHeight(),
+//    ) {
+//        TiledImage(
+//            modifier = Modifier.align(Alignment.Center)
+//                .fillMaxWidth()
+//                .padding(24.dp)
+//                .fillMaxHeight(),
+//            imageBitmap = imageResource("panel00_center.png")
+//        )
+//        val state = rememberScrollState()
+//        SelectionContainer {
+//            Column(
+//                Modifier.padding(36.dp).verticalScroll(state)
+//            ) {
+//                val modVariant = row.mod.findFirstEnabled ?: row.mod.findHighestVersion
+//                val modInfo = modVariant?.modInfo
+//                Text(
+//                    modInfo?.name ?: "VNSector",
+//                    fontWeight = FontWeight.ExtraBold,
+//                    fontFamily = SmolTheme.orbitronSpaceFont,
+//                    fontSize = TextUnit(18f, TextUnitType.Sp)
+//                )
+//                Text(
+//                    "${modInfo?.id ?: "vnsector"} ${modInfo?.version?.toString() ?: "no version"}",
+//                    modifier = Modifier.padding(top = 4.dp),
+//                    fontSize = TextUnit(12f, TextUnitType.Sp),
+//                    fontFamily = SmolTheme.fireCodeFont
+//                )
+//                Text("Author", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
+//                Text(modInfo?.author ?: "It's always Techpriest", modifier = Modifier.padding(top = 2.dp, start = 8.dp))
+//                Text("Description", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
+//                Text(modInfo?.description ?: "", modifier = Modifier.padding(top = 2.dp))
+//                val dependencies =
+//                    modVariant?.run { SL.dependencyFinder.findDependencies(modVariant = this, mods = allMods) }
+//                        ?: emptyList()
+//                if (dependencies.isNotEmpty()) {
+//                    Text("Dependencies", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
+//                    Text(
+//                        dependencies
+//                            .joinToString {
+//                                val depName: String =
+//                                    it.second?.findHighestVersion?.modInfo?.name ?: it.second?.id ?: it.first.id ?: ""
+//                                depName + if (it.first.version != null) " v${it.first.version?.raw}" else ""
+//                            },
+//                        modifier = Modifier.padding(top = 2.dp)
+//                    )
+//                }
+//
+//                val modThreadId = row.mod.getModThreadId()
+//                if (modThreadId != null) {
+//                    DisableSelection {
+//                        SmolLinkText(
+//                            text = "Forum Thread",
+//                            modifier = Modifier.padding(top = 16.dp)
+//                                .mouseClickable {
+//                                    if (this.buttons.isPrimaryPressed) {
+//                                        modThreadId.openModThread()
+//                                    }
+//                                }
+//                        )
+//                    }
+//                }
+//
+//                val nexusId = row.mod.getNexusId()
+//                if (nexusId != null) {
+//                    DisableSelection {
+//                        SmolLinkText(
+//                            text = "NexusMods",
+//                            modifier = Modifier.padding(top = 16.dp)
+//                                .mouseClickable {
+//                                    if (this.buttons.isPrimaryPressed) {
+//                                        nexusId.getNexusModsUrl().openAsUriInBrowser()
+//                                    }
+//                                }
+//                        )
+//                    }
+//                }
+//            }
+//        }
+//        TiledImage(
+//            modifier = Modifier.align(Alignment.CenterStart).width(32.dp).fillMaxHeight()
+//                .padding(top = 32.dp, bottom = 32.dp),
+//            imageBitmap = imageResource("panel00_left.png")
+//        )
+//        TiledImage(
+//            modifier = Modifier.align(Alignment.CenterEnd).width(32.dp).fillMaxHeight()
+//                .padding(top = 32.dp, bottom = 32.dp),
+//            imageBitmap = imageResource("panel00_right.png")
+//        )
+//        TiledImage(
+//            modifier = Modifier.align(Alignment.TopCenter).height(32.dp).fillMaxWidth()
+//                .padding(start = 32.dp, end = 32.dp),
+//            imageBitmap = imageResource("panel00_top.png")
+//        )
+//        TiledImage(
+//            modifier = Modifier.align(Alignment.BottomCenter).height(32.dp).fillMaxWidth()
+//                .padding(start = 32.dp, end = 32.dp),
+//            imageBitmap = imageResource("panel00_bot.png")
+//        )
+//        Image(
+//            painter = painterResource("panel00_top_left.png"),
+//            contentDescription = null,
+//            modifier = Modifier.align(Alignment.TopStart).width(32.dp).height(32.dp),
+//            contentScale = ContentScale.None
+//        )
+//        Image(
+//            painter = painterResource("panel00_bot_left.png"),
+//            contentDescription = null,
+//            modifier = Modifier.align(Alignment.BottomStart).width(32.dp).height(32.dp),
+//            contentScale = ContentScale.None
+//        )
+//        Image(
+//            painter = painterResource("panel00_top_right.png"),
+//            contentDescription = null,
+//            modifier = Modifier.align(Alignment.TopEnd).width(32.dp).height(32.dp),
+//            contentScale = ContentScale.None
+//        )
+//        Image(
+//            painter = painterResource("panel00_bot_right.png"),
+//            contentDescription = null,
+//            modifier = Modifier.align(Alignment.BottomEnd).width(32.dp).height(32.dp),
+//            contentScale = ContentScale.None
+//        )
+//    }
+//}
