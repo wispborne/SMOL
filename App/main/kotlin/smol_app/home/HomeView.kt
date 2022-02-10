@@ -30,7 +30,7 @@ import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
 import smol_app.toolbar.*
 import smol_app.util.filterModGrid
-import smol_app.util.onSubmitKeyPress
+import smol_app.util.onEnterKeyPressed
 import smol_app.util.replaceAllUsingDifference
 import utilities.IOLock
 
@@ -180,7 +180,7 @@ private fun AppScope.consoleTextField(
                 },
                 leadingIcon = { Icon(painter = painterResource("icon-console.svg"), contentDescription = null) },
                 modifier = Modifier
-                    .onSubmitKeyPress {
+                    .onEnterKeyPressed {
                         kotlin.runCatching {
                             SmolCLI(
                                 userManager = SL.userManager,

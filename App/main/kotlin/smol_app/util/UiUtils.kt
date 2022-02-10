@@ -138,11 +138,23 @@ fun String.acronym(): String =
         .joinToString(separator = "") { it.firstOrNull()?.toString() ?: "" }
 
 @OptIn(ExperimentalComposeUiApi::class)
-fun Modifier.onSubmitKeyPress(onKeyEvent: () -> Boolean): Modifier {
+fun Modifier.onEnterKeyPressed(onKeyEvent: () -> Boolean): Modifier {
     return this.onKeyEvent { event ->
         if (event.type == KeyEventType.KeyUp && (event.key.equalsAny(
                 Key.Enter,
                 Key.NumPadEnter
+            ))
+        ) {
+            onKeyEvent.invoke()
+        } else false
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+fun Modifier.onEscKeyPressed(onKeyEvent: () -> Boolean): Modifier {
+    return this.onKeyEvent { event ->
+        if (event.type == KeyEventType.KeyUp && (event.key.equalsAny(
+                Key.Escape,
             ))
         ) {
             onKeyEvent.invoke()

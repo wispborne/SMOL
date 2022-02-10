@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
+import smol_app.util.onEnterKeyPressed
 
 /**
  * Alert dialog is a Dialog which interrupts the user with urgent information, details or actions.
@@ -50,7 +51,8 @@ fun SmolAlertDialog(
         .fillMaxWidth()
         .fillMaxHeight()
         .background(Color.Black.copy(alpha = ContentAlpha.medium)),
-    modifier: Modifier = Modifier.width(400.dp),
+    modifier: Modifier = Modifier.width(400.dp)
+        .onEnterKeyPressed { onDismissRequest(); true },
     dismissButton: @Composable (() -> Unit)? = null,
     title: @Composable (() -> Unit)? = null,
     text: @Composable (() -> Unit)? = null,
@@ -65,7 +67,8 @@ fun SmolAlertDialog(
         AlertDialog(
             onDismissRequest = onDismissRequest,
             confirmButton = confirmButton,
-            modifier = modifier.clickable(enabled = false) {}, // Don't dismiss the dialog when you click on it!
+            modifier = modifier
+                .clickable(enabled = false) {}, // Don't dismiss the dialog when you click on it!,
             dismissButton = dismissButton,
             title = title,
             text = text,

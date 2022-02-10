@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.input.pointer.pointerMoveFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -41,6 +42,7 @@ import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.lighten
 import smol_app.util.smolPreview
 import utilities.copyToClipboard
+import utilities.equalsAny
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -124,6 +126,19 @@ fun AppScope.ModProfileCard(
                                     modifier = Modifier
                                         .weight(1f)
                                         .padding(end = 16.dp)
+                                        .onKeyEvent { event ->
+                                            if (event.type == KeyEventType.KeyUp
+                                                && (event.key.equalsAny(
+                                                    Key.Escape,
+                                                    Key.Enter,
+                                                    Key.NumPadEnter
+                                                ))
+                                            ) {
+                                                isEditMode.value = false
+                                                true
+                                            } else
+                                                false
+                                        }
                                         .align(Alignment.CenterVertically),
                                     value = modProfileName.value,
                                     label = { Text(text = "Profile Name") },
@@ -145,7 +160,7 @@ fun AppScope.ModProfileCard(
                             if (isUserMade) {
                                 SmolTooltipArea(tooltip = {
                                     SmolTooltipText(
-                                        text = if (isEditMode.value) "Save profile name." else "Edit name."
+                                        text = if (isEditMode.value) "Done." else "Edit name."
                                     )
                                 }) {
                                     IconToggleButton(

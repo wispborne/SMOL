@@ -297,7 +297,7 @@ fun AppScope.ModBrowserView(
                                     SmolOutlinedTextField(
                                         modifier = Modifier.weight(1f)
                                             .align(Alignment.CenterVertically)
-                                            .onSubmitKeyPress {
+                                            .onEnterKeyPressed {
                                                 browser.value?.loadUrl(enteredUrl)
                                                 true
                                             },

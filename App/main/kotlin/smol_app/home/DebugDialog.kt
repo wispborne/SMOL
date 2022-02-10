@@ -1,22 +1,20 @@
 package smol_app.home
 
-import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.Button
 import androidx.compose.material.Divider
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import smol_access.Constants
 import smol_access.model.Mod
 import smol_app.composables.SmolAlertDialog
 import smol_app.themes.SmolTheme
+import smol_app.util.onEnterKeyPressed
 import smol_app.util.parseHtml
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -29,11 +27,9 @@ fun debugDialog(
     val scrollState = rememberScrollState()
     SmolAlertDialog(
         modifier = modifier
-            .widthIn(min = 700.dp),
+            .widthIn(min = 700.dp)
+            .onEnterKeyPressed { onDismiss.invoke(); true },
         onDismissRequest = onDismiss,
-        confirmButton = {
-            Button(onClick = onDismiss) { Text("Ok") }
-        },
         title = { Text(text = mod.id, style = SmolTheme.alertDialogTitle()) },
         text = {
             SelectionContainer {
