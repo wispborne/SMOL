@@ -46,13 +46,13 @@ fun DependencyFixerRow(
                         contentDescription = null,
                         colorFilter = ColorFilter.tint(color = MaterialTheme.colors.onBackground)
                     )
+                    val modNameToShow = depState.dependency.name?.ifBlank { null } ?: depState.dependency.id
+                    val modVersionToShow = depState.dependency.version?.let { " $it" }?.ifBlank { null } ?: ""
                     Text(
                         modifier = Modifier.align(Alignment.CenterVertically),
                         text = when (depState) {
                             is DependencyFinder.DependencyState.Disabled -> "Disabled dependency: ${depState.variant.modInfo.name} ${depState.variant.modInfo.version}"
                             is DependencyFinder.DependencyState.Missing -> {
-                                val modNameToShow = depState.dependency.name?.ifBlank { null } ?: depState.dependency.id
-                                val modVersionToShow = depState.dependency.version?.let { " $it" }?.ifBlank { null } ?: ""
                                 "Missing dependency: $modNameToShow$modVersionToShow"
                             }
                             is DependencyFinder.DependencyState.Enabled -> "you should never see this"
@@ -63,8 +63,9 @@ fun DependencyFixerRow(
                         onClick = {
                             when (depState) {
                                 is DependencyFinder.DependencyState.Disabled -> GlobalScope.launch {
-                                    SL.access.enableModVariant(
-                                        depState.variant
+                                    SL.access.changeActiveVariant(
+                                        mod = depState.variant.mod(SL.access),
+                                        modVariant = depState.variant
                                     )
                                 }
                                 is DependencyFinder.DependencyState.Missing -> {
@@ -80,7 +81,7 @@ fun DependencyFixerRow(
                     ) {
                         Text(
                             text = when (depState) {
-                                is DependencyFinder.DependencyState.Disabled -> "Enable ${depState.variant.modInfo.name}"
+                                is DependencyFinder.DependencyState.Disabled -> "Enable ${depState.variant.modInfo.name}${modVersionToShow}"
                                 is DependencyFinder.DependencyState.Missing -> "Search"
                                 is DependencyFinder.DependencyState.Enabled -> "you should never see this"
                             }
