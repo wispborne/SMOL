@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.pointerMoveFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -124,12 +125,13 @@ fun ModVariantsDropdown(
                     Text(
                         text = when {
                             // If there is an enabled variant, show its version string.
-                            mod.enabledVariants.isNotEmpty() -> mod.enabledVariants.joinToString { it.modInfo.version.toString() }
+                            mod.enabledVariants.isNotEmpty() -> mod.enabledVariants.joinToString { it.modInfo.version.toString().replace(' ', ' ') }
                             // If no enabled variant, show "Disabled"
                             else -> "Disabled"
                         },
                         fontWeight = FontWeight.Bold,
-                        fontFamily = font
+                        fontFamily = font,
+                        maxLines = 1
                     )
                     SmolDropdownArrow(
                         Modifier.align(Alignment.CenterVertically),

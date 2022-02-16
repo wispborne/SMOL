@@ -5,13 +5,13 @@ import smol_access.model.Mod
 import smol_access.model.ModVariant
 import timber.ktx.Timber
 
-class DependencyFinder internal constructor(private val modLoader: ModLoader) {
+class DependencyFinder internal constructor(private val modsCache: ModsCache) {
     fun findDependencies(modVariant: ModVariant, mods: List<Mod>): List<Pair<Dependency, Mod?>> =
         modVariant.modInfo.dependencies
             .map { dep -> dep to mods.firstOrNull { it.id == dep.id } }
 
     fun findDependencyStates(modVariant: ModVariant, mods: List<Mod>): List<DependencyState> =
-        (modVariant.mod(modLoader).findFirstEnabled?.run { findDependencies(modVariant = this, mods = mods) }
+        (modVariant.mod(modsCache).findFirstEnabled?.run { findDependencies(modVariant = this, mods = mods) }
             ?: emptyList())
             .map { (dependency, foundDependencyMod) ->
                 // Mod not found or has no variants, it's missing.
@@ -47,7 +47,7 @@ class DependencyFinder internal constructor(private val modLoader: ModLoader) {
                             val validButDisabledDependency = variantsMeetingVersionReq
                                 .maxByOrNull { it.modInfo.version }
                             if (validButDisabledDependency == null) {
-                                Timber.w { "Unexpected scenario finding dependency for mod ${modVariant.mod(modLoader).id} with dependency: $dependency." }
+                                Timber.w { "Unexpected scenario finding dependency for mod ${modVariant.mod(modsCache).id} with dependency: $dependency." }
                                 DependencyState.Missing(dependency, foundDependencyMod)
                             } else {
                                 DependencyState.Disabled(dependency, validButDisabledDependency)

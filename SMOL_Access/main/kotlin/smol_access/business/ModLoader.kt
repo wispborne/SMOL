@@ -1,10 +1,8 @@
 package smol_access.business
 
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import smol_access.Constants
 import smol_access.config.GamePathManager
@@ -20,15 +18,10 @@ import kotlin.io.path.absolutePathString
 internal class ModLoader internal constructor(
     private val gamePathManager: GamePathManager,
     private val modInfoLoader: ModInfoLoader,
-    private val gameEnabledMods: GameEnabledMods
+    private val gameEnabledMods: GameEnabledMods,
+    private val modsCache: ModsCache,
+    private val staging: Staging
 ) {
-    private val modsMutable = MutableStateFlow<ModListUpdate?>(null)
-    val mods = modsMutable.asStateFlow()
-        .also {
-            GlobalScope.launch(Dispatchers.Default) {
-                it.collect { Timber.i { "Mod list updated: ${it?.mods?.size} mods (${it?.added?.joinToString { it.smolId }} added, ${it?.removed?.joinToString { it.smolId }} removed)." } }
-            }
-        }
 
     private var isReloadingMutable = MutableStateFlow(false)
     val isLoading = isReloadingMutable.asStateFlow()
@@ -40,13 +33,13 @@ internal class ModLoader internal constructor(
     suspend fun reload(modIds: List<ModId>? = null): ModListUpdate? {
         if (isLoading.value) {
             Timber.i { "Mod reload requested, but declined; already reloading." }
-            return mods.value
+            return modsCache.mods.value
         }
 
         Timber.i { "Refreshing mod info files: ${modIds ?: "all"}." }
 
-        val previousMods = mods.value
-        val previousModVariants = (previousMods?.mods?.flatMap { it.variants } ?: emptyList())
+        val previousMods = modsCache.mods.value
+        val previousModVariants = previousMods?.mods?.flatMap { it.variants }
 
         return try {
             isReloadingMutable.emit(true)
@@ -88,6 +81,7 @@ internal class ModLoader internal constructor(
                             }
                             .toList()
                             .onEach { Timber.v { "Found /mods mod $it" } }
+                    val gameLauncherEnabledMods = gameEnabledMods.getEnabledMods()?.enabledMods ?: emptyList()
 
                     // Merge all items together, replacing nulls with data.
                     val result = (modsFolderMods)
@@ -119,9 +113,7 @@ internal class ModLoader internal constructor(
                         .map { mod -> mod.copy(variants = mod.variants.sortedBy { it.modInfo.version }) }
                         .toList()
                         .onEach {
-                            Timber.d { "Loaded mod: $it" }
-
-                            val variantsInModsFolder = it.variants.filter { it.isModInfoEnabled }
+                            val variantsInModsFolder = it.variants.filter { it.isModInfoEnabled && it.modInfo.id in gameLauncherEnabledMods }
 
                             if (variantsInModsFolder.size > 1) {
                                 Timber.w {
@@ -138,12 +130,13 @@ internal class ModLoader internal constructor(
                         val newModVariants = result.flatMap { it.variants }
                         ModListUpdate(
                             mods = result,
-                            added = newModVariants.filter { it.smolId !in previousModVariants.map { it.smolId } },
-                            removed = previousModVariants.filter { it.smolId !in newModVariants.map { it.smolId } }
+                            added = if (previousModVariants == null) emptyList() else newModVariants.filter { it.smolId !in previousModVariants.map { it.smolId } },
+                            removed = previousModVariants?.filter { it.smolId !in newModVariants.map { it.smolId } }
+                                ?: emptyList()
                         )
                     } else {
                         // If this was an update of only some mods, update only those.
-                        val updatedList = modsMutable.value?.mods?.toMutableList().apply {
+                        val updatedList = modsCache.modsMutable.value?.mods?.toMutableList().apply {
                             result.forEach { selectedMod ->
                                 this?.removeIf { it.id == selectedMod.id }
                                 this?.add(selectedMod)
@@ -153,11 +146,26 @@ internal class ModLoader internal constructor(
 
                         ModListUpdate(
                             mods = updatedList,
-                            added = updatedListVariants.filter { it.smolId !in previousModVariants.map { it.smolId } },
-                            removed = previousModVariants.filter { it.smolId !in updatedListVariants.map { it.smolId } }
+                            added = if (previousModVariants == null) emptyList() else updatedListVariants.filter { it.smolId !in previousModVariants.map { it.smolId } },
+                            removed = previousModVariants?.filter { it.smolId !in updatedListVariants.map { it.smolId } }
+                                ?: emptyList()
                         )
                     }
-                    modsMutable.emit(update)
+                        .also {
+                            it.added.forEach {
+                                staging.disableModVariant(
+                                    modVariant = it,
+                                    disableInVanillaLauncher = false
+                                )
+                            }
+                        }
+                        .also {
+                            it.added.onEach { Timber.i { "Added mod: $it" } }
+                            it.removed.onEach { Timber.i { "Removed mod: $it" } }
+                            it.mods.onEach { Timber.d { "Loaded mod: $it" } }
+                        }
+
+                    modsCache.modsMutable.emit(update)
 
                     return@withContext update
                 }

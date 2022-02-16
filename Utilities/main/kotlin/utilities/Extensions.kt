@@ -82,6 +82,7 @@ val String.Companion.empty
  * True if any of the arguments are equal; false otherwise.
  */
 fun Any.equalsAny(vararg other: Any): Boolean = arrayOf(*other).any { this == it }
+fun String.equalsAny(vararg other: String, ignoreCase: Boolean = true): Boolean = arrayOf(*other).any { this.equals(it, ignoreCase) }
 
 /**
  * Returns items matching the predicate or, if none are matching, returns the original [Collection].

@@ -142,11 +142,6 @@ private fun setUpToasts() {
         SL.access.mods.collect { modListUpdate ->
             val addedModVariants = modListUpdate?.added ?: return@collect
 
-            if (addedModVariants == modListUpdate.mods.flatMap { it.variants }) {
-                Timber.d { "Added mods are the same as existing mods, this is probably startup. Not adding 'mod found' toasts." }
-                return@collect
-            }
-
             addedModVariants
                 .forEach { newModVariant ->
                     Timber.i { "Found new mod ${newModVariant.modInfo.id} ${newModVariant.modInfo.version}." }

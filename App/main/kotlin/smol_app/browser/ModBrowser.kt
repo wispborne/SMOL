@@ -291,7 +291,6 @@ fun AppScope.ModBrowserView(
                                     }
                                     var enteredUrl by remember { mutableStateOf("") }
                                     LaunchedEffect(Unit) {
-                                        Timber.i { "here" }
                                         browser.value?.currentUrl?.collectLatest { enteredUrl = it.first }
                                     }
                                     SmolOutlinedTextField(

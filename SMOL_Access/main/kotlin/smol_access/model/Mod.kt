@@ -2,7 +2,7 @@ package smol_access.model
 
 import smol_access.Access
 import smol_access.Constants
-import smol_access.business.ModLoader
+import smol_access.business.ModsCache
 import java.nio.file.Path
 import java.util.*
 import kotlin.io.path.exists
@@ -99,20 +99,22 @@ data class ModVariant(
                 )
             }
 
+        private val systemFolderNameAllowedChars = Regex("""[^0-9a-zA-Z\\.\-_ ]""")
         fun createSmolId(modInfo: ModInfo) = createSmolId(modInfo.id, modInfo.version)
+        fun generateVariantFolderName(modInfo: ModInfo) =
+            "${modInfo.name?.replace(systemFolderNameAllowedChars, "")}_${createSmolId(modInfo)}"
 
         val MOCK: ModVariant
             get() = Mod.MOCK.variants.first()
     }
 
-    internal fun mod(modLoader: ModLoader) = modLoader.mods.value?.mods!!.first { it.id == modInfo.id }
+    internal fun mod(modsCache: ModsCache) = modsCache.mods.value?.mods!!.first { it.id == modInfo.id }
     fun mod(access: Access) = access.mods.value?.mods!!.first { it.id == modInfo.id }
 
     val isModInfoEnabled: Boolean
         get() = modsFolderInfo.folder.resolve(Constants.MOD_INFO_FILE).exists()
 
-    private val systemFolderNameAllowedChars = Regex("""[^0-9a-zA-Z\\.\-_ ]""")
-    fun generateVariantFolderName() = "${modInfo.name?.replace(systemFolderNameAllowedChars, "")}_${smolId}"
+    fun generateVariantFolderName() = Companion.generateVariantFolderName(this.modInfo)
 }
 
 typealias SmolId = String

@@ -1,5 +1,10 @@
 package smol_access.model
 
+import smol_access.Constants
+import utilities.equalsAny
+import java.nio.file.Path
+import kotlin.io.path.name
+
 data class ModInfo(
     val id: String,
     val name: String?,
@@ -71,3 +76,5 @@ data class Dependency(
     val name: String? = null,
     val version: Version?
 )
+
+fun Path.isModInfoFile() = this.name.equalsAny(Constants.MOD_INFO_FILE, Constants.MOD_INFO_FILE_DISABLED, ignoreCase = true)

@@ -77,7 +77,7 @@ class ModInfoLoader(
                                         }
                                     }
                                 }
-                                    .onFailure { Timber.w(it) }
+                                    .onFailure { Timber.w(it) { "Error reading version checker file. This mod has defined a `data/config/version/version_files.csv`."} }
                                     .getOrNull()
                             }
                         }

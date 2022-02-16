@@ -11,7 +11,7 @@ import utilities.trace
 class UserModProfileManager internal constructor(
     private val userManager: UserManager,
     private val access: Access,
-    private val modLoader: ModLoader
+    private val modsCache: ModsCache
 ) {
     /**
      * Prevent profiles updating while we're switching mod profiles.
@@ -20,7 +20,7 @@ class UserModProfileManager internal constructor(
 
     init {
         GlobalScope.launch {
-            modLoader.mods.collect { newMods ->
+            modsCache.mods.collect { newMods ->
                 newMods ?: return@collect
                 if (isModProfileSwitching) return@collect
 
@@ -33,7 +33,7 @@ class UserModProfileManager internal constructor(
                                         .flatMap { it.enabledVariants }
                                         .map {
                                             UserProfile.ModProfile.ShallowModVariant(
-                                                modId = it.mod(modLoader).id,
+                                                modId = it.mod(modsCache).id,
                                                 modName = it.modInfo.name ?: "",
                                                 smolVariantId = it.smolId,
                                                 version = it.modInfo.version
@@ -61,7 +61,7 @@ class UserModProfileManager internal constructor(
                 Timber.i { "Mod profile diff for switching: $diff." }
                 val variantsToDisable = diff.removed
                 val variantsToEnable = diff.added
-                val allKnownVariants = modLoader.mods.value?.mods?.flatMap { it.variants } ?: emptyList()
+                val allKnownVariants = modsCache.mods.value?.mods?.flatMap { it.variants } ?: emptyList()
 
                 variantsToDisable
                     .mapNotNull { varToDisable ->

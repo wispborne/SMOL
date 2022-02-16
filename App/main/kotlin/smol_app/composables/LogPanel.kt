@@ -27,6 +27,7 @@ import smol_access.SL
 import smol_app.Logging
 import smol_app.UI
 import smol_app.themes.SmolTheme
+import smol_app.util.replaceTabsWithSpaces
 import timber.LogLevel
 
 @OptIn(ExperimentalSplitPaneApi::class)
@@ -102,7 +103,7 @@ fun AppScope.logPanel(
                                 ) {
                                     items(log) {
                                         SmolText(
-                                            text = it.message.replace("\t", "    "),
+                                            text = it.message.replaceTabsWithSpaces(),
                                             softWrap = false,
                                             fontFamily = SmolTheme.fireCodeFont,
                                             fontSize = 14.sp,

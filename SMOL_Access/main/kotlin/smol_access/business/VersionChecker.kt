@@ -36,7 +36,7 @@ internal class VersionChecker(
     private val gson: Jsanity,
     private val versionCheckerCache: VersionCheckerCache,
     private val userManager: UserManager,
-    private val modLoader: ModLoader,
+    private val modsCache: ModsCache,
     private val httpClientBuilder: HttpClientBuilder
 ) : IVersionChecker {
     companion object {
@@ -72,7 +72,7 @@ internal class VersionChecker(
                                     client.get<HttpResponse>(modVariant.versionCheckerInfo!!.masterVersionFile!!)
                                         .receive<String>()
                                         .let {
-                                            modVariant.mod(modLoader) to gson.fromJson<VersionCheckerInfo>(
+                                            modVariant.mod(modsCache) to gson.fromJson<VersionCheckerInfo>(
                                                 json = it,
                                                 shouldStripComments = true
                                             )

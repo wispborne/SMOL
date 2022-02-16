@@ -15,11 +15,10 @@ val IOLock = ObservableReentrantReadWriteLock()
 
 object IOLocks {
     val modFolderLock = ReentrantReadWriteLock()
-    val modFilesLock = modFolderLock
     val configLock = ReentrantReadWriteLock()
     val gameMainFolderLock = ReentrantReadWriteLock()
-    val defaultLock = configLock + modFilesLock
-    val everythingLock = configLock + modFilesLock + gameMainFolderLock
+    val defaultLock = configLock + modFolderLock
+    val everythingLock = configLock + modFolderLock + gameMainFolderLock
 }
 
 data class LockContext(val locks: List<ReentrantReadWriteLock>)

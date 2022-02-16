@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.collectLatest
 import smol_app.Logging
 import smol_app.themes.SmolTheme
+import smol_app.util.replaceTabsWithSpaces
 import smol_app.util.smolPreview
 import timber.LogLevel
 
@@ -59,7 +60,7 @@ fun logButtonAndErrorDisplay(modifier: Modifier = Modifier, showLogPanel: Mutabl
         LaunchedEffect(Unit) {
             Logging.logFlow.collectLatest {
                 if (it.logLevel >= LogLevel.ERROR) {
-                    newestLogLine = it.message
+                    newestLogLine = it.message.replaceTabsWithSpaces()
                 }
             }
         }

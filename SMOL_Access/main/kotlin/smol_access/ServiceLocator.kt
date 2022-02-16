@@ -35,10 +35,7 @@ class ServiceLocator internal constructor(
             this.followRedirects = true
         }
     },
-//    val moshi: Moshi = Moshi.Builder()
-//        .add(ModInfoAdapter())
-//        .addLast(KotlinJsonAdapterFactory())
-//        .build(),
+    internal val modsCache: ModsCache = ModsCache(),
     val jsanity: Jsanity = Jsanity(gson = GsonBuilder.buildGson()),
     internal val versionCheckerCache: VersionCheckerCache = VersionCheckerCache(gson = jsanity),
     val appConfig: AppConfig = AppConfig(gson = jsanity),
@@ -54,7 +51,8 @@ class ServiceLocator internal constructor(
     ),
     internal val gameEnabledMods: GameEnabledMods = GameEnabledMods(jsanity, gamePathManager),
     val archives: Archives = Archives(
-        modInfoLoader = modInfoLoader
+        modInfoLoader = modInfoLoader,
+        jsanity = jsanity
     ),
     val jreManager: JreManager = JreManager(
         gamePathManager = gamePathManager,
@@ -62,34 +60,37 @@ class ServiceLocator internal constructor(
         httpClientBuilder = httpClientBuilder,
         archives = archives
     ),
+    internal val staging: Staging = Staging(
+        gamePathManager = gamePathManager,
+        modsCache = modsCache,
+        gameEnabledMods = gameEnabledMods,
+        manualReloadTrigger = manualReloadTrigger
+    ),
     internal val modLoader: ModLoader = ModLoader(
         gamePathManager = gamePathManager,
         modInfoLoader = modInfoLoader,
-        gameEnabledMods = gameEnabledMods
+        gameEnabledMods = gameEnabledMods,
+        modsCache = modsCache,
+        staging = staging
     ),
-    val dependencyFinder: DependencyFinder = DependencyFinder(modLoader = modLoader),
+    val dependencyFinder: DependencyFinder = DependencyFinder(modsCache = modsCache),
     val versionChecker: IVersionChecker = VersionChecker(
         gson = jsanity,
         versionCheckerCache = versionCheckerCache,
         userManager = userManager,
-        modLoader = modLoader,
+        modsCache = modsCache,
         httpClientBuilder = httpClientBuilder
-    ),
-    internal val staging: Staging = Staging(
-        gamePathManager = gamePathManager,
-        modLoader = modLoader,
-        gameEnabledMods = gameEnabledMods,
-        manualReloadTrigger = manualReloadTrigger
     ),
     val access: Access = Access(
         staging = staging,
         modLoader = modLoader,
         archives = archives,
         appConfig = appConfig,
-        gamePathManager = gamePathManager
+        gamePathManager = gamePathManager,
+        modsCache = modsCache
     ),
     val userModProfileManager: UserModProfileManager = UserModProfileManager(
-        userManager = userManager, access = access, modLoader = modLoader
+        userManager = userManager, access = access, modsCache = modsCache
     ),
     val themeManager: ThemeManager = ThemeManager(userManager = userManager, jsanity = jsanity),
     val modRepo: ModRepo = ModRepo(jsanity = jsanity, httpClientBuilder = httpClientBuilder)

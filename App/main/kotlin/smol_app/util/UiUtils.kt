@@ -193,3 +193,5 @@ fun Constants.isModBrowserEnabled() = isJCEFEnabled() && SL.gamePathManager.path
 fun Constants.isModProfilesEnabled() = SL.gamePathManager.path.value.exists()
 
 fun createGoogleSearchFor(query: String) = "https://google.com/search?q=" + query.replace(' ', '+')
+
+fun String.replaceTabsWithSpaces() = this.replace(oldValue = "\t", newValue = "    ")

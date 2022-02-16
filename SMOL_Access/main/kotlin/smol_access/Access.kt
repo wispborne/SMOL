@@ -3,10 +3,7 @@ package smol_access
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
-import smol_access.business.Archives
-import smol_access.business.ModListUpdate
-import smol_access.business.ModLoader
-import smol_access.business.Staging
+import smol_access.business.*
 import smol_access.config.AppConfig
 import smol_access.config.GamePathManager
 import smol_access.config.SettingsPath
@@ -24,7 +21,8 @@ class Access internal constructor(
     private val modLoader: ModLoader,
     private val archives: Archives,
     private val appConfig: AppConfig,
-    private val gamePathManager: GamePathManager
+    private val gamePathManager: GamePathManager,
+    private val modsCache: ModsCache
 ) {
 
     /**
@@ -87,7 +85,7 @@ class Access internal constructor(
     }
 
     val mods: StateFlow<ModListUpdate?>
-        get() = modLoader.mods
+        get() = modsCache.mods
     val areModsLoading = modLoader.isLoading
 
     val modModificationState = MutableStateFlow<Map<ModId, ModModificationState>>(emptyMap())
@@ -112,7 +110,9 @@ class Access internal constructor(
     suspend fun installFromUnknownSource(
         inputFile: Path,
         destinationFolder: Path
-    ) = archives.installFromUnknownSource(inputFile, destinationFolder)
+    ) {
+        archives.installFromUnknownSource(inputFile, destinationFolder)
+    }
 
     /**
      * Changes the active mod variant, or disables all if `null` is set.
@@ -120,7 +120,7 @@ class Access internal constructor(
     suspend fun changeActiveVariant(mod: Mod, modVariant: ModVariant?): Result<Unit> {
         Timber.i { "Changing active variant of ${mod.id} to ${modVariant?.smolId}. (current: ${mod.findFirstEnabled?.smolId})." }
         try {
-            val modVariantParent = modVariant?.mod(modLoader)
+            val modVariantParent = modVariant?.mod(modsCache)
             if (modVariantParent != null && mod != modVariantParent) {
                 val err = "Variant and mod were different! ${mod.id}, ${modVariant.smolId}"
                 Timber.i { err }
@@ -174,7 +174,7 @@ class Access internal constructor(
                 modModificationState.update {
                     it.toMutableMap().apply { this[mod.id] = ModModificationState.EnablingVariant }
                 }
-                staging.enableModVariant(modVariant)
+                staging.enableModVariant(modVariant, modLoader)
             } else {
                 Result.success(Unit)
             }
@@ -189,7 +189,7 @@ class Access internal constructor(
             modModificationState.update {
                 it.toMutableMap().apply { this[modToEnable.mod(this@Access).id] = ModModificationState.EnablingVariant }
             }
-            return staging.enableModVariant(modToEnable)
+            return staging.enableModVariant(modToEnable, modLoader)
         } finally {
             staging.manualReloadTrigger.trigger.emit("Enabled mod: $modToEnable")
             modModificationState.update {
@@ -228,7 +228,7 @@ class Access internal constructor(
         trace(onFinished = { _, millis ->
             Timber.i { "Deleted mod variant ${modVariant.smolId} folders in ${millis}ms. Remove staging/mods files? $removeUncompressedFolder." }
         }) {
-            IOLock.write(IOLocks.modFilesLock) {
+            IOLock.write(IOLocks.modFolderLock) {
                 if (removeUncompressedFolder) {
                     val gameModsFolder = modVariant.modsFolderInfo.folder
 
