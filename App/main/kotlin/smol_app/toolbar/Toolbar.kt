@@ -15,7 +15,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.push
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.tinylog.Logger
 import smol_access.Constants
@@ -139,10 +141,12 @@ fun AppScope.launchButton() {
             onClick = {
                 val gameLauncher = SL.gamePathManager.path.value?.resolve("starsector.exe")
                 Logger.info { "Launching ${gameLauncher?.absolutePathString()} with working dir ${SL.gamePathManager.path.value}." }
-                runCommandInTerminal(
-                    command = ("\"${gameLauncher?.absolutePathString() ?: "missing game path"}\""),
-                    workingDirectory = SL.gamePathManager.path.value?.toFile()
-                )
+                CoroutineScope(Job()).launch {
+                    runCommandInTerminal(
+                        command = ("\"${gameLauncher?.absolutePathString() ?: "missing game path"}\""),
+                        workingDirectory = SL.gamePathManager.path.value?.toFile()
+                    )
+                }
             },
             enabled = SL.gamePathManager.path.value.exists(),
             colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.primary),

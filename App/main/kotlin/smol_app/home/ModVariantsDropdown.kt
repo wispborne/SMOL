@@ -96,7 +96,7 @@ fun ModVariantsDropdown(
                     backgroundColor = when (mod.state) {
                         ModState.Enabled -> MaterialTheme.colors.primary
                         else -> MaterialTheme.colors.primaryVariant
-                    }
+                    },
                 )
             ) {
                 if (modState != Access.ModModificationState.Ready) {

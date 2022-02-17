@@ -1,10 +1,7 @@
 package updatestager
 
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.withContext
 import org.update4j.Configuration
 import org.update4j.FileMetadata
 import org.update4j.UpdateOptions
@@ -121,6 +118,8 @@ class Updater(
 
     fun isUpdatedDownloaded() = SMOL_UPDATE_ZIP.exists()
 
+    private var installJob: Job? = null
+
     /**
      * This will FAIL if the application is still running when the update starts, as it cannot update files in use.
      * Call this, then immediately close SMOL.
@@ -132,13 +131,25 @@ class Updater(
         val command = "\"${
             standaloneJrePath.resolve("bin/java.exe").absolutePathString()
         }\" -jar $updateInstallerFilename '${SMOL_UPDATE_ZIP}'"
-        runCommandInTerminal(
-            command = command,
-            workingDirectory = File("."),
-            runAsync = true,
-            launchInNewWindow = true,
-            newWindowTitle = "Installing SMOL update"
-        )
+
+        try {
+            if (installJob == null) {
+                installJob = Job()
+
+                CoroutineScope(installJob!!).launch {
+                    runCommandInTerminal(
+                        command = command,
+                        workingDirectory = File("."),
+                        runAsync = true,
+                        launchInNewWindow = true,
+                        newWindowTitle = "Installing SMOL update"
+                    )
+                }
+            }
+        } finally {
+            installJob?.cancel()
+            installJob = null
+        }
     }
 
     private fun getUpdateChannelSetting() =

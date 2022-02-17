@@ -144,7 +144,7 @@ fun AppScope.settingsView(
                             item {
                                 Text(
                                     text = "Application Settings",
-                                    modifier = Modifier.padding(bottom = 8.dp, start = 16.dp, end = 16.dp),
+                                    modifier = Modifier.padding(bottom = 8.dp, start = 16.dp, end = 16.dp, top = 8.dp),
                                     fontWeight = FontWeight.Bold,
                                     fontFamily = SmolTheme.orbitronSpaceFont,
                                     fontSize = 13.sp
@@ -174,7 +174,7 @@ fun AppScope.settingsView(
 
                                     Column(modifier = Modifier.padding(start = 16.dp, top = 24.dp)) {
                                         Text(text = "Update", style = SettingsView.settingLabelStyle())
-                                        SmolSecondaryButton(
+                                        SmolButton(
                                             onClick = {
                                                 scope.launch {
                                                     val remoteConfig = SL.UI.updater.getRemoteConfig()

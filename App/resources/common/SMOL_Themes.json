@@ -10,6 +10,17 @@
       "onPrimary": "#A8DBFC",
       "hyperlink": "#00FFFF"
     },
+    "Launcher": {
+      "isDark": true,
+      "primary": "#0937D5",
+      "primaryVariant": "#1F4CDF",
+      "secondary": "#49FCFF",
+      "secondaryVariant": "#3BCBE8",
+      "surface": "#010F3F",
+      "background": "#0E162B",
+      "onPrimary": "#A8DBFC",
+      "hyperlink": "#00FFFF"
+    },
     "One Dark": {
       "isDark": true,
       "onPrimary": "#dadbe0",

@@ -1,9 +1,11 @@
 package utilities
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import timber.ktx.Timber
 import java.io.File
 
-fun runCommandInTerminal(
+suspend fun runCommandInTerminal(
     command: String,
     workingDirectory: File?,
     runAsync: Boolean = false,
@@ -25,17 +27,19 @@ fun runCommandInTerminal(
 
     val finalCommand = launcherCommand + command
     Timber.i { "Running terminal command: '$finalCommand'." }
-    Runtime.getRuntime()
-        .exec(
-            finalCommand,
-            null,
-            workingDirectory
-        ).apply {
-            if (!runAsync) {
-                this.inputStream.transferTo(System.out)
-                this.errorStream.transferTo(System.err)
+    withContext(Dispatchers.IO) {
+        Runtime.getRuntime()
+            .exec(
+                finalCommand,
+                null,
+                workingDirectory
+            ).apply {
+                if (!runAsync) {
+                    this.inputStream.transferTo(System.out)
+                    this.errorStream.transferTo(System.err)
+                }
             }
-        }
+    }
 }
 
 //Runtime.getRuntime()
