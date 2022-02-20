@@ -181,6 +181,7 @@ fun AppScope.ModGridRow(
                                 SmolTooltipText(
                                     text = buildString {
                                         append("Newer version available: ${onlineVersionInfo.modVersion}")
+                                        append("\nCurrent version: $highestLocalVersion.")
                                         append("\n\nClick to download and update.")
                                     }
                                 )
@@ -221,6 +222,7 @@ fun AppScope.ModGridRow(
                             SmolTooltipText(
                                 text = buildAnnotatedString {
                                     append("Newer version available: ${onlineVersionInfo.modVersion}.")
+                                    append("\nCurrent version: $highestLocalVersion.")
                                     append("\n\n<i>Update information is provided by the mod author, not SMOL, and cannot be guaranteed.</i>".parseHtml())
                                     if (ddUrl == null) append("\n<i>This mod does not support direct download and should be downloaded manually.</i>".parseHtml())
                                     if (hasModThread) {
