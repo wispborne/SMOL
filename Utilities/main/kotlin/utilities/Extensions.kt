@@ -63,7 +63,11 @@ fun Path?.exists(vararg options: LinkOption): Boolean = this?.let { Files.exists
 fun Path.walk(maxDepth: Int = Int.MAX_VALUE, vararg options: FileVisitOption): Sequence<Path> =
     Files.walk(this, maxDepth, *options)
         .asSequence()
-        .filter { !it.isSameFileAs(this) }
+        .filter {
+            kotlin.runCatching { !it.isSameFileAs(this) }
+                .onFailure { Timber.i(it) }
+                .getOrElse { false }
+        }
 
 fun Throwable.rootCause(): Throwable {
     return if (this.cause != null && this !== this.cause)
@@ -82,7 +86,8 @@ val String.Companion.empty
  * True if any of the arguments are equal; false otherwise.
  */
 fun Any.equalsAny(vararg other: Any): Boolean = arrayOf(*other).any { this == it }
-fun String.equalsAny(vararg other: String, ignoreCase: Boolean = true): Boolean = arrayOf(*other).any { this.equals(it, ignoreCase) }
+fun String.equalsAny(vararg other: String, ignoreCase: Boolean = true): Boolean =
+    arrayOf(*other).any { this.equals(it, ignoreCase) }
 
 /**
  * Returns items matching the predicate or, if none are matching, returns the original [Collection].
@@ -213,6 +218,8 @@ suspend fun Path.awaitWrite(timeoutMillis: Long = 1000): Path {
         throw RuntimeException("Timed out waiting ${timeoutMillis}ms for write access to $this.")
     }
 }
+
+fun Path.requiresAdmin(): Boolean = this.exists() && !this.isWritable()
 
 @Throws(IOException::class)
 fun Path.mountOf(): Path? {

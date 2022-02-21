@@ -27,7 +27,7 @@ import smol_app.UI
 import smol_app.composables.*
 import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
-import smol_app.toolbar.*
+import smol_app.toolbar.toolbar
 import smol_app.updater.UpdateSmolToast
 import timber.ktx.Timber
 import utilities.exists
@@ -35,7 +35,6 @@ import utilities.toPathOrNull
 import java.io.File
 import javax.swing.JFileChooser
 import kotlin.io.path.pathString
-import kotlin.random.Random
 
 object SettingsView {
     @Composable
@@ -117,13 +116,9 @@ fun AppScope.settingsView(
                         )
                     }
 
-                    val recomposer = currentRecomposeScope
                     val jresFound = remember { SnapshotStateList<JreEntry>() }
-                    LaunchedEffect(Random.nextLong()) {
-                        jresFound.clear()
-                        jresFound.addAll(
-                            SL.jreManager.findJREs()
-                                .sortedBy { it.versionString })
+                    LaunchedEffect(Unit) {
+                        refreshJres(jresFound)
                     }
 
                     Row(
@@ -225,15 +220,15 @@ fun AppScope.settingsView(
                                 item {
                                     jreSwitcher(
                                         modifier = Modifier.padding(start = 16.dp, top = 24.dp),
-                                        recomposer = recomposer,
-                                        jresFound = jresFound
+                                        jresFound = jresFound,
+                                        refreshJres = { refreshJres(jresFound) }
                                     )
                                 }
                                 item {
                                     jre8DownloadButton(
                                         modifier = Modifier.padding(start = 16.dp, top = 8.dp),
                                         jresFound = jresFound,
-                                        recomposer = recomposer
+                                        refreshJres = { refreshJres(jresFound) }
                                     )
                                 }
                             }
@@ -259,6 +254,13 @@ fun AppScope.settingsView(
             }
         }
     )
+}
+
+private suspend fun refreshJres(jresFound: SnapshotStateList<JreEntry>) {
+    jresFound.clear()
+    jresFound.addAll(
+        SL.jreManager.findJREs()
+            .sortedBy { it.versionString })
 }
 
 @Composable

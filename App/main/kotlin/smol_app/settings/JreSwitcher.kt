@@ -10,16 +10,17 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import smol_access.SL
 import smol_access.business.JreEntry
 import smol_access.business.JreManager
@@ -29,14 +30,16 @@ import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
 import smol_app.util.openAsUriInBrowser
 import smol_app.util.parseHtml
+import utilities.requiresAdmin
+import kotlin.io.path.isWritable
 import kotlin.io.path.relativeTo
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AppScope.jreSwitcher(
     modifier: Modifier = Modifier,
-    recomposer: RecomposeScope,
-    jresFound: SnapshotStateList<JreEntry>
+    jresFound: SnapshotStateList<JreEntry>,
+    refreshJres: suspend () -> Unit
 ) {
     Column(modifier = modifier.padding(start = 16.dp, bottom = 4.dp)) {
         if (jresFound.size > 1) {
@@ -69,24 +72,32 @@ fun AppScope.jreSwitcher(
                 if (!jreEntry.isUsedByGame) {
                     GlobalScope.launch {
                         SL.jreManager.changeJre(jreEntry)
-
-                        withContext(Dispatchers.Main) {
-                            recomposer.invalidate()
-                        }
+                        refreshJres.invoke()
                     }
                 }
             }
 
+            val tooltip = "Set ${jreEntry.versionString} as the active JRE."
+            val adminTooltip = "Run SMOL as Admin to choose this JRE."
             SmolTooltipArea(
-                tooltip = { SmolTooltipText("Set ${jreEntry.versionString} as the active JRE.") },
+                tooltip = { SmolTooltipText(if (jreEntry.path.requiresAdmin()) adminTooltip else tooltip) },
                 delayMillis = SmolTooltipArea.shortDelay
             ) {
-                Row {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     RadioButton(
                         onClick = onClick,
+                        enabled = jreEntry.path.isWritable(),
                         modifier = Modifier.align(Alignment.CenterVertically),
                         selected = jreEntry.isUsedByGame
                     )
+                    if (jreEntry.path.requiresAdmin()) {
+                        Icon(
+                            painter = painterResource("icon-admin-shield.svg"),
+                            tint = MaterialTheme.colors.onBackground,
+                            modifier = Modifier.padding(end = 8.dp),
+                            contentDescription = null
+                        )
+                    }
                     Text(
                         modifier = Modifier.align(Alignment.CenterVertically)
                             .clickable(
@@ -119,7 +130,7 @@ fun AppScope.jreSwitcher(
 fun AppScope.jre8DownloadButton(
     modifier: Modifier = Modifier,
     jresFound: SnapshotStateList<JreEntry>,
-    recomposer: RecomposeScope
+    refreshJres: suspend () -> Unit
 ) {
     val jre8DownloadProgress by SL.jreManager.jre8DownloadProgress.collectAsState()
 
@@ -139,7 +150,7 @@ fun AppScope.jre8DownloadButton(
                 onClick = {
                     GlobalScope.launch {
                         SL.jreManager.downloadJre8()
-                        recomposer.invalidate()
+                        refreshJres.invoke()
                     }
                 },
                 modifier = Modifier
