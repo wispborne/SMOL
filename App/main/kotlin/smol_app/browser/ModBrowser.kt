@@ -173,7 +173,7 @@ fun AppScope.ModBrowserView(
                 Spacer(modifier = Modifier.width(16.dp))
             }
         }, content = {
-            Column(Modifier.padding(bottom = SmolTheme.bottomBarHeight - 16.dp)) {
+            Column(Modifier.padding(bottom = SmolTheme.bottomBarHeight - 8.dp)) {
                 Row(modifier = Modifier.padding(start = 16.dp, top = 8.dp)) {
                     val splitterState = rememberSplitPaneState(
                         initialPositionPercentage = SL.UI.uiConfig.modBrowserState?.modListWidthPercent ?: 0f
