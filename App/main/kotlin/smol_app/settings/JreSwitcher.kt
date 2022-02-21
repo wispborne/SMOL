@@ -30,7 +30,7 @@ import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
 import smol_app.util.openAsUriInBrowser
 import smol_app.util.parseHtml
-import utilities.requiresAdmin
+import utilities.isMissingAdmin
 import kotlin.io.path.isWritable
 import kotlin.io.path.relativeTo
 
@@ -80,7 +80,7 @@ fun AppScope.jreSwitcher(
             val tooltip = "Set ${jreEntry.versionString} as the active JRE."
             val adminTooltip = "Run SMOL as Admin to choose this JRE."
             SmolTooltipArea(
-                tooltip = { SmolTooltipText(if (jreEntry.path.requiresAdmin()) adminTooltip else tooltip) },
+                tooltip = { SmolTooltipText(if (jreEntry.path.isMissingAdmin()) adminTooltip else tooltip) },
                 delayMillis = SmolTooltipArea.shortDelay
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -90,10 +90,10 @@ fun AppScope.jreSwitcher(
                         modifier = Modifier.align(Alignment.CenterVertically),
                         selected = jreEntry.isUsedByGame
                     )
-                    if (jreEntry.path.requiresAdmin()) {
+                    if (jreEntry.path.isMissingAdmin()) {
                         Icon(
                             painter = painterResource("icon-admin-shield.svg"),
-                            tint = MaterialTheme.colors.onBackground,
+                            tint = MaterialTheme.colors.secondary,
                             modifier = Modifier.padding(end = 8.dp),
                             contentDescription = null
                         )

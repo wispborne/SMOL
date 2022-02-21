@@ -1,16 +1,22 @@
 package smol_access.business
 
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import smol_access.config.GamePathManager
 import smol_access.model.Vmparams
 import timber.ktx.Timber
 import utilities.IOLock
 import utilities.Platform
+import utilities.isMissingAdmin
 import kotlin.io.path.*
 
 class VmParamsManager(
     gamePathManager: GamePathManager,
     private val platform: Platform
 ) {
+    private val vmparams_ = MutableStateFlow(read())
+    val vmparams = vmparams_.asStateFlow()
+
     private val path = gamePathManager.path.value?.let {
         when (platform) {
             Platform.Windows -> it.resolve("vmparams")
@@ -27,12 +33,19 @@ class VmParamsManager(
         }
     }
 
+    init {
+        read()
+    }
+
+    fun isMissingAdmin() = path?.isMissingAdmin()
+
     fun read(): Vmparams? =
         IOLock.read {
             if (path?.exists() != true) {
                 null
             } else {
                 Vmparams(path.readText())
+                    .also { vmparams_.value = it }
             }
         }
 
@@ -72,6 +85,9 @@ class VmParamsManager(
             }
                 .onFailure { Timber.w(it) { "Unable to update vmparams file. Ensure that SMOL has permission (run as admin?)." } }
         }
+
+        // Update `vmparams` variable
+        read()
     }
 
     fun update(mutator: (Vmparams?) -> Vmparams?): Vmparams? =

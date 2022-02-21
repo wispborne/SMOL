@@ -219,7 +219,7 @@ suspend fun Path.awaitWrite(timeoutMillis: Long = 1000): Path {
     }
 }
 
-fun Path.requiresAdmin(): Boolean = this.exists() && !this.isWritable()
+fun Path.isMissingAdmin(): Boolean = this.exists() && !this.isWritable()
 
 @Throws(IOException::class)
 fun Path.mountOf(): Path? {

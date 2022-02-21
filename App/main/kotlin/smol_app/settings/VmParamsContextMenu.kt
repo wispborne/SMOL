@@ -30,14 +30,15 @@ import kotlin.math.roundToInt
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun AppScope.ramButton(modifier: Modifier = Modifier) {
+fun AppScope.changeRamSection(modifier: Modifier = Modifier) {
     val showVmParamsMenu = remember { mutableStateOf(false) }
     Column(
         modifier = modifier.padding(start = 16.dp, bottom = 8.dp)
     ) {
+        val assignedRam = SL.UI.vmParamsManager.vmparams.collectAsState().value?.xmx
         Row(Modifier.padding(bottom = 4.dp)) {
             Text(
-                text = "Assigned RAM",
+                text = "Assigned RAM: $assignedRam",
                 style = SettingsView.settingLabelStyle(),
                 modifier = Modifier.align(Alignment.CenterVertically)
             )
@@ -57,14 +58,31 @@ fun AppScope.ramButton(modifier: Modifier = Modifier) {
             }
         }
 
+        val isMissingAdmin = SL.UI.vmParamsManager.isMissingAdmin() == true
         SmolTooltipArea(
-            tooltip = { SmolTooltipText("Adjust the RAM allocated to the game. Modifies vmparams.") },
+            tooltip = {
+                SmolTooltipText(
+                    if (isMissingAdmin) "Run SMOL as Admin to modify vmparams."
+                    else "Adjust the RAM allocated to the game. Modifies vmparams."
+                )
+            },
             delayMillis = SmolTooltipArea.shortDelay
         ) {
-            SmolButton(
-                onClick = { showVmParamsMenu.value = true }
-            ) {
-                Text(text = "Click to Set...")
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (isMissingAdmin) {
+                    Icon(
+                        painter = painterResource("icon-admin-shield.svg"),
+                        tint = MaterialTheme.colors.secondary,
+                        modifier = Modifier.padding(end = 8.dp),
+                        contentDescription = null
+                    )
+                }
+                SmolButton(
+                    onClick = { showVmParamsMenu.value = true },
+                    enabled = !isMissingAdmin
+                ) {
+                    Text(text = "Click to Set...")
+                }
             }
         }
     }
@@ -80,7 +98,7 @@ fun vmParamsContextMenu(
     val cellMinWidth = 100.dp
     val width = cellMinWidth * 2
     val gridHeight = 240.dp
-    var assignedRam by remember { mutableStateOf(SL.UI.vmParamsManager.read()?.xmx) }
+    val assignedRam = SL.UI.vmParamsManager.vmparams.collectAsState().value?.xmx
     val presetsInGb = 2..6
 
     val availableSystemRam = runCatching { SystemInfo().hardware.memory.available }
@@ -142,7 +160,6 @@ fun vmParamsContextMenu(
                         shape = SmolTheme.smolFullyClippedButtonShape(),
                         onClick = {
                             SL.UI.vmParamsManager.update { it?.run { withGb(presetGb) } }
-                            assignedRam = SL.UI.vmParamsManager.read()?.xmx
                         }
                     ) {
                         Text(
@@ -201,7 +218,6 @@ fun vmParamsContextMenu(
             onClick = {
                 if (mb.toIntOrNull() != null) {
                     SL.UI.vmParamsManager.update { it?.run { withMb(mb.toInt()) } }
-                    assignedRam = SL.UI.vmParamsManager.read()?.xmx
                 }
             }
         ) {

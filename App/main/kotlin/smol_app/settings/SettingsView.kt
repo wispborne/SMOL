@@ -216,7 +216,7 @@ fun AppScope.settingsView(
                                         fontSize = 13.sp
                                     )
                                 }
-                                item { ramButton(modifier = Modifier.padding(start = 16.dp, top = 16.dp)) }
+                                item { changeRamSection(modifier = Modifier.padding(start = 16.dp, top = 16.dp)) }
                                 item {
                                     jreSwitcher(
                                         modifier = Modifier.padding(start = 16.dp, top = 24.dp),
