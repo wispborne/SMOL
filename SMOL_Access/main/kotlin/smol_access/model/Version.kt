@@ -46,6 +46,8 @@ data class Version(
 
         /**
          * `compareTo`, except it compares numbers as numbers instead of their unicode symbol value.
+         * Can use <https://github.com/apache/maven/blob/master/maven-artifact/src/main/java/org/apache/maven/artifact/versioning/ComparableVersion.java>
+         *     if this doesn't work right.
          */
         fun String.compareRecognizingNumbers(other: String): Int {
             val thisChunked = this.splitIntoAlphaAndNumeric()

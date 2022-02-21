@@ -44,6 +44,7 @@ import smol_app.UI
 import smol_app.browser.chromium.CefBrowserPanel
 import smol_app.browser.chromium.ChromiumBrowser
 import smol_app.composables.*
+import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
 import smol_app.toolbar.*
 import smol_app.util.*
@@ -84,13 +85,7 @@ fun AppScope.ModBrowserView(
         modifier = modifier,
         topBar = {
             TopAppBar(modifier = Modifier.height(SmolTheme.topBarHeight)) {
-                launchButton()
-                installModsButton()
-                Spacer(Modifier.width(16.dp))
-                homeButton()
-                screenTitle(text = "Mod Browser")
-                profilesButton()
-                settingsButton()
+                toolbar(router.state.value.activeChild.instance as Screen)
 
                 SmolTooltipArea(
                     modifier = Modifier

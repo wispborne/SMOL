@@ -66,13 +66,8 @@ fun AppScope.homeView(
         modifier = modifier,
         topBar = {
             TopAppBar(modifier = Modifier.height(SmolTheme.topBarHeight)) {
-                launchButton()
-                installModsButton()
-                Spacer(Modifier.width(16.dp))
-                screenTitle(text = "Home")
-                modBrowserButton()
-                profilesButton()
-                settingsButton()
+                toolbar(router.state.value.activeChild.instance as Screen)
+
                 if (isWriteLocked.value) {
                     CircularProgressIndicator(
                         modifier = Modifier.padding(start = 16.dp)

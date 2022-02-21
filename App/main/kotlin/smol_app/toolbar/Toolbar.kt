@@ -5,13 +5,19 @@ package smol_app.toolbar
 import AppScope
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.push
@@ -36,96 +42,77 @@ import utilities.weightedRandom
 import java.awt.FileDialog
 import kotlin.io.path.absolutePathString
 
-
 @Composable
-fun AppScope.settingsButton() {
-    SmolButton(
-        onClick = { router.push(Screen.Settings) },
-        modifier = Modifier.padding(start = 16.dp)
-    ) {
-        Text("Settings")
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun AppScope.modBrowserButton() {
-    val isEnabled = Constants.isModBrowserEnabled()
-    SmolTooltipArea(
-        tooltip = {
-            SmolTooltipText(
-                when {
-                    !Constants.isJCEFEnabled() -> "JCEF not found; add to /libs to enable the Mod Browser."
-                    !SL.gamePathManager.path.value.exists() -> "Set a valid game path."
-                    else -> "View and install mods from the internet."
-                }
-            )
-        },
-        delayMillis = SmolTooltipArea.shortDelay
-    ) {
-        SmolButton(
-            enabled = isEnabled,
-            onClick = { router.push(Screen.ModBrowser()) },
-            modifier = Modifier.padding(start = 16.dp)
+fun tabButton(
+    modifier: Modifier = Modifier, enabled: Boolean, onClick: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    Column {
+        val color = MaterialTheme.colors.secondary
+        TextButton(
+            onClick = { if (enabled) onClick.invoke() },
+            colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.surface),
+            modifier = modifier
+                .padding(start = 16.dp)
+                .run {
+                    if (!enabled) this.drawWithContent {
+                        drawContent()
+                        val y = size.height
+                        val x = size.width
+                        val strokeWidth = 2f
+                        drawLine(
+                            strokeWidth = strokeWidth,
+                            color = color,
+                            cap = StrokeCap.Square,
+                            start = Offset(x = 0f, y = y),
+                            end = Offset(x = x, y = y)
+                        )
+                    } else this
+                },
         ) {
-            Text("Mod Browser")
+            Column {
+                content.invoke()
+            }
         }
     }
 }
 
 @Composable
-fun AppScope.profilesButton() {
-    SmolTooltipArea(
-        tooltip = {
-            SmolTooltipText(
-                text = when {
-                    !SL.gamePathManager.path.value.exists() -> "Set a valid game path."
-                    else -> "Create and swap between enabled mods."
-                }
-            )
-        },
-        delayMillis = SmolTooltipArea.shortDelay
-    ) {
-        SmolButton(
-            onClick = { router.push(Screen.Profiles) },
-            enabled = Constants.isModProfilesEnabled(),
-            modifier = Modifier.padding(start = 16.dp)
-        ) {
-            Text("Profiles")
-        }
+fun AppScope.toolbar(currentScreen: Screen) {
+    launchButton()
+    installModsButton()
+    Row {
+        Divider(
+            modifier = Modifier
+                .padding(start = 24.dp, end = 8.dp)
+                .size(height = 24.dp, width = 1.dp)
+                .align(Alignment.CenterVertically)
+                .background(color = MaterialTheme.colors.onSurface.copy(alpha = .3f))
+        )
+        homeButton(enabled = currentScreen !is Screen.Home)
+        modBrowserButton(enabled = currentScreen !is Screen.ModBrowser)
+        profilesButton(enabled = currentScreen !is Screen.Profiles)
+        settingsButton(enabled = currentScreen !is Screen.Settings)
     }
 }
 
-@Composable
-fun AppScope.homeButton(modifier: Modifier = Modifier) {
-    SmolTooltipArea(
-        tooltip = { SmolTooltipText("View and change mods.") },
-        delayMillis = SmolTooltipArea.shortDelay
-    ) {
-        SmolButton(
-            onClick = { router.push(Screen.Home) },
-            modifier = modifier.padding(start = 16.dp)
-        ) {
-            Text("Home")
-        }
-    }
-}
-
-val sayings = listOf(
+val launchQuotes = listOf(
     "Engage!" to 10f,
     "Make it so." to 10f,
     "Onward!" to 10f,
-    "To infinity, and beyond!" to 8f,
     "Execute." to 10f,
+    "Burn bright." to 8f,
+    "To infinity, and beyond!" to 8f,
     "Take us out." to 8f,
     "Punch it, Chewie." to 5f,
     "Let's fly!" to 7f,
+    "One smol step for humankind." to 5f,
     "I am a leaf on the wind. Watch how I soar." to 4f
 )
 
 @Composable
-fun AppScope.launchButton() {
-    val launchText = remember { sayings.weightedRandom() }
+fun launchButton(modifier: Modifier = Modifier, enabled: Boolean = true) {
+    val launchText = remember { launchQuotes.weightedRandom() }
     SmolTooltipArea(
         tooltip = {
             SmolTooltipText(
@@ -148,9 +135,9 @@ fun AppScope.launchButton() {
                     )
                 }
             },
-            enabled = SL.gamePathManager.path.value.exists(),
+            enabled = SL.gamePathManager.path.value.exists() && enabled,
             colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.primary),
-            modifier = Modifier
+            modifier = modifier
                 .padding(start = 16.dp),
             border = BorderStroke(
                 width = 4.dp,
@@ -173,7 +160,7 @@ fun AppScope.launchButton() {
 }
 
 @Composable
-fun AppScope.installModsButton(modifier: Modifier = Modifier) {
+fun AppScope.installModsButton(modifier: Modifier = Modifier, enabled: Boolean = true) {
     SmolTooltipArea(
         tooltip = { SmolTooltipText(text = "Select one or more mod archives or mod_info.json files.") },
         delayMillis = SmolTooltipArea.shortDelay
@@ -207,6 +194,7 @@ fun AppScope.installModsButton(modifier: Modifier = Modifier) {
                         }
                 }
             },
+            enabled = enabled,
             modifier = modifier.padding(start = 16.dp)
         ) {
             Text("Install Mods")
@@ -216,5 +204,77 @@ fun AppScope.installModsButton(modifier: Modifier = Modifier) {
 //                tint = SmolTheme.dimmedIconColor()
 //            )
         }
+    }
+}
+
+@Composable
+fun AppScope.homeButton(modifier: Modifier = Modifier, enabled: Boolean = true) {
+    SmolTooltipArea(
+        tooltip = { SmolTooltipText("View and change mods.") },
+        delayMillis = SmolTooltipArea.shortDelay
+    ) {
+        tabButton(
+            enabled = enabled,
+            onClick = { router.push(Screen.Home) }
+        ) {
+            Text("Home")
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun AppScope.modBrowserButton(modifier: Modifier = Modifier, enabled: Boolean = true) {
+    val isEnabled = Constants.isModBrowserEnabled() && enabled
+    SmolTooltipArea(
+        tooltip = {
+            SmolTooltipText(
+                when {
+                    !Constants.isJCEFEnabled() -> "JCEF not found; add to /libs to enable the Mod Browser."
+                    !SL.gamePathManager.path.value.exists() -> "Set a valid game path."
+                    else -> "View and install mods from the internet."
+                }
+            )
+        },
+        delayMillis = SmolTooltipArea.shortDelay
+    ) {
+        tabButton(
+            enabled = isEnabled,
+            onClick = { router.push(Screen.ModBrowser()) }
+        ) {
+            Text("Mod Browser")
+        }
+    }
+}
+
+@Composable
+fun AppScope.profilesButton(modifier: Modifier = Modifier, enabled: Boolean = true) {
+    SmolTooltipArea(
+        tooltip = {
+            SmolTooltipText(
+                text = when {
+                    !SL.gamePathManager.path.value.exists() -> "Set a valid game path."
+                    else -> "Create and swap between enabled mods."
+                }
+            )
+        },
+        delayMillis = SmolTooltipArea.shortDelay
+    ) {
+        tabButton(
+            onClick = { router.push(Screen.Profiles) },
+            enabled = Constants.isModProfilesEnabled() && enabled,
+        ) {
+            Text("Profiles")
+        }
+    }
+}
+
+@Composable
+fun AppScope.settingsButton(modifier: Modifier = Modifier, enabled: Boolean = true) {
+    tabButton(
+        onClick = { router.push(Screen.Settings) },
+        enabled = enabled,
+    ) {
+        Text("Settings")
     }
 }

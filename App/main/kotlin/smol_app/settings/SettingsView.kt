@@ -25,6 +25,7 @@ import smol_access.business.JreEntry
 import smol_access.config.SettingsPath
 import smol_app.UI
 import smol_app.composables.*
+import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
 import smol_app.toolbar.*
 import smol_app.updater.UpdateSmolToast
@@ -53,13 +54,7 @@ fun AppScope.settingsView(
     val showLogPanel = remember { mutableStateOf(false) }
     Scaffold(topBar = {
         TopAppBar(modifier = Modifier.height(SmolTheme.topBarHeight)) {
-            launchButton()
-            installModsButton()
-            Spacer(Modifier.width(16.dp))
-            homeButton()
-            modBrowserButton()
-            profilesButton()
-            screenTitle(text = "Settings")
+            toolbar(router.state.value.activeChild.instance as Screen)
         }
     },
         content = {
@@ -163,11 +158,19 @@ fun AppScope.settingsView(
                                         settingsPathErrors = settingsPathErrors
                                     )
 
-                                    // Confirm buttons
+                                    // Confirm button
+                                    var initialPath by remember { mutableStateOf(gamePath) }
                                     Row(
-                                        Modifier.padding(start = 16.dp, end = 16.dp)
+                                        modifier = Modifier.padding(start = 16.dp, end = 16.dp)
                                     ) {
-                                        SmolButton(onClick = { saveSettings() }) { Text("Apply") }
+                                        SmolButton(
+                                            enabled = gamePath != initialPath,
+                                            onClick = {
+                                                saveSettings()
+                                                initialPath = gamePath
+                                            }) {
+                                            Text("Apply")
+                                        }
                                     }
 
                                     themeDropdown(Modifier.padding(start = 16.dp, top = 24.dp))

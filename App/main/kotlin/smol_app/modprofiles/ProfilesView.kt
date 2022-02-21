@@ -26,6 +26,7 @@ import smol_access.model.ModVariant
 import smol_access.model.SmolId
 import smol_access.model.UserProfile
 import smol_app.composables.*
+import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.lighten
 import smol_app.toolbar.*
@@ -61,13 +62,7 @@ fun AppScope.ProfilesView(
     Scaffold(
         topBar = {
             TopAppBar(modifier = Modifier.height(SmolTheme.topBarHeight)) {
-                launchButton()
-                installModsButton()
-                Spacer(Modifier.width(16.dp))
-                homeButton()
-                modBrowserButton()
-                screenTitle(text = "Mod Profiles")
-                settingsButton()
+                toolbar(router.state.value.activeChild.instance as Screen)
             }
         }, content = {
             val scrollState = rememberScrollState()
