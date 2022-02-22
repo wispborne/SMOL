@@ -3,6 +3,7 @@ package smol_access.model
 import smol_access.Access
 import smol_access.Constants
 import smol_access.business.ModsCache
+import utilities.isMissingAdmin
 import java.nio.file.Path
 import java.util.*
 import kotlin.io.path.exists
@@ -76,12 +77,6 @@ data class ModVariant(
     val versionCheckerInfo: VersionCheckerInfo?,
     val modsFolderInfo: Mod.ModsFolderInfo
 ) {
-    /**
-     * Composite key: mod id + mod version.
-     */
-    val smolId: SmolId
-        get() = createSmolId(modInfo)
-
     companion object {
         private val smolIdAllowedChars = Regex("""[^0-9a-zA-Z\\.\-_]""")
         fun createSmolId(id: String, version: Version) =
@@ -108,6 +103,12 @@ data class ModVariant(
             get() = Mod.MOCK.variants.first()
     }
 
+    /**
+     * Composite key: mod id + mod version.
+     */
+    val smolId: SmolId
+        get() = createSmolId(modInfo)
+
     internal fun mod(modsCache: ModsCache) = modsCache.mods.value?.mods!!.first { it.id == modInfo.id }
     fun mod(access: Access) = access.mods.value?.mods!!.first { it.id == modInfo.id }
 
@@ -115,6 +116,10 @@ data class ModVariant(
         get() = modsFolderInfo.folder.resolve(Constants.MOD_INFO_FILE).exists()
 
     fun generateVariantFolderName() = Companion.generateVariantFolderName(this.modInfo)
+
+    fun isMissingAdmin() = modsFolderInfo.folder.isMissingAdmin()
+            || modsFolderInfo.folder.resolve(Constants.MOD_INFO_FILE).isMissingAdmin()
+            || modsFolderInfo.folder.resolve(Constants.MOD_INFO_FILE_DISABLED).isMissingAdmin()
 }
 
 typealias SmolId = String

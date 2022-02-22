@@ -178,7 +178,12 @@ class Archives internal constructor(
                                         ArchiveExtractToMemoryCallback(indicesToExtract, inArchive) { results ->
                                             modInfo = modInfoFile?.let {
                                                 results[modInfoFile.itemIndex]?.let {
-                                                    modInfoLoader.deserializeModInfoFile(modInfoJson = it)
+                                                    kotlin.runCatching {
+                                                        modInfoLoader.deserializeModInfoFile(
+                                                            modInfoJson = it
+                                                        )
+                                                    }
+                                                        .getOrNull()
                                                 }
                                             }
 

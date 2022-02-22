@@ -45,7 +45,7 @@ class ModInfoLoader(
                                 && (file.name.equals(Constants.MOD_INFO_FILE, ignoreCase = true)
                                         || file.name.equals(Constants.MOD_INFO_FILE_DISABLED, ignoreCase = true))
                             ) {
-                                modInfo = deserializeModInfoFile(file.readText())
+                                modInfo = kotlin.runCatching { deserializeModInfoFile(file.readText()) }.getOrNull()
                             }
                         }
 
@@ -77,7 +77,7 @@ class ModInfoLoader(
                                         }
                                     }
                                 }
-                                    .onFailure { Timber.w(it) { "Error reading version checker file. This mod has defined a `data/config/version/version_files.csv`."} }
+                                    .onFailure { Timber.w(it) { "Error reading version checker file. This mod has defined a `data/config/version/version_files.csv`." } }
                                     .getOrNull()
                             }
                         }

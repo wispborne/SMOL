@@ -31,6 +31,8 @@ class JreManager(
         private val versionRegex = Regex("""(\d+\.\d+\.\d+[\d_\-.+\w]*)""")
     }
 
+    fun isMissingAdmin() = gamePathManager.path.value?.isMissingAdmin() == true
+
     suspend fun findJREs(): List<JreEntry> {
         return withContext(Dispatchers.IO) {
             IOLock.read(IOLocks.gameMainFolderLock) {

@@ -133,33 +133,46 @@ fun AppScope.jre8DownloadButton(
     refreshJres: suspend () -> Unit
 ) {
     val jre8DownloadProgress by SL.jreManager.jre8DownloadProgress.collectAsState()
+    val isMissingAdmin = SL.jreManager.isMissingAdmin()
 
     Row(modifier = modifier.padding(start = 16.dp)) {
         SmolTooltipArea(
             tooltip = {
                 SmolTooltipText(
-                    "Download JRE 8 to '<code>${
-                        SL.gamePathManager.path.value?.resolve(JreManager.gameJreFolderName)
-                    }</code>'.".parseHtml()
+                    text =
+                    if (isMissingAdmin) "Run SMOL as Admin to download.".parseHtml()
+                    else
+                        "Download JRE 8 to '<code>${
+                            SL.gamePathManager.path.value?.resolve(JreManager.gameJreFolderName)
+                        }</code>'.".parseHtml()
                 )
             },
             delayMillis = SmolTooltipArea.shortDelay
         ) {
-            SmolButton(
-                enabled = jre8DownloadProgress == null,
-                onClick = {
-                    GlobalScope.launch {
-                        SL.jreManager.downloadJre8()
-                        refreshJres.invoke()
-                    }
-                },
-                modifier = Modifier
-                    .align(Alignment.CenterVertically)
-            ) {
-                Text(
-                    text = if (jresFound.any { it.versionString.contains("1.8") })
-                        "Redownload JRE 8"
-                    else "Download JRE 8"
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                SmolButton(
+                    enabled = jre8DownloadProgress == null && !isMissingAdmin,
+                    onClick = {
+                        GlobalScope.launch {
+                            SL.jreManager.downloadJre8()
+                            refreshJres.invoke()
+                        }
+                    },
+                    modifier = Modifier
+                        .align(Alignment.CenterVertically)
+                ) {
+                    Text(
+                        text = if (jresFound.any { it.versionString.contains("1.8") })
+                            "Redownload JRE 8"
+                        else "Download JRE 8"
+                    )
+                }
+
+                Icon(
+                    painter = painterResource("icon-admin-shield.svg"),
+                    tint = MaterialTheme.colors.secondary,
+                    modifier = Modifier.padding(start = 8.dp),
+                    contentDescription = null
                 )
             }
         }

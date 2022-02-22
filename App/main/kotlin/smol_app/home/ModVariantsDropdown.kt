@@ -19,7 +19,6 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.tinylog.Logger
 import smol_access.Access
-import smol_access.Constants
 import smol_access.SL
 import smol_access.model.Mod
 import smol_access.model.ModVariant
@@ -32,8 +31,6 @@ import smol_app.util.state
 sealed class DropdownAction {
     data class ChangeToVariant(val variant: ModVariant) : DropdownAction()
     object Disable : DropdownAction()
-    data class MigrateMod(val mod: Mod) : DropdownAction()
-    data class ResetToArchive(val variant: ModVariant) : DropdownAction()
 }
 
 @ExperimentalFoundationApi
@@ -87,10 +84,11 @@ fun ModVariantsDropdown(
     Box(modifier) {
         Box(Modifier.width(IntrinsicSize.Min)) {
             val hasEnabledVariant = mod.enabledVariants.isNotEmpty()
+            val hasSingleVariant = mod.variants.size == 1
 
             SmolButton(
                 onClick = {
-                    if (mod.variants.size == 1) {
+                    if (hasSingleVariant) {
                         // If only one variant, one-click to enable and disable
                         GlobalScope.launch {
                             kotlin.runCatching {
@@ -140,10 +138,12 @@ fun ModVariantsDropdown(
                     }
                     Text(
                         text = when {
+                            hasSingleVariant && hasEnabledVariant -> "Disable"
                             // If there is an enabled variant, show its version string.
                             hasEnabledVariant -> mod.enabledVariants.joinToString {
                                 it.modInfo.version.toString().replace(' ', ' ')
                             }
+                            hasSingleVariant && !hasEnabledVariant -> "Enable"
                             // If no enabled variant, show "Disabled"
                             else -> "Disabled"
                         },
@@ -151,10 +151,12 @@ fun ModVariantsDropdown(
                         fontFamily = font,
                         maxLines = 1
                     )
-                    SmolDropdownArrow(
-                        Modifier.align(Alignment.CenterVertically),
-                        expanded
-                    )
+                    if (mod.variants.size > 1) {
+                        SmolDropdownArrow(
+                            modifier = Modifier.align(Alignment.CenterVertically),
+                            expanded = expanded
+                        )
+                    }
                 }
                 val background = MaterialTheme.colors.background
                 MaterialTheme(shapes = Shapes(medium = SmolTheme.smolFullyClippedButtonShape())) {
@@ -198,21 +200,40 @@ fun ModVariantsDropdown(
                                                     is DropdownAction.Disable -> {
                                                         SL.access.disableMod(mod = mod)
                                                     }
-                                                    is DropdownAction.MigrateMod -> {
-                                                        // TODO
-//                                                SL.archives.compressModsInFolder(
-//                                                    mod.modsFolderInfo?.folder ?: return@runCatching
-//                                                )
-                                                    }
-                                                    is DropdownAction.ResetToArchive -> {
-                                                        // TODO
-                                                    }
                                                 }
                                             }
                                                 .onFailure { Logger.error(it) }
                                         }
                                     }) {
                                     Row {
+                                        @Composable
+                                        fun shield() {
+                                            SmolTooltipArea(
+                                                tooltip = {
+                                                    SmolTooltipText(text = "Run SMOL as Admin.")
+                                                },
+                                                delayMillis = SmolTooltipArea.shortDelay
+                                            ) {
+                                                Icon(
+                                                    painter = painterResource("icon-admin-shield.svg"),
+                                                    tint = MaterialTheme.colors.secondary,
+                                                    modifier = Modifier.padding(end = 8.dp),
+                                                    contentDescription = null
+                                                )
+                                            }
+                                        }
+                                        when (action) {
+                                            is DropdownAction.ChangeToVariant -> {
+                                                if (action.variant.isMissingAdmin()) {
+                                                    shield()
+                                                }
+                                            }
+                                            is DropdownAction.Disable -> {
+                                                if (firstEnabledVariant?.isMissingAdmin() == true) {
+                                                    shield()
+                                                }
+                                            }
+                                        }
                                         Text(
                                             modifier = Modifier
                                                 .align(Alignment.CenterVertically)
@@ -220,8 +241,6 @@ fun ModVariantsDropdown(
                                             text = when (action) {
                                                 is DropdownAction.ChangeToVariant -> action.variant.modInfo.version.toString()
                                                 is DropdownAction.Disable -> "Disable"
-                                                is DropdownAction.MigrateMod -> "Migrate to ${Constants.APP_NAME}"
-                                                is DropdownAction.ResetToArchive -> "Reset to default"
                                             },
                                             fontWeight = FontWeight.Bold,
                                             fontFamily = font
