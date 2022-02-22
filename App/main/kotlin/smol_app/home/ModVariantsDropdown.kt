@@ -14,7 +14,6 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.pointerMoveFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -87,8 +86,25 @@ fun ModVariantsDropdown(
 
     Box(modifier) {
         Box(Modifier.width(IntrinsicSize.Min)) {
+            val hasEnabledVariant = mod.enabledVariants.isNotEmpty()
+
             SmolButton(
-                onClick = { expanded = true },
+                onClick = {
+                    if (mod.variants.size == 1) {
+                        // If only one variant, one-click to enable and disable
+                        GlobalScope.launch {
+                            kotlin.runCatching {
+                                if (hasEnabledVariant) {
+                                    SL.access.disableMod(mod)
+                                } else {
+                                    SL.access.changeActiveVariant(mod, mod.variants.firstOrNull())
+                                }
+                            }
+                        }
+                    } else {
+                        expanded = true
+                    }
+                },
                 modifier = Modifier
                     .align(Alignment.CenterStart),
                 shape = SmolTheme.smolFullyClippedButtonShape(),
@@ -125,7 +141,9 @@ fun ModVariantsDropdown(
                     Text(
                         text = when {
                             // If there is an enabled variant, show its version string.
-                            mod.enabledVariants.isNotEmpty() -> mod.enabledVariants.joinToString { it.modInfo.version.toString().replace(' ', ' ') }
+                            hasEnabledVariant -> mod.enabledVariants.joinToString {
+                                it.modInfo.version.toString().replace(' ', ' ')
+                            }
                             // If no enabled variant, show "Disabled"
                             else -> "Disabled"
                         },
@@ -178,9 +196,7 @@ fun ModVariantsDropdown(
                                                         SL.access.changeActiveVariant(mod, action.variant)
                                                     }
                                                     is DropdownAction.Disable -> {
-                                                        SL.access.disableModVariant(
-                                                            firstEnabledVariant ?: return@runCatching
-                                                        )
+                                                        SL.access.disableMod(mod = mod)
                                                     }
                                                     is DropdownAction.MigrateMod -> {
                                                         // TODO
