@@ -45,7 +45,7 @@ class Main {
                             it.printStackTrace()
                         }
                         .onSuccess {
-                            println("Done.")
+                            println("Done. SMOL does not automatically relaunch.")
                         }
                 } finally {
                     isThreadDone = true

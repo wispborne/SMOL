@@ -23,10 +23,10 @@ import smol_app.navigation.Screen
 import smol_app.navigation.rememberRouter
 import smol_app.util.SmolPair
 import smol_app.util.SmolWindowState
-import utilities.currentPlatform
 import smol_app.util.isJCEFEnabled
 import timber.LogLevel
 import timber.ktx.Timber
+import utilities.currentPlatform
 import utilities.makeFinite
 import java.util.*
 import javax.swing.UIManager
@@ -99,6 +99,8 @@ fun main() = application {
         }
     }
 
+
+    Timber.i { "Launched SMOL ${Constants.APP_VERSION}." }
 
     val onKeyEventHandlers = remember { mutableListOf<(KeyEvent) -> Boolean>() }
 

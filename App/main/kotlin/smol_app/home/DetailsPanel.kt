@@ -19,17 +19,14 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.pointer.isPrimaryPressed
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.ExperimentalUnitApi
-import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.TextUnitType
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.*
 import smol_access.SL
 import smol_access.model.Mod
 import smol_app.composables.SmolLinkText
-import smol_app.composables.TiledImage
+import smol_app.composables.SmolTooltipArea
+import smol_app.composables.SmolTooltipText
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.withAdjustedBrightness
 import smol_app.util.*
@@ -128,6 +125,21 @@ fun BoxScope.detailsPanel(
                             fontFamily = SmolTheme.fireCodeFont
                         )
                     }
+                    if (modInfo?.isUtilityMod == true) {
+                        SmolTooltipArea(tooltip = { SmolTooltipText(text = "Utility mods may be added or removed from a save at will.") }) {
+                            Row(
+                                modifier = Modifier.padding(top = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    painter = painterResource("icon-utility-mod.svg"),
+                                    modifier = Modifier.padding(end = 4.dp).size(24.dp),
+                                    contentDescription = null
+                                )
+                                Text("Utility Mod", fontSize = 15.sp)
+                            }
+                        }
+                    }
                     Text("Author", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
                     Text(modInfo?.author ?: "(no author specified)", modifier = Modifier.padding(top = 2.dp))
                     Text("Description", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
@@ -141,7 +153,8 @@ fun BoxScope.detailsPanel(
                             dependencies
                                 .joinToString {
                                     val depName: String =
-                                        it.second?.findHighestVersion?.modInfo?.name ?: it.second?.id ?: it.first.id ?: ""
+                                        it.second?.findHighestVersion?.modInfo?.name ?: it.second?.id ?: it.first.id
+                                        ?: ""
                                     depName + if (it.first.version != null) " v${it.first.version?.raw}" else ""
                                 },
                             modifier = Modifier.padding(top = 2.dp)
