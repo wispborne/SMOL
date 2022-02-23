@@ -168,12 +168,14 @@ fun AppScope.jre8DownloadButton(
                     )
                 }
 
-                Icon(
-                    painter = painterResource("icon-admin-shield.svg"),
-                    tint = MaterialTheme.colors.secondary,
-                    modifier = Modifier.padding(start = 8.dp),
-                    contentDescription = null
-                )
+                if (isMissingAdmin) {
+                    Icon(
+                        painter = painterResource("icon-admin-shield.svg"),
+                        tint = MaterialTheme.colors.secondary,
+                        modifier = Modifier.padding(start = 8.dp),
+                        contentDescription = null
+                    )
+                }
             }
         }
 

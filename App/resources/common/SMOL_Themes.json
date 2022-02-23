@@ -91,9 +91,9 @@
       "primaryVariant": "#45B034",
       "secondary": "#BEE45F",
       "secondaryVariant": "#9EC83B",
-      "surface": "#3F978E",
+      "surface": "#27847A",
       "background": "#136E64",
-      "hyperlink": "#F50607"
+      "hyperlink": "#FF6060"
     },
     "VIC": {
       "isDark": true,
@@ -154,7 +154,7 @@
       "secondaryVariant": "#97745D",
       "surface": "#383049",
       "background": "#291E3F",
-      "hyperlink": "#B79782"
+      "hyperlink": "#EECD7F"
     },
     "Comes": {
       "isDark": true,
@@ -164,7 +164,7 @@
       "secondaryVariant": "#97745D",
       "surface": "#544A6A",
       "background": "#383049",
-      "hyperlink": "#B79782"
+      "hyperlink": "#EECD7F"
     },
     "Red Pain": {
       "isDark": true,

@@ -156,7 +156,7 @@ fun AppScope.settingsView(
                                     // Confirm button
                                     var initialPath by remember { mutableStateOf(gamePath) }
                                     Row(
-                                        modifier = Modifier.padding(start = 16.dp, end = 16.dp)
+                                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp)
                                     ) {
                                         SmolButton(
                                             enabled = gamePath != initialPath,
