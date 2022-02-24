@@ -1,0 +1,6 @@
+<component name="CopyrightManager">
+  <copyright>
+    <option name="notice" value="This file is distributed under the GPLv3. An informal description follows:&#10;- Anyone can copy, modify and distribute this software as long as the other points are followed.&#10;- You must include the license and copyright notice with each and every distribution.&#10;- You may this software for commercial purposes.&#10;- If you modify it, you must indicate changes made to the code.&#10;- Any modifications of this code base MUST be distributed with the same license, GPLv3.&#10;- This software is provided without warranty.&#10;- The software author or license can not be held liable for any damages inflicted by the software.&#10;The full license is available from &lt;https://www.gnu.org/licenses/gpl-3.0.txt&gt;." />
+    <option name="myName" value="GPLv3" />
+  </copyright>
+</component>
