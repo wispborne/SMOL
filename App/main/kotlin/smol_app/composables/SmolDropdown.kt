@@ -30,6 +30,7 @@ abstract class SmolDropdownMenuItem(
 
 class SmolDropdownMenuItemTemplate(
     val text: String,
+    val iconPath: String? = null,
     backgroundColor: Color? = null,
     border: Border? = null,
     val contentColor: Color? = null,
@@ -89,6 +90,13 @@ fun SmolDropdownWithButton(
                     )
                 ) {
                     if (selectedItem is SmolDropdownMenuItemTemplate) {
+                        if (!selectedItem.iconPath.isNullOrBlank()) {
+                            Icon(
+                                painter = painterResource(selectedItem.iconPath),
+                                modifier = Modifier.padding(end = 8.dp),
+                                contentDescription = null
+                            )
+                        }
                         Text(
                             text = selectedItem.text,
                             fontWeight = FontWeight.Bold,
@@ -134,19 +142,25 @@ fun SmolDropdownWithButton(
                                 expanded = false
                                 items[index].onClick()
                             }) {
-                            Row(Modifier.height(IntrinsicSize.Min)) {
-                                if (item is SmolDropdownMenuItemCustom) {
-                                    item.customItemContent.invoke(this, false)
-                                } else if (item is SmolDropdownMenuItemTemplate) {
-                                    Text(
-                                        text = item.text,
-                                        modifier = Modifier.weight(1f),
-                                        fontWeight = FontWeight.Bold,
-                                        color = item.contentColor ?: contentColorFor(
-                                            item.backgroundColor ?: MaterialTheme.colors.surface
-                                        )
+                            if (item is SmolDropdownMenuItemCustom) {
+                                item.customItemContent.invoke(this, false)
+                            } else if (item is SmolDropdownMenuItemTemplate) {
+                                if (!item.iconPath.isNullOrBlank()) {
+                                    Icon(
+                                        painter = painterResource(item.iconPath),
+                                        // For some reason, setting the size prevents the text from wrapping prematurely.
+                                        modifier = Modifier.padding(end = 8.dp).size(24.dp),
+                                        contentDescription = null
                                     )
                                 }
+                                Text(
+                                    text = item.text,
+                                    modifier = Modifier.weight(1f),
+                                    fontWeight = FontWeight.Bold,
+                                    color = item.contentColor ?: contentColorFor(
+                                        item.backgroundColor ?: MaterialTheme.colors.surface
+                                    )
+                                )
                             }
                         }
                     }

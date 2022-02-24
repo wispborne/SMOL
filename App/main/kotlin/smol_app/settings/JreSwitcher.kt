@@ -172,7 +172,7 @@ fun AppScope.jre8DownloadButton(
                     Icon(
                         painter = painterResource("icon-admin-shield.svg"),
                         tint = MaterialTheme.colors.secondary,
-                        modifier = Modifier.padding(start = 8.dp),
+                        modifier = Modifier.padding(start = 16.dp),
                         contentDescription = null
                     )
                 }

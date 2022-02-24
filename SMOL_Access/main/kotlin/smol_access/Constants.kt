@@ -40,8 +40,8 @@ object Constants {
     // Updater
     val VERSION_PROPERTIES_FILE: Path? = resourcesDir?.resolve("version.properties")
     private const val baseUpdateUrl = "https://raw.githubusercontent.com/davidwhitman/SMOL_Dist"
-    const val UPDATE_URL_UNSTABLE = "$baseUpdateUrl/unstable/"
-    const val UPDATE_URL_STABLE = "$baseUpdateUrl/main/"
+    const val UPDATE_URL_UNSTABLE = "$baseUpdateUrl/unstable"
+    const val UPDATE_URL_STABLE = "$baseUpdateUrl/main"
 
     val TEMP_DIR = System.getProperty("java.io.tmpdir")?.let { Path.of(it) } ?: APP_FOLDER_DEFAULT
 

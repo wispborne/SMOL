@@ -16,7 +16,7 @@ class AppConfig(gson: Jsanity) :
             )
         )
     ) {
-    var updateChannel: String? by pref(prefKey = "updateChannel", defaultValue = "unstable")
+    var updateChannel: UpdateChannel by pref(prefKey = "updateChannel", defaultValue = UpdateChannel.Stable)
     internal var gamePath: String? by pref(prefKey = "gamePath", defaultValue = null)
     var lastFilePickerDirectory: String? by pref(prefKey = "lastFilePickerDirectory", defaultValue = null)
     var jre8Url: String by pref(
@@ -33,5 +33,10 @@ class AppConfig(gson: Jsanity) :
                 "jre8Url=$jre8Url, " +
                 "userProfile=$userProfile" +
                 ")"
+    }
+
+    enum class UpdateChannel {
+        Unstable,
+        Stable
     }
 }

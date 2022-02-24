@@ -23,12 +23,10 @@ import kotlinx.coroutines.launch
 import smol_access.SL
 import smol_access.business.JreEntry
 import smol_access.config.SettingsPath
-import smol_app.UI
 import smol_app.composables.*
 import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
 import smol_app.toolbar.toolbar
-import smol_app.updater.UpdateSmolToast
 import timber.ktx.Timber
 import utilities.exists
 import utilities.toPathOrNull
@@ -170,32 +168,7 @@ fun AppScope.settingsView(
 
                                     themeDropdown(Modifier.padding(start = 16.dp, top = 24.dp))
 
-                                    Column(modifier = Modifier.padding(start = 16.dp, top = 24.dp)) {
-                                        Text(text = "Update", style = SettingsView.settingLabelStyle())
-                                        SmolButton(
-                                            onClick = {
-                                                scope.launch {
-                                                    val remoteConfig = SL.UI.updater.getRemoteConfig()
-
-                                                    if (remoteConfig == null) {
-                                                        Timber.w { "Unable to fetch remote config, aborting update check." }
-                                                    } else {
-                                                        UpdateSmolToast().createIfNeeded(
-                                                            updateConfig = remoteConfig,
-                                                            toasterState = SL.UI.toaster,
-                                                            updater = SL.UI.updater
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        ) {
-                                            Text("Check for Update")
-                                        }
-                                        Text(
-                                            text = "If an update is found, a notification will be displayed.",
-                                            style = MaterialTheme.typography.caption
-                                        )
-                                    }
+                                    updateSection(scope)
                                 }
                             }
 

@@ -16,7 +16,6 @@ import kotlin.io.path.absolutePathString
 import kotlin.io.path.exists
 import kotlin.io.path.name
 
-
 class Updater(
     private val appConfig: AppConfig
 ) {
@@ -152,17 +151,24 @@ class Updater(
         }
     }
 
-    private fun getUpdateChannelSetting() =
+    fun getUpdateChannelSetting() =
         when (appConfig.updateChannel) {
-            "unstable" -> UpdateChannel.Unstable
+            AppConfig.UpdateChannel.Unstable -> UpdateChannel.Unstable
             else -> UpdateChannel.Stable
         }
 
-    fun getUpdateConfigUrl(channel: UpdateChannel = getUpdateChannelSetting()) =
+    fun getUpdateConfigUrl(channel: UpdateChannel) =
         when (channel) {
             UpdateChannel.Unstable -> Constants.UPDATE_URL_UNSTABLE
             UpdateChannel.Stable -> Constants.UPDATE_URL_STABLE
         }
+
+    fun setUpdateChannel(updateChannel: UpdateChannel) {
+        appConfig.updateChannel = when (updateChannel) {
+            UpdateChannel.Unstable -> AppConfig.UpdateChannel.Unstable
+            UpdateChannel.Stable -> AppConfig.UpdateChannel.Stable
+        }
+    }
 
 
     enum class UpdateChannel {
