@@ -43,6 +43,7 @@ import smol_app.composables.SmolTooltipText
 import smol_app.util.openAsUriInBrowser
 import smol_app.util.parseHtml
 import utilities.isMissingAdmin
+import kotlin.io.path.exists
 import kotlin.io.path.isWritable
 import kotlin.io.path.relativeTo
 
@@ -91,6 +92,7 @@ fun AppScope.jreSwitcher(
 
             val tooltip = "Set ${jreEntry.versionString} as the active JRE."
             val adminTooltip = "Run SMOL as Admin to choose this JRE."
+            val canChangeJre = jreEntry.path.isWritable() && SL.gamePathManager.path.collectAsState().value?.exists() == true
             SmolTooltipArea(
                 tooltip = { SmolTooltipText(if (jreEntry.path.isMissingAdmin()) adminTooltip else tooltip) },
                 delayMillis = SmolTooltipArea.shortDelay
@@ -98,7 +100,7 @@ fun AppScope.jreSwitcher(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     RadioButton(
                         onClick = onClick,
-                        enabled = jreEntry.path.isWritable(),
+                        enabled = canChangeJre,
                         modifier = Modifier.align(Alignment.CenterVertically),
                         selected = jreEntry.isUsedByGame
                     )
@@ -114,6 +116,7 @@ fun AppScope.jreSwitcher(
                         modifier = Modifier.align(Alignment.CenterVertically)
                             .clickable(
                                 indication = null,
+                                enabled = canChangeJre,
                                 interactionSource = remember { MutableInteractionSource() },
                                 onClick = { onClick.invoke() },
                             ),
@@ -127,13 +130,15 @@ fun AppScope.jreSwitcher(
             }
         }
 
-        SmolText(
-            text = "If the launcher and game are zoomed in or off-center, right-click your Starsector shortcut, " +
-                    "then go to Properties, Compatibility, Change high DPI settings, and tick the checkbox for \"Override...Scaling performed by Application\"\n" +
-                    "Thanks to Normal Dude for this fix.",
-            style = MaterialTheme.typography.caption,
-            modifier = Modifier.padding(top = 4.dp)
-        )
+        if (jresFound.firstOrNull { it.isUsedByGame }?.version != 7) {
+            SmolText(
+                text = "If the launcher and game are zoomed in or off-center, right-click your Starsector shortcut, " +
+                        "then go to Properties, Compatibility, Change high DPI settings, and tick the checkbox for \"Override...Scaling performed by Application\"\n" +
+                        "Thanks to Normal Dude for this fix.",
+                style = MaterialTheme.typography.caption,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
     }
 }
 
@@ -145,7 +150,7 @@ fun AppScope.jre8DownloadButton(
     refreshJres: suspend () -> Unit
 ) {
     val jre8DownloadProgress by SL.jreManager.jre8DownloadProgress.collectAsState()
-    val isMissingAdmin = SL.jreManager.isMissingAdmin()
+    val isMissingAdmin = SL.jreManager.isMissingAdmin.collectAsState().value
 
     Row(modifier = modifier.padding(start = 16.dp)) {
         SmolTooltipArea(

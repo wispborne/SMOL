@@ -2,11 +2,24 @@
 
 Starsector Mod Organizer & Launcher
 
-For Windows only. Unix users, check out [AtlanticAccent's Mod Manager](https://fractalsoftworks.com/forum/index.php?topic=21995.msg332186#msg332186).
+For Windows only. Unix users, see if [AtlanticAccent's MOSS](https://fractalsoftworks.com/forum/index.php?topic=21995.msg332186#msg332186) will work for you.
 
 ## Why?
 
-Why make this? Starsector is already incredibly easy to mod, and there are two [mod managers](https://fractalsoftworks.com/forum/index.php?topic=21995.0) already [out there](https://www.nexusmods.com/site/mods/179).
+### Why is it so huge? 400 MB?!
+
+Two main reasons.
+
+- First, because the embedded browser, JCEF, is 219 MB on its own. You can delete this (remove the `jcef` folder from `libs`) and SMOL will work, but you won't be able to use the Mod Browser.
+- Second, because the UI framework, Compose for Desktop (by JetBrains), is about 100 MB on its own.
+
+Add in other dependencies (7zip to extract mods, json/xml parsing, Kotlin's standard libs, etc) and it ends up being...not very smol. The actual code I wrote is less than 3 MB.
+
+For a much, much smaller application, try [AtlanticAccent's MOSS](https://fractalsoftworks.com/forum/index.php?topic=21995.msg332186#msg332186).
+
+### Why make this?
+
+Starsector is already incredibly easy to mod, and there are two [mod managers](https://fractalsoftworks.com/forum/index.php?topic=21995.0) already [out there](https://www.nexusmods.com/site/mods/179).
 
 - SMOL is more than a mod manager; it has VRAM Estimator built-in, as well as Version Checker, **and** a an online mod browser.
 - SMOL supports multiple versions of the same mod.
@@ -44,42 +57,30 @@ Did this really need to be built? Absolutely not, but it has been fun to work on
 
 SMOL uses 7zip, so anything 7zip supports: AR, ARJ, CAB, CHM, CPIO, CramFS, DMG, EXT, FAT, GPT, HFS, IHEX, ISO, LZH, LZMA, MBR, MSI, NSIS, NTFS, QCOW2, RAR, RPM, SquashFS, UDF, UEFI, VDI, VHD, VMDK, WIM, XAR and Z
 
-# Known Issues
+## Known Issues
 
+- The browser is always on top of the rest of the application - anything that intersects it cuts cut off.
+  - This is a known bug in the UI framework. See <https://github.com/JetBrains/compose-jb/issues/1087> and <https://github.com/JetBrains/compose-jb/issues/221>.
 - JCEF, the Chromium Embedded Framework that's used in the Mod Browser, sometimes doesn't shut down with SMOL (despite being told to), and sits in the background, using CPU.
 
 ## Under the Hood
 
 Mod folders are named using the mod version and a unique id generated from the mod id and the version, which allows different versions of the same mod to be placed in the same folder.
 
-SMOL primarily utilizes three folders.
-
-### `~/archives`
-
-In the user's home folder. Contains compressed archives (.zip, .7z, etc) of mods that have an associated archive. Mods may be reset to default, which replaces any existing version of them with the archived version, thus wiping any changes the user might have made.
-
-### `~/staging`
-
-In the user's home folder. Mods are placed here, then hardlinked to the game's /mods folder.
-
-### `/mods`
-
-In the game folder. SMOL does not put files here, but rather puts them into /staging and then creates hardlinks to them here.
-
-<br>
-Hardlinks are used to avoid having a mod folder existing in two places, which would require double the storage space. They are also much faster to create than copying files, which means mods may be enabled faster.
-
-Symlinks require administrator permission to create in Windows, which is why they were not used.
+SMOL disables mods by renaming the `mod_info.json` file to `mod_info.json.disabled`, preventing the game from reading it as a valid mod.
 
 ## Building
 
-1. Unzip `./App/libs/jcef-v1.0.10-92.0.25.7z` to `./App/libs/jcef-v1.0.10-92.0.25`.
+1. Unzip `./App/libs/jcef-v1.0.18.7z` to `./App/libs/jcef-v1.0.18`.
 2. Run `./gradlew run`.
 
 ## Credits
 
-* **Fractal Softworks** for making Starsector.
+* **Fractal Softworks** for making Starsector and for permission to scrape the forum periodically.
 * **MesoTroniK** for consulting and brainstorming the whole way through.
-* **AtlanticAccent** for open-sourcing his Mod Manager, allowing me to peek under the hood (I copied almost nothing, I swear!) and being a great competitor ;)
-* **rubi/CeruleanPancake** for feedback and morality support.
+* **AtlanticAccent** for open-sourcing his Mod Manager, allowing me to peek under the hood (I copied almost nothing, I swear!) and being a great competitor :)
+* **rubi/CeruleanPancake** for feedback, QA, and morale/moral support.
 * **Soren/Harmful Mechanic** for feedback.
+* **ruddygreat** for feedback and QA.
+* **Tartiflette** for the idea to disable mods by renaming the mod_info.json file, and other feedback.
+* **The rest of the USC moderator team** for feedback.

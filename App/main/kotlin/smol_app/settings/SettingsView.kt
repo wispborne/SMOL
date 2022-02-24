@@ -106,7 +106,6 @@ fun AppScope.settingsView(
                                 SL.access.reload()
                             }
                         }
-
                         return true
                     }
 
@@ -169,7 +168,8 @@ fun AppScope.settingsView(
                                         modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp)
                                     ) {
                                         SmolButton(
-                                            enabled = gamePath != initialPath,
+                                            enabled = gamePath != initialPath
+                                                    && gamePath?.toPathOrNull()?.exists() == true,
                                             onClick = {
                                                 saveSettings()
                                                 initialPath = gamePath

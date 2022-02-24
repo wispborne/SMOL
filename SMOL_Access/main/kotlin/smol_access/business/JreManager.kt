@@ -19,8 +19,13 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.withContext
 import smol_access.HttpClientBuilder
 import smol_access.config.AppConfig
@@ -43,7 +48,9 @@ class JreManager(
         private val versionRegex = Regex("""(\d+\.\d+\.\d+[\d_\-.+\w]*)""")
     }
 
-    fun isMissingAdmin() = gamePathManager.path.value?.isMissingAdmin() == true
+    val isMissingAdmin = gamePathManager.path
+        .map { it?.isMissingAdmin() == true }
+        .stateIn(scope = CoroutineScope(Job()), started = SharingStarted.Eagerly, initialValue = false)
 
     suspend fun findJREs(): List<JreEntry> {
         return withContext(Dispatchers.IO) {

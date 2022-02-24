@@ -16,11 +16,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import org.update4j.Configuration
 import smol_access.SL
 import smol_app.UI
 import smol_app.composables.SmolButton
@@ -34,6 +35,16 @@ import updatestager.Updater
 fun updateSection(scope: CoroutineScope) {
     Column(modifier = Modifier.padding(start = 16.dp, top = 24.dp)) {
         Text(text = "Updates", style = SettingsView.settingLabelStyle())
+        var updateStatus by remember { mutableStateOf("") }
+
+        fun doUpdateCheck() {
+            scope.launch {
+                val update = checkForUpdate()
+                updateStatus = if (update?.requiresUpdate() != true) "No update found." else "Update found! Check the notification to download."
+            }
+        }
+
+        LaunchedEffect(Unit) { doUpdateCheck() }
 
         SmolDropdownWithButton(
             modifier = Modifier.padding(top = 4.dp),
@@ -47,7 +58,7 @@ fun updateSection(scope: CoroutineScope) {
                     iconPath = "icon-stable.svg",
                     onClick = {
                         SL.UI.updater.setUpdateChannel(Updater.UpdateChannel.Stable)
-                        checkForUpdate(scope)
+                        doUpdateCheck()
                     }
                 ),
                 SmolDropdownMenuItemTemplate(
@@ -55,38 +66,36 @@ fun updateSection(scope: CoroutineScope) {
                     iconPath = "icon-experimental.svg",
                     onClick = {
                         SL.UI.updater.setUpdateChannel(Updater.UpdateChannel.Unstable)
-                        checkForUpdate(scope)
+                        doUpdateCheck()
                     }
                 )
             ),
             shouldShowSelectedItemInMenu = true)
 
         SmolButton(
-            onClick = {
-                checkForUpdate(scope)
-            }
+            onClick = { doUpdateCheck() }
         ) {
             Text("Check for Update")
         }
         Text(
-            text = "If an update is found, a notification will be displayed.",
+            text = updateStatus,
             style = MaterialTheme.typography.caption
         )
     }
 }
 
-private fun checkForUpdate(scope: CoroutineScope) {
-    scope.launch {
-        val remoteConfig = SL.UI.updater.getRemoteConfig()
+private suspend fun checkForUpdate(): Configuration? {
+    val remoteConfig = SL.UI.updater.getRemoteConfig()
 
-        if (remoteConfig == null) {
-            Timber.w { "Unable to fetch remote config, aborting update check." }
-        } else {
-            UpdateSmolToast().createIfNeeded(
-                updateConfig = remoteConfig,
-                toasterState = SL.UI.toaster,
-                updater = SL.UI.updater
-            )
-        }
+    if (remoteConfig == null) {
+        Timber.w { "Unable to fetch remote config, aborting update check." }
+    } else {
+        UpdateSmolToast().createIfNeeded(
+            updateConfig = remoteConfig,
+            toasterState = SL.UI.toaster,
+            updater = SL.UI.updater
+        )
     }
+
+    return remoteConfig
 }

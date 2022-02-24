@@ -45,27 +45,22 @@ private fun logButtonAndErrorDisplayPreview() = smolPreview {
 @Composable
 fun logButtonAndErrorDisplay(modifier: Modifier = Modifier, showLogPanel: MutableState<Boolean>) {
     Row(modifier) {
-        SmolTooltipArea(
-            tooltip = { SmolTooltipText(text = "Show/Hide Logs") },
-            delayMillis = SmolTooltipArea.shortDelay
-        ) {
-            IconToggleButton(
-                checked = showLogPanel.value,
-                modifier = Modifier.padding(start = 8.dp).run {
-                    if (showLogPanel.value) this.background(
-                        color = Color.White.copy(alpha = 0.20f),
-                        shape = CircleShape
-                    )
-                    else this
-                },
-                onCheckedChange = { showLogPanel.value = it }
-            ) {
-                Icon(
-                    painter = painterResource("icon-log.svg"),
-                    tint = if (showLogPanel.value) Color.White else SmolTheme.dimmedIconColor(),
-                    contentDescription = null
+        IconToggleButton(
+            checked = showLogPanel.value,
+            modifier = Modifier.padding(start = 8.dp).run {
+                if (showLogPanel.value) this.background(
+                    color = Color.White.copy(alpha = 0.20f),
+                    shape = CircleShape
                 )
-            }
+                else this
+            },
+            onCheckedChange = { showLogPanel.value = it }
+        ) {
+            Icon(
+                painter = painterResource("icon-log.svg"),
+                tint = if (showLogPanel.value) Color.White else SmolTheme.dimmedIconColor(),
+                contentDescription = null
+            )
         }
 
         var newestLogLine by remember { mutableStateOf("") }

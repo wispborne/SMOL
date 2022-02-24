@@ -25,6 +25,7 @@ import timber.ktx.Timber
 import timber.ktx.i
 import utilities.asList
 import utilities.trace
+import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 
 internal class ModLoader internal constructor(
@@ -125,7 +126,8 @@ internal class ModLoader internal constructor(
                         .map { mod -> mod.copy(variants = mod.variants.sortedBy { it.modInfo.version }) }
                         .toList()
                         .onEach {
-                            val variantsInModsFolder = it.variants.filter { it.isModInfoEnabled && it.modInfo.id in gameLauncherEnabledMods }
+                            val variantsInModsFolder =
+                                it.variants.filter { it.isModInfoEnabled && it.modInfo.id in gameLauncherEnabledMods }
 
                             if (variantsInModsFolder.size > 1) {
                                 Timber.w {
@@ -138,11 +140,16 @@ internal class ModLoader internal constructor(
                             }
                         }
 
+                    val currentGamePath = gamePathManager.path.value
+                    val hasGamePathChanged = previousMods?.gamePath != currentGamePath
+
                     val update = if (modIds == null) {
                         val newModVariants = result.flatMap { it.variants }
                         ModListUpdate(
+                            gamePath = currentGamePath,
                             mods = result,
-                            added = if (previousModVariants == null) emptyList() else newModVariants.filter { it.smolId !in previousModVariants.map { it.smolId } },
+                            added = if (previousModVariants == null || hasGamePathChanged) emptyList()
+                            else newModVariants.filter { it.smolId !in previousModVariants.map { it.smolId } },
                             removed = previousModVariants?.filter { it.smolId !in newModVariants.map { it.smolId } }
                                 ?: emptyList()
                         )
@@ -157,8 +164,10 @@ internal class ModLoader internal constructor(
                         val updatedListVariants = updatedList.flatMap { it.variants }
 
                         ModListUpdate(
+                            gamePath = currentGamePath,
                             mods = updatedList,
-                            added = if (previousModVariants == null) emptyList() else updatedListVariants.filter { it.smolId !in previousModVariants.map { it.smolId } },
+                            added = if (previousModVariants == null || hasGamePathChanged) emptyList()
+                            else updatedListVariants.filter { it.smolId !in previousModVariants.map { it.smolId } },
                             removed = previousModVariants?.filter { it.smolId !in updatedListVariants.map { it.smolId } }
                                 ?: emptyList()
                         )
@@ -192,6 +201,7 @@ internal class ModLoader internal constructor(
 }
 
 data class ModListUpdate(
+    val gamePath: Path?,
     val mods: List<Mod>,
     val added: List<ModVariant>,
     val removed: List<ModVariant>

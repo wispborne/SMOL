@@ -67,7 +67,7 @@ class Access internal constructor(
         IOLock.read {
             // Game path
             if (newGamePath == null) {
-                errors[SettingsPath.Game]?.add("Game path not set!")
+                errors[SettingsPath.Game]?.add("Game path invalid or not set!")
             } else if (!newGamePath.exists()) {
                 errors[SettingsPath.Game]?.add("Game path '$newGamePath' doesn't exist!")
             } else {

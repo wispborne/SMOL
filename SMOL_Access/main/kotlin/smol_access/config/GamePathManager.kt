@@ -23,10 +23,14 @@ import kotlinx.coroutines.launch
 import timber.ktx.Timber
 import utilities.IOLock
 import utilities.Platform
+import utilities.exists
 import utilities.toPathOrNull
 import java.io.File
 import java.nio.file.Path
-import kotlin.io.path.*
+import kotlin.io.path.absolutePathString
+import kotlin.io.path.createDirectories
+import kotlin.io.path.isWritable
+import kotlin.io.path.pathString
 
 
 class GamePathManager internal constructor(
