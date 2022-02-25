@@ -126,9 +126,9 @@ fun AppScope.ModGridRow(
                         ) {
                             Icon(
                                 imageVector =
-//                                (if (isFavorited)
-//                                    androidx.compose.material.icons.Icons.Default.Favorite
-                                androidx.compose.material.icons.Icons.Default.FavoriteBorder,
+                                (if (isFavorited)
+                                    androidx.compose.material.icons.Icons.Default.Favorite
+                                else androidx.compose.material.icons.Icons.Default.FavoriteBorder),
                                 contentDescription = null,
                                 modifier = Modifier
                                     .align(Alignment.Center)

@@ -58,7 +58,7 @@ import smol_app.browser.chromium.ChromiumBrowser
 import smol_app.composables.*
 import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
-import smol_app.toolbar.*
+import smol_app.toolbar.toolbar
 import smol_app.util.*
 import timber.ktx.Timber
 import utilities.Platform
@@ -266,6 +266,12 @@ fun AppScope.ModBrowserView(
                         second {
                             Column {
                                 Row(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 8.dp)) {
+                                    var canGoBack by remember { mutableStateOf(browser.value?.canGoBack ?: false) }
+                                    var canGoForward by remember {
+                                        mutableStateOf(
+                                            browser.value?.canGoForward ?: false
+                                        )
+                                    }
                                     SmolSecondaryButton(
                                         modifier = Modifier.padding(start = 8.dp)
                                             .align(Alignment.CenterVertically),
@@ -279,6 +285,7 @@ fun AppScope.ModBrowserView(
                                     IconButton(
                                         modifier = Modifier.padding(start = 8.dp)
                                             .align(Alignment.CenterVertically),
+                                        enabled = canGoBack,
                                         onClick = { browser.value?.goBack() }
                                     ) {
                                         Icon(
@@ -289,6 +296,7 @@ fun AppScope.ModBrowserView(
                                     IconButton(
                                         modifier = Modifier.padding(start = 8.dp, end = 8.dp)
                                             .align(Alignment.CenterVertically),
+                                        enabled = canGoForward,
                                         onClick = { browser.value?.goForward() }
                                     ) {
                                         Icon(
@@ -298,7 +306,11 @@ fun AppScope.ModBrowserView(
                                     }
                                     var enteredUrl by remember { mutableStateOf("") }
                                     LaunchedEffect(Unit) {
-                                        browser.value?.currentUrl?.collectLatest { enteredUrl = it.first }
+                                        browser.value?.currentUrl?.collect {
+                                            enteredUrl = it.first
+                                            canGoBack = browser.value?.canGoBack ?: false
+                                            canGoForward = browser.value?.canGoForward ?: false
+                                        }
                                     }
                                     SmolOutlinedTextField(
                                         modifier = Modifier.weight(1f)
@@ -473,7 +485,7 @@ private fun AppScope.embeddedBrowser(
 @Composable
 fun browserIcon(modifier: Modifier = Modifier, mod: ScrapedMod) {
     if (mod.forumPostLink?.toString()?.isBlank() == false) {
-        val descText = "Open in a browser"
+        val descText = "Open in an external browser"
         SmolTooltipArea(
             modifier = modifier,
             tooltip = { SmolTooltipText(text = descText) }) {

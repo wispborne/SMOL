@@ -28,7 +28,8 @@ import org.cef.callback.CefDownloadItemCallback
 import org.cef.handler.CefDownloadHandler
 import org.cef.handler.CefLifeSpanHandlerAdapter
 import org.cef.handler.CefLoadHandler
-import org.cef.network.CefRequest
+import org.cef.handler.CefLoadHandler.ErrorCode
+import org.cef.network.CefRequest.TransitionType
 import smol_app.browser.DownloadHander
 import tests.detailed.handler.MessageRouterHandler
 import tests.detailed.handler.MessageRouterHandlerEx
@@ -214,24 +215,34 @@ class CefBrowserPanel
 
         client?.addLoadHandler(
             object : CefLoadHandler {
-                override fun onLoadingStateChange(p0: CefBrowser?, p1: Boolean, p2: Boolean, p3: Boolean) = Unit
+                override fun onLoadingStateChange(
+                    browser: CefBrowser,
+                    isLoading: Boolean,
+                    canGoBack: Boolean,
+                    canGoForward: Boolean
+                ) {
+                    this@CefBrowserPanel.canGoBack = canGoBack
+                    this@CefBrowserPanel.canGoForward = canGoForward
+                    _currentUrl.value = (browser.url ?: "") to Random.nextInt()
+                }
 
-                override fun onLoadStart(p0: CefBrowser?, p1: CefFrame?, p2: CefRequest.TransitionType?) {
+                override fun onLoadStart(browser: CefBrowser?, frame: CefFrame?, transitionType: TransitionType?) {
+                }
+
+                override fun onLoadEnd(browser: CefBrowser?, frame: CefFrame?, httpStatusCode: Int) {
                     _currentUrl.value = (browser?.url ?: "") to Random.nextInt()
                 }
 
-                override fun onLoadEnd(p0: CefBrowser?, p1: CefFrame?, p2: Int) = Unit
-
                 override fun onLoadError(
-                    p0: CefBrowser?,
-                    p1: CefFrame?,
-                    p2: CefLoadHandler.ErrorCode?,
-                    p3: String?,
-                    p4: String?
+                    browser: CefBrowser?, frame: CefFrame?, errorCode: ErrorCode?,
+                    errorText: String?, failedUrl: String?
                 ) = Unit
             }
         )
     }
+
+    override var canGoBack: Boolean? = browser?.canGoBack()
+    override var canGoForward: Boolean? = browser?.canGoForward()
 
     private val _currentUrl = MutableStateFlow("" to 0)
     override val currentUrl = _currentUrl.asStateFlow()

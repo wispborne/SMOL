@@ -23,6 +23,8 @@ interface ChromiumBrowser {
     fun loadUrl(url: String)
     fun goBack()
     fun goForward()
+    val canGoBack: Boolean?
+    val canGoForward: Boolean?
 
     /**
      * Once you quit, you can't create it again.

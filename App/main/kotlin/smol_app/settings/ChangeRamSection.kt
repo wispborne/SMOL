@@ -45,10 +45,10 @@ import kotlin.math.roundToInt
 @Composable
 fun AppScope.changeRamSection(modifier: Modifier = Modifier) {
     val showVmParamsMenu = remember { mutableStateOf(false) }
+    val assignedRam = SL.UI.vmParamsManager.vmparams.collectAsState().value?.xmx
     Column(
         modifier = modifier.padding(start = 16.dp, bottom = 8.dp)
     ) {
-        val assignedRam = SL.UI.vmParamsManager.vmparams.collectAsState().value?.xmx
         Row(Modifier.padding(bottom = 4.dp)) {
             Text(
                 text = "Assigned RAM: $assignedRam",
@@ -71,7 +71,7 @@ fun AppScope.changeRamSection(modifier: Modifier = Modifier) {
             }
         }
 
-        val isMissingAdmin = SL.UI.vmParamsManager.isMissingAdmin() == true
+        val isMissingAdmin = SL.UI.vmParamsManager.isMissingAdmin.collectAsState().value
         SmolTooltipArea(
             tooltip = {
                 SmolTooltipText(

@@ -12,30 +12,29 @@
 
 package smol_access.business
 
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.*
 import smol_access.config.GamePathManager
 import smol_access.model.Vmparams
 import timber.ktx.Timber
 import utilities.IOLock
 import utilities.Platform
 import utilities.isMissingAdmin
+import java.nio.file.Path
 import kotlin.io.path.*
 
 class VmParamsManager(
-    gamePathManager: GamePathManager,
+    private val gamePathManager: GamePathManager,
     private val platform: Platform
 ) {
     private val vmparams_ = MutableStateFlow(read())
     val vmparams = vmparams_.asStateFlow()
 
-    private val path = gamePathManager.path.value?.let {
-        when (platform) {
-            Platform.Windows -> it.resolve("vmparams")
-            Platform.MacOS -> TODO()
-            Platform.Linux -> it.resolve("starsector.sh")
-        }
-    }
+    private val path = gamePathManager.path
+        .map { getVmParamsPath() }
+        .filterNotNull()
+        .stateIn(scope = CoroutineScope(Job()), started = SharingStarted.Eagerly, initialValue = getVmParamsPath())
 
     private val backupPath = gamePathManager.path.value?.let {
         when (platform) {
@@ -45,18 +44,29 @@ class VmParamsManager(
         }
     }
 
+    val isMissingAdmin = path
+        .map { it?.isMissingAdmin() == true }
+        .stateIn(scope = CoroutineScope(Job()), started = SharingStarted.Eagerly, initialValue = false)
+
     init {
         read()
     }
 
-    fun isMissingAdmin() = path?.isMissingAdmin()
+    private fun getVmParamsPath(): Path? {
+        val gamePath = gamePathManager.path
+        return when (platform) {
+            Platform.Windows -> gamePath.value?.resolve("vmparams")
+            Platform.Linux -> gamePath.value?.resolve("starsector.sh")
+            Platform.MacOS -> TODO()
+        }
+    }
 
     fun read(): Vmparams? =
         IOLock.read {
-            if (path?.exists() != true) {
+            if (path?.value?.exists() != true) {
                 null
             } else {
-                Vmparams(path.readText())
+                Vmparams(path.value!!.readText())
                     .also { vmparams_.value = it }
             }
         }
@@ -85,15 +95,15 @@ class VmParamsManager(
                 return
             }
 
-            if (!path.exists()) {
+            if (path.value?.exists() != true) {
                 kotlin.runCatching {
-                    path.createFile()
+                    path.value?.createFile()
                 }
                     .onFailure { Timber.w(it) { "Unable to create a vmparams file. Ensure that SMOL has permission (run as admin?)." } }
             }
 
             kotlin.runCatching {
-                path.writeText(vmparams.fullString)
+                path.value?.writeText(vmparams.fullString)
             }
                 .onFailure { Timber.w(it) { "Unable to update vmparams file. Ensure that SMOL has permission (run as admin?)." } }
         }

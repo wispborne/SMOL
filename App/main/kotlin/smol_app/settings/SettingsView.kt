@@ -82,6 +82,7 @@ fun AppScope.settingsView(
                             ).failure
                         )
                     }
+                    val jresFound = remember { SnapshotStateList<JreEntry>() }
 
                     fun saveSettings(): Boolean {
                         val errors = kotlin.runCatching {
@@ -103,6 +104,7 @@ fun AppScope.settingsView(
                             SL.gamePathManager.set(gamePath!!)
 
                             GlobalScope.launch {
+                                refreshJres(jresFound)
                                 SL.access.reload()
                             }
                         }
@@ -125,7 +127,6 @@ fun AppScope.settingsView(
                         )
                     }
 
-                    val jresFound = remember { SnapshotStateList<JreEntry>() }
                     LaunchedEffect(Unit) {
                         refreshJres(jresFound)
                     }

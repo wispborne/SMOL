@@ -16,9 +16,7 @@ import com.sun.jna.platform.win32.Advapi32Util
 import com.sun.jna.platform.win32.WinReg
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import timber.ktx.Timber
 import utilities.IOLock
@@ -27,10 +25,7 @@ import utilities.exists
 import utilities.toPathOrNull
 import java.io.File
 import java.nio.file.Path
-import kotlin.io.path.absolutePathString
-import kotlin.io.path.createDirectories
-import kotlin.io.path.isWritable
-import kotlin.io.path.pathString
+import kotlin.io.path.*
 
 
 class GamePathManager internal constructor(
