@@ -9,7 +9,6 @@ on:
   push:
     tags:
       - '*'
-    branches: [ main,dev ]
 
 jobs:
   build:
@@ -32,14 +31,10 @@ jobs:
         with:
           arguments: Mod_Repo:uberJar
 
-      - name: Set Variables
-        run: |
-          git log --format=%B -n 1 $(git log -1 --pretty=format:"%h") | cat - > changes.txt
-
       - name: Publish Release on GitHub
         uses: "ncipollo/release-action@v1"
         with:
-          bodyFile: changes.txt
+          generateReleaseNotes: true
           draft: false
           prerelease: true
           token: ${{ secrets.GITHUB_TOKEN }}
