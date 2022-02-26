@@ -16,6 +16,7 @@ import io.ktor.http.*
 
 data class ScrapedMod(
     val name: String,
+    val description: String?,
     val gameVersionReq: String,
     val authors: String,
     val forumPostLink: Url?,

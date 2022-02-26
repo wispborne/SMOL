@@ -22,7 +22,6 @@ import androidx.compose.foundation.lazy.GridCells
 import androidx.compose.foundation.lazy.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.mouseClickable
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -35,14 +34,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.SwingPanel
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import mod_repo.ScrapedMod
@@ -479,35 +475,6 @@ private fun AppScope.embeddedBrowser(
         )
     } else {
 //        javaFxBrowser(jfxpanel, background, linkLoader)
-    }
-}
-
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
-@Composable
-fun browserIcon(modifier: Modifier = Modifier, mod: ScrapedMod) {
-    if (mod.forumPostLink?.toString()?.isBlank() == false) {
-        val descText = "Open in an external browser\n${mod.forumPostLink}"
-        SmolTooltipArea(
-            modifier = modifier,
-            tooltip = { SmolTooltipText(text = descText) }) {
-            Icon(
-                painter = painterResource("icon-web.svg"),
-                contentDescription = descText,
-                modifier = Modifier
-                    .width(16.dp)
-                    .height(16.dp)
-                    .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)))
-                    .mouseClickable {
-                        if (this.buttons.isPrimaryPressed) {
-                            runCatching {
-                                mod.forumPostLink?.toString()?.openAsUriInBrowser()
-                            }
-                                .onFailure { Logger.warn(it) }
-                        }
-                    },
-                tint = SmolTheme.dimmedIconColor()
-            )
-        }
     }
 }
 

@@ -59,6 +59,7 @@ class ForumScraper {
 
                         ScrapedMod(
                             name = link.text(),
+                            description = null,
                             gameVersionReq = modElement.select("strong span").text(),
                             authors = modElement.select("em strong").text(),
                             forumPostLink = link.attr("href").ifBlank { null }?.let { Url(it) },
@@ -103,6 +104,7 @@ class ForumScraper {
 
                             ScrapedMod(
                                 name = titleLinkElement.text().replace(versionRegex, "").trim(),
+                                description = null,
                                 gameVersionReq = versionRegex.find(titleLinkElement.text())?.groupValues?.getOrNull(1)
                                     ?.trim()
                                     ?: "",

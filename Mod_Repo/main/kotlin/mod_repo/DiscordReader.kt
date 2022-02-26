@@ -63,6 +63,7 @@ internal class DiscordReader {
             .map { message ->
                 ScrapedMod(
                     name = message.content?.lines()?.firstOrNull()?.trim('*', '_') ?: "(Discord Mod)",
+                    description = message.content,
                     gameVersionReq = "",
                     authors = message.author?.username ?: "",
                     forumPostLink = message.content?.lines()
