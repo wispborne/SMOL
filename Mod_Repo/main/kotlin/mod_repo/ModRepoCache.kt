@@ -26,7 +26,7 @@ class ModRepoCache(gson: Jsanity) : Config(
     )
 ) {
     companion object {
-        val location = CONFIG_FOLDER_DEFAULT.resolve("ModRepo.json")
+        val location = Main.CONFIG_FOLDER_DEFAULT.resolve("ModRepo.json")
     }
 
     var lastUpdated: String? by pref(

@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Run Mod_Repo" type="JetRunConfigurationType">
+    <option name="MAIN_CLASS_NAME" value="mod_repo.Main" />
+    <module name="SMOL.Mod_Repo.main" />
+    <shortenClasspath name="NONE" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Mod_Repo" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

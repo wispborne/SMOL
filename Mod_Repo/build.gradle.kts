@@ -30,6 +30,14 @@ dependencies {
         exclude("TinyLog")
     })
 
+    // API
+    val ktorVersion = "1.6.7"
+    implementation("io.ktor:ktor-client-core:$ktorVersion")
+    implementation("io.ktor:ktor-client-cio:$ktorVersion")
+    implementation("io.ktor:ktor-client-logging:$ktorVersion")
+    implementation("io.ktor:ktor-client-gson:$ktorVersion")
+
+
 // https://mvnrepository.com/artifact/org.jsoup/jsoup
     implementation("org.jsoup:jsoup:1.14.3")
 

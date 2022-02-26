@@ -25,5 +25,6 @@ data class ScrapedMod(
 
 enum class ModSource {
     Index,
-    ModdingSubforum
+    ModdingSubforum,
+    Discord
 }
