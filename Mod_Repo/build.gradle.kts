@@ -46,6 +46,19 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
     }
 }
 
+// Create uber jar with all dependencies inside.
+tasks.register(name = "uberJar", type = Jar::class) {
+    archiveFileName.set("${project.name}-fat.jar")
+    destinationDirectory.set(File("dist"))
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest {
+        attributes["Implementation-Title"] = "SMOL Mod Scraper"
+        attributes["Implementation-Version"] = "1.0.0"
+        attributes["Main-Class"] = "mod_repo.Main"
+    }
+    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+    with(tasks.jar.get() as CopySpec)
+}
 
 kotlin.sourceSets.main {
     // List of where your Kotlin source code is, if any.

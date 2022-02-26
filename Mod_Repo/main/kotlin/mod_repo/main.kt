@@ -12,7 +12,6 @@
 
 package mod_repo
 
-import com.fasterxml.jackson.databind.json.JsonMapper
 import com.github.androidpasswordstore.sublimefuzzy.Fuzzy
 import com.google.gson.GsonBuilder
 import kotlinx.coroutines.delay
