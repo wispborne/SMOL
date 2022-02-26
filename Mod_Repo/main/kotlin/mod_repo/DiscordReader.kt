@@ -19,6 +19,7 @@ import io.ktor.client.features.json.*
 import io.ktor.client.features.logging.*
 import io.ktor.client.request.*
 import io.ktor.http.*
+import kotlinx.coroutines.delay
 import timber.ktx.Timber
 import utilities.exists
 import utilities.prefer
@@ -38,6 +39,8 @@ import kotlin.io.path.bufferedReader
  */
 internal class DiscordReader {
     private val baseUrl = "https://discord.com/api"
+    val serverId = "187635036525166592"
+    val modUpdatesChannelId = "825068217361760306"
     private val urlFinderRegex = Regex(
         """(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#-]*[\w@?^=%&\/~+#-])"""
     )
@@ -71,6 +74,7 @@ internal class DiscordReader {
                         ?.prefer { it.contains("fractal") }
                         ?.firstOrNull()
                         ?.let { kotlin.runCatching { Url(it) }.onFailure { Timber.w(it) }.getOrNull() },
+                    discordMessageLink = Url("https://discord.com/channels/$serverId/$modUpdatesChannelId/${message.id}"),
                     source = ModSource.Discord,
                     categories = emptyList()
                 )
@@ -87,14 +91,41 @@ internal class DiscordReader {
             null
         }
 
-    private suspend fun getMessages(httpClient: HttpClient, authToken: String): List<Message> {
-        val modUpdatesId = "825068217361760306"
+    private suspend fun getMessages(
+        httpClient: HttpClient,
+        authToken: String,
+        limit: Int = Int.MAX_VALUE
+    ): List<Message> {
+        val messages = mutableListOf<Message>()
+        var runs = 0 // Limit number of runs in case other breaks don't trigger.
+        val perRequestLimit = 100
 
-        return httpClient.request<List<Message>>("$baseUrl/channels/$modUpdatesId/messages") {
-            parameter("limit", "100")
-            header("Authorization", "Bot $authToken")
-            accept(ContentType.Application.Json)
+        while (messages.count() < limit && runs < 25) {
+            val newMessages = httpClient.request<List<Message>>("$baseUrl/channels/$modUpdatesChannelId/messages") {
+                parameter("limit", perRequestLimit.toString())
+                header("Authorization", "Bot $authToken")
+                accept(ContentType.Application.Json)
+
+                if (messages.isNotEmpty()) {
+                    // Grab results from before the oldest message we've gotten so far.
+                    parameter("before", messages.last().id)
+                }
+            }
+                .sortedBy { it.timeStamp }
+
+            Timber.i { "Found ${newMessages.count()} posts in Discord #mod_updates." }
+            messages += newMessages
+            runs++
+
+            if (newMessages.isEmpty() || newMessages.size < perRequestLimit) {
+                Timber.i { "Found all ${messages.count()} posts in Discord #mod_updates, finishing scrape." }
+                break
+            } else {
+                delay(200)
+            }
         }
+
+        return messages
     }
 
     internal data class Message(

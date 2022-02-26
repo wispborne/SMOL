@@ -45,6 +45,7 @@ import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.lighten
+import smol_app.util.MarkdownParser
 import smol_app.util.openAsUriInBrowser
 import smol_app.util.smolPreview
 import java.awt.Cursor
@@ -67,52 +68,63 @@ fun scrapedModCard(mod: ScrapedMod, linkLoader: MutableState<((String) -> Unit)?
     ) {
 
         Row(modifier = Modifier.padding(12.dp)) {
-            Column(
+            Box(
                 modifier = Modifier.align(Alignment.CenterVertically)
                     .weight(1f)
                     .padding(end = 16.dp)
             ) {
                 SmolTooltipArea(
-                    tooltip = { mod.description?.let { SmolTooltipText(text = it) } },
+                    tooltip = {
+                        mod.description?.let {
+                            SmolTooltipText(
+                                text = MarkdownParser.messageFormatter(
+                                    text = it,
+                                    primary = true
+                                )
+                            )
+                        }
+                    },
                     delayMillis = if (mod.description != null)
                         SmolTooltipArea.shortDelay
                     else Int.MAX_VALUE
                 ) {
-                    Text(
-                        modifier = Modifier,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        fontFamily = SmolTheme.orbitronSpaceFont,
-                        text = mod.name.ifBlank { "???" }
-                    )
-                    if (mod.authors.isNotBlank()) {
+                    Column {
                         Text(
-                            modifier = Modifier.padding(top = 8.dp),
-                            fontSize = 11.sp,
-                            fontStyle = FontStyle.Italic,
-                            text = mod.authors
+                            modifier = Modifier,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            fontFamily = SmolTheme.orbitronSpaceFont,
+                            text = mod.name.ifBlank { "???" }
                         )
-                    }
-
-                    val tags = remember {
-                        mod.categories + when (mod.source) {
-                            ModSource.Index -> "Index"
-                            ModSource.ModdingSubforum -> "Modding Subforum"
-                            ModSource.Discord -> "Discord"
-                        }
-                    }
-                    if (tags.isNotEmpty()) {
-                        Row(modifier = Modifier.padding(top = 12.dp)) {
-                            Icon(
-                                modifier = Modifier.size(12.dp).align(Alignment.CenterVertically),
-                                painter = painterResource("icon-tag.svg"),
-                                contentDescription = null
-                            )
+                        if (mod.authors.isNotBlank()) {
                             Text(
-                                modifier = Modifier.align(Alignment.CenterVertically).padding(start = 6.dp),
+                                modifier = Modifier.padding(top = 8.dp),
                                 fontSize = 11.sp,
-                                text = tags.joinToString()
+                                fontStyle = FontStyle.Italic,
+                                text = mod.authors
                             )
+                        }
+
+                        val tags = remember {
+                            mod.categories + when (mod.source) {
+                                ModSource.Index -> "Index"
+                                ModSource.ModdingSubforum -> "Modding Subforum"
+                                ModSource.Discord -> "Discord"
+                            }
+                        }
+                        if (tags.isNotEmpty()) {
+                            Row(modifier = Modifier.padding(top = 12.dp)) {
+                                Icon(
+                                    modifier = Modifier.size(12.dp).align(Alignment.CenterVertically),
+                                    painter = painterResource("icon-tag.svg"),
+                                    contentDescription = null
+                                )
+                                Text(
+                                    modifier = Modifier.align(Alignment.CenterVertically).padding(start = 6.dp),
+                                    fontSize = 11.sp,
+                                    text = tags.joinToString()
+                                )
+                            }
                         }
                     }
                 }

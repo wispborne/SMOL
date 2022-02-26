@@ -37,7 +37,7 @@ class Main {
 
         @JvmStatic
         fun main(args: Array<String>) {
-            Timber.plant(timber.Timber.DebugTree(logLevel = LogLevel.INFO, appenders = emptyList()))
+            Timber.plant(timber.Timber.DebugTree(logLevel = LogLevel.DEBUG, appenders = emptyList()))
             val jsanity = Jsanity(
                 GsonBuilder()
                     .setPrettyPrinting()

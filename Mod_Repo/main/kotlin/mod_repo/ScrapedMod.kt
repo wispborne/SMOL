@@ -20,6 +20,7 @@ data class ScrapedMod(
     val gameVersionReq: String,
     val authors: String,
     val forumPostLink: Url?,
+    val discordMessageLink: Url?,
     val source: ModSource,
     val categories: List<String>
 )

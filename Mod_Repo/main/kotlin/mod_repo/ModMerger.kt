@@ -65,25 +65,27 @@ internal class ModMerger {
                                         || (nameResultFlip.first && authorsResult.first)
 
                             if (Main.isDebugMode && (nameResult.second > 0 || nameResultFlip.second > 0 || authorsResult.second > 0 || authorsResultFlip.second > 0)) {
-                                println(buildString {
-                                    appendLine("Compared '${outer.name}' to '${inner.name}':")
-                                    appendLine("  '${outer.name.prepForMatching()}'<-->'${inner.name.prepForMatching()}'==>${nameResult.second}")
-                                    appendLine("  '${inner.name.prepForMatching()}'<-->'${outer.name.prepForMatching()}'==>${nameResultFlip.second}")
-                                    appendLine("  '${outer.authors.prepForMatching()}'<-->'${inner.authors.prepForMatching()}'==>${authorsResult.second}")
-                                    append("  '${inner.authors.prepForMatching()}'<-->'${outer.authors.prepForMatching()}'==>${authorsResultFlip.second}")
-                                })
+                                Timber.d {
+                                    buildString {
+                                        appendLine("Compared '${outer.name}' to '${inner.name}':")
+                                        appendLine("  '${outer.name.prepForMatching()}'<-->'${inner.name.prepForMatching()}'==>${nameResult.second}")
+                                        appendLine("  '${inner.name.prepForMatching()}'<-->'${outer.name.prepForMatching()}'==>${nameResultFlip.second}")
+                                        appendLine("  '${outer.authors.prepForMatching()}'<-->'${inner.authors.prepForMatching()}'==>${authorsResult.second}")
+                                        append("  '${inner.authors.prepForMatching()}'<-->'${outer.authors.prepForMatching()}'==>${authorsResultFlip.second}")
+                                    }
+                                }
                             }
 
                             if (isMatch) {
                                 modsToSkip.add(
                                     if (outer.source == ModSource.Index) {
-                                        println("Replacing '${inner.name}' from '${inner.authors}' with '${outer.name}' from '${outer.authors}'.")
+                                        Timber.i { "Replacing '${inner.name}' from '${inner.authors}' with '${outer.name}' from '${outer.authors}'." }
                                         inner
                                     } else if (inner.source == ModSource.Index) {
-                                        println("Replacing '${outer.name}' from '${outer.authors}' with '${inner.name}' from '${inner.authors}'.")
+                                        Timber.i { "Replacing '${outer.name}' from '${outer.authors}' with '${inner.name}' from '${inner.authors}'." }
                                         outer
                                     } else {
-                                        println("Replacing '${inner.name}' from '${inner.authors}' with '${outer.name}' from '${outer.authors}'.")
+                                        Timber.i { "Replacing '${inner.name}' from '${inner.authors}' with '${outer.name}' from '${outer.authors}'." }
                                         inner
                                     }
                                 )
@@ -92,7 +94,7 @@ internal class ModMerger {
                 }
 
                 val result = this - modsToSkip
-                println("Deduplicating ${this.count()} mods...done, removed ${this.count() - result.count()} mods.")
+                Timber.i { "Deduplicating ${this.count()} mods...done, removed ${this.count() - result.count()} mods." }
                 cleanUpMods(result)
             }
     }

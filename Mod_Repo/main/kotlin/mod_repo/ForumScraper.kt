@@ -39,7 +39,7 @@ class ForumScraper {
     }
 
     internal fun scrapeModIndexLinks(): List<ScrapedMod>? {
-        println("Scraping Mod Index...")
+        Timber.i { "Scraping Mod Index..." }
         return kotlin.runCatching {
             val doc: Document = Jsoup.connect("https://fractalsoftworks.com/forum/index.php?topic=177.0").get()
 //        Jsoup.parse(
@@ -63,6 +63,7 @@ class ForumScraper {
                             gameVersionReq = modElement.select("strong span").text(),
                             authors = modElement.select("em strong").text(),
                             forumPostLink = link.attr("href").ifBlank { null }?.let { Url(it) },
+                            discordMessageLink = null,
                             source = ModSource.Index,
                             categories = listOf(category)
                         )
@@ -74,7 +75,7 @@ class ForumScraper {
     }
 
     internal fun scrapeModdingForumLinks(): List<ScrapedMod>? {
-        println("Scraping Modding Forum...")
+        Timber.i { "Scraping Modding Forum..." }
         return scrapeSubforumLinks(
             forumBaseUrl = Main.FORUM_BASE_URL,
             subforumNumber = 3
@@ -82,7 +83,7 @@ class ForumScraper {
     }
 
     internal fun scrapeModForumLinks(): List<ScrapedMod>? {
-        println("Scraping Mod Forum...")
+        Timber.i { "Scraping Mod Forum..." }
         return scrapeSubforumLinks(
             forumBaseUrl = Main.FORUM_BASE_URL,
             subforumNumber = 8
@@ -110,6 +111,7 @@ class ForumScraper {
                                     ?: "",
                                 authors = authorLinkElement.text(),
                                 forumPostLink = titleLinkElement.attr("href").ifBlank { null }?.let { Url(it) },
+                                discordMessageLink = null,
                                 source = ModSource.ModdingSubforum,
                                 categories = emptyList()
                             )
