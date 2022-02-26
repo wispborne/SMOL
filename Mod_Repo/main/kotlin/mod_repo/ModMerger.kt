@@ -13,6 +13,8 @@
 package mod_repo
 
 import com.github.androidpasswordstore.sublimefuzzy.Fuzzy
+import io.ktor.http.*
+import io.ktor.util.*
 
 /**
  * This file is distributed under the GPLv3. An informal description follows:
@@ -90,9 +92,19 @@ internal class ModMerger {
 
                 val result = this - modsToSkip
                 println("Deduplicating ${this.count()} mods...done, removed ${this.count() - result.count()} mods.")
-                result
+                cleanUpMods(result)
             }
     }
+
+    private fun cleanUpMods(mods: List<ScrapedMod>): List<ScrapedMod> =
+        mods
+            .map { mod ->
+                mod.copy(forumPostLink = mod.forumPostLink?.copy(
+                    parameters = mod.forumPostLink.parameters
+                        .filter { key, _ -> !key.equals("PHPSESSID", ignoreCase = true) }
+                        .let { Parameters.build { appendAll(it) } })
+                )
+            }
 
     private fun String.prepForMatching() = this.lowercase().filter { it.isLetter() }
 }

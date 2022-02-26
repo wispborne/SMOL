@@ -22,7 +22,6 @@ import io.ktor.http.*
 import timber.ktx.Timber
 import utilities.exists
 import utilities.prefer
-import java.net.URI
 import java.util.*
 import kotlin.io.path.bufferedReader
 
@@ -70,7 +69,7 @@ internal class DiscordReader {
                         ?.mapNotNull { urlFinderRegex.find(it)?.value }
                         ?.prefer { it.contains("fractal") }
                         ?.firstOrNull()
-                        ?.let { kotlin.runCatching { URI.create(it) }.onFailure { Timber.w(it) }.getOrNull() },
+                        ?.let { kotlin.runCatching { Url(it) }.onFailure { Timber.w(it) }.getOrNull() },
                     source = ModSource.Discord,
                     categories = emptyList()
                 )

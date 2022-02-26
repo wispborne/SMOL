@@ -12,11 +12,11 @@
 
 package mod_repo
 
+import io.ktor.http.*
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.select.Elements
 import timber.ktx.Timber
-import java.net.URI
 
 /**
  * This file is distributed under the GPLv3. An informal description follows:
@@ -61,7 +61,7 @@ class ForumScraper {
                             name = link.text(),
                             gameVersionReq = modElement.select("strong span").text(),
                             authors = modElement.select("em strong").text(),
-                            forumPostLink = link.attr("href").ifBlank { null }?.let { URI.create(it) },
+                            forumPostLink = link.attr("href").ifBlank { null }?.let { Url(it) },
                             source = ModSource.Index,
                             categories = listOf(category)
                         )
@@ -107,7 +107,7 @@ class ForumScraper {
                                     ?.trim()
                                     ?: "",
                                 authors = authorLinkElement.text(),
-                                forumPostLink = titleLinkElement.attr("href").ifBlank { null }?.let { URI.create(it) },
+                                forumPostLink = titleLinkElement.attr("href").ifBlank { null }?.let { Url(it) },
                                 source = ModSource.ModdingSubforum,
                                 categories = emptyList()
                             )

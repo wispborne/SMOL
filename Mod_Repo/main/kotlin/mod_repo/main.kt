@@ -12,7 +12,10 @@
 
 package mod_repo
 
+import com.github.salomonbrys.kotson.registerTypeAdapter
+import com.github.salomonbrys.kotson.toJson
 import com.google.gson.GsonBuilder
+import io.ktor.http.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -38,7 +41,11 @@ class Main {
             val jsanity = Jsanity(
                 GsonBuilder()
                     .setPrettyPrinting()
-                    .disableHtmlEscaping().create()
+                    .disableHtmlEscaping()
+                    .registerTypeAdapter<Url> {
+                        serialize { it.src.toString().toJson() }
+                    }
+                    .create()
             )
             val modRepoCache = ModRepoCache(jsanity)
 

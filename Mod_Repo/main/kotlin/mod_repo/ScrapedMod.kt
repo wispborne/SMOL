@@ -12,13 +12,13 @@
 
 package mod_repo
 
-import java.net.URI
+import io.ktor.http.*
 
 data class ScrapedMod(
     val name: String,
     val gameVersionReq: String,
     val authors: String,
-    val forumPostLink: URI?,
+    val forumPostLink: Url?,
     val source: ModSource,
     val categories: List<String>
 )

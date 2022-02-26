@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Run Mod_Repo" type="JetRunConfigurationType">
+  <configuration default="false" name="Run Mod Scraper" type="JetRunConfigurationType">
     <option name="MAIN_CLASS_NAME" value="mod_repo.Main" />
     <module name="SMOL.Mod_Repo.main" />
     <shortenClasspath name="NONE" />
