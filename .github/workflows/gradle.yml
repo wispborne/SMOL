@@ -3,7 +3,7 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Java CI
+name: Build Mod Repo and Create Release from Tag
 
 on:
   push:
@@ -36,6 +36,5 @@ jobs:
         with:
           generateReleaseNotes: true
           draft: false
-          prerelease: true
           token: ${{ secrets.GITHUB_TOKEN }}
           artifacts: "Mod_Repo/dist/*"
