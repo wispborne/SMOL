@@ -16,6 +16,7 @@ import com.github.salomonbrys.kotson.*
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonElement
 import com.google.gson.JsonParser
+import io.ktor.http.*
 import smol_access.model.Dependency
 import smol_access.model.ModInfo
 import smol_access.model.Version
@@ -69,6 +70,9 @@ object GsonBuilder {
                         .getOrElse { emptyList() }
                 )
             }
+        }
+        .registerTypeAdapter<Url> {
+            deserialize { Url(it.json.string) }
         }
         .create()
 

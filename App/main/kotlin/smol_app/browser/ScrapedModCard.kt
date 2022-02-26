@@ -33,6 +33,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.ktor.http.*
 import mod_repo.ModSource
 import mod_repo.ScrapedMod
 import smol_app.themes.SmolTheme
@@ -82,6 +83,7 @@ fun scrapedModCard(mod: ScrapedMod, linkLoader: MutableState<((String) -> Unit)?
                     mod.categories + when (mod.source) {
                         ModSource.Index -> "Index"
                         ModSource.ModdingSubforum -> "Modding Subforum"
+                        ModSource.Discord -> "Discord"
                     }
                 }
                 if (tags.isNotEmpty()) {
@@ -112,7 +114,7 @@ fun scrapedModCardPreview() = smolPreview {
             name = "Archean Order",
             gameVersionReq = "0.95a",
             authors = "Morrokain",
-            forumPostLink = URI.create("index0026.html?PHPSESSID=30de1ecdaac1b579e7b6ddd2b384c554&topic=13183.0"),
+            forumPostLink = Url("index0026.html?topic=13183.0"),
             categories = listOf("Total Conversions"),
             source = ModSource.Index
         ),
