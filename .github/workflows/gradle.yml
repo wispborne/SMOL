@@ -28,12 +28,8 @@ jobs:
         with:
           arguments: Mod_Repo:uberJar
 
-      - name: Fetch Tags
-        run: git fetch --prune --unshallow --tags
-
       - name: Set Variables
         run: |
-          echo "VERSION=$(git describe --tags)" >> $GITHUB_ENV
           git log --format=%B -n 1 $(git log -1 --pretty=format:"%h") | cat - > changes.txt
 
       - name: Publish Release on GitHub
