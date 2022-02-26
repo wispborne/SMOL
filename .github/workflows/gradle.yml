@@ -5,7 +5,11 @@
 
 name: Java CI
 
-on: [ push ]
+on:
+  push:
+    tags:
+      - '*'
+    branches: [ main,dev ]
 
 jobs:
   build:
@@ -35,8 +39,6 @@ jobs:
       - name: Publish Release on GitHub
         uses: "ncipollo/release-action@v1"
         with:
-          name: ${{ env.VERSION }}
-          tag: ${{ env.VERSION }}
           bodyFile: changes.txt
           draft: false
           prerelease: true
