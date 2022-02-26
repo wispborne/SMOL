@@ -39,6 +39,7 @@ import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.collectLatest
@@ -146,7 +147,7 @@ fun AppScope.ModBrowserView(
                 SmolTooltipArea(
                     modifier = Modifier
                         .padding(end = 8.dp),
-                    tooltip = { SmolTooltipText(text = "Open in a browser") }) {
+                    tooltip = { SmolTooltipText(text = "Open in an external browser") }) {
                     IconButton(
                         onClick = {
                             runCatching {
@@ -485,7 +486,7 @@ private fun AppScope.embeddedBrowser(
 @Composable
 fun browserIcon(modifier: Modifier = Modifier, mod: ScrapedMod) {
     if (mod.forumPostLink?.toString()?.isBlank() == false) {
-        val descText = "Open in an external browser"
+        val descText = "Open in an external browser\n${mod.forumPostLink}"
         SmolTooltipArea(
             modifier = modifier,
             tooltip = { SmolTooltipText(text = descText) }) {

@@ -15,6 +15,7 @@ package mod_repo
 import com.github.androidpasswordstore.sublimefuzzy.Fuzzy
 import io.ktor.http.*
 import io.ktor.util.*
+import timber.ktx.Timber
 
 /**
  * This file is distributed under the GPLv3. An informal description follows:
@@ -104,6 +105,11 @@ internal class ModMerger {
                         .filter { key, _ -> !key.equals("PHPSESSID", ignoreCase = true) }
                         .let { Parameters.build { appendAll(it) } })
                 )
+            }
+            .filter {
+                val hasLink = it.forumPostLink != null
+                if (!hasLink) Timber.i { "Removing mod without a link: '${it.name}' by '${it.authors}'." }
+                hasLink
             }
 
     private fun String.prepForMatching() = this.lowercase().filter { it.isLetter() }

@@ -72,7 +72,11 @@ object GsonBuilder {
             }
         }
         .registerTypeAdapter<Url> {
-            deserialize { Url(it.json.string) }
+            deserialize { arg ->
+                kotlin.runCatching { Url(arg.json.string) }
+                    .onFailure { Timber.w(it) { arg.json.toString() } }
+                    .getOrNull()
+            }
         }
         .create()
 
