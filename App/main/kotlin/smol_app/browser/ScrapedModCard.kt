@@ -12,26 +12,26 @@
 
 package smol_app.browser
 
+import AppScope
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.mouseClickable
-import androidx.compose.material.Card
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.foundation.text.ClickableText
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.input.pointer.pointerMoveFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -41,18 +41,24 @@ import io.ktor.http.*
 import mod_repo.ModSource
 import mod_repo.ScrapedMod
 import org.tinylog.kotlin.Logger
+import smol_app.WindowState
+import smol_app.composables.SmolAlertDialog
+import smol_app.composables.SmolButton
 import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
 import smol_app.themes.SmolTheme
+import smol_app.themes.SmolTheme.hyperlink
 import smol_app.themes.SmolTheme.lighten
 import smol_app.util.MarkdownParser
 import smol_app.util.openAsUriInBrowser
 import smol_app.util.smolPreview
 import java.awt.Cursor
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
 @Composable
-fun scrapedModCard(mod: ScrapedMod, linkLoader: MutableState<((String) -> Unit)?>) {
+fun AppScope.scrapedModCard(mod: ScrapedMod, linkLoader: MutableState<((String) -> Unit)?>) {
+    var isBeingHovered by remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier
             .wrapContentHeight()
@@ -63,7 +69,11 @@ fun scrapedModCard(mod: ScrapedMod, linkLoader: MutableState<((String) -> Unit)?
             )
             .clickable {
                 mod.forumPostLink?.run { linkLoader.value?.invoke(this.toString()) }
-            },
+            }
+            .pointerMoveFilter(
+                onEnter = { isBeingHovered = true; false },
+                onExit = { isBeingHovered = false; false }
+            ),
         shape = SmolTheme.smolFullyClippedButtonShape()
     ) {
 
@@ -79,7 +89,7 @@ fun scrapedModCard(mod: ScrapedMod, linkLoader: MutableState<((String) -> Unit)?
                             SmolTooltipText(
                                 text = MarkdownParser.messageFormatter(
                                     text = it,
-                                    primary = true
+                                    linkColor = MaterialTheme.colors.hyperlink
                                 )
                             )
                         }
@@ -105,6 +115,62 @@ fun scrapedModCard(mod: ScrapedMod, linkLoader: MutableState<((String) -> Unit)?
                             )
                         }
 
+                        // Description button
+                        if (!mod.description.isNullOrBlank()) {
+                            OutlinedButton(
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                                modifier = Modifier.heightIn(min = 24.dp),
+                                onClick = {
+                                    alertDialogSetter.invoke {
+                                        SmolAlertDialog(
+                                            title = {
+                                                SelectionContainer {
+                                                    Text(
+                                                        text = mod.name,
+                                                        style = SmolTheme.alertDialogTitle(),
+                                                    )
+                                                }
+                                            },
+                                            text = {
+//                                                SelectionContainer {
+                                                    val text = MarkdownParser.messageFormatter(
+                                                        text = mod.description!!,
+                                                        linkColor = MaterialTheme.colors.hyperlink
+                                                    )
+                                                    ClickableText(
+                                                        text = text,
+                                                        style = SmolTheme.alertDialogBody().copy(color = MaterialTheme.colors.onSurface),
+                                                        onClick = {
+                                                            text.getStringAnnotations(
+                                                                tag = MarkdownParser.SymbolAnnotationType.LINK.name,
+                                                                start = it,
+                                                                end = it
+                                                            ).firstOrNull()
+                                                                ?.item
+                                                                ?.also {
+                                                                    linkLoader.value?.invoke(it)
+                                                                }
+                                                        }
+                                                    )
+//                                                }
+                                            },
+                                            onDismissRequest = { alertDialogSetter.invoke(null) },
+                                            confirmButton = {
+                                                SmolButton(onClick = { alertDialogSetter.invoke(null) }) {
+                                                    Text("Ok")
+                                                }
+                                            }
+                                        )
+                                    }
+                                }) {
+                                Text(
+                                    text = "View Desc.",
+                                    style = MaterialTheme.typography.caption,
+                                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.9f)
+                                )
+                            }
+                        }
+
                         val tags = remember {
                             mod.categories + when (mod.source) {
                                 ModSource.Index -> "Index"
@@ -113,7 +179,7 @@ fun scrapedModCard(mod: ScrapedMod, linkLoader: MutableState<((String) -> Unit)?
                             }
                         }
                         if (tags.isNotEmpty()) {
-                            Row(modifier = Modifier.padding(top = 12.dp)) {
+                            Row(modifier = Modifier.padding(top = 4.dp)) {
                                 Icon(
                                     modifier = Modifier.size(12.dp).align(Alignment.CenterVertically),
                                     painter = painterResource("icon-tag.svg"),
@@ -129,7 +195,12 @@ fun scrapedModCard(mod: ScrapedMod, linkLoader: MutableState<((String) -> Unit)?
                     }
                 }
             }
-            browserIcon(modifier = Modifier.align(Alignment.Top), mod = mod)
+            Column(modifier = Modifier.align(Alignment.Top)) {
+                val alphaOfHoverDimmedElements =
+                    animateFloatAsState(if (isBeingHovered) 1.0f else 0.7f)
+                BrowserIcon(iconModifier = Modifier.alpha(alphaOfHoverDimmedElements.value), mod = mod)
+                DiscordIcon(iconModifier = Modifier.alpha(alphaOfHoverDimmedElements.value), mod = mod)
+            }
         }
     }
 }
@@ -137,13 +208,14 @@ fun scrapedModCard(mod: ScrapedMod, linkLoader: MutableState<((String) -> Unit)?
 @Preview
 @Composable
 fun scrapedModCardPreview() = smolPreview {
-    scrapedModCard(
+    AppScope(WindowState()).scrapedModCard(
         ScrapedMod(
             name = "Archean Order",
             description = "test description",
             gameVersionReq = "0.95a",
             authors = "Morrokain",
             forumPostLink = Url("index0026.html?topic=13183.0"),
+            discordMessageLink = Url("https://discord.com/channels/187635036525166592/537191061156659200/947258123528319097"),
             categories = listOf("Total Conversions"),
             source = ModSource.Index
         ),
@@ -153,23 +225,52 @@ fun scrapedModCardPreview() = smolPreview {
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
-fun browserIcon(modifier: Modifier = Modifier, mod: ScrapedMod) {
+fun BrowserIcon(modifier: Modifier = Modifier, iconModifier: Modifier = Modifier, mod: ScrapedMod) {
     if (mod.forumPostLink?.toString()?.isBlank() == false) {
-        val descText = "Open in an external browser\n${mod.forumPostLink}"
+        val descText = "Open in an external browser.\n${mod.forumPostLink}"
         SmolTooltipArea(
             modifier = modifier,
             tooltip = { SmolTooltipText(text = descText) }) {
             Icon(
                 painter = painterResource("icon-web.svg"),
                 contentDescription = descText,
-                modifier = Modifier
-                    .width(16.dp)
-                    .height(16.dp)
+                modifier = iconModifier
+                    .size(16.dp)
                     .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)))
                     .mouseClickable {
                         if (this.buttons.isPrimaryPressed) {
                             runCatching {
                                 mod.forumPostLink?.toString()?.openAsUriInBrowser()
+                            }
+                                .onFailure { Logger.warn(it) }
+                        }
+                    },
+                tint = SmolTheme.dimmedIconColor()
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
+@Composable
+fun DiscordIcon(modifier: Modifier = Modifier, iconModifier: Modifier = Modifier, mod: ScrapedMod) {
+    if (mod.discordMessageLink?.toString()?.isBlank() == false) {
+        val descText = "Open in web Discord.\n${mod.discordMessageLink}"
+        SmolTooltipArea(
+            modifier = modifier,
+            tooltip = { SmolTooltipText(text = descText) }) {
+            Icon(
+                painter = painterResource("icon-discord-white.svg"),
+                contentDescription = descText,
+                modifier = iconModifier
+                    .padding(top = 8.dp)
+                    .size(16.dp)
+                    .padding(1.dp)
+                    .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)))
+                    .mouseClickable {
+                        if (this.buttons.isPrimaryPressed) {
+                            runCatching {
+                                mod.discordMessageLink?.toString()?.openAsUriInBrowser()
                             }
                                 .onFailure { Logger.warn(it) }
                         }

@@ -26,7 +26,6 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -80,7 +79,7 @@ fun AppScope.ModBrowserView(
     modifier: Modifier = Modifier,
     defaultUrl: String? = null
 ) {
-    val scrapedMods = remember { mutableStateListOf(elements = SL.modRepo.getItems().toTypedArray()) }
+    val scrapedMods = SL.modRepo.items.collectAsState().value
     val shownMods = remember { mutableStateListOf<ScrapedMod?>(elements = scrapedMods.toTypedArray()) }
 
     val browser = remember { mutableStateOf<ChromiumBrowser?>(null) }
@@ -117,29 +116,30 @@ fun AppScope.ModBrowserView(
                 }
                 Spacer(Modifier.weight(1f))
 
-                SmolTooltipArea(
-                    modifier = Modifier
-                        .padding(end = 8.dp),
-                    tooltip = { SmolTooltipText(text = "Fetch latest mod cache.") }) {
-                    IconButton(
-                        modifier = Modifier,
-                        onClick = {
-                            coroutineScope.launch {
-                                kotlin.runCatching { SL.modRepo.refreshFromInternet() }
-                                    .onFailure { Timber.w(it) }
-                            }
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .width(24.dp)
-                                .height(24.dp),
-                            tint = SmolTheme.dimmedIconColor()
-                        )
-                    }
-                }
+                // Doesn't seem to work, just restart the app to reload, it only happens once a day anyway.
+//                SmolTooltipArea(
+//                    modifier = Modifier
+//                        .padding(end = 8.dp),
+//                    tooltip = { SmolTooltipText(text = "Fetch latest mod cache.") }) {
+//                    IconButton(
+//                        modifier = Modifier,
+//                        onClick = {
+//                            coroutineScope.launch {
+//                                kotlin.runCatching { SL.modRepo.refreshFromInternet() }
+//                                    .onFailure { Timber.w(it) }
+//                            }
+//                        }
+//                    ) {
+//                        Icon(
+//                            imageVector = Icons.Default.Refresh,
+//                            contentDescription = null,
+//                            modifier = Modifier
+//                                .width(24.dp)
+//                                .height(24.dp),
+//                            tint = SmolTheme.dimmedIconColor()
+//                        )
+//                    }
+//                }
                 SmolTooltipArea(
                     modifier = Modifier
                         .padding(end = 8.dp),
@@ -221,7 +221,7 @@ fun AppScope.ModBrowserView(
                                     }
 
                                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                                        val lastUpdated = SL.modRepo.getLastUpdated()
+                                        val lastUpdated = SL.modRepo.lastUpdated.collectAsState().value
                                         Text(
                                             modifier = Modifier.padding(vertical = 4.dp, horizontal = 16.dp),
                                             text = "Mod list generated on: ${

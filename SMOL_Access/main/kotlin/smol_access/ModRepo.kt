@@ -18,6 +18,8 @@ import io.ktor.client.statement.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import mod_repo.ModRepoCache
 import mod_repo.ScrapedMod
@@ -29,9 +31,12 @@ import java.time.format.DateTimeFormatter
 class ModRepo internal constructor(private val jsanity: Jsanity, private val httpClientBuilder: HttpClientBuilder) {
     private val modRepoCache = ModRepoCache(jsanity)
     private val scope = CoroutineScope(Job())
+    private val items_ = MutableStateFlow(emptyList<ScrapedMod>())
+    val items = items_.asStateFlow()
+    private val lastUpdated_ = MutableStateFlow<ZonedDateTime?>(null)
+    val lastUpdated = lastUpdated_.asStateFlow()
 
-    fun getItems(): List<ScrapedMod> = modRepoCache.items
-    fun getLastUpdated(): ZonedDateTime? = modRepoCache.lastUpdated?.let { dateTimeStr ->
+    private fun getLastUpdated(): ZonedDateTime? = modRepoCache.lastUpdated?.let { dateTimeStr ->
         runCatching { ZonedDateTime.parse(dateTimeStr, DateTimeFormatter.ISO_DATE_TIME) }
             .onFailure { Timber.w(it) }
             .getOrNull()
@@ -54,6 +59,8 @@ class ModRepo internal constructor(private val jsanity: Jsanity, private val htt
                     Timber.i { "Updated scraped mods. Previous: ${modRepoCache.items.count()}, now: ${freshIndexMods.items.count()}" }
                     modRepoCache.items = freshIndexMods.items
                     modRepoCache.lastUpdated = freshIndexMods.lastUpdated
+                    lastUpdated_.value = getLastUpdated()
+                    items_.value = modRepoCache.items
                 }
             }
         }

@@ -12,9 +12,8 @@
 
 package smol_app.util
 
-import androidx.compose.material.Colors
-import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -59,7 +58,7 @@ object MarkdownParser {
     @Composable
     fun messageFormatter(
         text: String,
-        primary: Boolean
+        linkColor: Color
     ): AnnotatedString {
         val tokens = symbolPattern.findAll(text)
         val matchedtokens = mutableListOf(tokens)
@@ -73,8 +72,7 @@ object MarkdownParser {
 
                 val (annotatedString, stringAnnotation) = getSymbolAnnotation(
                     matchResult = token,
-                    colorScheme = MaterialTheme.colors,
-                    primary = primary
+                    linkColor = linkColor,
                 )
                 append(annotatedString)
 
@@ -102,15 +100,14 @@ object MarkdownParser {
      */
     private fun getSymbolAnnotation(
         matchResult: MatchResult,
-        colorScheme: Colors,
-        primary: Boolean
+        linkColor: Color,
     ): SymbolAnnotation {
         return when {
             matchResult.value.startsWith("@") -> SymbolAnnotation(
                 AnnotatedString(
                     text = matchResult.value,
                     spanStyle = SpanStyle(
-                        color = if (primary) colorScheme.onPrimary else colorScheme.primary,
+                        color = linkColor,
                         fontWeight = FontWeight.Bold
                     )
                 ),
@@ -171,7 +168,7 @@ object MarkdownParser {
                 AnnotatedString(
                     text = matchResult.value,
                     spanStyle = SpanStyle(
-                        color = if (primary) colorScheme.onPrimary else colorScheme.primary
+                        color = linkColor
                     )
                 ),
                 StringAnnotation(
