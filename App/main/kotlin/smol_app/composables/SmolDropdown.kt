@@ -15,10 +15,12 @@ package smol_app.composables
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -43,6 +45,7 @@ abstract class SmolDropdownMenuItem(
 class SmolDropdownMenuItemTemplate(
     val text: String,
     val iconPath: String? = null,
+    val isEnabled: Boolean = true,
     backgroundColor: Color? = null,
     border: Border? = null,
     val contentColor: Color? = null,
@@ -82,6 +85,7 @@ fun SmolDropdownWithButton(
     initiallySelectedIndex: Int = 0,
     shouldShowSelectedItemInMenu: Boolean = true,
     canSelectItems: Boolean = true,
+    neverShowFirstItemInPopupMenu: Boolean = false,
     customButtonContent: (@Composable (selectedItem: SmolDropdownMenuItem, isExpanded: Boolean, setExpanded: (Boolean) -> Unit) -> Unit)? = null
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -97,6 +101,7 @@ fun SmolDropdownWithButton(
                     modifier = Modifier.wrapContentWidth()
                         .align(Alignment.CenterStart),
                     shape = SmolTheme.smolFullyClippedButtonShape(),
+                    enabled = (selectedItem as? SmolDropdownMenuItemTemplate)?.isEnabled ?: true,
                     colors = ButtonDefaults.buttonColors(
                         backgroundColor = backgroundColor
                     )
@@ -105,7 +110,7 @@ fun SmolDropdownWithButton(
                         if (!selectedItem.iconPath.isNullOrBlank()) {
                             Icon(
                                 painter = painterResource(selectedItem.iconPath),
-                                modifier = Modifier.padding(end = 8.dp),
+                                modifier = Modifier.padding(end = 12.dp),
                                 contentDescription = null
                             )
                         }
@@ -124,7 +129,7 @@ fun SmolDropdownWithButton(
                     )
                 }
             } else {
-                Box(modifier = Modifier.clickable { expanded = expanded.not() }) {
+                Box(modifier = Modifier.clip(MaterialTheme.shapes.small).clickable { expanded = expanded.not() }) {
                     customButtonContent.invoke(selectedItem, expanded) { expanded = it }
                 }
             }
@@ -136,43 +141,45 @@ fun SmolDropdownWithButton(
             ) {
                 items.forEachIndexed { index, item ->
                     if (shouldShowSelectedItemInMenu || index != selectedIndex || !canSelectItems) {
-                        DropdownMenuItem(
-                            modifier = Modifier.let {
-                                if (item.backgroundColor != null)
-                                    it.background(item.backgroundColor) else it
-                            }
-                                .run {
-                                    if (item.border != null) this.border(
-                                        item.border.borderStroke,
-                                        item.border.shape
-                                    ) else this
-                                },
-                            onClick = {
-                                if (canSelectItems) {
-                                    selectedIndex = index
+                        if (!(neverShowFirstItemInPopupMenu && index == 0)) {
+                            DropdownMenuItem(
+                                modifier = Modifier.let {
+                                    if (item.backgroundColor != null)
+                                        it.background(item.backgroundColor) else it
                                 }
-                                expanded = false
-                                items[index].onClick()
-                            }) {
-                            if (item is SmolDropdownMenuItemCustom) {
-                                item.customItemContent.invoke(this, false)
-                            } else if (item is SmolDropdownMenuItemTemplate) {
-                                if (!item.iconPath.isNullOrBlank()) {
-                                    Icon(
-                                        painter = painterResource(item.iconPath),
-                                        // For some reason, setting the size prevents the text from wrapping prematurely.
-                                        modifier = Modifier.padding(end = 8.dp).size(24.dp),
-                                        contentDescription = null
+                                    .run {
+                                        if (item.border != null) this.border(
+                                            item.border.borderStroke,
+                                            item.border.shape
+                                        ) else this
+                                    },
+                                onClick = {
+                                    if (canSelectItems) {
+                                        selectedIndex = index
+                                    }
+                                    expanded = false
+                                    items[index].onClick()
+                                }) {
+                                if (item is SmolDropdownMenuItemCustom) {
+                                    item.customItemContent.invoke(this, false)
+                                } else if (item is SmolDropdownMenuItemTemplate) {
+                                    if (!item.iconPath.isNullOrBlank()) {
+                                        Icon(
+                                            painter = painterResource(item.iconPath),
+                                            // For some reason, setting the size prevents the text from wrapping prematurely.
+                                            modifier = Modifier.padding(end = 12.dp).size(24.dp),
+                                            contentDescription = null
+                                        )
+                                    }
+                                    Text(
+                                        text = item.text,
+                                        modifier = Modifier.weight(1f),
+                                        fontWeight = FontWeight.Bold,
+                                        color = item.contentColor ?: contentColorFor(
+                                            item.backgroundColor ?: MaterialTheme.colors.surface
+                                        )
                                     )
                                 }
-                                Text(
-                                    text = item.text,
-                                    modifier = Modifier.weight(1f),
-                                    fontWeight = FontWeight.Bold,
-                                    color = item.contentColor ?: contentColorFor(
-                                        item.backgroundColor ?: MaterialTheme.colors.surface
-                                    )
-                                )
                             }
                         }
                     }

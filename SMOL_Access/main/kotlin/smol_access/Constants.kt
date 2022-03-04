@@ -27,6 +27,9 @@ object Constants {
     const val MOD_INFO_FILE = "mod_info.json"
     const val MOD_INFO_FILE_DISABLED = "mod_info.json.disabled"
     const val ENABLED_MODS_FILENAME = "enabled_mods.json"
+    const val MODS_FOLDER_NAME = "mods"
+    const val SAVES_FOLDER_NAME = "saves"
+    fun getGameLogPath(gamePath: Path) = gamePath.resolve("starsector-core/starsector.log")
     const val VERSION_CHECKER_CSV_PATH = "data/config/version/version_files.csv"
     const val VERSION_CHECKER_FILE_ENDING = ".version"
     const val FORUM_URL = "https://fractalsoftworks.com/forum/index.php"

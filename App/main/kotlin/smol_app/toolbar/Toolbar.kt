@@ -24,12 +24,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.replaceCurrent
@@ -40,19 +42,16 @@ import kotlinx.coroutines.launch
 import org.tinylog.Logger
 import smol_access.Constants
 import smol_access.SL
-import smol_app.composables.SmolButton
-import smol_app.composables.SmolTooltipArea
-import smol_app.composables.SmolTooltipText
+import smol_app.composables.*
 import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
-import smol_app.util.doesGamePathExist
-import smol_app.util.isJCEFEnabled
-import smol_app.util.isModBrowserEnabled
-import smol_app.util.isModProfilesEnabled
+import smol_app.util.*
+import timber.ktx.Timber
 import utilities.runCommandInTerminal
 import utilities.weightedRandom
 import java.awt.FileDialog
 import kotlin.io.path.absolutePathString
+import kotlin.io.path.isReadable
 
 @Composable
 fun tabButton(
@@ -97,7 +96,7 @@ fun tabButton(
 fun AppScope.toolbar(currentScreen: Screen) {
     launchButton()
     installModsButton()
-    Row {
+    Row(verticalAlignment = Alignment.CenterVertically) {
         Divider(
             modifier = Modifier
                 .padding(start = 24.dp, end = 8.dp)
@@ -109,6 +108,7 @@ fun AppScope.toolbar(currentScreen: Screen) {
         modBrowserButton(isSelected = currentScreen is Screen.ModBrowser)
         profilesButton(isSelected = currentScreen is Screen.Profiles)
         settingsButton(isSelected = currentScreen is Screen.Settings)
+        quickLinksDropdown()
     }
 }
 
@@ -306,4 +306,67 @@ fun AppScope.settingsButton(modifier: Modifier = Modifier, isSelected: Boolean) 
     ) {
         Text("Settings")
     }
+}
+
+@Composable
+fun AppScope.quickLinksDropdown(modifier: Modifier = Modifier) {
+    val gamePath = SL.gamePathManager.path.collectAsState().value
+    val savesPath = gamePath?.resolve(Constants.SAVES_FOLDER_NAME)
+    val modsPath = gamePath?.resolve(Constants.MODS_FOLDER_NAME)
+    val logPath = gamePath?.let {
+        kotlin.runCatching { Constants.getGameLogPath(gamePath) }.onFailure { Timber.w(it) }.getOrNull()
+    }
+    SmolDropdownWithButton(
+        shouldShowSelectedItemInMenu = false,
+        canSelectItems = false,
+        modifier = Modifier
+            .padding(start = 16.dp),
+        customButtonContent = { _: SmolDropdownMenuItem, isExpanded: Boolean, _: (Boolean) -> Unit ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(vertical = 4.dp, horizontal = 8.dp)
+            ) {
+                Icon(painter = painterResource("icon-folder.svg"), contentDescription = null)
+                SmolDropdownArrow(
+                    modifier = Modifier
+                        .align(Alignment.CenterVertically),
+                    expanded = isExpanded
+                )
+            }
+        },
+        items = listOf(
+            SmolDropdownMenuItemTemplate(
+                text = "Starsector" + if (gamePath?.isReadable() != true) " (not found)" else "",
+                iconPath = "icon-folder-game.svg",
+                isEnabled = gamePath?.isReadable() == true,
+                onClick = {
+                    gamePath?.openInDesktop()
+                }
+            ),
+            SmolDropdownMenuItemTemplate(
+                text = "Mods" + if (modsPath?.isReadable() != true) " (not found)" else "",
+                iconPath = "icon-folder-mods.svg",
+                isEnabled = modsPath?.isReadable() == true,
+                onClick = {
+                    modsPath?.openInDesktop()
+                }
+            ),
+            SmolDropdownMenuItemTemplate(
+                text = "Saves" + if (savesPath?.isReadable() != true) " (not found)" else "",
+                iconPath = "icon-folder-saves.svg",
+                isEnabled = savesPath?.isReadable() == true,
+                onClick = {
+                    savesPath?.openInDesktop()
+                }
+            ),
+            SmolDropdownMenuItemTemplate(
+                text = "Log" + if (logPath?.isReadable() != true) " (not found)" else "",
+                iconPath = "icon-file-debug.svg",
+                isEnabled = logPath?.isReadable() == true,
+                onClick = {
+                    logPath?.openInDesktop()
+                }
+            )
+        )
+    )
 }

@@ -14,16 +14,14 @@ package smol_app.modprofiles
 
 import AppScope
 import androidx.compose.desktop.ui.tooling.preview.Preview
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.border
+import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.GridCells
 import androidx.compose.foundation.lazy.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -41,7 +39,7 @@ import smol_app.composables.*
 import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.lighten
-import smol_app.toolbar.*
+import smol_app.toolbar.toolbar
 import java.util.*
 
 @OptIn(
@@ -50,7 +48,7 @@ import java.util.*
 )
 @Composable
 @Preview
-fun AppScope.ProfilesView(
+fun AppScope.ModProfilesView(
     modifier: Modifier = Modifier
 ) {
     val recomposer = currentRecomposeScope
@@ -137,37 +135,45 @@ fun AppScope.ProfilesView(
                             style = MaterialTheme.typography.h6,
                             modifier = Modifier.padding(start = 8.dp, bottom = 16.dp)
                         )
-                        LazyVerticalGrid(
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                            cells = GridCells.Adaptive(370.dp)
-                        ) {
-                            this.items(items = saveGames.value
-                                .sortedByDescending { it.saveDate }
-                                .mapIndexed { index, saveFile ->
-                                    ModProfileCardInfo.SaveModProfileCardInfo(
-                                        id = UUID.randomUUID().toString(),
-                                        name = saveFile.characterName,
-                                        description = "",
-                                        sortOrder = 1337 + index,
-                                        enabledModVariants = saveFile.mods.map {
-                                            UserProfile.ModProfile.ShallowModVariant(
-                                                modId = it.id,
-                                                modName = it.name,
-                                                smolVariantId = ModVariant.createSmolId(it.id, it.version),
-                                                version = it.version
-                                            )
-                                        },
-                                        saveFile = saveFile
+                        Row {
+                            val lazyListState = rememberLazyListState()
+                            LazyVerticalGrid(
+                                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                                cells = GridCells.Adaptive(370.dp),
+                                state = lazyListState
+                            ) {
+                                this.items(items = saveGames.value
+                                    .sortedByDescending { it.saveDate }
+                                    .mapIndexed { index, saveFile ->
+                                        ModProfileCardInfo.SaveModProfileCardInfo(
+                                            id = UUID.randomUUID().toString(),
+                                            name = saveFile.characterName,
+                                            description = "",
+                                            sortOrder = 1337 + index,
+                                            enabledModVariants = saveFile.mods.map {
+                                                UserProfile.ModProfile.ShallowModVariant(
+                                                    modId = it.id,
+                                                    modName = it.name,
+                                                    smolVariantId = ModVariant.createSmolId(it.id, it.version),
+                                                    version = it.version
+                                                )
+                                            },
+                                            saveFile = saveFile
+                                        )
+                                    }
+                                ) { modProfile ->
+                                    ModProfileCard(
+                                        userProfile = userProfile,
+                                        modProfile = modProfile,
+                                        modVariants = shallowModVariants
                                     )
                                 }
-                            ) { modProfile ->
-                                ModProfileCard(
-                                    userProfile = userProfile,
-                                    modProfile = modProfile,
-                                    modVariants = shallowModVariants
-                                )
                             }
+                            VerticalScrollbar(
+                                modifier = Modifier.fillMaxHeight(),
+                                adapter = rememberScrollbarAdapter(lazyListState)
+                            )
                         }
                     }
                 }
