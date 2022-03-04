@@ -41,6 +41,10 @@ import kotlin.system.exitProcess
 class UpdateSmolToast {
     private var job = CoroutineScope(Job())
 
+    companion object {
+        const val UPDATE_TOAST_ID = "smol-update"
+    }
+
     enum class UpdateStage {
         Idle,
         Downloading,
@@ -51,150 +55,156 @@ class UpdateSmolToast {
         Done,
     }
 
-    fun createIfNeeded(
-        updateConfig: Configuration,
+    fun updateUpdateToast(
+        updateConfig: Configuration?,
         toasterState: ToasterState,
         updater: Updater
     ) {
-        if (updateConfig.requiresUpdate()) {
-            val updateToastId = "smol-update"
+        if (updateConfig?.requiresUpdate() == true) {
+            Timber.i { "Adding update toast." }
             toasterState.addItem(
                 toast = Toast(
-                    id = updateToastId,
+                    id = UPDATE_TOAST_ID,
                     timeoutMillis = null,
                     useStandardToastFrame = true,
                     content = {
-                        val version = updateConfig.resolvedProperties[Updater.PROP_VERSION_NAME]
-                        var updateStage by remember {
-                            mutableStateOf(
-                                if (updater.isUpdatedDownloaded())
-                                    UpdateStage.ReadyToInstall else UpdateStage.Idle
-                            )
-                        }
-
-                        Row(modifier = Modifier
-                            .let {
-                                if (updateStage == UpdateStage.Downloading)
-                                    it.width(400.dp)
-                                else it
-                            }) {
-                            val fileProgress = updater.currentFileDownload.collectAsState()
-
-                            Column {
-                                Text(
-                                    text = when (updateStage) {
-                                        UpdateStage.Downloading ->
-                                            "Downloading ${version?.let { "$it: " } ?: ""}" +
-                                                    "${fileProgress.value?.name?.ellipsizeAfter(30)}"
-                                        UpdateStage.DownloadFailed -> "Download failed."
-                                        UpdateStage.ReadyToInstall -> "Update downloaded."
-                                        UpdateStage.Installing -> "Installing update."
-                                        else -> "${version?.ifBlank { null } ?: "A new version"} of SMOL is available."
-                                    }
+                        kotlin.runCatching {
+                            val version = updateConfig.resolvedProperties[Updater.PROP_VERSION_NAME]
+                            var updateStage by remember {
+                                mutableStateOf(
+                                    if (updater.isUpdatedDownloaded())
+                                        UpdateStage.ReadyToInstall else UpdateStage.Idle
                                 )
+                            }
 
-                                Row {
-                                    SmolButton(
-                                        modifier = Modifier.padding(top = 4.dp).align(Alignment.CenterVertically),
-                                        enabled = updateStage != UpdateStage.Done,
-                                        onClick = {
-                                            when (updateStage) {
-                                                UpdateStage.Idle -> {
-                                                    job = CoroutineScope(Job())
-                                                    job.launch {
-                                                        try {
-                                                            updateStage = UpdateStage.Downloading
-                                                            updater.update(remoteConfig = updateConfig)
-                                                            updateStage = UpdateStage.ReadyToInstall
-                                                        } catch (e: Exception) {
-                                                            Timber.w(e)
-                                                            updateStage = UpdateStage.DownloadFailed
-                                                        }
-                                                    }
-                                                }
-                                                UpdateStage.Downloading -> {
-                                                    job.cancel()
-                                                    updateStage = UpdateStage.Idle
-                                                }
-                                                UpdateStage.ReadyToInstall -> {
-                                                    job = CoroutineScope(Job())
-                                                    job.launch {
-                                                        try {
-                                                            updateStage = UpdateStage.Installing
-                                                            // Start updater, then quit application so updater can replace files.
-                                                            updater.installUpdate()
-                                                            exitProcess(status = 0)
-                                                            updateStage = UpdateStage.Done
-                                                        } catch (e: Exception) {
-                                                            Timber.w(e)
-                                                            updateStage = UpdateStage.InstallFailed
-                                                        }
-                                                    }
-                                                }
-                                                UpdateStage.Installing -> {
-                                                    job.cancel()
-                                                    updateStage = UpdateStage.ReadyToInstall
-                                                }
-                                                else -> {
-                                                }
-                                            }
+                            Row(modifier = Modifier
+                                .let {
+                                    if (updateStage == UpdateStage.Downloading)
+                                        it.width(400.dp)
+                                    else it
+                                }) {
+                                val fileProgress = updater.currentFileDownload.collectAsState()
+
+                                Column {
+                                    Text(
+                                        text = when (updateStage) {
+                                            UpdateStage.Downloading ->
+                                                "Downloading ${version?.let { "$it: " } ?: ""}" +
+                                                        "${fileProgress.value?.name?.ellipsizeAfter(30)}"
+                                            UpdateStage.DownloadFailed -> "Download failed."
+                                            UpdateStage.ReadyToInstall -> "Update downloaded."
+                                            UpdateStage.Installing -> "Installing update."
+                                            else -> "${version?.ifBlank { null } ?: "A new version"} of SMOL is available."
                                         }
-                                    ) {
-                                        Text(
-                                            text = when (updateStage) {
-                                                UpdateStage.Idle,
-                                                UpdateStage.DownloadFailed -> "Download"
-                                                UpdateStage.Downloading -> "Cancel"
-                                                UpdateStage.ReadyToInstall,
-                                                UpdateStage.Installing,
-                                                UpdateStage.InstallFailed -> "Install"
-                                                UpdateStage.Done -> "Done"
+                                    )
+
+                                    Row {
+                                        SmolButton(
+                                            modifier = Modifier.padding(top = 4.dp).align(Alignment.CenterVertically),
+                                            enabled = updateStage != UpdateStage.Done,
+                                            onClick = {
+                                                when (updateStage) {
+                                                    UpdateStage.Idle -> {
+                                                        job = CoroutineScope(Job())
+                                                        job.launch {
+                                                            try {
+                                                                updateStage = UpdateStage.Downloading
+                                                                updater.update(remoteConfig = updateConfig)
+                                                                updateStage = UpdateStage.ReadyToInstall
+                                                            } catch (e: Exception) {
+                                                                Timber.w(e)
+                                                                updateStage = UpdateStage.DownloadFailed
+                                                            }
+                                                        }
+                                                    }
+                                                    UpdateStage.Downloading -> {
+                                                        job.cancel()
+                                                        updateStage = UpdateStage.Idle
+                                                    }
+                                                    UpdateStage.ReadyToInstall -> {
+                                                        job = CoroutineScope(Job())
+                                                        job.launch {
+                                                            try {
+                                                                updateStage = UpdateStage.Installing
+                                                                // Start updater, then quit application so updater can replace files.
+                                                                updater.installUpdate()
+                                                                exitProcess(status = 0)
+                                                                updateStage = UpdateStage.Done
+                                                            } catch (e: Exception) {
+                                                                Timber.w(e)
+                                                                updateStage = UpdateStage.InstallFailed
+                                                            }
+                                                        }
+                                                    }
+                                                    UpdateStage.Installing -> {
+                                                        job.cancel()
+                                                        updateStage = UpdateStage.ReadyToInstall
+                                                    }
+                                                    else -> {
+                                                    }
+                                                }
                                             }
+                                        ) {
+                                            Text(
+                                                text = when (updateStage) {
+                                                    UpdateStage.Idle,
+                                                    UpdateStage.DownloadFailed -> "Download"
+                                                    UpdateStage.Downloading -> "Cancel"
+                                                    UpdateStage.ReadyToInstall,
+                                                    UpdateStage.Installing,
+                                                    UpdateStage.InstallFailed -> "Install"
+                                                    UpdateStage.Done -> "Done"
+                                                }
+                                            )
+                                        }
+
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.padding(start = 16.dp).size(20.dp)
+                                                .align(Alignment.CenterVertically),
+                                            progress = updater.totalDownloadFraction.collectAsState().value ?: 0f
+                                        )
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.padding(start = 8.dp).size(20.dp)
+                                                .align(Alignment.CenterVertically),
+                                            progress = fileProgress.value?.progress ?: 0f
                                         )
                                     }
 
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.padding(start = 16.dp).size(20.dp)
-                                            .align(Alignment.CenterVertically),
-                                        progress = updater.totalDownloadFraction.collectAsState().value ?: 0f
-                                    )
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.padding(start = 8.dp).size(20.dp)
-                                            .align(Alignment.CenterVertically),
-                                        progress = fileProgress.value?.progress ?: 0f
+                                    val downloadTotal = updater.totalDownloadBytes.collectAsState().value
+                                    val downloadedTotal =
+                                        if (updateStage >= UpdateStage.Downloading) downloadTotal
+                                        else updater.totalDownloadedBytes.collectAsState().value
+                                    val downloadedAmountText =
+                                        "${downloadedTotal?.let { "%.2f".format(it.bytesToMB) } ?: "unknown"} / "
+                                    Text(
+                                        text = "${if (updateStage >= UpdateStage.Downloading) downloadedAmountText else ""}${downloadTotal?.bytesAsShortReadableMB ?: "unknown"}",
+                                        modifier = Modifier.padding(start = 8.dp)
                                     )
                                 }
 
-                                val downloadTotal = updater.totalDownloadBytes.collectAsState().value
-                                val downloadedTotal =
-                                    if (updateStage >= UpdateStage.Downloading) downloadTotal
-                                    else updater.totalDownloadedBytes.collectAsState().value
-                                val downloadedAmountText =
-                                    "${downloadedTotal?.let { "%.2f".format(it.bytesToMB) } ?: "unknown"} / "
-                                Text(
-                                    text = "${if (updateStage >= UpdateStage.Downloading) downloadedAmountText else ""}${downloadTotal?.bytesAsShortReadableMB ?: "unknown"}",
-                                    modifier = Modifier.padding(start = 8.dp)
-                                )
-                            }
 
+                                Spacer(Modifier.weight(1f))
 
-                            Spacer(Modifier.weight(1f))
-
-                            IconButton(
-                                modifier = Modifier
-                                    .padding(start = 8.dp)
-                                    .align(Alignment.CenterVertically)
-                                    .size(16.dp),
-                                onClick = {
-                                    toasterState.remove(updateToastId)
+                                IconButton(
+                                    modifier = Modifier
+                                        .padding(start = 8.dp)
+                                        .align(Alignment.CenterVertically)
+                                        .size(16.dp),
+                                    onClick = {
+                                        toasterState.remove(UPDATE_TOAST_ID)
+                                    }
+                                ) {
+                                    Icon(imageVector = Icons.Default.Close, contentDescription = null)
                                 }
-                            ) {
-                                Icon(imageVector = Icons.Default.Close, contentDescription = null)
                             }
                         }
+                            .onFailure { Timber.w(it) }
                     }
                 )
             )
+        } else {
+            Timber.i { "Removing update toast." }
+            toasterState.remove(toastId = UPDATE_TOAST_ID)
         }
     }
 }

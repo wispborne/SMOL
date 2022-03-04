@@ -16,7 +16,6 @@ package smol_app.home
 
 import AppScope
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.animateContentSize
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.VerticalScrollbar
@@ -107,7 +106,7 @@ fun AppScope.ModGridView(
                 val isEnabledCollapsed = remember { mutableStateOf(false) }
                 val isDisabledCollapsed = remember { mutableStateOf(false) }
                 val listState = rememberLazyListState()
-                LazyColumn(Modifier.fillMaxWidth().animateContentSize(), state = listState) {
+                LazyColumn(Modifier.fillMaxWidth(), state = listState) {
                     mods
                         .filterNotNull()
                         .groupBy { it.uiEnabled }
@@ -310,7 +309,7 @@ fun AppScope.modGridBulkActionMenu(modifier: Modifier = Modifier, checkedRows: S
 @Preview
 @Composable
 fun previewModGrid() {
-    AppScope(WindowState())
+    AppScope(windowState = WindowState(), recomposer = currentRecomposeScope)
         .ModGridView(Modifier, SnapshotStateList())
 }
 

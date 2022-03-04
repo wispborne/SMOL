@@ -49,7 +49,7 @@ class Updater(
 
     suspend fun getRemoteConfig(
         channel: UpdateChannel = getUpdateChannelSetting()
-    ): Configuration? {
+    ): Configuration {
         val remoteConfigUrl = URI.create(
             "${getUpdateConfigUrl(channel)}/$UPDATE_CONFIG_XML"
         ).toURL()
@@ -62,7 +62,14 @@ class Updater(
                 }
             }
                 .onFailure { Timber.w(it) }
-                .getOrNull()
+                .onSuccess {
+                    Timber.i {
+                        "Fetched update-config.xml from ${remoteConfigUrl}. Update needed? ${it.requiresUpdate()}, Total size: ${
+                            it.files.filter { it.requiresUpdate() }.sumOf { it.size }
+                        }b."
+                    }
+                }
+                .getOrThrow()
         }
 
         totalDownloadBytes.value = remoteConfig?.files

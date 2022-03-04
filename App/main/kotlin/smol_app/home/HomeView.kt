@@ -27,7 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.arkivanov.decompose.push
+import com.arkivanov.decompose.replaceCurrent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collectLatest
@@ -40,7 +40,7 @@ import smol_app.cli.SmolCLI
 import smol_app.composables.*
 import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
-import smol_app.toolbar.*
+import smol_app.toolbar.toolbar
 import smol_app.util.filterModGrid
 import smol_app.util.onEnterKeyPressed
 import smol_app.util.replaceAllUsingDifference
@@ -144,7 +144,7 @@ fun AppScope.homeView(
                             Text(text = errors.joinToString(separator = "\n\n") { "Error: $it" })
                         }
                         SmolButton(
-                            onClick = { router.push(Screen.Settings) },
+                            onClick = { router.replaceCurrent(Screen.Settings) },
                             modifier = Modifier.padding(top = 8.dp)
                         ) {
                             Text("Settings")

@@ -28,8 +28,9 @@ import smol_app.composables.SmolButton
 import smol_app.composables.SmolDropdownMenuItemTemplate
 import smol_app.composables.SmolDropdownWithButton
 import smol_app.updater.UpdateSmolToast
-import timber.ktx.Timber
 import updatestager.Updater
+import java.io.FileNotFoundException
+import java.net.UnknownHostException
 
 @Composable
 fun updateSection(scope: CoroutineScope) {
@@ -39,8 +40,27 @@ fun updateSection(scope: CoroutineScope) {
 
         fun doUpdateCheck() {
             scope.launch {
-                val update = checkForUpdate()
-                updateStatus = if (update?.requiresUpdate() != true) "No update found." else "Update found! Check the notification to download."
+                kotlin.runCatching {
+                    updateStatus =
+                        if (!checkForUpdate().requiresUpdate()) {
+                            "No update found."
+                        } else {
+                            "Update found! Check the notification to download."
+                        }
+
+                }
+                    .onFailure {
+                        updateStatus =
+                            when (it) {
+                                is UnknownHostException -> "Unable to connect to ${it.message}."
+                                is FileNotFoundException ->
+                                    if (SL.UI.updater.getUpdateChannelSetting() == Updater.UpdateChannel.Stable)
+                                        "There's no stable version...yet." else
+                                        "File not found: ${it.message}."
+                                else -> it.toString()
+                            }
+
+                    }
             }
         }
 
@@ -84,18 +104,25 @@ fun updateSection(scope: CoroutineScope) {
     }
 }
 
-private suspend fun checkForUpdate(): Configuration? {
-    val remoteConfig = SL.UI.updater.getRemoteConfig()
+private suspend fun checkForUpdate(): Configuration {
+    val remoteConfig =
+        runCatching { SL.UI.updater.getRemoteConfig() }
+            .onFailure {
+                UpdateSmolToast().updateUpdateToast(
+                    updateConfig = null,
+                    toasterState = SL.UI.toaster,
+                    updater = SL.UI.updater
+                )
+            }
+            .onSuccess { remoteConfig ->
+                UpdateSmolToast().updateUpdateToast(
+                    updateConfig = remoteConfig,
+                    toasterState = SL.UI.toaster,
+                    updater = SL.UI.updater
+                )
+            }
+            .getOrThrow()
 
-    if (remoteConfig == null) {
-        Timber.w { "Unable to fetch remote config, aborting update check." }
-    } else {
-        UpdateSmolToast().createIfNeeded(
-            updateConfig = remoteConfig,
-            toasterState = SL.UI.toaster,
-            updater = SL.UI.updater
-        )
-    }
 
     return remoteConfig
 }

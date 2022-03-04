@@ -133,25 +133,26 @@ fun AppScope.scrapedModCard(mod: ScrapedMod, linkLoader: MutableState<((String) 
                                             },
                                             text = {
 //                                                SelectionContainer {
-                                                    val text = MarkdownParser.messageFormatter(
-                                                        text = mod.description!!,
-                                                        linkColor = MaterialTheme.colors.hyperlink
-                                                    )
-                                                    ClickableText(
-                                                        text = text,
-                                                        style = SmolTheme.alertDialogBody().copy(color = MaterialTheme.colors.onSurface),
-                                                        onClick = {
-                                                            text.getStringAnnotations(
-                                                                tag = MarkdownParser.SymbolAnnotationType.LINK.name,
-                                                                start = it,
-                                                                end = it
-                                                            ).firstOrNull()
-                                                                ?.item
-                                                                ?.also {
-                                                                    linkLoader.value?.invoke(it)
-                                                                }
-                                                        }
-                                                    )
+                                                val text = MarkdownParser.messageFormatter(
+                                                    text = mod.description!!,
+                                                    linkColor = MaterialTheme.colors.hyperlink
+                                                )
+                                                ClickableText(
+                                                    text = text,
+                                                    style = SmolTheme.alertDialogBody()
+                                                        .copy(color = MaterialTheme.colors.onSurface),
+                                                    onClick = {
+                                                        text.getStringAnnotations(
+                                                            tag = MarkdownParser.SymbolAnnotationType.LINK.name,
+                                                            start = it,
+                                                            end = it
+                                                        ).firstOrNull()
+                                                            ?.item
+                                                            ?.also {
+                                                                linkLoader.value?.invoke(it)
+                                                            }
+                                                    }
+                                                )
 //                                                }
                                             },
                                             onDismissRequest = { alertDialogSetter.invoke(null) },
@@ -172,11 +173,13 @@ fun AppScope.scrapedModCard(mod: ScrapedMod, linkLoader: MutableState<((String) 
                         }
 
                         val tags = remember {
-                            mod.categories + when (mod.source) {
+                            ((mod.categories ?: emptyList()) + when (mod.source) {
                                 ModSource.Index -> "Index"
                                 ModSource.ModdingSubforum -> "Modding Subforum"
                                 ModSource.Discord -> "Discord"
-                            }
+                                null -> null
+                            })
+                                .filterNotNull()
                         }
                         if (tags.isNotEmpty()) {
                             Row(modifier = Modifier.padding(top = 4.dp)) {
@@ -208,7 +211,7 @@ fun AppScope.scrapedModCard(mod: ScrapedMod, linkLoader: MutableState<((String) 
 @Preview
 @Composable
 fun scrapedModCardPreview() = smolPreview {
-    AppScope(WindowState()).scrapedModCard(
+    AppScope(windowState = WindowState(), recomposer = currentRecomposeScope).scrapedModCard(
         ScrapedMod(
             name = "Archean Order",
             description = "test description",

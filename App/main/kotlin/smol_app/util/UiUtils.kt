@@ -201,8 +201,9 @@ fun Constants.isJCEFEnabled() =
         .onFailure { Timber.d { it.message ?: "Couldn't find jcef" } }
         .getOrElse { false }
 
-fun Constants.isModBrowserEnabled() = isJCEFEnabled() && SL.gamePathManager.path.value.exists()
-fun Constants.isModProfilesEnabled() = SL.gamePathManager.path.value.exists()
+fun Constants.isModBrowserEnabled() = isJCEFEnabled() && doesGamePathExist()
+fun Constants.isModProfilesEnabled() = doesGamePathExist()
+fun Constants.doesGamePathExist() = SL.gamePathManager.path.value.exists()
 
 fun createGoogleSearchFor(query: String) = "https://google.com/search?q=" + query.replace(' ', '+')
 

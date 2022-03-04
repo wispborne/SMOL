@@ -60,10 +60,12 @@ fun WindowState.appView() {
     val theme = SL.themeManager.activeTheme.collectAsState()
 
     var alertDialogBuilder: @Composable ((dismiss: () -> Unit) -> Unit)? by remember { mutableStateOf(null) }
+    val recomposer = currentRecomposeScope
     val appScope by remember {
-        mutableStateOf(AppScope(this).apply {
-            this.alertDialogSetter = { alertDialogBuilder = it }
-        })
+        mutableStateOf(AppScope(windowState = this, recomposer = recomposer)
+            .apply {
+                this.alertDialogSetter = { alertDialogBuilder = it }
+            })
     }
 
     LaunchedEffect("runonce") {
@@ -72,12 +74,12 @@ fun WindowState.appView() {
 //                onlineUrl = SL.UI.updater.getUpdateConfigUrl(),
 //                localPath = Path.of("dist\\main\\app\\SMOL")
 //            )
-            val remoteConfig = SL.UI.updater.getRemoteConfig()
+            val remoteConfig = kotlin.runCatching { SL.UI.updater.getRemoteConfig() }.getOrNull()
 
             if (remoteConfig == null) {
                 Timber.w { "Unable to fetch remote config, aborting update check." }
             } else {
-                UpdateSmolToast().createIfNeeded(
+                UpdateSmolToast().updateUpdateToast(
                     updateConfig = remoteConfig,
                     toasterState = SL.UI.toaster,
                     updater = SL.UI.updater
@@ -99,23 +101,29 @@ fun WindowState.appView() {
             Children(router.state, animation = crossfade()) { screen ->
                 Box {
                     val configuration = screen.configuration
+
+                    if (router.state.value.activeChild.configuration::class == configuration::class) {
+                        Timber.i { "Skipping recreation of active screen." }
+                    }
+
                     when (configuration) {
                         is Screen.Home -> appScope.homeView()
                         is Screen.Settings -> appScope.settingsView()
                         is Screen.Profiles -> appScope.ProfilesView()
                         is Screen.ModBrowser -> appScope.ModBrowserView(defaultUrl = configuration.defaultUri)
                     }.run { }
-                    if (SL.gamePathManager.path.value.exists()) {
-                        appScope.FileDropper()
-                    }
-
-                    // Toasts
-                    toaster(
-                        modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    )
                 }
             }
+
+            if (SL.gamePathManager.path.value.exists()) {
+                appScope.FileDropper()
+            }
+
+            // Toasts
+            toaster(
+                modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            )
 
             val refreshTrigger by remember { mutableStateOf(Unit) }
 
@@ -198,7 +206,8 @@ private fun setUpToasts() {
     }
 }
 
-class AppScope(windowState: WindowState) : IWindowState by windowState {
+class AppScope(windowState: WindowState, private val recomposer: RecomposeScope) : IWindowState by windowState {
+
 
     /**
      * Usage: alertDialogSetter.invoke { AlertDialog(...) }
@@ -208,6 +217,7 @@ class AppScope(windowState: WindowState) : IWindowState by windowState {
     fun dismissAlertDialog() = alertDialogSetter.invoke(null)
 
     suspend fun reloadMods() = reloadModsInner()
+    fun recomposeAppUI() = recomposer.invalidate()
 }
 
 

@@ -20,6 +20,8 @@ import timber.Timber.DebugTree.Companion.fqcnIgnore
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.time.Instant
+import java.time.temporal.ChronoUnit
+import java.time.temporal.TemporalUnit
 import java.util.*
 import java.util.Collections.unmodifiableList
 import java.util.regex.Pattern
@@ -257,7 +259,7 @@ class Timber private constructor() {
                 scope.launch {
                     val priorityChar = "${priority.name.firstOrNull()?.uppercase()}"
                     val formattedMsg =
-                        "${Instant.now()} ${if (priorityChar.isNotBlank()) "$priorityChar/" else ""}${if (!tag.isNullOrBlank()) "$tag/" else ""} $message"
+                        "${Instant.now().truncatedTo(ChronoUnit.SECONDS)} ${if (priorityChar.isNotBlank()) "$priorityChar/" else ""}${if (!tag.isNullOrBlank()) "$tag/" else ""} $message"
                     if (priority < LogLevel.WARN) {
                         System.out.println(formattedMsg)
                     } else {

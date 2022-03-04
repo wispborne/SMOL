@@ -32,7 +32,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.arkivanov.decompose.push
+import com.arkivanov.decompose.replaceCurrent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
@@ -45,10 +45,10 @@ import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
 import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
+import smol_app.util.doesGamePathExist
 import smol_app.util.isJCEFEnabled
 import smol_app.util.isModBrowserEnabled
 import smol_app.util.isModProfilesEnabled
-import utilities.exists
 import utilities.runCommandInTerminal
 import utilities.weightedRandom
 import java.awt.FileDialog
@@ -56,18 +56,22 @@ import kotlin.io.path.absolutePathString
 
 @Composable
 fun tabButton(
-    modifier: Modifier = Modifier, enabled: Boolean, onClick: () -> Unit,
+    modifier: Modifier = Modifier, forceDisabled: Boolean, isSelected: Boolean, onClick: () -> Unit,
     content: @Composable () -> Unit
 ) {
     Column {
         val color = MaterialTheme.colors.secondary
         TextButton(
-            onClick = { if (enabled) onClick.invoke() },
-            colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.surface),
+            onClick = { if (!forceDisabled && !isSelected) onClick.invoke() },
+            colors = ButtonDefaults.buttonColors(
+                backgroundColor = MaterialTheme.colors.surface,
+                disabledBackgroundColor = MaterialTheme.colors.surface
+            ),
+            enabled = !forceDisabled,
             modifier = modifier
                 .padding(start = 16.dp)
                 .run {
-                    if (!enabled) this.drawWithContent {
+                    if (isSelected) this.drawWithContent {
                         drawContent()
                         val y = size.height
                         val x = size.width
@@ -101,10 +105,10 @@ fun AppScope.toolbar(currentScreen: Screen) {
                 .align(Alignment.CenterVertically)
                 .background(color = MaterialTheme.colors.onSurface.copy(alpha = .3f))
         )
-        homeButton(enabled = currentScreen !is Screen.Home)
-        modBrowserButton(enabled = currentScreen !is Screen.ModBrowser)
-        profilesButton(enabled = currentScreen !is Screen.Profiles)
-        settingsButton(enabled = currentScreen !is Screen.Settings)
+        homeButton(isSelected = currentScreen is Screen.Home)
+        modBrowserButton(isSelected = currentScreen is Screen.ModBrowser)
+        profilesButton(isSelected = currentScreen is Screen.Profiles)
+        settingsButton(isSelected = currentScreen is Screen.Settings)
     }
 }
 
@@ -123,13 +127,13 @@ val launchQuotes = listOf(
 )
 
 @Composable
-fun launchButton(modifier: Modifier = Modifier, enabled: Boolean = true) {
+fun AppScope.launchButton(modifier: Modifier = Modifier) {
     val launchText = remember { launchQuotes.weightedRandom() }
     SmolTooltipArea(
         tooltip = {
             SmolTooltipText(
                 when {
-                    !SL.gamePathManager.path.value.exists() -> "Set a valid game path."
+                    !Constants.doesGamePathExist() -> "Set a valid game path."
                     else -> launchText
                 }
             )
@@ -146,8 +150,11 @@ fun launchButton(modifier: Modifier = Modifier, enabled: Boolean = true) {
                         workingDirectory = SL.gamePathManager.path.value?.toFile()
                     )
                 }
+                // Putting router here is a dumb hack that triggers a recompose when the app UI is invalidated,
+                // which we want so that the button enabled state gets reevaluated.
+                router
             },
-            enabled = SL.gamePathManager.path.value.exists() && enabled,
+            enabled = Constants.doesGamePathExist(),
             colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.primary),
             modifier = modifier
                 .padding(start = 16.dp),
@@ -172,9 +179,16 @@ fun launchButton(modifier: Modifier = Modifier, enabled: Boolean = true) {
 }
 
 @Composable
-fun AppScope.installModsButton(modifier: Modifier = Modifier, enabled: Boolean = true) {
+fun AppScope.installModsButton(modifier: Modifier = Modifier) {
     SmolTooltipArea(
-        tooltip = { SmolTooltipText(text = "Select one or more mod archives or mod_info.json files.") },
+        tooltip = {
+            SmolTooltipText(
+                text = when {
+                    !Constants.doesGamePathExist() -> "Set a valid game path."
+                    else -> "Select one or more mod archives or mod_info.json files."
+                }
+            )
+        },
         delayMillis = SmolTooltipArea.shortDelay
     ) {
         SmolButton(
@@ -206,7 +220,7 @@ fun AppScope.installModsButton(modifier: Modifier = Modifier, enabled: Boolean =
                         }
                 }
             },
-            enabled = enabled,
+            enabled = Constants.doesGamePathExist(),
             modifier = modifier.padding(start = 16.dp)
         ) {
             Text("Install Mods")
@@ -220,14 +234,15 @@ fun AppScope.installModsButton(modifier: Modifier = Modifier, enabled: Boolean =
 }
 
 @Composable
-fun AppScope.homeButton(modifier: Modifier = Modifier, enabled: Boolean = true) {
+fun AppScope.homeButton(modifier: Modifier = Modifier, isSelected: Boolean) {
     SmolTooltipArea(
         tooltip = { SmolTooltipText("View and change mods.") },
         delayMillis = SmolTooltipArea.shortDelay
     ) {
         tabButton(
-            enabled = enabled,
-            onClick = { router.push(Screen.Home) }
+            isSelected = isSelected,
+            forceDisabled = false,
+            onClick = { router.replaceCurrent(Screen.Home) }
         ) {
             Text("Home")
         }
@@ -236,14 +251,13 @@ fun AppScope.homeButton(modifier: Modifier = Modifier, enabled: Boolean = true) 
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun AppScope.modBrowserButton(modifier: Modifier = Modifier, enabled: Boolean = true) {
-    val isEnabled = Constants.isModBrowserEnabled() && enabled
+fun AppScope.modBrowserButton(modifier: Modifier = Modifier, isSelected: Boolean) {
     SmolTooltipArea(
         tooltip = {
             SmolTooltipText(
                 when {
                     !Constants.isJCEFEnabled() -> "JCEF not found; add to /libs to enable the Mod Browser."
-                    !SL.gamePathManager.path.value.exists() -> "Set a valid game path."
+                    !Constants.doesGamePathExist() -> "Set a valid game path."
                     else -> "View and install mods from the internet."
                 }
             )
@@ -251,8 +265,9 @@ fun AppScope.modBrowserButton(modifier: Modifier = Modifier, enabled: Boolean = 
         delayMillis = SmolTooltipArea.shortDelay
     ) {
         tabButton(
-            enabled = isEnabled,
-            onClick = { router.push(Screen.ModBrowser()) }
+            forceDisabled = !Constants.isModBrowserEnabled(),
+            isSelected = isSelected,
+            onClick = { router.replaceCurrent(Screen.ModBrowser()) }
         ) {
             Text("Mod Browser")
         }
@@ -260,12 +275,12 @@ fun AppScope.modBrowserButton(modifier: Modifier = Modifier, enabled: Boolean = 
 }
 
 @Composable
-fun AppScope.profilesButton(modifier: Modifier = Modifier, enabled: Boolean = true) {
+fun AppScope.profilesButton(modifier: Modifier = Modifier, isSelected: Boolean) {
     SmolTooltipArea(
         tooltip = {
             SmolTooltipText(
                 text = when {
-                    !SL.gamePathManager.path.value.exists() -> "Set a valid game path."
+                    !Constants.doesGamePathExist() -> "Set a valid game path."
                     else -> "Create and swap between enabled mods."
                 }
             )
@@ -273,8 +288,9 @@ fun AppScope.profilesButton(modifier: Modifier = Modifier, enabled: Boolean = tr
         delayMillis = SmolTooltipArea.shortDelay
     ) {
         tabButton(
-            onClick = { router.push(Screen.Profiles) },
-            enabled = Constants.isModProfilesEnabled() && enabled,
+            onClick = { router.replaceCurrent(Screen.Profiles) },
+            forceDisabled = !Constants.isModProfilesEnabled(),
+            isSelected = isSelected
         ) {
             Text("Profiles")
         }
@@ -282,10 +298,11 @@ fun AppScope.profilesButton(modifier: Modifier = Modifier, enabled: Boolean = tr
 }
 
 @Composable
-fun AppScope.settingsButton(modifier: Modifier = Modifier, enabled: Boolean = true) {
+fun AppScope.settingsButton(modifier: Modifier = Modifier, isSelected: Boolean) {
     tabButton(
-        onClick = { router.push(Screen.Settings) },
-        enabled = enabled,
+        onClick = { router.replaceCurrent(Screen.Settings) },
+        forceDisabled = false,
+        isSelected = isSelected
     ) {
         Text("Settings")
     }

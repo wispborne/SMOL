@@ -21,8 +21,8 @@ data class ScrapedMod(
     val authors: String,
     val forumPostLink: Url?,
     val discordMessageLink: Url?,
-    val source: ModSource,
-    val categories: List<String>
+    val source: ModSource?,
+    val categories: List<String>?
 )
 
 enum class ModSource {

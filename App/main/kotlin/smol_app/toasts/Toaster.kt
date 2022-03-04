@@ -33,6 +33,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import smol_access.SL
 import smol_app.UI
@@ -74,7 +75,7 @@ class ToasterState {
         toasts
             .filter { toast -> toast.id !in items.value.map { it.id } }
             .run {
-                items.value += this
+                items.update { it + this }
             }
 
     fun addItem(toast: Toast) = addItems(toast.asList())

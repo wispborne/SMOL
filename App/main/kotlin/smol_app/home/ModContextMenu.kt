@@ -26,7 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.arkivanov.decompose.push
+import com.arkivanov.decompose.replaceCurrent
 import kotlinx.coroutines.*
 import org.tinylog.Logger
 import smol_access.Constants
@@ -113,7 +113,7 @@ private fun AppScope.modGridSingleModMenu(
         if (modThreadId != null) {
             DropdownMenuItem(
                 onClick = {
-                    router.push(Screen.ModBrowser(modThreadId.getModThreadUrl()))
+                    router.replaceCurrent(Screen.ModBrowser(modThreadId.getModThreadUrl()))
                     onShowContextMenuChange(false)
                 },
             ) {

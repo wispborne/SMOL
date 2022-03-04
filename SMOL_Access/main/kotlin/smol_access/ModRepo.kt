@@ -25,8 +25,10 @@ import mod_repo.ModRepoCache
 import mod_repo.ScrapedMod
 import timber.ktx.Timber
 import utilities.Jsanity
+import java.nio.file.Path
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import kotlin.io.path.readText
 
 class ModRepo internal constructor(private val jsanity: Jsanity, private val httpClientBuilder: HttpClientBuilder) {
     private val modRepoCache = ModRepoCache(jsanity)
@@ -44,24 +46,30 @@ class ModRepo internal constructor(private val jsanity: Jsanity, private val htt
 
     suspend fun refreshFromInternet() {
         withContext(Dispatchers.IO) {
-            httpClientBuilder.invoke().use { client ->
-                val freshIndexMods = kotlin.runCatching {
-                    client.get<HttpResponse>(Constants.modRepoUrl)
-                        .receive<String>()
-                        .let { jsanity.fromJson<ScrapedModsRepo>(json = it, shouldStripComments = false) }
+            val freshIndexMods =
+                kotlin.runCatching {
+                    // Try to read from local file first, for debugging, in ./App/ModRepo.json.
+                    if (false)
+                        Path.of("ModRepo.json").readText()
+                    else throw NotImplementedError()
                 }
+                    .recoverCatching {
+                        httpClientBuilder.invoke().use { client ->
+                            client.get<HttpResponse>(Constants.modRepoUrl).receive()
+                        }
+                    }
                     .onFailure {
                         Timber.w(it) { "Unable to fetch mods from ${Constants.modRepoUrl}." }
                     }
                     .getOrNull()
+                    ?.let { jsanity.fromJson<ScrapedModsRepo>(json = it, shouldStripComments = false) }
 
-                if (freshIndexMods != null) {
-                    Timber.i { "Updated scraped mods. Previous: ${modRepoCache.items.count()}, now: ${freshIndexMods.items.count()}" }
-                    modRepoCache.items = freshIndexMods.items
-                    modRepoCache.lastUpdated = freshIndexMods.lastUpdated
-                    lastUpdated_.value = getLastUpdated()
-                    items_.value = modRepoCache.items
-                }
+            if (freshIndexMods != null) {
+                Timber.i { "Updated scraped mods. Previous: ${modRepoCache.items.count()}, now: ${freshIndexMods.items.count()}" }
+                modRepoCache.items = freshIndexMods.items
+                modRepoCache.lastUpdated = freshIndexMods.lastUpdated
+                lastUpdated_.value = getLastUpdated()
+                items_.value = modRepoCache.items
             }
         }
     }

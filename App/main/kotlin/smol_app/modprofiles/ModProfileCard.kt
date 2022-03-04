@@ -63,7 +63,7 @@ import java.time.format.FormatStyle
 @Composable
 @Preview
 fun ModProfileCardPreview() = smolPreview {
-    AppScope(WindowState()).ModProfileCard(
+    AppScope(windowState = WindowState(), recomposer = currentRecomposeScope).ModProfileCard(
         userProfile = mockUserProfile,
         modProfile = mockModProfile,
         modVariants = emptyList()

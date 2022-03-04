@@ -34,7 +34,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.arkivanov.decompose.push
+import com.arkivanov.decompose.replaceCurrent
 import smol_access.Constants
 import smol_access.model.Mod
 import smol_access.model.ModVariant
@@ -248,7 +248,7 @@ fun AppScope.ModGridRow(
                             if (this.buttons.isPrimaryPressed) {
                                 if (hasModThread) {
                                     if (Constants.isModBrowserEnabled()) {
-                                        router.push(Screen.ModBrowser(modThreadId?.getModThreadUrl()))
+                                        router.replaceCurrent(Screen.ModBrowser(modThreadId?.getModThreadUrl()))
                                     } else {
                                         kotlin.runCatching {
                                             modThreadId?.getModThreadUrl()

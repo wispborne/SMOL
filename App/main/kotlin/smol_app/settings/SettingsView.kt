@@ -108,6 +108,8 @@ fun AppScope.settingsView(
                                 SL.access.reload()
                             }
                         }
+
+                        recomposeAppUI()
                         return true
                     }
 
