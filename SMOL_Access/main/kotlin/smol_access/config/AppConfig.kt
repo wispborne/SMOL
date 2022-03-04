@@ -28,7 +28,7 @@ class AppConfig(gson: Jsanity) :
             )
         )
     ) {
-    var updateChannel: UpdateChannel by pref(prefKey = "updateChannel", defaultValue = UpdateChannel.Stable)
+    var updateChannel: UpdateChannel by pref(prefKey = "updateChannel", defaultValue = UpdateChannel.Unstable)
     internal var gamePath: String? by pref(prefKey = "gamePath", defaultValue = null)
     var lastFilePickerDirectory: String? by pref(prefKey = "lastFilePickerDirectory", defaultValue = null)
     var jre8Url: String by pref(
