@@ -197,7 +197,7 @@ private fun AppScope.modGridSingleModMenu(
         onShowContextMenuChange(false)
     }) {
         Image(
-            painter = painterResource("icon-bug.svg"),
+            painter = painterResource("icon-debug.svg"),
             colorFilter = ColorFilter.tint(MaterialTheme.colors.onSurface),
             modifier = Modifier.padding(end = 12.dp).size(24.dp),
             contentDescription = null

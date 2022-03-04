@@ -46,9 +46,11 @@ tasks.register("buildSmol") {
         copy {
             val sourceDist = rootProject.projectDir.resolve("UpdateInstaller/dist")
             val sourceJre = rootProject.projectDir.resolve("UpdateInstaller/jre")
+            val readme = rootProject.projectDir.resolve("README.md")
+            val license = rootProject.projectDir.resolve("LICENSE.txt")
             val dest = rootProject.projectDir.resolve("dist/main/app/SMOL")
             println("Copying from $sourceDist, $sourceJre to $dest.")
-            from(sourceDist, sourceJre)
+            from(sourceDist, sourceJre, readme, license)
             into(dest)
         }
     }

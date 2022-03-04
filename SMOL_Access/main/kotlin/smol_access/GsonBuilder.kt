@@ -77,6 +77,7 @@ object GsonBuilder {
                     .onFailure { Timber.w(it) { arg.json.toString() } }
                     .getOrNull()
             }
+            serialize { it.src.toString().toJson() }
         }
         .create()
 

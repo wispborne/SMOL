@@ -13,6 +13,7 @@
 package mod_repo
 
 import com.github.salomonbrys.kotson.registerTypeAdapter
+import com.github.salomonbrys.kotson.string
 import com.github.salomonbrys.kotson.toJson
 import com.google.gson.GsonBuilder
 import io.ktor.http.*
@@ -43,6 +44,11 @@ class Main {
                     .setPrettyPrinting()
                     .disableHtmlEscaping()
                     .registerTypeAdapter<Url> {
+                        deserialize { arg ->
+                            kotlin.runCatching { Url(arg.json.string) }
+                                .onFailure { Timber.w(it) { arg.json.toString() } }
+                                .getOrNull()
+                        }
                         serialize { it.src.toString().toJson() }
                     }
                     .create()

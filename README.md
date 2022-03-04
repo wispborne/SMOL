@@ -32,8 +32,8 @@ Did this really need to be built? Absolutely not, but it has been fun to work on
 
 ## Main Features
 
+* **Mod Browser** to view and install mods from the Forums and #mod_updates without leaving SMOL.
 * Quickly **switch between mod versions**.
-* **Mod Browser** to view and install mods from the Forums without leaving SMOL.
 * **Mod Profiles** allow swapping between different groups of mods/versions easily.
   * Make a new profile for a new save, or keep a barebones profile for mod development.
 * Easily assign more (or less) **RAM** to the game.
@@ -46,12 +46,13 @@ Did this really need to be built? Absolutely not, but it has been fun to work on
 * Warns and provides fixes for missing mod **dependencies**.
   * eg. if LazyLib is disabled, a button is shown to enable it. If it is not found, a button appears to search for it online.
 * Works alongside manual mod management; you are **not locked into using SMOL**.
+* Built-in and easily configurable **themes**.
 
 ## Smoller Features
 
-* Built-in and easily configurable **themes**.
 * **Favorite** a mod to pin it to the top.
 * In-app **log viewer** with selectable logging level.
+* **Shortcuts** to your game folder, mods, saves, and log file.
 
 ### Supported File Formats
 
