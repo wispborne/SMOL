@@ -103,7 +103,7 @@ fun WindowState.appView() {
                     val configuration = screen.configuration
 
                     if (router.state.value.activeChild.configuration::class == configuration::class) {
-                        Timber.i { "Skipping recreation of active screen." }
+                        Timber.d { "Skipping recreation of active screen." }
                     }
 
                     when (configuration) {

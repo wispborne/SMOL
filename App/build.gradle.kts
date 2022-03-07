@@ -17,12 +17,12 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm")
-    id("org.jetbrains.compose") version "1.1.0-rc01"
+    id("org.jetbrains.compose") version "1.1.0"
 }
 
 group = "com.wisp"
 val smolVersion =
-    "1.0.0-beta01" // TODO don't forget to change default channel to "stable" in AppConfig for release.
+    "1.0.0-beta02" // TODO don't forget to change default channel to "stable" in AppConfig for release.
 
 // This gets appended to the app's jarfile, which means it has a unique name each time the app updates,
 // resulting in the file not getting removed. Keep a constant version here so user doesn't end up with a ton of outdated files.
@@ -109,15 +109,19 @@ compose.desktop {
     application {
         mainClass = "smol_app.MainKt"
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Exe, TargetFormat.Deb)
+            targetFormats(TargetFormat.Exe)
             outputBaseDir.set(rootProject.projectDir.resolve("dist"))
             packageName = "SMOL"
             packageVersion = "1.0.0"
+            description = "Starsector Mod Organizer and Launcher"
+            vendor = "Wisp"
+            licenseFile.set(project.file("../LICENSE.txt"))
 
             windows {
                 println("OS: Windows")
                 console = true
                 upgradeUuid = "51169f8d-9aec-4abf-b30a-f5bc5a5f6509"
+                iconFile.set(project.file("smol.ico"))
                 jvmArgs += listOf("-Djava.library.path=./libs/$jcefFolder/bin/lib/win64") // For CEF (Chromium Embedded Framework)
 //                jvmArgs += listOf(
 //                    "-XX:StartFlightRecording:settings=default,filename=./compose-rec.jfr",
@@ -125,14 +129,14 @@ compose.desktop {
 //                )
 //                jvmArgs += listOf("-Djava.library.path=native/windows") // To use lwjgl in VRAM Checker
             }
-            macOS {
-                println("OS: MacOS")
-//                jvmArgs += listOf("-Djava.library.path=native/macosx") // To use lwjgl in VRAM Checker
-            }
-            linux {
-                println("OS: Linux")
-//                jvmArgs += listOf("-Djava.library.path=native/linux") // To use lwjgl in VRAM Checker
-            }
+//            macOS {
+//                println("OS: MacOS")
+////                jvmArgs += listOf("-Djava.library.path=native/macosx") // To use lwjgl in VRAM Checker
+//            }
+//            linux {
+//                println("OS: Linux")
+////                jvmArgs += listOf("-Djava.library.path=native/linux") // To use lwjgl in VRAM Checker
+//            }
 
             // task suggestRuntimeModules to generate this
             modules(

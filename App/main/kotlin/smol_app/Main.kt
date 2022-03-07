@@ -49,7 +49,7 @@ import kotlin.io.path.inputStream
 var safeMode = false
 
 fun main() = application {
-    fixWhiteFlashOnStartup()
+//    fixWhiteFlashOnStartup()
 
     // Logger
     kotlin.runCatching {
@@ -62,11 +62,21 @@ fun main() = application {
 
     var appWindowState = rememberWindowState()
 
-    val uiConfig = SL.UI.uiConfig
-    val access = SL.access
+    val uiConfig = kotlin.runCatching { SL.UI.uiConfig }
+        .onFailure {
+            it.printStackTrace()
+            Timber.e(it)
+        }
+        .getOrNull()
+    val access = kotlin.runCatching { SL.access }
+        .onFailure {
+            it.printStackTrace()
+            Timber.e(it)
+        }
+        .getOrNull()
 
     kotlin.runCatching {
-        access.checkAndSetDefaultPaths(currentPlatform)
+        access?.checkAndSetDefaultPaths(currentPlatform)
     }
         .onFailure {
             if (safeMode) {
@@ -90,7 +100,7 @@ fun main() = application {
             ?.also { Constants.APP_VERSION = it }
 
         kotlin.runCatching {
-            val savedState = uiConfig.windowState!!
+            val savedState = uiConfig!!.windowState!!
             rememberWindowState(
                 placement = WindowPlacement.valueOf(savedState.placement),
                 isMinimized = savedState.isMinimized,
@@ -100,7 +110,7 @@ fun main() = application {
         }
             .onSuccess { appWindowState = it }
             .onFailure {
-                uiConfig.windowState = SmolWindowState(
+                uiConfig?.windowState = SmolWindowState(
                     "", false, SmolPair(0f, 0f), SmolPair(0f, 0f)
                 )
             }
@@ -136,7 +146,7 @@ fun main() = application {
             })
         }
 
-        saveWindowParamsOnChange(appWindowState, uiConfig)
+        saveWindowParamsOnChange(appWindowState, uiConfig!!)
 
         smolWindowState.appView()
     }

@@ -20,37 +20,61 @@ import java.io.File
 suspend fun runCommandInTerminal(
     command: String,
     workingDirectory: File?,
-    runAsync: Boolean = false,
+    args: List<String> = emptyList(),
+    envArgs: List<String> = emptyList(),
     launchInNewWindow: Boolean = false,
     newWindowTitle: String? = null
 ) {
     val launcherCommand = when (currentPlatform) {
         Platform.Windows -> {
-            "cmd /C ${
-                if (launchInNewWindow) {
-                    "start \"${newWindowTitle ?: "Running..."}\" "
-                } else {
-                    ""
-                }
-            }"
+            listOf("cmd", "/C") + if (launchInNewWindow) {
+                listOf("start", "\"${newWindowTitle ?: "Running..."}\"")
+            } else {
+                emptyList()
+            }
         }
-        else -> "open "
+        else -> listOf("open")
     }
 
-    val finalCommand = launcherCommand + command
-    Timber.i { "Running terminal command: '$finalCommand'." }
+    val finalCommand = launcherCommand + command + args.joinToString()
     withContext(Dispatchers.IO) {
-        Runtime.getRuntime()
-            .exec(
-                finalCommand,
-                null,
-                workingDirectory
-            ).apply {
-                if (!runAsync) {
+        kotlin.runCatching {
+            ProcessBuilder(command, *args.toTypedArray())
+                .directory(workingDirectory)
+                .apply {
+                    environment().clear()
+                }
+                .also {
+                    Timber.i {
+                        "Running terminal command: '${
+                            it.command().joinToString()
+                        }' in working dir '${it.directory().absolutePath}' with environment '${it.environment().entries.joinToString()}'."
+                    }
+                }
+                .start()
+                .apply {
                     this.inputStream.transferTo(System.out)
                     this.errorStream.transferTo(System.err)
                 }
-            }
+//            Runtime.getRuntime()
+//                .also {
+//                    Timber.i {
+//                        "Running terminal command: '${finalCommand}' in working dir '${workingDirectory}' with environment '${envArgs.joinToString()}'."
+//                    }
+//                }
+//                .exec(
+//                    finalCommand.toTypedArray() + args.toTypedArray(),
+//                    emptyArray(),
+//                    workingDirectory
+//                )
+//                .apply {
+////                if (!runAsync) {
+//                    this.inputStream.transferTo(System.out)
+//                    this.errorStream.transferTo(System.err)
+////                }
+//                }
+        }
+            .onFailure { Timber.e(it) }
     }
 }
 

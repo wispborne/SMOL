@@ -47,6 +47,7 @@ Did this really need to be built? Absolutely not, but it has been fun to work on
   * eg. if LazyLib is disabled, a button is shown to enable it. If it is not found, a button appears to search for it online.
 * Works alongside manual mod management; you are **not locked into using SMOL**.
 * Built-in and easily configurable **themes**.
+* **Self-update** downloads only what's needed.
 
 ## Smoller Features
 
@@ -83,5 +84,5 @@ SMOL disables mods by renaming the `mod_info.json` file to `mod_info.json.disabl
 * **rubi/CeruleanPancake** for feedback, QA, and morale/moral support.
 * **Soren/Harmful Mechanic** for feedback.
 * **ruddygreat** for feedback and QA.
-* **Tartiflette** for the idea to disable mods by renaming the mod_info.json file, and other feedback.
+* **Tartiflette** for the idea to disable mods by renaming the mod_info.json file, the SMOL icon, and other feedback.
 * **The rest of the USC moderator team** for feedback.

@@ -84,6 +84,7 @@ class JreManager(
 
                         return@mapNotNull JreEntry(versionString = versionString, path = path)
                     }
+                    .filter { it.path.name != "jre-min-win" } // If user extracted SMOL into their game directory, don't show the standalone jre.
                     .toList()
             }
         }

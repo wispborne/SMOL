@@ -52,6 +52,7 @@ import utilities.weightedRandom
 import java.awt.FileDialog
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.isReadable
+import kotlin.io.path.readText
 
 @Composable
 fun tabButton(
@@ -142,13 +143,37 @@ fun AppScope.launchButton(modifier: Modifier = Modifier) {
     ) {
         SmolButton(
             onClick = {
-                val gameLauncher = SL.gamePathManager.path.value?.resolve("starsector.exe")
-                Logger.info { "Launching ${gameLauncher?.absolutePathString()} with working dir ${SL.gamePathManager.path.value}." }
-                CoroutineScope(Job()).launch {
-                    runCommandInTerminal(
-                        command = ("\"${gameLauncher?.absolutePathString() ?: "missing game path"}\""),
-                        workingDirectory = SL.gamePathManager.path.value?.toFile()
-                    )
+                val directLaunch = true
+                if (directLaunch) {
+                    val workingDir = SL.gamePathManager.path.value?.resolve("starsector-core")
+                    val gameLauncher = SL.gamePathManager.path.value?.resolve("jre/bin/java.exe")
+                    val vmparams = (SL.gamePathManager.path.value?.resolve("vmparams")?.readText()
+                        ?.removePrefix("java.exe")
+                        ?.split(' ') ?: emptyList())
+                        .filter { it.isNotBlank() }
+                    CoroutineScope(Job()).launch {
+                        runCommandInTerminal(
+                            command = (gameLauncher?.absolutePathString() ?: "missing game path"),
+                            args = listOf(
+                                "-DlaunchDirect=true",
+                                "-DstartFS=false",
+                                "-DstartSound=true",
+                                "-DstartRes=1920x1080",
+//                                "-Dorg.lwjgl.util.Debug=true", // debugging for lwjgl
+                                "-Djava.library.path=${workingDir?.absolutePathString()}\\native\\windows"
+                            ) + vmparams.filter { !it.startsWith("-Djava.library.path") },
+                            workingDirectory = workingDir?.toFile()
+                        )
+                    }
+                } else {
+                    val workingDir = SL.gamePathManager.path.value?.resolve("starsector-core")
+                    val gameLauncher = SL.gamePathManager.path.value?.resolve("starsector-core/starsector.bat")
+                    CoroutineScope(Job()).launch {
+                        runCommandInTerminal(
+                            command = (gameLauncher?.absolutePathString() ?: "missing game path"),
+                            workingDirectory = workingDir?.toFile()
+                        )
+                    }
                 }
                 // Putting router here is a dumb hack that triggers a recompose when the app UI is invalidated,
                 // which we want so that the button enabled state gets reevaluated.

@@ -158,7 +158,7 @@ class Updater(
                     runCommandInTerminal(
                         command = command,
                         workingDirectory = File("."),
-                        runAsync = true,
+//                        runAsync = true,
                         launchInNewWindow = true,
                         newWindowTitle = "Installing SMOL update"
                     )
