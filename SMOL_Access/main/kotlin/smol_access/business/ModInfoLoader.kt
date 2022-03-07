@@ -20,6 +20,7 @@ import smol_access.model.VersionCheckerInfo
 import timber.ktx.Timber
 import utilities.IOLock
 import utilities.Jsanity
+import utilities.equalsAny
 import utilities.walk
 import java.nio.file.FileVisitOption
 import java.nio.file.Path
@@ -55,7 +56,7 @@ class ModInfoLoader(
 
                             if (modInfo == null
                                 && (file.name.equals(Constants.MOD_INFO_FILE, ignoreCase = true)
-                                        || file.name.equals(Constants.MOD_INFO_FILE_DISABLED, ignoreCase = true))
+                                        || file.name.equalsAny(*Constants.MOD_INFO_FILE_DISABLED_NAMES, ignoreCase = true))
                             ) {
                                 modInfo = kotlin.runCatching { deserializeModInfoFile(file.readText()) }.getOrNull()
                             }

@@ -25,7 +25,8 @@ object Constants {
     private val resourcesDir = System.getProperty("compose.application.resources.dir")?.toPathOrNull()
 
     const val MOD_INFO_FILE = "mod_info.json"
-    const val MOD_INFO_FILE_DISABLED = "mod_info.json.disabled"
+    // Backwards compat, first one is the one used for new disable actions.
+    val MOD_INFO_FILE_DISABLED_NAMES = arrayOf("mod_info.json.disabled-by-SMOL", "mod_info.json.disabled")
     const val ENABLED_MODS_FILENAME = "enabled_mods.json"
     const val MODS_FOLDER_NAME = "mods"
     const val SAVES_FOLDER_NAME = "saves"

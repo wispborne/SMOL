@@ -240,7 +240,7 @@ class Archives internal constructor(
 
             val modInfoFile =
                 findModInfoFileInFolder(folderContainingSingleMod)
-                    ?: throw RuntimeException("Expected a ${Constants.MOD_INFO_FILE} or ${Constants.MOD_INFO_FILE_DISABLED} in ${folderContainingSingleMod.absolutePathString()}")
+                    ?: throw RuntimeException("Expected a ${Constants.MOD_INFO_FILE} or ${Constants.MOD_INFO_FILE_DISABLED_NAMES} in ${folderContainingSingleMod.absolutePathString()}")
 
 //            val modInfo = modInfoLoader.readModInfoFile(modInfoFile.readText())
 

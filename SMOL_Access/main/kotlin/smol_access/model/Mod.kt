@@ -131,7 +131,7 @@ data class ModVariant(
 
     fun isMissingAdmin() = modsFolderInfo.folder.isMissingAdmin()
             || modsFolderInfo.folder.resolve(Constants.MOD_INFO_FILE).isMissingAdmin()
-            || modsFolderInfo.folder.resolve(Constants.MOD_INFO_FILE_DISABLED).isMissingAdmin()
+            || Constants.MOD_INFO_FILE_DISABLED_NAMES.any { modsFolderInfo.folder.resolve(it).isMissingAdmin() }
 }
 
 typealias SmolId = String

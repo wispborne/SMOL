@@ -23,6 +23,7 @@ import timber.ktx.w
 import utilities.IOLock
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.exists
+import kotlin.io.path.isReadable
 import kotlin.io.path.moveTo
 
 internal class Staging(
@@ -44,14 +45,14 @@ internal class Staging(
             return Result.failure(RuntimeException("mod_info.json not found in ${modVariant.modsFolderInfo.folder.absolutePathString()}"))
         } else {
             IOLock.write {
-                kotlin.runCatching { modInfoFile.moveTo(modInfoFile.parent.resolve(Constants.MOD_INFO_FILE_DISABLED)) }
+                kotlin.runCatching { modInfoFile.moveTo(modInfoFile.parent.resolve(Constants.MOD_INFO_FILE_DISABLED_NAMES.first())) }
                     .onFailure {
                         Timber.w(it)
                     }
             }
         }
 
-        Timber.i { "Disabling ${modVariant.smolId}: renamed to ${Constants.MOD_INFO_FILE_DISABLED}." }
+        Timber.i { "Disabling ${modVariant.smolId}: renamed to ${Constants.MOD_INFO_FILE_DISABLED_NAMES.first()}." }
 
         if (disableInVanillaLauncher) {
             if (modVariant.mod(modsCache).isEnabledInGame) {
@@ -84,14 +85,21 @@ internal class Staging(
             return Result.success(Unit)
         }
 
-        val modInfoFile = modVariant.modsFolderInfo.folder.resolve(Constants.MOD_INFO_FILE_DISABLED)
+        // Look for any disabled mod_info filenames.
+        val disabledModInfoFiles = Constants.MOD_INFO_FILE_DISABLED_NAMES.map {
+            modVariant.modsFolderInfo.folder.resolve(it)
+        }
+            .filter { it.isReadable() }
 
+        // And disable them.
         IOLock.write {
             if (!modVariant.isModInfoEnabled) {
-                kotlin.runCatching { modInfoFile.moveTo(modInfoFile.parent.resolve(Constants.MOD_INFO_FILE)) }
-                    .onFailure {
-                        Timber.w(it)
-                    }
+                disabledModInfoFiles.forEach { modInfoFile ->
+                    kotlin.runCatching { modInfoFile.moveTo(modInfoFile.parent.resolve(Constants.MOD_INFO_FILE)) }
+                        .onFailure {
+                            Timber.w(it)
+                        }
+                }
             }
 
         }
