@@ -60,7 +60,7 @@ class Main {
                     ForumScraper().run()// TODO
                 }
                     .onFailure { Timber.e(it) }
-                    .getOrThrow()
+                    .getOrNull()
             }
 
             val discordJob = GlobalScope.async {
@@ -68,7 +68,7 @@ class Main {
                     DiscordReader().readAllMessages()
                 }
                     .onFailure { Timber.e(it) }
-                    .getOrThrow()
+                    .getOrNull()
             }
 
             runBlocking {
