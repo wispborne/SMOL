@@ -35,6 +35,7 @@ jobs:
         uses: "ncipollo/release-action@v1"
         with:
           generateReleaseNotes: true
+          allowUpdates: true
           draft: false
           token: ${{ secrets.GITHUB_TOKEN }}
           artifacts: "Mod_Repo/dist/*"
