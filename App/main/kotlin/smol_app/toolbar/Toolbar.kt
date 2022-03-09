@@ -47,9 +47,12 @@ import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
 import smol_app.util.*
 import timber.ktx.Timber
+import utilities.IOLock
+import utilities.IOLocks
 import utilities.runCommandInTerminal
 import utilities.weightedRandom
 import java.awt.FileDialog
+import java.util.prefs.Preferences
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.isReadable
 import kotlin.io.path.readText
@@ -127,6 +130,13 @@ val launchQuotes = listOf(
     "I am a leaf on the wind. Watch how I soar." to 4f
 )
 
+data class StarsectorLaunchPrefs(
+    val isFullscreen: Boolean,
+    val resolution: String,
+    val hasSound: Boolean
+)
+
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun AppScope.launchButton(modifier: Modifier = Modifier) {
     val launchText = remember { launchQuotes.weightedRandom() }
@@ -143,27 +153,63 @@ fun AppScope.launchButton(modifier: Modifier = Modifier) {
     ) {
         SmolButton(
             onClick = {
+                // Game crashes with missing OpenAL unless we use Direct Launch and provide an absolute path to OpenAL.
+                // No idea why.
                 val directLaunch = true
                 if (directLaunch) {
                     val workingDir = SL.gamePathManager.path.value?.resolve("starsector-core")
                     val gameLauncher = SL.gamePathManager.path.value?.resolve("jre/bin/java.exe")
-                    val vmparams = (SL.gamePathManager.path.value?.resolve("vmparams")?.readText()
-                        ?.removePrefix("java.exe")
-                        ?.split(' ') ?: emptyList())
-                        .filter { it.isNotBlank() }
-                    CoroutineScope(Job()).launch {
-                        runCommandInTerminal(
-                            command = (gameLauncher?.absolutePathString() ?: "missing game path"),
-                            args = listOf(
-                                "-DlaunchDirect=true",
-                                "-DstartFS=false",
-                                "-DstartSound=true",
-                                "-DstartRes=1920x1080",
+                    val (vmparams, launchPrefs) = kotlin.runCatching {
+                        val vmp = IOLock.read(IOLocks.gameMainFolderLock) {
+                            (SL.gamePathManager.path.value?.resolve("vmparams")?.readText()
+                                ?.removePrefix("java.exe")
+                                ?.split(' ') ?: emptyList())
+                                .filter { it.isNotBlank() }
+                        }
+
+                        val launchPrefs = Preferences.userRoot().node("com").node("fs").node("starfarer").let { prefs ->
+                            Timber.i {
+                                "Reading Starsector settings from Registry:\n${
+                                    prefs.keys().joinToString(separator = "\n") { key ->
+                                        "$key: ${if (key == "serial") "REDACTED" else prefs.get(key, "(no value found)")}"
+                                    }
+                                }"
+                            }
+                            StarsectorLaunchPrefs(
+                                isFullscreen = prefs.getBoolean("fullscreen", false),
+                                resolution = prefs.get("resolution", "1920x1080"),
+                                hasSound = prefs.getBoolean("sound", true)
+                            )
+                        }
+
+                        vmp to launchPrefs
+                    }
+                        .onFailure { Timber.w(it) }
+                        .getOrElse { ex ->
+                            alertDialogSetter.invoke {
+                                SmolAlertDialog(
+                                    onDismissRequest = { alertDialogSetter.invoke(null) },
+                                    text = { Text(text = ex.toString(), style = SmolTheme.alertDialogBody()) },
+                                    confirmButton = { SmolButton(onClick = { alertDialogSetter.invoke(null) }) { Text("Ok") } }
+                                )
+                            }
+                            null to null
+                        }
+                    if (vmparams != null && launchPrefs != null) {
+                        CoroutineScope(Job()).launch {
+                            runCommandInTerminal(
+                                command = (gameLauncher?.absolutePathString() ?: "missing game path"),
+                                args = listOf(
+                                    "-DlaunchDirect=true",
+                                    "-DstartFS=${launchPrefs.isFullscreen}",
+                                    "-DstartSound=${launchPrefs.hasSound}",
+                                    "-DstartRes=${launchPrefs.resolution}",
 //                                "-Dorg.lwjgl.util.Debug=true", // debugging for lwjgl
-                                "-Djava.library.path=${workingDir?.absolutePathString()}\\native\\windows"
-                            ) + vmparams.filter { !it.startsWith("-Djava.library.path") },
-                            workingDirectory = workingDir?.toFile()
-                        )
+                                    "-Djava.library.path=${workingDir?.absolutePathString()}\\native\\windows"
+                                ) + vmparams.filter { !it.startsWith("-Djava.library.path") },
+                                workingDirectory = workingDir?.toFile()
+                            )
+                        }
                     }
                 } else {
                     val workingDir = SL.gamePathManager.path.value?.resolve("starsector-core")
@@ -171,6 +217,9 @@ fun AppScope.launchButton(modifier: Modifier = Modifier) {
                     CoroutineScope(Job()).launch {
                         runCommandInTerminal(
                             command = (gameLauncher?.absolutePathString() ?: "missing game path"),
+                            args = listOf(
+                                "-Djava.library.path=${workingDir?.absolutePathString()}\\native\\windows"
+                            ),
                             workingDirectory = workingDir?.toFile()
                         )
                     }
