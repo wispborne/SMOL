@@ -23,10 +23,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import org.update4j.Configuration
 import smol_app.composables.SmolButton
 import smol_app.toasts.Toast
@@ -89,11 +86,11 @@ class UpdateSmolToast {
                                     Text(
                                         text = when (updateStage) {
                                             UpdateStage.Downloading ->
-                                                "Downloading ${version?.let { "$it: " } ?: ""}" +
-                                                        "${fileProgress.value?.name?.ellipsizeAfter(30)}"
-                                            UpdateStage.DownloadFailed -> "Download failed."
-                                            UpdateStage.ReadyToInstall -> "Update downloaded."
-                                            UpdateStage.Installing -> "Installing update."
+                                                "Downloading ${version?.let { version -> "$version: " } ?: ""}" +
+                                                        (fileProgress.value?.name?.ellipsizeAfter(30) ?: "...")
+                                            UpdateStage.DownloadFailed -> "SMOL update download failed."
+                                            UpdateStage.ReadyToInstall -> "SMOL update downloaded."
+                                            UpdateStage.Installing -> "Installing SMOL update."
                                             else -> "${version?.ifBlank { null } ?: "A new version"} of SMOL is available."
                                         }
                                     )
@@ -128,8 +125,9 @@ class UpdateSmolToast {
                                                                 updateStage = UpdateStage.Installing
                                                                 // Start updater, then quit application so updater can replace files.
                                                                 updater.installUpdate()
-                                                                exitProcess(status = 0)
+                                                                delay(400) // Time to log an error if there was one
                                                                 updateStage = UpdateStage.Done
+                                                                exitProcess(status = 0)
                                                             } catch (e: Exception) {
                                                                 Timber.w(e)
                                                                 updateStage = UpdateStage.InstallFailed
@@ -172,7 +170,7 @@ class UpdateSmolToast {
 
                                     val downloadTotal = updater.totalDownloadBytes.collectAsState().value
                                     val downloadedTotal =
-                                        if (updateStage >= UpdateStage.Downloading) downloadTotal
+                                        if (updateStage > UpdateStage.Downloading) downloadTotal
                                         else updater.totalDownloadedBytes.collectAsState().value
                                     val downloadedAmountText =
                                         "${downloadedTotal?.let { "%.2f".format(it.bytesToMB) } ?: "unknown"} / "

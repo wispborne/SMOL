@@ -41,6 +41,7 @@ import smol_app.util.bytesAsShortReadableMB
 import smol_app.util.openInDesktop
 import smol_app.util.smolPreview
 import timber.ktx.Timber
+import utilities.equalsAny
 import java.awt.Cursor
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.name
@@ -50,12 +51,21 @@ import kotlin.io.path.name
 fun downloadToast(
     modifier: Modifier = Modifier,
     download: DownloadItem,
-    requestToastDismissal: () -> Unit
+    requestToastDismissal: (delayMs: Long) -> Unit
 ) {
     val status = download.status.collectAsState().value
     val progressBytes = download.progressBytes.collectAsState().value
     val bitsPerSecond = download.bitsPerSecond.collectAsState().value
     val totalBytes = download.totalBytes
+
+    if (status::class.equalsAny(
+            DownloadItem.Status.Failed::class,
+            DownloadItem.Status.Cancelled::class,
+            DownloadItem.Status.Completed::class
+        )
+    ) {
+        requestToastDismissal(ToasterState.defaultTimeoutMillis)
+    }
 
     val progressPercent: Float =
         if (download.fractionDone.value != null)
@@ -138,7 +148,7 @@ fun downloadToast(
                     .size(16.dp),
                 onClick = {
                     SL.UI.downloadManager.activeDownloads[download.id]?.cancel()
-                    requestToastDismissal()
+                    requestToastDismissal(0)
                 }
             ) {
                 Icon(imageVector = Icons.Default.Close, contentDescription = null)

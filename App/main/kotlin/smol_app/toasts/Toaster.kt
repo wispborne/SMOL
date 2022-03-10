@@ -37,6 +37,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import smol_access.SL
 import smol_app.UI
+import timber.ktx.Timber
 import utilities.asList
 
 class ToasterState {
@@ -56,14 +57,18 @@ class ToasterState {
                     .distinctBy { it.id }
                     .toMutableList()
 
-                items.value.forEach {
-                    if (it.timeoutMillis != null && !timersByToastId.containsKey(it.id)) {
-                        timersByToastId[it.id] = it.timeoutMillis
+                // If there's a toast in the new list that doesn't have a timer and should, add the timer.
+                items.value.forEach { toast ->
+                    if (toast.timeoutMillis != null && !timersByToastId.containsKey(toast.id)) {
+                        Timber.i { "Added toast timer, as it didn't have one, for toast $toast." }
+                        timersByToastId[toast.id] = toast.timeoutMillis
                     }
                 }
 
-                timersByToastId.keys.forEach { toastId ->
+                // Prune any timers that don't have a Toast anymore.
+                timersByToastId.keys.toList().forEach { toastId ->
                     if (toastId !in items.value.map { it.id }) {
+                        Timber.i { "Pruned toast timer $toastId with no corresponding toast." }
                         timersByToastId.remove(toastId)
                     }
                 }
@@ -71,12 +76,14 @@ class ToasterState {
         }
     }
 
-    fun addItems(toasts: List<Toast>) =
+    fun addItems(toasts: List<Toast>) {
         toasts
             .filter { toast -> toast.id !in items.value.map { it.id } }
             .run {
                 items.update { it + this }
+                Timber.i { "Added new toasts ${toasts.joinToString(separator = "\n")}." }
             }
+    }
 
     fun addItem(toast: Toast) = addItems(toast.asList())
 
@@ -97,23 +104,29 @@ fun toaster(
     val toasterState = SL.UI.toaster
     val items = toasterState.items.collectAsState()
 
+    // Constantly loop to update Toast timers.
     LaunchedEffect(Unit) {
         while (true) {
+            val loopDelay = 500L
             items.value.toList().forEach {
                 if (toasterState.timersByToastId.containsKey(it.id)) {
-                    toasterState.timersByToastId[it.id] = toasterState.timersByToastId[it.id]!! - 100
+                    toasterState.timersByToastId[it.id] = toasterState.timersByToastId[it.id]!! - loopDelay
                 }
             }
 
             val preFilterSize = items.value.size
             toasterState.items.value =
-                items.value.filter { (toasterState.timersByToastId[it.id] ?: 1) > 0 }
+                items.value.filter { toast ->
+                    val hasTimeLeftOrIndefinite = (toasterState.timersByToastId[toast.id] ?: 1) > 0
+                    if (!hasTimeLeftOrIndefinite) Timber.i { "Removing expired toast $toast." }
+                    hasTimeLeftOrIndefinite
+                }
 
             if (preFilterSize != items.value.size) {
                 recomposeScope.invalidate()
             }
 
-            delay(500)
+            delay(loopDelay)
         }
     }
 

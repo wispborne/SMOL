@@ -12,50 +12,53 @@
 
 package utilities
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import timber.ktx.Timber
 import java.io.File
 
-suspend fun runCommandInTerminal(
+/**
+ * Runs a command in the OS's command line.
+ *
+ * Warning: This blocks until the spawned process exits (or is launched, if `launchInNewWindow` is `true`).
+ * Run in a coroutine to avoid this.
+ */
+fun runCommandInTerminal(
     command: String,
     workingDirectory: File?,
     args: List<String> = emptyList(),
-    envArgs: List<String> = emptyList(),
     launchInNewWindow: Boolean = false,
     newWindowTitle: String? = null
 ) {
     val launcherCommand = when (currentPlatform) {
         Platform.Windows -> {
-            listOf("cmd", "/C") + if (launchInNewWindow) {
-                listOf("start", "\"${newWindowTitle ?: "Running..."}\"")
+            if (launchInNewWindow) {
+                listOf("cmd", "/C", "start", "\"${newWindowTitle ?: "Running..."}\"")
             } else {
                 emptyList()
             }
         }
         else -> listOf("open")
-    }
+    }.toTypedArray()
 
-    val finalCommand = launcherCommand + command + args.joinToString()
-    withContext(Dispatchers.IO) {
-        kotlin.runCatching {
-            ProcessBuilder(command, *args.toTypedArray())
-                .directory(workingDirectory)
-                .apply {
-                    environment().clear()
+    val finalCommands = launcherCommand + command
+//    withContext(Dispatchers.IO) {
+    kotlin.runCatching {
+        ProcessBuilder(*finalCommands, *args.toTypedArray())
+            .directory(workingDirectory)
+            .apply {
+                environment().clear()
+            }
+            .also {
+                Timber.i {
+                    "Running terminal command: '${
+                        it.command().joinToString()
+                    }' in working dir '${it.directory().absolutePath}' with environment '${it.environment().entries.joinToString()}'."
                 }
-                .also {
-                    Timber.i {
-                        "Running terminal command: '${
-                            it.command().joinToString()
-                        }' in working dir '${it.directory().absolutePath}' with environment '${it.environment().entries.joinToString()}'."
-                    }
-                }
-                .start()
-                .apply {
-                    this.inputStream.transferTo(System.out)
-                    this.errorStream.transferTo(System.err)
-                }
+            }
+            .start()
+            .apply {
+                this.inputStream.transferTo(System.out)
+                this.errorStream.transferTo(System.err)
+            }
 //            Runtime.getRuntime()
 //                .also {
 //                    Timber.i {
@@ -73,9 +76,9 @@ suspend fun runCommandInTerminal(
 //                    this.errorStream.transferTo(System.err)
 ////                }
 //                }
-        }
-            .onFailure { Timber.e(it) }
     }
+        .onFailure { Timber.e(it) }
+//    }
 }
 
 //Runtime.getRuntime()

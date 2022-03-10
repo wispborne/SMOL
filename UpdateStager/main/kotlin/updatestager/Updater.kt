@@ -146,28 +146,18 @@ class Updater(
         val updateInstallerFilename = "UpdateInstaller-fat.jar"
         val standaloneJrePath = Path.of("jre-min-win")
 
-        val command = "\"${
-            standaloneJrePath.resolve("bin/java.exe").absolutePathString()
-        }\" -jar $updateInstallerFilename '${SMOL_UPDATE_ZIP}'"
+        val command = standaloneJrePath.resolve("bin/java.exe").absolutePathString()
 
-        try {
-            if (installJob == null) {
-                installJob = Job()
-
-                CoroutineScope(installJob!!).launch {
-                    runCommandInTerminal(
-                        command = command,
-                        workingDirectory = File("."),
-//                        runAsync = true,
-                        launchInNewWindow = true,
-                        newWindowTitle = "Installing SMOL update"
-                    )
-                }
-            }
-        } finally {
-            installJob?.cancel()
-            installJob = null
+        GlobalScope.launch {
+            runCommandInTerminal(
+                command = command,
+                workingDirectory = File("."),
+                args = listOf("-jar", updateInstallerFilename, "'${SMOL_UPDATE_ZIP}'"),
+                launchInNewWindow = true,
+                newWindowTitle = "Installing SMOL update"
+            )
         }
+        runBlocking { delay(300) }
     }
 
     fun getUpdateChannelSetting() =

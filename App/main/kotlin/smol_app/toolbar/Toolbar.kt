@@ -35,10 +35,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.replaceCurrent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import org.tinylog.Logger
 import smol_access.Constants
 import smol_access.SL
@@ -171,7 +168,12 @@ fun AppScope.launchButton(modifier: Modifier = Modifier) {
                             Timber.i {
                                 "Reading Starsector settings from Registry:\n${
                                     prefs.keys().joinToString(separator = "\n") { key ->
-                                        "$key: ${if (key == "serial") "REDACTED" else prefs.get(key, "(no value found)")}"
+                                        "$key: ${
+                                            if (key == "serial") "REDACTED" else prefs.get(
+                                                key,
+                                                "(no value found)"
+                                            )
+                                        }"
                                     }
                                 }"
                             }
@@ -196,7 +198,7 @@ fun AppScope.launchButton(modifier: Modifier = Modifier) {
                             null to null
                         }
                     if (vmparams != null && launchPrefs != null) {
-                        CoroutineScope(Job()).launch {
+                        CoroutineScope(Job()).launch(Dispatchers.IO) {
                             runCommandInTerminal(
                                 command = (gameLauncher?.absolutePathString() ?: "missing game path"),
                                 args = listOf(
@@ -214,7 +216,7 @@ fun AppScope.launchButton(modifier: Modifier = Modifier) {
                 } else {
                     val workingDir = SL.gamePathManager.path.value?.resolve("starsector-core")
                     val gameLauncher = SL.gamePathManager.path.value?.resolve("starsector-core/starsector.bat")
-                    CoroutineScope(Job()).launch {
+                    CoroutineScope(Job()).launch(Dispatchers.IO) {
                         runCommandInTerminal(
                             command = (gameLauncher?.absolutePathString() ?: "missing game path"),
                             args = listOf(

@@ -407,7 +407,6 @@ private fun AppScope.embeddedBrowser(
                         ) {
                             SL.UI.downloadManager.downloads.value.firstOrNull { it.id == itemId }
                                 ?.let { download ->
-                                    Timber.d { "" }
                                     runBlocking {
                                         if (progressBytes != null)
                                             download.progressBytes.emit(progressBytes)

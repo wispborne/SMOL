@@ -165,7 +165,7 @@ private fun setUpToasts() {
             addedModVariants
                 .forEach { newModVariant ->
                     Timber.i { "Found new mod ${newModVariant.modInfo.id} ${newModVariant.modInfo.version}." }
-                    val id = "new-" + newModVariant.smolId
+                    val id = "new-mod-" + newModVariant.smolId
                     SL.UI.toaster.addItem(Toast(
                         id = id,
                         timeoutMillis = null,
@@ -173,9 +173,10 @@ private fun setUpToasts() {
                     ) {
                         toastInstalledCard(
                             modVariant = newModVariant,
-                            requestToastDismissal = {
+                            requestToastDismissal = { delayMillis ->
                                 if (!SL.UI.toaster.timersByToastId.containsKey(id)) {
-                                    SL.UI.toaster.timersByToastId[id] = 0
+                                    Timber.i { "Changed toast timer id $id to ${delayMillis}ms." }
+                                    SL.UI.toaster.timersByToastId[id] = delayMillis
                                 }
                             }
                         )
@@ -191,11 +192,15 @@ private fun setUpToasts() {
             downloads
                 .filter { it.id !in items.value.map { it.id } }
                 .map {
-                    Toast(id = it.id, timeoutMillis = null, useStandardToastFrame = true) {
+                    val toastId = "download-${it.id}"
+                    Toast(id = toastId, timeoutMillis = null, useStandardToastFrame = true) {
                         downloadToast(
                             download = it,
-                            requestToastDismissal = {
-                                SL.UI.toaster.remove(it.id)
+                            requestToastDismissal = { delayMillis ->
+                                if (!SL.UI.toaster.timersByToastId.containsKey(toastId)) {
+                                    Timber.i { "Changed toast timer id $toastId to ${delayMillis}ms." }
+                                    SL.UI.toaster.timersByToastId[toastId] = delayMillis
+                                }
                             })
                     }
                 }

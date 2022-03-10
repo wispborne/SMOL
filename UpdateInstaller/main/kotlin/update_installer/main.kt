@@ -46,19 +46,26 @@ class Main {
                 try {
                     println("Waiting 5 seconds for SMOL to quit and release file locks.")
                     Thread.sleep(5000)
+                    var timesToRepeat = 3
 
                     println("Installing ${updateZipPath.absolutePath}...")
-                    kotlin.runCatching {
-                        Archive.read(updateZipPath.absolutePath).install()
+                    while (timesToRepeat > 0) {
+                        kotlin.runCatching {
+                            Archive.read(updateZipPath.absolutePath).install()
+                        }
+                            .onFailure {
+                                timesToRepeat--
+                                System.err.println("Error installing $updateZipPath.")
+                                System.err.println(it.message)
+                                it.printStackTrace()
+                                System.err.println("Retrying $timesToRepeat more time(s).")
+                                Thread.sleep(3000)
+                            }
+                            .onSuccess {
+                                timesToRepeat = 0
+                                println("Done. SMOL does not automatically relaunch.")
+                            }
                     }
-                        .onFailure {
-                            System.err.println("Error installing $updateZipPath.")
-                            System.err.println(it.message)
-                            it.printStackTrace()
-                        }
-                        .onSuccess {
-                            println("Done. SMOL does not automatically relaunch.")
-                        }
                 } finally {
                     isThreadDone = true
                 }
