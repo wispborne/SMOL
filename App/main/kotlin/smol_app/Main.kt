@@ -30,6 +30,7 @@ import org.cef.CefApp
 import org.tinylog.Logger
 import smol_access.Constants
 import smol_access.SL
+import smol_access.ServiceLocator
 import smol_app.browser.chromium.CefBrowserPanel
 import smol_app.navigation.Screen
 import smol_app.navigation.rememberRouter
@@ -49,7 +50,17 @@ import kotlin.io.path.inputStream
 var safeMode = false
 
 fun main() = application {
-//    fixWhiteFlashOnStartup()
+    kotlin.runCatching {
+        ServiceLocator.init()
+    }
+        .onFailure {
+            it.printStackTrace()
+            println("Something terrible has happened and SMOL cannot start. Try 'Run as administrator'.")
+            System.console()?.readLine()
+            // Leave console window open but don't try to open SMOL.
+            // Something awful happened (they probably need to run as admin)
+            return@application
+        }
 
     // Logger
     kotlin.runCatching {
@@ -58,7 +69,9 @@ fun main() = application {
             else LogLevel.INFO
         Logging.setup()
     }
-        .onFailure { println(it) }
+        .onFailure {
+            println(it)
+        }
 
     var appWindowState = rememberWindowState()
 

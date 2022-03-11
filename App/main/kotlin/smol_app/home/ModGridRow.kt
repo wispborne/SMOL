@@ -14,7 +14,6 @@ package smol_app.home
 
 import AppScope
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.mouseClickable
@@ -29,22 +28,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.*
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.arkivanov.decompose.replaceCurrent
-import smol_access.Constants
 import smol_access.model.Mod
 import smol_access.model.ModVariant
 import smol_access.model.UserProfile
 import smol_app.composables.SmolText
-import smol_app.composables.SmolTooltipArea
-import smol_app.composables.SmolTooltipText
-import smol_app.navigation.Screen
-import smol_app.util.*
-import timber.ktx.Timber
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
@@ -184,109 +174,13 @@ fun AppScope.ModGridRow(
                 // Mod version (active or highest)
                 Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {
                     // Update badge icon
-                    if (highestLocalVersion != null && onlineVersion != null && onlineVersion > highestLocalVersion) {
-                        val ddUrl =
-                            onlineVersionInfo.directDownloadURL?.ifBlank { null }
-                                ?: mod.findHighestVersion?.versionCheckerInfo?.directDownloadURL
-                        if (ddUrl != null) {
-                            SmolTooltipArea(tooltip = {
-                                SmolTooltipText(
-                                    text = buildString {
-                                        append("Newer version available: ${onlineVersionInfo.modVersion}")
-                                        append("\nCurrent version: $highestLocalVersion.")
-                                        append("\n\nClick to download and update.")
-                                    }
-                                )
-                            }, modifier = Modifier.mouseClickable {
-                                if (this.buttons.isPrimaryPressed) {
-                                    alertDialogSetter {
-                                        DirectDownloadAlertDialog(
-                                            ddUrl = ddUrl,
-                                            mod = mod,
-                                            onlineVersion = onlineVersion
-                                        )
-                                    }
-                                }
-                            }
-                                .align(Alignment.CenterVertically)) {
-                                Image(
-                                    painter = painterResource("icon-direct-install.svg"),
-                                    contentDescription = null,
-                                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(color = MaterialTheme.colors.secondary),
-                                    modifier = Modifier.width(28.dp).height(28.dp)
-                                        .padding(end = 8.dp)
-                                        .align(Alignment.CenterVertically)
-                                        .pointerHoverIcon(
-                                            PointerIcon(
-                                                java.awt.Cursor.getPredefinedCursor(
-                                                    java.awt.Cursor.HAND_CURSOR
-                                                )
-                                            )
-                                        )
-                                )
-                            }
-                        }
-
-                        val modThreadId =
-                            mod.findHighestVersion?.versionCheckerInfo?.modThreadId
-                        val hasModThread = modThreadId?.isNotBlank() == true
-                        SmolTooltipArea(tooltip = {
-                            SmolTooltipText(
-                                text = buildAnnotatedString {
-                                    append("Newer version available: ${onlineVersionInfo.modVersion}.")
-                                    append("\nCurrent version: $highestLocalVersion.")
-                                    append("\n\n<i>Update information is provided by the mod author, not SMOL, and cannot be guaranteed.</i>".parseHtml())
-                                    if (ddUrl == null) append("\n<i>This mod does not support direct download and should be downloaded manually.</i>".parseHtml())
-                                    if (hasModThread) {
-                                        append("\n\nClick to open <code>${modThreadId?.getModThreadUrl()}</code>.".parseHtml())
-                                    } else {
-                                        append("\n\n<b>No mod thread provided. Click to search on Google.</b>".parseHtml())
-                                    }
-                                }
-                            )
-                        }, modifier = Modifier.mouseClickable {
-                            if (this.buttons.isPrimaryPressed) {
-                                if (hasModThread) {
-                                    if (Constants.isModBrowserEnabled()) {
-                                        router.replaceCurrent(Screen.ModBrowser(modThreadId?.getModThreadUrl()))
-                                    } else {
-                                        kotlin.runCatching {
-                                            modThreadId?.getModThreadUrl()
-                                                ?.openAsUriInBrowser()
-                                        }
-                                            .onFailure { Timber.w(it) }
-                                    }
-                                } else {
-                                    createGoogleSearchFor("starsector ${mod.findHighestVersion?.modInfo?.name}")
-                                        .openAsUriInBrowser()
-                                }
-                            }
-                        }
-                            .align(Alignment.CenterVertically)) {
-                            Image(
-                                painter = painterResource(
-                                    if (hasModThread) "icon-new-update.svg"
-                                    else "icon-new-update-search.svg"
-                                ),
-                                contentDescription = null,
-                                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(
-                                    color =
-                                    if (ddUrl == null) MaterialTheme.colors.secondary
-                                    else MaterialTheme.colors.secondary.copy(alpha = ContentAlpha.disabled)
-                                ),
-                                modifier = Modifier.width(28.dp).height(28.dp)
-                                    .padding(end = 8.dp)
-                                    .align(Alignment.CenterVertically)
-                                    .pointerHoverIcon(
-                                        PointerIcon(
-                                            java.awt.Cursor.getPredefinedCursor(
-                                                java.awt.Cursor.HAND_CURSOR
-                                            )
-                                        )
-                                    )
-                            )
-                        }
-                    }
+                    ModUpdateIcon(
+                        modifier = Modifier.align(Alignment.CenterVertically),
+                        highestLocalVersion = highestLocalVersion,
+                        onlineVersion = onlineVersion,
+                        onlineVersionInfo = onlineVersionInfo,
+                        mod = mod
+                    )
 
                     // Versions discovered
                     Row(
@@ -376,3 +270,4 @@ fun AppScope.ModGridRow(
         }
     }
 }
+

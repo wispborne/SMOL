@@ -21,6 +21,27 @@ data class Version(
 ) : Comparable<Version> {
     override fun toString() = raw ?: listOfNotNull(major, minor, patch, build).joinToString(separator = ".")
 
+    /**
+     * Compares this object with the specified object for order. Returns zero if this object is equal
+     * to the specified [other] object, a negative number if it's less than [other], or a positive number
+     * if it's greater than [other].
+     */
+    override operator fun compareTo(other: Version): Int {
+        this.major.compareRecognizingNumbers(other.major).run { if (this != 0) return this }
+        this.minor.compareRecognizingNumbers(other.minor).run { if (this != 0) return this }
+        this.patch.compareRecognizingNumbers(other.patch).run { if (this != 0) return this }
+        (this.build ?: "0").compareRecognizingNumbers((other.build ?: "")).run { if (this != 0) return this }
+        return 0
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return other is Version && this.raw == other.raw
+    }
+
+    override fun hashCode(): Int {
+        return raw?.hashCode() ?: 0
+    }
+
     companion object {
         fun parse(versionString: String): Version {
             // Remove all non-version data from the version information,
@@ -66,7 +87,9 @@ data class Version(
             val otherChunked = other.splitIntoAlphaAndNumeric()
             var i = 0
 
-            while (i < thisChunked.size && i < otherChunked.size) {
+            // Iterate over each character in the version segment (using "0" to fill in if one is longer than the other).
+            // As soon as there's inequality, return that result.
+            while (i < thisChunked.size || i < otherChunked.size) {
                 val thisToCompare = thisChunked.getOrElse(i) { "0" }.let { it.toIntOrNull() ?: it }
                 val otherToCompare = otherChunked.getOrElse(i) { "0" }.let { it.toIntOrNull() ?: it }
 
@@ -81,26 +104,5 @@ data class Version(
 
             return 0
         }
-    }
-
-    /**
-     * Compares this object with the specified object for order. Returns zero if this object is equal
-     * to the specified [other] object, a negative number if it's less than [other], or a positive number
-     * if it's greater than [other].
-     */
-    override operator fun compareTo(other: Version): Int {
-        this.major.compareRecognizingNumbers(other.major).run { if (this != 0) return this }
-        this.minor.compareRecognizingNumbers(other.minor).run { if (this != 0) return this }
-        this.patch.compareRecognizingNumbers(other.patch).run { if (this != 0) return this }
-        (this.build ?: "0").compareRecognizingNumbers((other.build ?: "")).run { if (this != 0) return this }
-        return 0
-    }
-
-    override fun equals(other: Any?): Boolean {
-        return other is Version && this.raw == other.raw
-    }
-
-    override fun hashCode(): Int {
-        return raw?.hashCode() ?: 0
     }
 }

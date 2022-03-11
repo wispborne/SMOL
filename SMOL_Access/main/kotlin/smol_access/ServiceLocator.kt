@@ -30,7 +30,7 @@ import smol_access.themes.ThemeManager
 import smol_access.util.ManualReloadTrigger
 import utilities.Jsanity
 
-var SL = ServiceLocator()
+lateinit var SL: ServiceLocator
 
 //private val basicMoshi = Moshi.Builder()
 //    .addLast(KotlinJsonAdapterFactory()).build()
@@ -106,7 +106,13 @@ class ServiceLocator internal constructor(
     ),
     val themeManager: ThemeManager = ThemeManager(userManager = userManager, jsanity = jsanity),
     val modRepo: ModRepo = ModRepo(jsanity = jsanity, httpClientBuilder = httpClientBuilder)
-)
+) {
+    companion object {
+        fun init() {
+            SL = ServiceLocator()
+        }
+    }
+}
 
 private fun buildJackson(): ObjectMapper =
     JsonMapper.builder().defaultLeniency(true)
