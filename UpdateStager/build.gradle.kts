@@ -39,9 +39,37 @@ application {
     mainClass.set("updatestager.Main")
 }
 
-tasks.withType<JavaExec>().configureEach {
+fun JavaExec.configureRun(channel: String) {
     val directoryOfFilesToAddToManifest = rootDir.resolve("dist/main/app/SMOL")
-    this.setArgsString(directoryOfFilesToAddToManifest.absolutePath)
+    this.setArgsString("${directoryOfFilesToAddToManifest.absolutePath} $channel")
+}
+
+tasks.withType<JavaExec>().configureEach {
+}
+
+tasks {
+    val run by existing(JavaExec::class)
+
+    register("runStable") {
+        doFirst {
+            run.configure { this.configureRun("stable") }
+        }
+        finalizedBy("run")
+    }
+
+    register("runUnstable") {
+        doFirst {
+            run.configure { this.configureRun("unstable") }
+        }
+        finalizedBy("run")
+    }
+
+    register("runTest") {
+        doFirst {
+            run.configure { this.configureRun("test") }
+        }
+        finalizedBy("run")
+    }
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {

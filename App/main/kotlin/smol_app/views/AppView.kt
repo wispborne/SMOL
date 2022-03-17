@@ -49,6 +49,7 @@ import smol_app.toasts.toaster
 import smol_app.updater.UpdateSmolToast
 import smol_app.views.FileDropper
 import timber.ktx.Timber
+import updatestager.BaseAppUpdater
 import utilities.IOLock
 import utilities.exists
 import kotlin.io.path.exists
@@ -74,16 +75,31 @@ fun WindowState.appView() {
 //                onlineUrl = SL.UI.updater.getUpdateConfigUrl(),
 //                localPath = Path.of("dist\\main\\app\\SMOL")
 //            )
-            val remoteConfig = kotlin.runCatching { SL.UI.updater.getRemoteConfig() }.getOrNull()
+            val updateChannel = BaseAppUpdater.getUpdateChannelSetting(SL.appConfig)
+            val remoteConfigAsync =
+                async { kotlin.runCatching { SL.UI.smolUpdater.fetchRemoteConfig(updateChannel) }.getOrNull() }
+            val updaterConfigAsync =
+                async { kotlin.runCatching { SL.UI.updaterUpdater.fetchRemoteConfig(updateChannel) }.getOrNull() }
 
+            val remoteConfig = remoteConfigAsync.await()
             if (remoteConfig == null) {
                 Timber.w { "Unable to fetch remote config, aborting update check." }
             } else {
                 UpdateSmolToast().updateUpdateToast(
                     updateConfig = remoteConfig,
                     toasterState = SL.UI.toaster,
-                    updater = SL.UI.updater
+                    smolUpdater = SL.UI.smolUpdater
                 )
+            }
+
+            val updaterConfig = updaterConfigAsync.await()
+
+            if (updaterConfig != null && updaterConfig.requiresUpdate()) {
+                Timber.i { "Found update for the SMOL updater, updating it in the background." }
+                kotlin.runCatching {
+                    SL.UI.updaterUpdater.downloadUpdateZip(updaterConfig)
+                    SL.UI.updaterUpdater.installUpdate()
+                }
             }
         }
     }

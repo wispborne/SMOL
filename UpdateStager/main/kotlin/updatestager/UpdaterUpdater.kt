@@ -1,0 +1,54 @@
+/*
+ * This file is distributed under the GPLv3. An informal description follows:
+ * - Anyone can copy, modify and distribute this software as long as the other points are followed.
+ * - You must include the license and copyright notice with each and every distribution.
+ * - You may this software for commercial purposes.
+ * - If you modify it, you must indicate changes made to the code.
+ * - Any modifications of this code base MUST be distributed with the same license, GPLv3.
+ * - This software is provided without warranty.
+ * - The software author or license can not be held liable for any damages inflicted by the software.
+ * The full license is available from <https://www.gnu.org/licenses/gpl-3.0.txt>.
+ */
+
+package updatestager
+
+import org.update4j.Archive
+import org.update4j.Configuration
+import org.update4j.FileMetadata
+import timber.ktx.Timber
+import java.nio.file.Path
+import kotlin.io.path.absolutePathString
+import kotlin.io.path.relativeTo
+import kotlin.streams.asSequence
+
+class UpdaterUpdater : BaseAppUpdater() {
+    override val configXmlBaseFileNameWithoutExtension: String = "updater-config"
+    override val versionPropertyKey: String = "updater-version-prop"
+    override val updateZipFile: Path = Path.of("updater-update.zip")
+
+    override fun createConfiguration(
+        directoryOfFilesToAddToManifest: Path,
+        remoteConfigUrl: String
+    ): Configuration {
+        val dir = directoryOfFilesToAddToManifest
+
+        return Configuration.builder()
+            .baseUri(remoteConfigUrl)
+            .basePath(Path.of("").absolutePathString())
+            .files(
+                FileMetadata.streamDirectory(dir.resolve("jre-min-win")).asSequence()
+                    .plus(FileMetadata.readFrom(dir.resolve("UpdateInstaller-fat.jar")))
+                    .onEach { it.path(it.source.relativeTo(dir)) }
+                    .onEach { r -> r.classpath(r.source.toString().endsWith(".jar")) }
+                    .toList())
+            .build()
+    }
+
+    override fun installUpdateInternal() {
+        kotlin.runCatching {
+            Archive.read(updateZipFile).install(true)
+        }
+            .onFailure { Timber.e(it) }
+            .getOrThrow()
+    }
+}

@@ -14,7 +14,6 @@ package update_installer
 
 import org.update4j.Archive
 import java.io.File
-import kotlin.concurrent.thread
 
 class Main {
     companion object {
@@ -38,41 +37,37 @@ class Main {
             }
 
             println("Found update zip at ${updateZipPath.absolutePath}.")
+            var success = false
 
+            try {
+                println("Waiting 5 seconds for SMOL to quit and release file locks.")
+                Thread.sleep(5000)
+                var timesToRepeat = 3
 
-            var isThreadDone = false
+                println("Installing ${updateZipPath.absolutePath}...")
+                while (timesToRepeat > 0) {
+                    kotlin.runCatching {
+                        Archive.read(updateZipPath.absolutePath).install()
+                        success = true
+                    }
+                        .onFailure {
+                            timesToRepeat--
+                            System.err.println("Error installing $updateZipPath.")
+                            System.err.println(it.message)
+                            it.printStackTrace()
 
-            thread {
-                try {
-                    println("Waiting 5 seconds for SMOL to quit and release file locks.")
-                    Thread.sleep(5000)
-                    var timesToRepeat = 3
-
-                    println("Installing ${updateZipPath.absolutePath}...")
-                    while (timesToRepeat > 0) {
-                        kotlin.runCatching {
-                            Archive.read(updateZipPath.absolutePath).install()
-                        }
-                            .onFailure {
-                                timesToRepeat--
-                                System.err.println("Error installing $updateZipPath.")
-                                System.err.println(it.message)
-                                it.printStackTrace()
+                            if (timesToRepeat > 0) {
                                 System.err.println("Retrying $timesToRepeat more time(s).")
                                 Thread.sleep(3000)
                             }
-                            .onSuccess {
-                                timesToRepeat = 0
-                                println("Done. SMOL does not automatically relaunch.")
-                            }
-                    }
-                } finally {
-                    isThreadDone = true
+                        }
+                        .onSuccess {
+                            timesToRepeat = 0
+                            println("Done. Please relaunch SMOL to continue.")
+                        }
                 }
-            }
-
-            while (!isThreadDone) {
-                Thread.sleep(500)
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
 
             val pathOfAppToStartAfterUpdating = args.getOrNull(1)?.removeSurrounding("\'")?.ifBlank { null }
@@ -81,6 +76,10 @@ class Main {
                 println("Launching '$pathOfAppToStartAfterUpdating'...")
 
                 Runtime.getRuntime().exec("cmd /C \"$pathOfAppToStartAfterUpdating\"")
+            }
+
+            if (!success) {
+                System.err.println("Failed to update.")
             }
 
             pause()

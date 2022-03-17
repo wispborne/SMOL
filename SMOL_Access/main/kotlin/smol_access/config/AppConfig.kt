@@ -49,6 +49,7 @@ class AppConfig(gson: Jsanity) :
 
     enum class UpdateChannel {
         Unstable,
-        Stable
+        Stable,
+        Test,
     }
 }

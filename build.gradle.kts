@@ -48,14 +48,21 @@ tasks.register("buildSmol") {
             val sourceJre = rootProject.projectDir.resolve("UpdateInstaller/jre")
             val readme = rootProject.projectDir.resolve("README.md")
             val license = rootProject.projectDir.resolve("LICENSE.txt")
+            val updateScript = rootProject.projectDir.resolve("UpdateInstaller/install-SMOL-update.bat")
             val dest = rootProject.projectDir.resolve("dist/main/app/SMOL")
-            println("Copying from $sourceDist, $sourceJre to $dest.")
-            from(sourceDist, sourceJre, readme, license)
+            println("Copying from $sourceDist, $sourceJre, $updateScript to $dest.")
+            from(sourceDist, sourceJre, readme, license, updateScript)
             into(dest)
         }
     }
 }
 
-tasks.register("buildSmolDist") {
-    dependsOn("buildSmol", "UpdateStager:run")
+tasks.register("buildSmolDistStable") {
+    dependsOn("buildSmol", "UpdateStager:runStable")
+}
+tasks.register("buildSmolDistUnstable") {
+    dependsOn("buildSmol", "UpdateStager:runUnstable")
+}
+tasks.register("buildSmolDistTest") {
+    dependsOn("buildSmol", "UpdateStager:runTest")
 }

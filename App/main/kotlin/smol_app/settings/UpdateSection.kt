@@ -12,26 +12,34 @@
 
 package smol_app.settings
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.mouseClickable
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.update4j.Configuration
+import smol_access.Constants
 import smol_access.SL
 import smol_app.UI
 import smol_app.composables.SmolButton
 import smol_app.composables.SmolDropdownMenuItemTemplate
 import smol_app.composables.SmolDropdownWithButton
+import smol_app.composables.SmolLinkText
 import smol_app.updater.UpdateSmolToast
-import updatestager.Updater
+import smol_app.util.openAsUriInBrowser
+import timber.ktx.Timber
+import updatestager.BaseAppUpdater
 import java.io.FileNotFoundException
 import java.net.UnknownHostException
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun updateSection(scope: CoroutineScope) {
     Column(modifier = Modifier.padding(start = 16.dp, top = 24.dp)) {
@@ -54,7 +62,7 @@ fun updateSection(scope: CoroutineScope) {
                             when (it) {
                                 is UnknownHostException -> "Unable to connect to ${it.message}."
                                 is FileNotFoundException ->
-                                    if (SL.UI.updater.getUpdateChannelSetting() == Updater.UpdateChannel.Stable)
+                                    if (SL.UI.smolUpdater.getUpdateChannelSetting(appConfig = SL.appConfig) == BaseAppUpdater.UpdateChannel.Stable)
                                         "There's no stable version...yet." else
                                         "File not found: ${it.message}."
                                 else -> it.toString()
@@ -68,16 +76,17 @@ fun updateSection(scope: CoroutineScope) {
 
         SmolDropdownWithButton(
             modifier = Modifier.padding(top = 4.dp),
-            initiallySelectedIndex = when (SL.UI.updater.getUpdateChannelSetting()) {
-                Updater.UpdateChannel.Stable -> 0
-                Updater.UpdateChannel.Unstable -> 1
+            initiallySelectedIndex = when (SL.UI.smolUpdater.getUpdateChannelSetting(appConfig = SL.appConfig)) {
+                BaseAppUpdater.UpdateChannel.Stable -> 0
+                BaseAppUpdater.UpdateChannel.Unstable -> 1
+                BaseAppUpdater.UpdateChannel.Test -> 2
             },
             items = listOf(
                 SmolDropdownMenuItemTemplate(
                     text = "Stable",
                     iconPath = "icon-stable.svg",
                     onClick = {
-                        SL.UI.updater.setUpdateChannel(Updater.UpdateChannel.Stable)
+                        SL.UI.smolUpdater.setUpdateChannel(BaseAppUpdater.UpdateChannel.Stable, SL.appConfig)
                         doUpdateCheck()
                     }
                 ),
@@ -85,7 +94,15 @@ fun updateSection(scope: CoroutineScope) {
                     text = "Unstable",
                     iconPath = "icon-experimental.svg",
                     onClick = {
-                        SL.UI.updater.setUpdateChannel(Updater.UpdateChannel.Unstable)
+                        SL.UI.smolUpdater.setUpdateChannel(BaseAppUpdater.UpdateChannel.Unstable, SL.appConfig)
+                        doUpdateCheck()
+                    }
+                ),
+                SmolDropdownMenuItemTemplate(
+                    text = "Test (don't use this)",
+                    iconPath = "icon-test-radioactive.svg",
+                    onClick = {
+                        SL.UI.smolUpdater.setUpdateChannel(BaseAppUpdater.UpdateChannel.Test, SL.appConfig)
                         doUpdateCheck()
                     }
                 )
@@ -101,28 +118,49 @@ fun updateSection(scope: CoroutineScope) {
             text = updateStatus,
             style = MaterialTheme.typography.caption
         )
+        SmolLinkText(
+            text = "View All Releases",
+            modifier = Modifier
+                .padding(top = 8.dp)
+                .mouseClickable {
+                Constants.SMOL_RELEASES_URL.openAsUriInBrowser()
+            },
+            fontSize = 13.sp
+        )
     }
 }
 
 private suspend fun checkForUpdate(): Configuration {
     val remoteConfig =
-        runCatching { SL.UI.updater.getRemoteConfig() }
+        runCatching { SL.UI.smolUpdater.fetchRemoteConfig(SL.appConfig) }
             .onFailure {
                 UpdateSmolToast().updateUpdateToast(
                     updateConfig = null,
                     toasterState = SL.UI.toaster,
-                    updater = SL.UI.updater
+                    smolUpdater = SL.UI.smolUpdater
                 )
             }
             .onSuccess { remoteConfig ->
                 UpdateSmolToast().updateUpdateToast(
                     updateConfig = remoteConfig,
                     toasterState = SL.UI.toaster,
-                    updater = SL.UI.updater
+                    smolUpdater = SL.UI.smolUpdater
                 )
             }
-            .getOrThrow()
 
+    runCatching {
+        val updaterConfig = SL.UI.updaterUpdater.fetchRemoteConfig(SL.appConfig)
+
+        if (updaterConfig.requiresUpdate()) {
+            Timber.i { "Found update for the SMOL updater, updating it in the background." }
+            runCatching {
+                SL.UI.updaterUpdater.downloadUpdateZip(updaterConfig)
+                SL.UI.updaterUpdater.installUpdate()
+            }
+        }
+    }
+        .onFailure { Timber.w(it) }
 
     return remoteConfig
+        .getOrThrow()
 }

@@ -1,1 +1,0 @@
-jre-min-win\bin\java.exe -jar UpdateInstaller-fat.jar 'smol-update.zip'

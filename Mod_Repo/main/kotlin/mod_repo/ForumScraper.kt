@@ -13,6 +13,8 @@
 package mod_repo
 
 import io.ktor.http.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.select.Elements
@@ -30,11 +32,12 @@ import timber.ktx.Timber
  * The full license is available from <https://www.gnu.org/licenses/gpl-3.0.txt>.
  */
 class ForumScraper {
+    private val postsPerPage = 20
 
     fun run(): List<ScrapedMod>? {
         return (scrapeModIndexLinks() ?: emptyList())
-            .plus(scrapeModdingForumLinks() ?: emptyList())
-            .plus(scrapeModForumLinks() ?: emptyList())
+            .plus(runBlocking { scrapeModdingForumLinks() } ?: emptyList())
+            .plus(runBlocking { scrapeModForumLinks() } ?: emptyList())
             .ifEmpty { null }
     }
 
@@ -74,26 +77,29 @@ class ForumScraper {
             .getOrNull()
     }
 
-    internal fun scrapeModdingForumLinks(): List<ScrapedMod>? {
+    internal suspend fun scrapeModdingForumLinks(): List<ScrapedMod>? {
         Timber.i { "Scraping Modding Forum..." }
         return scrapeSubforumLinks(
             forumBaseUrl = Main.FORUM_BASE_URL,
-            subforumNumber = 3
+            subforumNumber = 3,
+            take = postsPerPage * 15
         )
     }
 
-    internal fun scrapeModForumLinks(): List<ScrapedMod>? {
+    internal suspend fun scrapeModForumLinks(): List<ScrapedMod>? {
         Timber.i { "Scraping Mod Forum..." }
         return scrapeSubforumLinks(
             forumBaseUrl = Main.FORUM_BASE_URL,
-            subforumNumber = 8
+            subforumNumber = 8,
+            take = postsPerPage * 12
         )
     }
 
-    private fun scrapeSubforumLinks(forumBaseUrl: String, subforumNumber: Int): List<ScrapedMod>? {
+    private suspend fun scrapeSubforumLinks(forumBaseUrl: String, subforumNumber: Int, take: Int): List<ScrapedMod>? {
         return kotlin.runCatching {
-            (0 until 80 step 20)
+            (0 until take step 20)
                 .flatMap { page ->
+                    Timber.i { "Fetching page ${page / postsPerPage} from subforum $subforumNumber." }
                     val doc: Document = Jsoup.connect("$forumBaseUrl?board=$subforumNumber.$page").get()
                     val posts: Elements = doc.select("#messageindex tr")
                     val versionRegex = Regex("""[\[{](.*?\d.*?)[]}]""")
@@ -118,6 +124,12 @@ class ForumScraper {
                         }
                         .filter { it.gameVersionReq.isNotEmpty() }
                         .filter { !it.name.contains("MOVED", ignoreCase = true) }
+                        .also {
+                            Timber.i { "Found ${it.count()} mods on page ${page / postsPerPage} of subforum $subforumNumber." }
+                        }
+                        .also {
+                            delay(200)
+                        }
                 }
         }
             .onFailure { Timber.w(it) }

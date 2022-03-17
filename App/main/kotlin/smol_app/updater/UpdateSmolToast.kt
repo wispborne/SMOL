@@ -32,7 +32,8 @@ import smol_app.util.bytesAsShortReadableMB
 import smol_app.util.bytesToMB
 import smol_app.util.ellipsizeAfter
 import timber.ktx.Timber
-import updatestager.Updater
+import updatestager.BaseAppUpdater
+import updatestager.SmolUpdater
 import kotlin.system.exitProcess
 
 class UpdateSmolToast {
@@ -55,7 +56,7 @@ class UpdateSmolToast {
     fun updateUpdateToast(
         updateConfig: Configuration?,
         toasterState: ToasterState,
-        updater: Updater
+        smolUpdater: BaseAppUpdater
     ) {
         if (updateConfig?.requiresUpdate() == true) {
             Timber.i { "Adding update toast." }
@@ -66,10 +67,10 @@ class UpdateSmolToast {
                     useStandardToastFrame = true,
                     content = {
                         kotlin.runCatching {
-                            val version = updateConfig.resolvedProperties[Updater.PROP_VERSION_NAME]
+                            val version = updateConfig.resolvedProperties[smolUpdater.versionPropertyKey]
                             var updateStage by remember {
                                 mutableStateOf(
-                                    if (updater.isUpdatedDownloaded())
+                                    if (smolUpdater.isUpdatedDownloaded())
                                         UpdateStage.ReadyToInstall else UpdateStage.Idle
                                 )
                             }
@@ -80,7 +81,7 @@ class UpdateSmolToast {
                                         it.width(400.dp)
                                     else it
                                 }) {
-                                val fileProgress = updater.currentFileDownload.collectAsState()
+                                val fileProgress = smolUpdater.currentFileDownload.collectAsState()
 
                                 Column {
                                     Text(
@@ -106,7 +107,7 @@ class UpdateSmolToast {
                                                         job.launch {
                                                             try {
                                                                 updateStage = UpdateStage.Downloading
-                                                                updater.update(remoteConfig = updateConfig)
+                                                                smolUpdater.downloadUpdateZip(remoteConfig = updateConfig)
                                                                 updateStage = UpdateStage.ReadyToInstall
                                                             } catch (e: Exception) {
                                                                 Timber.w(e)
@@ -124,7 +125,7 @@ class UpdateSmolToast {
                                                             try {
                                                                 updateStage = UpdateStage.Installing
                                                                 // Start updater, then quit application so updater can replace files.
-                                                                updater.installUpdate()
+                                                                smolUpdater.installUpdate()
                                                                 delay(400) // Time to log an error if there was one
                                                                 updateStage = UpdateStage.Done
                                                                 exitProcess(status = 0)
@@ -159,7 +160,7 @@ class UpdateSmolToast {
                                         CircularProgressIndicator(
                                             modifier = Modifier.padding(start = 16.dp).size(20.dp)
                                                 .align(Alignment.CenterVertically),
-                                            progress = updater.totalDownloadFraction.collectAsState().value ?: 0f
+                                            progress = smolUpdater.totalDownloadFraction.collectAsState().value ?: 0f
                                         )
                                         CircularProgressIndicator(
                                             modifier = Modifier.padding(start = 8.dp).size(20.dp)
@@ -168,10 +169,10 @@ class UpdateSmolToast {
                                         )
                                     }
 
-                                    val downloadTotal = updater.totalDownloadBytes.collectAsState().value
+                                    val downloadTotal = smolUpdater.totalDownloadBytes.collectAsState().value
                                     val downloadedTotal =
                                         if (updateStage > UpdateStage.Downloading) downloadTotal
-                                        else updater.totalDownloadedBytes.collectAsState().value
+                                        else smolUpdater.totalDownloadedBytes.collectAsState().value
                                     val downloadedAmountText =
                                         "${downloadedTotal?.let { "%.2f".format(it.bytesToMB) } ?: "unknown"} / "
                                     Text(

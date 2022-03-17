@@ -25,6 +25,7 @@ object Constants {
     private val resourcesDir = System.getProperty("compose.application.resources.dir")?.toPathOrNull()
 
     const val MOD_INFO_FILE = "mod_info.json"
+
     // Backwards compat, first one is the one used for new disable actions.
     val MOD_INFO_FILE_DISABLED_NAMES = arrayOf("mod_info.json.disabled-by-SMOL", "mod_info.json.disabled")
     const val ENABLED_MODS_FILENAME = "enabled_mods.json"
@@ -50,14 +51,17 @@ object Constants {
     val VERCHECK_CACHE_PATH: Path = APP_FOLDER_DEFAULT.resolve("SMOL_VerCheckCache.json")
     val VRAM_CHECKER_RESULTS_PATH: Path = APP_FOLDER_DEFAULT.resolve("SMOL_VRAMCheckResults.json")
 
+    const val SMOL_RELEASES_URL = "https://github.com/davidwhitman/SMOL_Dist/releases"
+
     // Mod Repo
     const val modRepoUrl = "https://raw.githubusercontent.com/davidwhitman/StarsectorModRepo/main/ModRepo.json"
 
     // Updater
     val VERSION_PROPERTIES_FILE: Path? = resourcesDir?.resolve("version.properties")
     private const val baseUpdateUrl = "https://raw.githubusercontent.com/davidwhitman/SMOL_Dist"
-    const val UPDATE_URL_UNSTABLE = "$baseUpdateUrl/unstable"
     const val UPDATE_URL_STABLE = "$baseUpdateUrl/main"
+    const val UPDATE_URL_UNSTABLE = "$baseUpdateUrl/unstable"
+    const val UPDATE_URL_TEST = "$baseUpdateUrl/test"
 
     val TEMP_DIR = System.getProperty("java.io.tmpdir")?.let { Path.of(it) } ?: APP_FOLDER_DEFAULT
 

@@ -14,18 +14,38 @@ package updatestager
 
 import smol_access.Constants
 import utilities.toPathOrNull
-import java.nio.file.Path
 
 class Main {
     companion object {
         /**
          * First arg must be `directoryOfFilesToAddToManifest`.
+         * Second arg must be `channel`: [stable, unstable, test].
          */
         @JvmStatic
         fun main(args: Array<String>) {
+            val channel = when (args[1].lowercase()) {
+                "stable", "main" -> BaseAppUpdater.UpdateChannel.Stable
+                "unstable" -> BaseAppUpdater.UpdateChannel.Unstable
+                "test" -> BaseAppUpdater.UpdateChannel.Test
+                else -> throw RuntimeException("Unrecognized channel: ${args[0]}.")
+            }
+            val url = when (channel) {
+                BaseAppUpdater.UpdateChannel.Stable -> Constants.UPDATE_URL_STABLE
+                BaseAppUpdater.UpdateChannel.Unstable -> Constants.UPDATE_URL_UNSTABLE
+                BaseAppUpdater.UpdateChannel.Test -> Constants.UPDATE_URL_TEST
+            }
+
             WriteLocalUpdateConfig.run(
-                onlineUrl = Constants.UPDATE_URL_UNSTABLE,
-                directoryOfFilesToAddToManifest = args[0].toPathOrNull()!!
+                onlineUrl = url,
+                directoryOfFilesToAddToManifest = args[0].toPathOrNull()!!,
+                updater = SmolUpdater(),
+                channel = channel
+            )
+            WriteLocalUpdateConfig.run(
+                onlineUrl = url,
+                directoryOfFilesToAddToManifest = args[0].toPathOrNull()!!,
+                updater = UpdaterUpdater(),
+                channel = channel
             )
         }
     }

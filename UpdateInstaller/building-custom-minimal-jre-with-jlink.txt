@@ -2,5 +2,5 @@ jre-min-win is a minimal version of the jre for the updator to use.
 It needs its own standalone jre because it can't replace the SMOL app's files while they're being used.
 Also can't use Starsector's jre because update4j requires java 9+.
 
-jlink --module-path UpdateInstaller-fat.jar --add-modules java.base --output customjre-win
-strip -p --strip-unneeded ./customjre/lib/server/libjvm.so
+jlink --module-path UpdateInstaller-fat.jar --add-modules java.base,java.xml,jdk.zipfs --output jre-min-win
+strip -p --strip-unneeded ./jre-min-win/lib/server/libjvm.so
