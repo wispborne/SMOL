@@ -173,13 +173,20 @@ fun AppScope.scrapedModCard(mod: ScrapedMod, linkLoader: MutableState<((String) 
                         }
 
                         val tags = remember {
-                            ((mod.categories ?: emptyList()) + when (mod.source) {
-                                ModSource.Index -> "Index"
-                                ModSource.ModdingSubforum -> "Modding Subforum"
-                                ModSource.Discord -> "Discord"
-                                null -> null
-                            })
-                                .filterNotNull()
+                            mod.categories?.sorted().orEmpty() + mod.sources.orEmpty()
+                                .sortedWith(
+                                    compareBy<ModSource> { it == ModSource.Index }
+                                        .thenBy { it == ModSource.Discord }
+                                        .thenBy { it == ModSource.ModdingSubforum }
+                                )
+                                .map {
+                                    when (it) {
+                                        ModSource.Index -> "Index"
+                                        ModSource.ModdingSubforum -> "Modding Subforum"
+                                        ModSource.Discord -> "Discord"
+                                    }
+                                }
+
                         }
                         if (tags.isNotEmpty()) {
                             Row(modifier = Modifier.padding(top = 4.dp)) {
@@ -220,7 +227,8 @@ fun scrapedModCardPreview() = smolPreview {
             forumPostLink = Url("index0026.html?topic=13183.0"),
             discordMessageLink = Url("https://discord.com/channels/187635036525166592/537191061156659200/947258123528319097"),
             categories = listOf("Total Conversions"),
-            source = ModSource.Index
+            source = ModSource.Index,
+            sources = listOf(ModSource.Index, ModSource.Discord)
         ),
         mutableStateOf({})
     )

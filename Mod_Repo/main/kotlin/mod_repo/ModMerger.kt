@@ -52,44 +52,66 @@ internal class ModMerger {
                         return@mapNotNull listOf(outerLoopMod) + scrapedMods
                             .parallelStream()
                             .filter { innerLoopMod ->
-                                val nameResult =
+                                val bestNameResult = listOf(
                                     Fuzzy.fuzzyMatch(
                                         outerLoopMod.name.prepForMatching(),
                                         innerLoopMod.name.prepForMatching()
-                                    )
-                                val nameResultFlip =
+                                    ),
                                     Fuzzy.fuzzyMatch(
                                         innerLoopMod.name.prepForMatching(),
                                         outerLoopMod.name.prepForMatching()
                                     )
-                                val authorsResult =
+                                )
+                                    .maxByOrNull { it.second }!!
+
+                                val bestAuthorsResult = (listOf(
                                     Fuzzy.fuzzyMatch(
                                         outerLoopMod.authors.prepForMatching(),
                                         innerLoopMod.authors.prepForMatching()
-                                    )
-                                val authorsResultFlip =
+                                    ),
                                     Fuzzy.fuzzyMatch(
                                         innerLoopMod.authors.prepForMatching(),
                                         outerLoopMod.authors.prepForMatching()
                                     )
-
-                                val isMatch =
-                                    (nameResult.first && authorsResult.first)
-                                            || (nameResultFlip.first && authorsResultFlip.first)
-                                            || (nameResult.first && authorsResultFlip.first)
-                                            || (nameResultFlip.first && authorsResult.first)
-
-                                if (Main.verboseOutput && (nameResult.second > 0 || nameResultFlip.second > 0 || authorsResult.second > 0 || authorsResultFlip.second > 0)) {
-                                    Timber.d {
-                                        buildString {
-                                            appendLine("Compared '${outerLoopMod.name}' to '${innerLoopMod.name}':")
-                                            appendLine("  '${outerLoopMod.name.prepForMatching()}'<-->'${innerLoopMod.name.prepForMatching()}'==>${nameResult.second}")
-                                            appendLine("  '${innerLoopMod.name.prepForMatching()}'<-->'${outerLoopMod.name.prepForMatching()}'==>${nameResultFlip.second}")
-                                            appendLine("  '${outerLoopMod.authors.prepForMatching()}'<-->'${innerLoopMod.authors.prepForMatching()}'==>${authorsResult.second}")
-                                            append("  '${innerLoopMod.authors.prepForMatching()}'<-->'${outerLoopMod.authors.prepForMatching()}'==>${authorsResultFlip.second}")
-                                        }
+                                ) + getOtherMatchingAliases(innerLoopMod.authors)
+                                    .flatMap { alias ->
+                                        listOf(
+                                            Fuzzy.fuzzyMatch(
+                                                outerLoopMod.authors.prepForMatching(),
+                                                alias.prepForMatching()
+                                            ),
+                                            Fuzzy.fuzzyMatch(
+                                                alias.prepForMatching(),
+                                                outerLoopMod.authors.prepForMatching()
+                                            )
+                                        )
+                                    } + getOtherMatchingAliases(outerLoopMod.authors)
+                                    .flatMap { alias ->
+                                        listOf(
+                                            Fuzzy.fuzzyMatch(
+                                                outerLoopMod.authors.prepForMatching(),
+                                                alias.prepForMatching()
+                                            ),
+                                            Fuzzy.fuzzyMatch(
+                                                alias.prepForMatching(),
+                                                outerLoopMod.authors.prepForMatching()
+                                            )
+                                        )
                                     }
-                                }
+                                        )
+                                    .maxByOrNull { it.second }!!
+
+                                val isMatch = bestNameResult.first && bestAuthorsResult.first
+
+//                                if (Main.verboseOutput && (bestNameResult.second > 0 || bestAuthorsResult.second > 0)) {
+//                                    Timber.d {
+//                                        buildString {
+//                                            appendLine("Compared '${outerLoopMod.name}' to '${innerLoopMod.name}':")
+//                                            appendLine("  '${outerLoopMod.name.prepForMatching()}'<-->'${innerLoopMod.name.prepForMatching()}'==>${bestNameResult.second}")
+//                                            append("  '${outerLoopMod.authors.prepForMatching()}'<-->'${innerLoopMod.authors.prepForMatching()}'==>${bestAuthorsResult.second}")
+//                                        }
+//                                    }
+//                                }
 
                                 if (isMatch) {
                                     modsAlreadyAddedToAGroup.add(innerLoopMod)
@@ -106,6 +128,20 @@ internal class ModMerger {
                     "Grouped ${mods.count()} mods by similarity, created ${modGroups.count()} groups."
                 Timber.i { msg }
                 summary.appendLine(msg)
+            }
+            .also { groupedMods ->
+                if (Main.verboseOutput) {
+                    groupedMods.forEach { modGroup ->
+                        Timber.i {
+                            buildString {
+                                appendLine("Mod group of ${modGroup.count()}:")
+                                modGroup.forEach { mod ->
+                                    appendLine("  '${mod.name}' by '${mod.authors}' from ${mod.sources}")
+                                }
+                            }
+                        }
+                    }
+                }
             }
             .let { groupedMods ->
                 Timber.i { "Merging ${mods.count()} mods by similarity..." }
@@ -131,6 +167,21 @@ internal class ModMerger {
             }
     }
 
+    val authorAliases = listOf(
+        listOf("Soren", "Søren", "Harmful Mechanic"),
+        listOf("RustyCabbage", "rubi"),
+        listOf("Wisp", "Wispborne"),
+        listOf("Caymon Joestar", "Haze"),
+    )
+
+    private fun getOtherMatchingAliases(author: String): List<String> =
+        authorAliases.firstOrNull { aliases ->
+            aliases.any { alias ->
+                Fuzzy.fuzzyMatch(author, alias).first || Fuzzy.fuzzyMatch(alias, author).first
+            }
+        }
+            .orEmpty()
+
     private fun mergeSimilarMods(mods: List<ScrapedMod>): ScrapedMod {
         return mods
             .reduce { mergedMod, modToFoldIn ->
@@ -138,10 +189,10 @@ internal class ModMerger {
 
                 // Mods from the Index always have priority in case of conflicts.
                 val doesNewModHavePriority =
-                    if (mergedMod.sources.contains(ModSource.Index)) {
+                    if (mergedMod.sources.orEmpty().contains(ModSource.Index)) {
                         Timber.i { "Merging '${modToFoldIn.name}' from '${modToFoldIn.authors}' with higher priority '${mergedMod.name}' from '${mergedMod.authors}'." }
                         false
-                    } else if (modToFoldIn.sources.contains(ModSource.Index)) {
+                    } else if (modToFoldIn.sources.orEmpty().contains(ModSource.Index)) {
                         Timber.i { "Merging '${mergedMod.name}' from '${mergedMod.authors}' with higher priority '${modToFoldIn.name}' from '${modToFoldIn.authors}'." }
                         true
                     } else {
@@ -185,7 +236,7 @@ internal class ModMerger {
                         right = modToFoldIn.source,
                         doesRightHavePriority = doesNewModHavePriority
                     ),
-                    sources = (modToFoldIn.sources + mergedMod.sources).distinct(),
+                    sources = (modToFoldIn.sources.orEmpty() + mergedMod.sources.orEmpty()).distinct(),
                     categories = (modToFoldIn.categories.orEmpty() + mergedMod.categories.orEmpty()).distinct(),
                 )
             }

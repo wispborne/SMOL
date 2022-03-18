@@ -23,7 +23,7 @@ data class ScrapedMod(
     val discordMessageLink: Url?,
     @Deprecated("Use `sources` because similar mods are now merged.")
     val source: ModSource?,
-    val sources: List<ModSource>,
+    val sources: List<ModSource>?,
     val categories: List<String>?
 )
 

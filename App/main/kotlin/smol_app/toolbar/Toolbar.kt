@@ -49,6 +49,7 @@ import utilities.IOLocks
 import utilities.runCommandInTerminal
 import utilities.weightedRandom
 import java.awt.FileDialog
+import java.nio.file.Path
 import java.util.prefs.Preferences
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.isReadable
@@ -164,27 +165,7 @@ fun AppScope.launchButton(modifier: Modifier = Modifier) {
                                 .filter { it.isNotBlank() }
                         }
 
-                        val launchPrefs = Preferences.userRoot().node("com").node("fs").node("starfarer").let { prefs ->
-                            Timber.i {
-                                "Reading Starsector settings from Registry:\n${
-                                    prefs.keys().joinToString(separator = "\n") { key ->
-                                        "$key: ${
-                                            if (key == "serial") "REDACTED" else prefs.get(
-                                                key,
-                                                "(no value found)"
-                                            )
-                                        }"
-                                    }
-                                }"
-                            }
-                            StarsectorLaunchPrefs(
-                                isFullscreen = prefs.getBoolean("fullscreen", false),
-                                resolution = prefs.get("resolution", "1920x1080"),
-                                hasSound = prefs.getBoolean("sound", true)
-                            )
-                        }
-
-                        vmp to launchPrefs
+                        vmp to getStarsectorLaunchPrefs()
                     }
                         .onFailure { Timber.w(it) }
                         .getOrElse { ex ->
@@ -198,17 +179,20 @@ fun AppScope.launchButton(modifier: Modifier = Modifier) {
                             null to null
                         }
                     if (vmparams != null && launchPrefs != null) {
+                        val overrideArgs = generateVmparamOverrides(launchPrefs, workingDir, vmparams)
+
                         CoroutineScope(Job()).launch(Dispatchers.IO) {
                             runCommandInTerminal(
                                 command = (gameLauncher?.absolutePathString() ?: "missing game path"),
-                                args = listOf(
-                                    "-DlaunchDirect=true",
-                                    "-DstartFS=${launchPrefs.isFullscreen}",
-                                    "-DstartSound=${launchPrefs.hasSound}",
-                                    "-DstartRes=${launchPrefs.resolution}",
-//                                "-Dorg.lwjgl.util.Debug=true", // debugging for lwjgl
-                                    "-Djava.library.path=${workingDir?.absolutePathString()}\\native\\windows"
-                                ) + vmparams.filter { !it.startsWith("-Djava.library.path") },
+                                args = overrideArgs.map { it.key + "=" + it.value } + vmparams
+                                    .filter { vanillaParam ->
+                                        // Remove any vanilla params that we're overriding.
+                                        overrideArgs.none { overrideArg ->
+                                            vanillaParam.startsWith(
+                                                overrideArg.key
+                                            )
+                                        }
+                                    },
                                 workingDirectory = workingDir?.toFile()
                             )
                         }
@@ -251,6 +235,58 @@ fun AppScope.launchButton(modifier: Modifier = Modifier) {
                 fontWeight = FontWeight.SemiBold
             )
         }
+    }
+}
+
+private fun generateVmparamOverrides(
+    launchPrefs: StarsectorLaunchPrefs,
+    workingDir: Path?,
+    vanillaVmparams: List<String>
+): Map<String, String?> {
+    val vmparamsKeysToAbsolutize = listOf(
+        "-Djava.library.path",
+        "-Dcom.fs.starfarer.settings.paths.saves",
+        "-Dcom.fs.starfarer.settings.paths.screenshots",
+        "-Dcom.fs.starfarer.settings.paths.mods",
+        "-Dcom.fs.starfarer.settings.paths.logs",
+    )
+
+    val overrideArgs = mapOf(
+        "-DlaunchDirect" to "true",
+        "-DstartFS" to launchPrefs.isFullscreen.toString(),
+        "-DstartSound" to launchPrefs.hasSound.toString(),
+        "-DstartRes" to launchPrefs.resolution
+    ) + vmparamsKeysToAbsolutize
+        .mapNotNull { key ->
+            // Look through vmparams for the matching key, grab the value of it, and treat it as a relative path
+            // to return an absolute one.
+            key to workingDir?.resolve(
+                (vanillaVmparams.firstOrNull { it.startsWith("$key=") } ?: return@mapNotNull null)
+                    .split("=").getOrNull(1) ?: return@mapNotNull null
+            )?.normalize()?.absolutePathString()
+        }
+    return overrideArgs
+}
+
+private fun getStarsectorLaunchPrefs(): StarsectorLaunchPrefs {
+    Preferences.userRoot().node("com").node("fs").node("starfarer").let { prefs ->
+        Timber.i {
+            "Reading Starsector settings from Registry:\n${
+                prefs.keys().joinToString(separator = "\n") { key ->
+                    "$key: ${
+                        if (key == "serial") "REDACTED" else prefs.get(
+                            key,
+                            "(no value found)"
+                        )
+                    }"
+                }
+            }"
+        }
+        return StarsectorLaunchPrefs(
+            isFullscreen = prefs.getBoolean("fullscreen", false),
+            resolution = prefs.get("resolution", "1920x1080"),
+            hasSound = prefs.getBoolean("sound", true)
+        )
     }
 }
 
