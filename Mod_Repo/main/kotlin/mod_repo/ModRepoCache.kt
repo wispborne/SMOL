@@ -33,5 +33,6 @@ class ModRepoCache(gson: Jsanity) : Config(
         prefKey = "lastUpdated",
         defaultValue = null
     )
+    var totalCount by pref(prefKey = "totalCount", defaultValue = 0)
     var items by pref<List<ScrapedMod>>(prefKey = "items", defaultValue = emptyList())
 }

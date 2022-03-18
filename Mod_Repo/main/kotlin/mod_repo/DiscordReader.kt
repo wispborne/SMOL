@@ -76,9 +76,11 @@ internal class DiscordReader {
                         ?.let { kotlin.runCatching { Url(it) }.onFailure { Timber.w(it) }.getOrNull() },
                     discordMessageLink = Url("https://discord.com/channels/$serverId/$modUpdatesChannelId/${message.id}"),
                     source = ModSource.Discord,
+                    sources = listOf(ModSource.Discord),
                     categories = emptyList()
                 )
             }
+            .map { cleanUpMod(it) }
     }
 
     private fun getProperties() =
@@ -127,6 +129,14 @@ internal class DiscordReader {
 
         return messages
     }
+
+    private val discordUnrecognizedEmojiRegex = Regex("""(<:.+?:.+?>)""")
+
+    private fun cleanUpMod(mod: ScrapedMod): ScrapedMod =
+        mod.copy(
+            name = mod.name.replace(discordUnrecognizedEmojiRegex, "").trim(),
+            description = mod.description?.replace(discordUnrecognizedEmojiRegex, "")?.trim(),
+        )
 
     internal data class Message(
         val id: String,

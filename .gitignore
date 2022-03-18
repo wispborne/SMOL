@@ -170,3 +170,5 @@ dist/
 # Don't commit the data that's user-specific
 SMOL-data
 ModRepo.json
+
+config.properties

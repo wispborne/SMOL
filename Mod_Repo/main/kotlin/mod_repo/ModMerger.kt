@@ -13,9 +13,9 @@
 package mod_repo
 
 import com.github.androidpasswordstore.sublimefuzzy.Fuzzy
-import io.ktor.http.*
-import io.ktor.util.*
 import timber.ktx.Timber
+import utilities.parallelMap
+import java.time.Instant
 
 /**
  * This file is distributed under the GPLv3. An informal description follows:
@@ -29,88 +29,182 @@ import timber.ktx.Timber
  * The full license is available from <https://www.gnu.org/licenses/gpl-3.0.txt>.
  */
 internal class ModMerger {
-    fun merge(mods: List<ScrapedMod>): List<ScrapedMod> {
+    suspend fun merge(mods: List<ScrapedMod>): List<ScrapedMod> {
+        val startTime = Instant.now()
+
+        // Mods that are also listed from another, more preferable source.
+        val modsAlreadyAddedToAGroup = mutableListOf<ScrapedMod>()
+        val summary = StringBuilder()
+
         return mods
             .sortedBy { it.name }
-            .run {
-                println("Deduplicating ${this.count()} mods...")
-                val modsToSkip = mutableListOf<ScrapedMod>()
+            .let { scrapedMods ->
+                Timber.i { "Grouping ${mods.count()} mods by similarity..." }
 
-                for (outer in this) {
-                    if (outer in modsToSkip) {
-                        continue
-                    }
+                // For each mod, look for all similar mods and return a group of similar mods
+                scrapedMods
+                    .mapNotNull { outerLoopMod ->
+                        if (outerLoopMod in modsAlreadyAddedToAGroup) {
+                            return@mapNotNull null
+                        }
 
-                    this.minus(outer)
-                        .forEach { inner ->
-                            val nameResult =
-                                Fuzzy.fuzzyMatch(outer.name.prepForMatching(), inner.name.prepForMatching())
-                            val nameResultFlip =
-                                Fuzzy.fuzzyMatch(inner.name.prepForMatching(), outer.name.prepForMatching())
-                            val authorsResult =
-                                Fuzzy.fuzzyMatch(
-                                    outer.authors.prepForMatching(),
-                                    inner.authors.prepForMatching()
-                                )
-                            val authorsResultFlip =
-                                Fuzzy.fuzzyMatch(
-                                    inner.authors.prepForMatching(),
-                                    outer.authors.prepForMatching()
-                                )
+                        // Add the mod and then look for and add all similar ones
+                        return@mapNotNull listOf(outerLoopMod) + scrapedMods
+                            .parallelStream()
+                            .filter { innerLoopMod ->
+                                val nameResult =
+                                    Fuzzy.fuzzyMatch(
+                                        outerLoopMod.name.prepForMatching(),
+                                        innerLoopMod.name.prepForMatching()
+                                    )
+                                val nameResultFlip =
+                                    Fuzzy.fuzzyMatch(
+                                        innerLoopMod.name.prepForMatching(),
+                                        outerLoopMod.name.prepForMatching()
+                                    )
+                                val authorsResult =
+                                    Fuzzy.fuzzyMatch(
+                                        outerLoopMod.authors.prepForMatching(),
+                                        innerLoopMod.authors.prepForMatching()
+                                    )
+                                val authorsResultFlip =
+                                    Fuzzy.fuzzyMatch(
+                                        innerLoopMod.authors.prepForMatching(),
+                                        outerLoopMod.authors.prepForMatching()
+                                    )
 
-                            val isMatch =
-                                (nameResult.first && authorsResult.first)
-                                        || (nameResultFlip.first && authorsResultFlip.first)
-                                        || (nameResult.first && authorsResultFlip.first)
-                                        || (nameResultFlip.first && authorsResult.first)
+                                val isMatch =
+                                    (nameResult.first && authorsResult.first)
+                                            || (nameResultFlip.first && authorsResultFlip.first)
+                                            || (nameResult.first && authorsResultFlip.first)
+                                            || (nameResultFlip.first && authorsResult.first)
 
-                            if (Main.isDebugMode && (nameResult.second > 0 || nameResultFlip.second > 0 || authorsResult.second > 0 || authorsResultFlip.second > 0)) {
-                                Timber.d {
-                                    buildString {
-                                        appendLine("Compared '${outer.name}' to '${inner.name}':")
-                                        appendLine("  '${outer.name.prepForMatching()}'<-->'${inner.name.prepForMatching()}'==>${nameResult.second}")
-                                        appendLine("  '${inner.name.prepForMatching()}'<-->'${outer.name.prepForMatching()}'==>${nameResultFlip.second}")
-                                        appendLine("  '${outer.authors.prepForMatching()}'<-->'${inner.authors.prepForMatching()}'==>${authorsResult.second}")
-                                        append("  '${inner.authors.prepForMatching()}'<-->'${outer.authors.prepForMatching()}'==>${authorsResultFlip.second}")
+                                if (Main.verboseOutput && (nameResult.second > 0 || nameResultFlip.second > 0 || authorsResult.second > 0 || authorsResultFlip.second > 0)) {
+                                    Timber.d {
+                                        buildString {
+                                            appendLine("Compared '${outerLoopMod.name}' to '${innerLoopMod.name}':")
+                                            appendLine("  '${outerLoopMod.name.prepForMatching()}'<-->'${innerLoopMod.name.prepForMatching()}'==>${nameResult.second}")
+                                            appendLine("  '${innerLoopMod.name.prepForMatching()}'<-->'${outerLoopMod.name.prepForMatching()}'==>${nameResultFlip.second}")
+                                            appendLine("  '${outerLoopMod.authors.prepForMatching()}'<-->'${innerLoopMod.authors.prepForMatching()}'==>${authorsResult.second}")
+                                            append("  '${innerLoopMod.authors.prepForMatching()}'<-->'${outerLoopMod.authors.prepForMatching()}'==>${authorsResultFlip.second}")
+                                        }
                                     }
                                 }
-                            }
 
-                            if (isMatch) {
-                                modsToSkip.add(
-                                    if (outer.source == ModSource.Index) {
-                                        Timber.i { "Replacing '${inner.name}' from '${inner.authors}' with '${outer.name}' from '${outer.authors}'." }
-                                        inner
-                                    } else if (inner.source == ModSource.Index) {
-                                        Timber.i { "Replacing '${outer.name}' from '${outer.authors}' with '${inner.name}' from '${inner.authors}'." }
-                                        outer
-                                    } else {
-                                        Timber.i { "Replacing '${inner.name}' from '${inner.authors}' with '${outer.name}' from '${outer.authors}'." }
-                                        inner
-                                    }
-                                )
+                                if (isMatch) {
+                                    modsAlreadyAddedToAGroup.add(innerLoopMod)
+                                    true
+                                } else {
+                                    false
+                                }
                             }
-                        }
-                }
-
-                val result = this - modsToSkip
-                Timber.i { "Deduplicating ${this.count()} mods...done, removed ${this.count() - result.count()} mods." }
-                cleanUpMods(result)
+                            .toList()
+                    }
             }
+            .also { modGroups ->
+                val msg =
+                    "Grouped ${mods.count()} mods by similarity, created ${modGroups.count()} groups."
+                Timber.i { msg }
+                summary.appendLine(msg)
+            }
+            .let { groupedMods ->
+                Timber.i { "Merging ${mods.count()} mods by similarity..." }
+                groupedMods.parallelMap { modGroup -> mergeSimilarMods(modGroup) }
+            }
+            .also { mergedMods ->
+                val msg =
+                    "Merged ${mods.count()} mods by similarity. ${mods.count() - mergedMods.count()} mods were duplicates, resulting in a total of ${mergedMods.count()} merged mods."
+                Timber.i { msg }
+                summary.appendLine(msg)
+            }
+            .let { mergedMods ->
+                cleanUpMods(mergedMods)
+            }
+            .onEach { Timber.i { it.toString() } }
+            .also { Timber.i { summary.toString() } }
+            .also {
+                Timber.i {
+                    "Total time to merge ${mods.count()} mods: ${
+                        Instant.now().toEpochMilli() - startTime.toEpochMilli()
+                    }ms."
+                }
+            }
+    }
+
+    private fun mergeSimilarMods(mods: List<ScrapedMod>): ScrapedMod {
+        return mods
+            .reduce { mergedMod, modToFoldIn ->
+                if (mergedMod == modToFoldIn) return@reduce mergedMod
+
+                // Mods from the Index always have priority in case of conflicts.
+                val doesNewModHavePriority =
+                    if (mergedMod.sources.contains(ModSource.Index)) {
+                        Timber.i { "Merging '${modToFoldIn.name}' from '${modToFoldIn.authors}' with higher priority '${mergedMod.name}' from '${mergedMod.authors}'." }
+                        false
+                    } else if (modToFoldIn.sources.contains(ModSource.Index)) {
+                        Timber.i { "Merging '${mergedMod.name}' from '${mergedMod.authors}' with higher priority '${modToFoldIn.name}' from '${modToFoldIn.authors}'." }
+                        true
+                    } else {
+                        Timber.i { "Merging '${modToFoldIn.name}' from '${modToFoldIn.authors}' with higher priority '${mergedMod.name}' from '${mergedMod.authors}'." }
+                        false
+                    }
+
+                mergedMod.copy(
+                    name = chooseBest(
+                        left = mergedMod.name.ifBlank { null },
+                        right = modToFoldIn.name.ifBlank { null },
+                        doesRightHavePriority = doesNewModHavePriority
+                    ) ?: "",
+                    description = chooseBest(
+                        left = mergedMod.description?.ifBlank { null },
+                        right = modToFoldIn.description?.ifBlank { null },
+                        doesRightHavePriority = doesNewModHavePriority
+                    ),
+                    gameVersionReq = chooseBest(
+                        left = mergedMod.gameVersionReq?.ifBlank { null },
+                        right = modToFoldIn.gameVersionReq?.ifBlank { null },
+                        doesRightHavePriority = doesNewModHavePriority
+                    ),
+                    authors = chooseBest(
+                        left = mergedMod.authors.ifBlank { null },
+                        right = modToFoldIn.authors.ifBlank { null },
+                        doesRightHavePriority = doesNewModHavePriority
+                    ) ?: "",
+                    forumPostLink = chooseBest(
+                        left = mergedMod.forumPostLink,
+                        right = modToFoldIn.forumPostLink,
+                        doesRightHavePriority = doesNewModHavePriority
+                    ),
+                    discordMessageLink = chooseBest(
+                        left = mergedMod.discordMessageLink,
+                        right = modToFoldIn.discordMessageLink,
+                        doesRightHavePriority = doesNewModHavePriority
+                    ),
+                    source = chooseBest(
+                        left = mergedMod.source,
+                        right = modToFoldIn.source,
+                        doesRightHavePriority = doesNewModHavePriority
+                    ),
+                    sources = (modToFoldIn.sources + mergedMod.sources).distinct(),
+                    categories = (modToFoldIn.categories.orEmpty() + mergedMod.categories.orEmpty()).distinct(),
+                )
+            }
+    }
+
+    private fun <T> chooseBest(left: T, right: T, doesRightHavePriority: Boolean): T {
+        return if (left != null && right != null)
+            if (doesRightHavePriority) right
+            else left
+        else if (doesRightHavePriority)
+            right ?: left
+        else left ?: right
     }
 
     private fun cleanUpMods(mods: List<ScrapedMod>): List<ScrapedMod> =
         mods
-            .map { mod ->
-                mod.copy(forumPostLink = mod.forumPostLink?.copy(
-                    parameters = mod.forumPostLink.parameters
-                        .filter { key, _ -> !key.equals("PHPSESSID", ignoreCase = true) }
-                        .let { Parameters.build { appendAll(it) } })
-                )
-            }
             .filter {
                 val hasLink = it.forumPostLink != null
-                if (!hasLink) Timber.i { "Removing mod without a link: '${it.name}' by '${it.authors}'." }
+                if (!hasLink) Timber.i { "Removing mod without a forum link: '${it.name}' by '${it.authors}'." }
                 hasLink
             }
 

@@ -13,12 +13,15 @@
 package mod_repo
 
 import io.ktor.http.*
+import io.ktor.util.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.select.Elements
 import timber.ktx.Timber
+
+private const val i = 15
 
 /**
  * This file is distributed under the GPLv3. An informal description follows:
@@ -31,17 +34,21 @@ import timber.ktx.Timber
  * - The software author or license can not be held liable for any damages inflicted by the software.
  * The full license is available from <https://www.gnu.org/licenses/gpl-3.0.txt>.
  */
-class ForumScraper {
+class ForumScraper(
+    val moddingForumPagesToScrape: Int,
+    val modForumPagesToScrape: Int
+) {
     private val postsPerPage = 20
 
     fun run(): List<ScrapedMod>? {
         return (scrapeModIndexLinks() ?: emptyList())
             .plus(runBlocking { scrapeModdingForumLinks() } ?: emptyList())
             .plus(runBlocking { scrapeModForumLinks() } ?: emptyList())
+            .map { mod -> cleanUpMod(mod) }
             .ifEmpty { null }
     }
 
-    internal fun scrapeModIndexLinks(): List<ScrapedMod>? {
+    private fun scrapeModIndexLinks(): List<ScrapedMod>? {
         Timber.i { "Scraping Mod Index..." }
         return kotlin.runCatching {
             val doc: Document = Jsoup.connect("https://fractalsoftworks.com/forum/index.php?topic=177.0").get()
@@ -68,6 +75,7 @@ class ForumScraper {
                             forumPostLink = link.attr("href").ifBlank { null }?.let { Url(it) },
                             discordMessageLink = null,
                             source = ModSource.Index,
+                            sources = listOf(ModSource.Index),
                             categories = listOf(category)
                         )
                     }
@@ -77,23 +85,32 @@ class ForumScraper {
             .getOrNull()
     }
 
-    internal suspend fun scrapeModdingForumLinks(): List<ScrapedMod>? {
+    private suspend fun scrapeModdingForumLinks(): List<ScrapedMod>? {
         Timber.i { "Scraping Modding Forum..." }
         return scrapeSubforumLinks(
             forumBaseUrl = Main.FORUM_BASE_URL,
             subforumNumber = 3,
-            take = postsPerPage * 15
+            take = postsPerPage * moddingForumPagesToScrape
         )
     }
 
-    internal suspend fun scrapeModForumLinks(): List<ScrapedMod>? {
+    private suspend fun scrapeModForumLinks(): List<ScrapedMod>? {
         Timber.i { "Scraping Mod Forum..." }
         return scrapeSubforumLinks(
             forumBaseUrl = Main.FORUM_BASE_URL,
             subforumNumber = 8,
-            take = postsPerPage * 12
+            take = postsPerPage * modForumPagesToScrape
         )
     }
+
+    private fun cleanUpMod(mod: ScrapedMod): ScrapedMod =
+        mod.copy(
+            forumPostLink = mod.forumPostLink?.copy(
+                parameters = mod.forumPostLink.parameters
+                    .filter { key, _ -> !key.equals("PHPSESSID", ignoreCase = true) }
+                    .let { Parameters.build { appendAll(it) } })
+        )
+
 
     private suspend fun scrapeSubforumLinks(forumBaseUrl: String, subforumNumber: Int, take: Int): List<ScrapedMod>? {
         return kotlin.runCatching {
@@ -119,10 +136,11 @@ class ForumScraper {
                                 forumPostLink = titleLinkElement.attr("href").ifBlank { null }?.let { Url(it) },
                                 discordMessageLink = null,
                                 source = ModSource.ModdingSubforum,
+                                sources = listOf(ModSource.ModdingSubforum),
                                 categories = emptyList()
                             )
                         }
-                        .filter { it.gameVersionReq.isNotEmpty() }
+                        .filter { !it.gameVersionReq.isNullOrBlank() }
                         .filter { !it.name.contains("MOVED", ignoreCase = true) }
                         .also {
                             Timber.i { "Found ${it.count()} mods on page ${page / postsPerPage} of subforum $subforumNumber." }

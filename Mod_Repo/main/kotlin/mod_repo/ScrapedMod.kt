@@ -17,11 +17,13 @@ import io.ktor.http.*
 data class ScrapedMod(
     val name: String,
     val description: String?,
-    val gameVersionReq: String,
+    val gameVersionReq: String?,
     val authors: String,
     val forumPostLink: Url?,
     val discordMessageLink: Url?,
+    @Deprecated("Use `sources` because similar mods are now merged.")
     val source: ModSource?,
+    val sources: List<ModSource>,
     val categories: List<String>?
 )
 

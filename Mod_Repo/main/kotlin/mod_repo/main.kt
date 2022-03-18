@@ -34,7 +34,12 @@ class Main {
         internal val CONFIG_FOLDER_DEFAULT = Path.of("")
         internal val FORUM_BASE_URL = "https://fractalsoftworks.com/forum/index.php"
         internal val configFilePath = Path.of("config.properties")
-        internal val isDebugMode = true
+        internal const val verboseOutput = true
+
+        /**
+         * Reduces the amount of scraping done for a faster runtime and less load on the server.
+         */
+        private const val DEV_MODE = false
 
         @JvmStatic
         fun main(args: Array<String>) {
@@ -57,7 +62,10 @@ class Main {
 
             val scrapeJob = GlobalScope.async {
                 kotlin.runCatching {
-                    ForumScraper().run()// TODO
+                    ForumScraper(
+                        moddingForumPagesToScrape = if (DEV_MODE) 3 else 15,
+                        modForumPagesToScrape = if (DEV_MODE) 3 else 12
+                    ).run()
                 }
                     .onFailure { Timber.e(it) }
                     .getOrNull()
@@ -77,10 +85,10 @@ class Main {
 
                 ModMerger()
                     .merge(forumMods + discordMods)
-                    .onEach { println(it.toString()) }
                     .run {
-                        println("Saving ${this.count()} mods to ${ModRepoCache.location.toAbsolutePath()}")
+                        println("Saving ${this.count()} mods to ${ModRepoCache.location.toAbsolutePath()}.")
                         modRepoCache.items = this
+                        modRepoCache.totalCount = this.count()
                         modRepoCache.lastUpdated = Instant.now().truncatedTo(ChronoUnit.MINUTES).toString()
                     }
 
