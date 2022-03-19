@@ -109,7 +109,7 @@ data class ModVariant(
         private val systemFolderNameAllowedChars = Regex("""[^0-9a-zA-Z\\.\-_ ]""")
         fun createSmolId(modInfo: ModInfo) = createSmolId(modInfo.id, modInfo.version)
         fun generateVariantFolderName(modInfo: ModInfo) =
-            "${modInfo.name?.replace(systemFolderNameAllowedChars, "")}_${createSmolId(modInfo)}"
+            "${modInfo.name?.replace(systemFolderNameAllowedChars, "")?.take(100)}-${modInfo.version}"
 
         val MOCK: ModVariant
             get() = Mod.MOCK.variants.first()
