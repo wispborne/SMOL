@@ -23,9 +23,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
@@ -34,6 +32,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.arkivanov.decompose.replaceCurrent
 import kotlinx.coroutines.*
 import org.tinylog.Logger
@@ -151,65 +150,54 @@ fun AppScope.launchButton(modifier: Modifier = Modifier) {
     ) {
         SmolButton(
             onClick = {
-                // Game crashes with missing OpenAL unless we use Direct Launch and provide an absolute path to OpenAL.
-                // No idea why.
-                val directLaunch = true
-                if (directLaunch) {
-                    val workingDir = SL.gamePathManager.path.value?.resolve("starsector-core")
-                    val gameLauncher = SL.gamePathManager.path.value?.resolve("jre/bin/java.exe")
-                    val (vmparams, launchPrefs) = kotlin.runCatching {
-                        val vmp = IOLock.read(IOLocks.gameMainFolderLock) {
-                            (SL.gamePathManager.path.value?.resolve("vmparams")?.readText()
-                                ?.removePrefix("java.exe")
-                                ?.split(' ') ?: emptyList())
-                                .filter { it.isNotBlank() }
-                        }
+                if (SL.appConfig.showGameLauncherWarning) {
+                    alertDialogSetter.invoke {
+                        var showGameLauncherWarning by mutableStateOf(SL.appConfig.showGameLauncherWarning)
 
-                        vmp to getStarsectorLaunchPrefs()
-                    }
-                        .onFailure { Timber.w(it) }
-                        .getOrElse { ex ->
-                            alertDialogSetter.invoke {
-                                SmolAlertDialog(
-                                    onDismissRequest = { alertDialogSetter.invoke(null) },
-                                    text = { Text(text = ex.toString(), style = SmolTheme.alertDialogBody()) },
-                                    confirmButton = { SmolButton(onClick = { alertDialogSetter.invoke(null) }) { Text("Ok") } }
-                                )
+                        SmolAlertDialog(
+                            onDismissRequest = { alertDialogSetter.invoke(null) },
+                            title = { Text("WARNING") },
+                            text = {
+                                Column {
+                                    Text(
+                                        text = buildString {
+                                            appendLine("Launching Starsector from SMOL may result in buggy behavior on some computers!")
+                                            appendLine()
+                                            appendLine("If you experience scaling/zoomed UI, rotated ships, or other ghastly behavior, please simply launch Starsector without SMOL.")
+                                        },
+                                        style = SmolTheme.alertDialogBody()
+                                    )
+                                    Text(
+                                        text = "I do apologize for the inconvenience and have spent many, many hours trying to solve this to no avail.",
+                                        fontSize = 13.sp
+                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(top = 16.dp)
+                                    ) {
+                                        Checkbox(
+                                            checked = !showGameLauncherWarning,
+                                            onCheckedChange = { checked ->
+                                                showGameLauncherWarning = !checked
+                                            }
+                                        )
+                                        Text("Don't show again")
+                                    }
+                                }
+                            },
+                            confirmButton = {
+                                SmolButton(onClick = {
+                                    alertDialogSetter.invoke(null)
+                                    SL.appConfig.showGameLauncherWarning = showGameLauncherWarning
+                                    launchStarsector()
+                                }) { Text("Ok") }
                             }
-                            null to null
-                        }
-                    if (vmparams != null && launchPrefs != null) {
-                        val overrideArgs = generateVmparamOverrides(launchPrefs, workingDir, vmparams)
-
-                        CoroutineScope(Job()).launch(Dispatchers.IO) {
-                            runCommandInTerminal(
-                                command = (gameLauncher?.absolutePathString() ?: "missing game path"),
-                                args = overrideArgs.map { it.key + "=" + it.value } + vmparams
-                                    .filter { vanillaParam ->
-                                        // Remove any vanilla params that we're overriding.
-                                        overrideArgs.none { overrideArg ->
-                                            vanillaParam.startsWith(
-                                                overrideArg.key
-                                            )
-                                        }
-                                    },
-                                workingDirectory = workingDir?.toFile()
-                            )
-                        }
-                    }
-                } else {
-                    val workingDir = SL.gamePathManager.path.value?.resolve("starsector-core")
-                    val gameLauncher = SL.gamePathManager.path.value?.resolve("starsector-core/starsector.bat")
-                    CoroutineScope(Job()).launch(Dispatchers.IO) {
-                        runCommandInTerminal(
-                            command = (gameLauncher?.absolutePathString() ?: "missing game path"),
-                            args = listOf(
-                                "-Djava.library.path=${workingDir?.absolutePathString()}\\native\\windows"
-                            ),
-                            workingDirectory = workingDir?.toFile()
                         )
                     }
+                } else {
+                    launchStarsector()
                 }
+
                 // Putting router here is a dumb hack that triggers a recompose when the app UI is invalidated,
                 // which we want so that the button enabled state gets reevaluated.
                 router
@@ -238,9 +226,74 @@ fun AppScope.launchButton(modifier: Modifier = Modifier) {
     }
 }
 
+@OptIn(ExperimentalMaterialApi::class)
+private fun AppScope.launchStarsector() {
+    // Game crashes with missing OpenAL unless we use Direct Launch and provide an absolute path to OpenAL.
+    // No idea why.
+    val directLaunch = true
+    if (directLaunch) {
+        val workingDir = SL.gamePathManager.path.value?.resolve("starsector-core")
+        val starsectorCoreDir = SL.gamePathManager.path.value?.resolve("starsector-core")
+        val gameLauncher = SL.gamePathManager.path.value?.resolve("jre/bin/java.exe")?.normalize()
+        val (vmparams, launchPrefs) = kotlin.runCatching {
+            val vmp = getCurrentVmParams()
+
+            vmp to getStarsectorLaunchPrefs()
+        }
+            .onFailure { Timber.w(it) }
+            .getOrElse { ex ->
+                alertDialogSetter.invoke {
+                    SmolAlertDialog(
+                        onDismissRequest = { alertDialogSetter.invoke(null) },
+                        text = { Text(text = ex.toString(), style = SmolTheme.alertDialogBody()) },
+                        confirmButton = { SmolButton(onClick = { alertDialogSetter.invoke(null) }) { Text("Ok") } }
+                    )
+                }
+                null to null
+            }
+        if (vmparams != null && launchPrefs != null) {
+            val overrideArgs = generateVmparamOverrides(launchPrefs, starsectorCoreDir, vmparams)
+
+            CoroutineScope(Job()).launch(Dispatchers.IO) {
+                runCommandInTerminal(
+                    args = listOf(gameLauncher?.absolutePathString() ?: "missing game path")
+                            + overrideArgs.map { it.key + "=" + it.value } + vmparams
+                        .filter { vanillaParam ->
+                            // Remove any vanilla params that we're overriding.
+                            overrideArgs.none { overrideArg ->
+                                vanillaParam.startsWith(
+                                    overrideArg.key
+                                )
+                            }
+                        },
+                    workingDirectory = workingDir?.toFile()
+                )
+            }
+        }
+    } else {
+        val workingDir = SL.gamePathManager.path.value?.resolve("starsector-core")!!
+        val gameJava = SL.gamePathManager.path.value?.resolve("jre/bin/java.exe")!!
+        val gameLauncher = SL.gamePathManager.path.value?.resolve("starsector-core/starsector.bat")
+        CoroutineScope(Job()).launch(Dispatchers.IO) {
+            runCommandInTerminal(
+                args = listOf(gameJava.absolutePathString(), "-cp", *getCurrentVmParams().toTypedArray()),
+                launchInNewWindow = true,
+                workingDirectory = workingDir.toFile()
+            )
+        }
+    }
+}
+
+private fun getCurrentVmParams() = IOLock.read(IOLocks.gameMainFolderLock) {
+    (SL.gamePathManager.path.value?.resolve("vmparams")?.readText()
+        ?.removePrefix("java.exe")
+        ?.split(' ') ?: emptyList())
+        .filter { it.isNotBlank() }
+}
+
 private fun generateVmparamOverrides(
     launchPrefs: StarsectorLaunchPrefs,
-    workingDir: Path?,
+    starsectorCoreDir: Path?,
     vanillaVmparams: List<String>
 ): Map<String, String?> {
     val vmparamsKeysToAbsolutize = listOf(
@@ -260,7 +313,7 @@ private fun generateVmparamOverrides(
         .mapNotNull { key ->
             // Look through vmparams for the matching key, grab the value of it, and treat it as a relative path
             // to return an absolute one.
-            key to workingDir?.resolve(
+            key to starsectorCoreDir?.resolve(
                 (vanillaVmparams.firstOrNull { it.startsWith("$key=") } ?: return@mapNotNull null)
                     .split("=").getOrNull(1) ?: return@mapNotNull null
             )?.normalize()?.absolutePathString()

@@ -14,6 +14,8 @@ package utilities
 
 import timber.ktx.Timber
 import java.io.File
+import java.nio.file.Path
+import kotlin.io.path.absolutePathString
 
 /**
  * Runs a command in the OS's command line.
@@ -22,9 +24,8 @@ import java.io.File
  * Run in a coroutine to avoid this.
  */
 fun runCommandInTerminal(
-    command: String,
-    workingDirectory: File?,
     args: List<String> = emptyList(),
+    workingDirectory: File?,
     launchInNewWindow: Boolean = false,
     newWindowTitle: String? = null
 ) {
@@ -39,14 +40,14 @@ fun runCommandInTerminal(
         else -> listOf("open")
     }.toTypedArray()
 
-    val finalCommands = launcherCommand + command
+    val finalCommands = launcherCommand
 //    withContext(Dispatchers.IO) {
     kotlin.runCatching {
         ProcessBuilder(*finalCommands, *args.toTypedArray())
             .directory(workingDirectory)
-            .apply {
-                environment().clear()
-            }
+//            .apply {
+//                environment().clear()
+//            }
             .also {
                 Timber.i {
                     "Running terminal command: '${

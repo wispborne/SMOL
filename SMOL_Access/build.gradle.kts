@@ -59,7 +59,7 @@ dependencies {
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     kotlinOptions {
-        jvmTarget = "16"
+        jvmTarget = "${project.property("smolJvmTarget")}"
         @Suppress("SuspiciousCollectionReassignment")
         freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
     }

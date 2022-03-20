@@ -79,9 +79,8 @@ class SmolUpdater : BaseAppUpdater() {
 
         GlobalScope.launch {
             runCommandInTerminal(
-                command = command,
                 workingDirectory = File("."),
-                args = listOf("-jar", updateInstallerFilename, "'${updateZipFile.absolutePathString()}'"),
+                args = listOf(command, "-jar", updateInstallerFilename, "'${updateZipFile.absolutePathString()}'"),
                 launchInNewWindow = true,
                 newWindowTitle = "Installing SMOL update..."
             )

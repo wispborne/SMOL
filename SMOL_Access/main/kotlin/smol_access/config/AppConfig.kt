@@ -36,6 +36,7 @@ class AppConfig(gson: Jsanity) :
         defaultValue = "https://drive.google.com/uc?id=155Lk0ml9AUGp5NwtTZGpdu7e7Ehdyeth&export=download"
     )
     internal var userProfile: UserProfile? by pref(prefKey = "userProfile", defaultValue = null)
+    var showGameLauncherWarning: Boolean by pref(prefKey = "showGameLauncherWarning", defaultValue = true)
 
     override fun toString(): String {
         return "AppConfig(" +
