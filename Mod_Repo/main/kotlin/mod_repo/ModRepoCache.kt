@@ -13,16 +13,13 @@
 package mod_repo
 
 import utilities.Config
-import utilities.InMemoryPrefStorage
 import utilities.Jsanity
 import utilities.JsonFilePrefStorage
 
 class ModRepoCache(gson: Jsanity) : Config(
-    prefStorage = InMemoryPrefStorage(
-        JsonFilePrefStorage(
-            gson = gson,
-            file = location
-        )
+    prefStorage = JsonFilePrefStorage(
+        gson = gson,
+        file = location
     )
 ) {
     companion object {

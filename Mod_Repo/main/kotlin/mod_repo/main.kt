@@ -86,10 +86,11 @@ class Main {
                 ModMerger()
                     .merge(forumMods + discordMods)
                     .run {
-                        println("Saving ${this.count()} mods to ${ModRepoCache.location.toAbsolutePath()}.")
+                        println("Saving ${this.count()} mods to ${ModRepoCache.location.toAbsolutePath()}...")
                         modRepoCache.items = this
                         modRepoCache.totalCount = this.count()
                         modRepoCache.lastUpdated = Instant.now().truncatedTo(ChronoUnit.MINUTES).toString()
+                        println("Saved ${this.count()} mods to ${ModRepoCache.location.toAbsolutePath()}.")
                     }
 
                 delay(1000)
