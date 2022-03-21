@@ -16,6 +16,7 @@ import com.github.androidpasswordstore.sublimefuzzy.Fuzzy
 import timber.ktx.Timber
 import utilities.parallelMap
 import java.time.Instant
+import kotlin.streams.toList
 
 /**
  * This file is distributed under the GPLv3. An informal description follows:
@@ -120,7 +121,7 @@ internal class ModMerger {
                                     false
                                 }
                             }
-                            .toList()
+                            .toList<ScrapedMod>()
                     }
             }
             .also { modGroups ->
