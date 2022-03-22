@@ -111,6 +111,10 @@ class ForumScraper(
             forumPostLink = mod.forumPostLink?.copy(
                 parameters = mod.forumPostLink.parameters
                     .filter { key, _ -> !key.equals("PHPSESSID", ignoreCase = true) }
+                    .let { Parameters.build { appendAll(it) } }),
+            link = mod.link?.copy(
+                parameters = mod.link.parameters
+                    .filter { key, _ -> !key.equals("PHPSESSID", ignoreCase = true) }
                     .let { Parameters.build { appendAll(it) } })
         )
 
