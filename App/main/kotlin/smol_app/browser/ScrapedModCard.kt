@@ -50,8 +50,10 @@ import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.hyperlink
 import smol_app.themes.SmolTheme.lighten
 import smol_app.util.MarkdownParser
+import smol_app.util.onEnterKeyPressed
 import smol_app.util.openAsUriInBrowser
 import smol_app.util.smolPreview
+import utilities.asList
 import java.awt.Cursor
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
@@ -160,7 +162,11 @@ fun AppScope.scrapedModCard(mod: ScrapedMod, linkLoader: MutableState<((String) 
                                                 SmolButton(onClick = { alertDialogSetter.invoke(null) }) {
                                                     Text("Ok")
                                                 }
-                                            }
+                                            },
+                                            modifier = Modifier
+                                                .padding(24.dp)
+                                                .widthIn(min = 600.dp)
+                                                .onEnterKeyPressed { alertDialogSetter.invoke(null); true }
                                         )
                                     }
                                 }) {
@@ -224,7 +230,9 @@ fun scrapedModCardPreview() = smolPreview {
             description = "test description",
             gameVersionReq = "0.95a",
             authors = "Morrokain",
+            authorsList = listOf("Morrokain"),
             forumPostLink = Url("index0026.html?topic=13183.0"),
+            link = Url("index0026.html?topic=13183.0"),
             discordMessageLink = Url("https://discord.com/channels/187635036525166592/537191061156659200/947258123528319097"),
             categories = listOf("Total Conversions"),
             source = ModSource.Index,

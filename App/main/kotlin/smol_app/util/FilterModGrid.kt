@@ -26,7 +26,7 @@ object Filter {
 
 enum class FilterType {
     SublimeSearch,
-    FuzzyWuzzySearch
+    @Deprecated("moved to sublime") FuzzyWuzzySearch
 }
 
 internal fun filterModGrid(query: String, mods: List<Mod>, access: Access): List<Mod> {

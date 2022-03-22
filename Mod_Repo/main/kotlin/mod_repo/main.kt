@@ -12,6 +12,7 @@
 
 package mod_repo
 
+import com.github.androidpasswordstore.sublimefuzzy.Fuzzy
 import com.github.salomonbrys.kotson.registerTypeAdapter
 import com.github.salomonbrys.kotson.string
 import com.github.salomonbrys.kotson.toJson
@@ -27,6 +28,10 @@ import utilities.Jsanity
 import java.nio.file.Path
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import kotlin.io.path.absolutePathString
+import kotlin.io.path.bufferedWriter
+import kotlin.io.path.createFile
+import kotlin.io.path.deleteIfExists
 
 
 class Main {
@@ -40,10 +45,27 @@ class Main {
          * Reduces the amount of scraping done for a faster runtime and less load on the server.
          */
         private const val DEV_MODE = false
+        private val logLevel = LogLevel.DEBUG
 
         @JvmStatic
         fun main(args: Array<String>) {
-            Timber.plant(timber.Timber.DebugTree(logLevel = LogLevel.DEBUG, appenders = emptyList()))
+            val logFile = Path.of("ModRepo.log")
+            val logOut = logFile
+                .apply {
+                    deleteIfExists()
+                    createFile()
+                }
+                .bufferedWriter()
+
+            Timber.plant(
+                timber.Timber.DebugTree(
+                    logLevel = logLevel, appenders = listOf { level, log ->
+                        if (level >= logLevel)
+                            logOut.appendLine(log)
+                    }
+                )
+            )
+
             val jsanity = Jsanity(
                 GsonBuilder()
                     .setPrettyPrinting()
@@ -94,7 +116,48 @@ class Main {
                     }
 
                 delay(1000)
+                println("Wrote log to ${logFile.absolutePathString()}.")
+                kotlin.runCatching {
+                    logOut.close()
+                }
             }
         }
+
+        fun compareToFindBestMatch(
+            leftList: List<String>,
+            rightList: List<String>,
+            stopAtFirstMatch: Boolean = true,
+            scoreThreshold: Int = 100
+        ): MatchResult {
+            Timber.v { "Comparing left: ${leftList.joinToString()} to right: ${rightList.joinToString()}." }
+            return leftList
+                .flatMap { i ->
+                    // Generate all pairs
+                    rightList
+                        .map { j ->
+                            i to j
+                        }
+                }
+                .map { pair ->
+                    val fuzzyMatch = Fuzzy.fuzzyMatch(pair.first, pair.second)
+                    val obj = MatchResult(
+                        leftMatch = pair.first,
+                        rightMatch = pair.second,
+                        isMatch = fuzzyMatch.first,
+                        score = fuzzyMatch.second
+                    )
+
+                    Timber.v { "Compared: $obj." }
+
+                    if (stopAtFirstMatch && fuzzyMatch.second > scoreThreshold)
+                        return obj
+                    obj
+                }
+                .maxByOrNull { it.score }
+                ?.let { highestMatch -> if (highestMatch.score > scoreThreshold) highestMatch else null }
+                ?: MatchResult(leftMatch = "", rightMatch = "", isMatch = false, score = 0)
+        }
+
+        data class MatchResult(val leftMatch: String, val rightMatch: String, val isMatch: Boolean, val score: Int)
     }
 }

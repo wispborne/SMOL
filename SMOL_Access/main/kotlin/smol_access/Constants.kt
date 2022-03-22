@@ -54,7 +54,9 @@ object Constants {
     const val SMOL_RELEASES_URL = "https://github.com/davidwhitman/SMOL_Dist/releases"
 
     // Mod Repo
-    const val modRepoUrl = "https://raw.githubusercontent.com/davidwhitman/StarsectorModRepo/main/ModRepo.json"
+    const val modRepoUrlStable = "https://raw.githubusercontent.com/davidwhitman/StarsectorModRepo/main/ModRepo.json"
+    const val modRepoUrlUnstable = "https://raw.githubusercontent.com/davidwhitman/StarsectorModRepo/main/ModRepo.json"
+    const val modRepoUrlTest = "https://raw.githubusercontent.com/davidwhitman/StarsectorModRepo/test/ModRepo.json"
 
     // Updater
     val VERSION_PROPERTIES_FILE: Path? = resourcesDir?.resolve("version.properties")

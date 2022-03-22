@@ -69,6 +69,9 @@ fun updateSection(scope: CoroutineScope) {
                             }
 
                     }
+
+                kotlin.runCatching { SL.modRepo.refreshFromInternet(SL.appConfig.updateChannel) }
+                    .onFailure { Timber.w(it) }
             }
         }
 
@@ -123,8 +126,8 @@ fun updateSection(scope: CoroutineScope) {
             modifier = Modifier
                 .padding(top = 8.dp)
                 .mouseClickable {
-                Constants.SMOL_RELEASES_URL.openAsUriInBrowser()
-            },
+                    Constants.SMOL_RELEASES_URL.openAsUriInBrowser()
+                },
             fontSize = 13.sp
         )
     }

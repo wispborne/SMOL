@@ -20,6 +20,7 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.select.Elements
 import timber.ktx.Timber
+import utilities.asList
 
 private const val i = 15
 
@@ -72,7 +73,9 @@ class ForumScraper(
                             description = null,
                             gameVersionReq = modElement.select("strong span").text(),
                             authors = modElement.select("em strong").text(),
+                            authorsList = modElement.select("em strong").text().asList(),
                             forumPostLink = link.attr("href").ifBlank { null }?.let { Url(it) },
+                            link = link.attr("href").ifBlank { null }?.let { Url(it) },
                             discordMessageLink = null,
                             source = ModSource.Index,
                             sources = listOf(ModSource.Index),
@@ -133,7 +136,9 @@ class ForumScraper(
                                     ?.trim()
                                     ?: "",
                                 authors = authorLinkElement.text(),
+                                authorsList = authorLinkElement.text().asList(),
                                 forumPostLink = titleLinkElement.attr("href").ifBlank { null }?.let { Url(it) },
+                                link = titleLinkElement.attr("href").ifBlank { null }?.let { Url(it) },
                                 discordMessageLink = null,
                                 source = ModSource.ModdingSubforum,
                                 sources = listOf(ModSource.ModdingSubforum),

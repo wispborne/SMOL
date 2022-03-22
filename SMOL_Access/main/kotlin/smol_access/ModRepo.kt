@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import mod_repo.ModRepoCache
 import mod_repo.ScrapedMod
+import smol_access.config.AppConfig
 import timber.ktx.Timber
 import utilities.Jsanity
 import java.nio.file.Path
@@ -44,7 +45,13 @@ class ModRepo internal constructor(private val jsanity: Jsanity, private val htt
             .getOrNull()
     }
 
-    suspend fun refreshFromInternet() {
+    suspend fun refreshFromInternet(updateChannel: AppConfig.UpdateChannel) {
+        val modRepoUrl = when (updateChannel) {
+            AppConfig.UpdateChannel.Stable -> Constants.modRepoUrlStable
+            AppConfig.UpdateChannel.Unstable -> Constants.modRepoUrlUnstable
+            AppConfig.UpdateChannel.Test -> Constants.modRepoUrlTest
+        }
+
         withContext(Dispatchers.IO) {
             val freshIndexMods =
                 kotlin.runCatching {
@@ -55,11 +62,11 @@ class ModRepo internal constructor(private val jsanity: Jsanity, private val htt
                 }
                     .recoverCatching {
                         httpClientBuilder.invoke().use { client ->
-                            client.get<HttpResponse>(Constants.modRepoUrl).receive()
+                            client.get<HttpResponse>(modRepoUrl).receive()
                         }
                     }
                     .onFailure {
-                        Timber.w(it) { "Unable to fetch mods from ${Constants.modRepoUrl}." }
+                        Timber.w(it) { "Unable to fetch mods from $modRepoUrl." }
                     }
                     .getOrNull()
                     ?.let { jsanity.fromJson<ScrapedModsRepo>(json = it, shouldStripComments = false) }

@@ -18,14 +18,19 @@ data class ScrapedMod(
     val name: String,
     val description: String?,
     val gameVersionReq: String?,
-    val authors: String,
-    val forumPostLink: Url?,
+    @Deprecated("Use `authorsList` which contains author aliases.") val authors: String,
+    val authorsList: List<String>?,
+    val link: Url?,
+    @Deprecated("Use `link` instead, as the mod isn't necessarily on the forum.") val forumPostLink: Url?,
     val discordMessageLink: Url?,
     @Deprecated("Use `sources` because similar mods are now merged.")
     val source: ModSource?,
     val sources: List<ModSource>?,
     val categories: List<String>?
-)
+) {
+    fun authors() = authorsList.orEmpty()
+    fun sources() = sources.orEmpty()
+}
 
 enum class ModSource {
     Index,

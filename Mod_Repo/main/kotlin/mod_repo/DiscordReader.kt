@@ -21,6 +21,7 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.coroutines.delay
 import timber.ktx.Timber
+import utilities.asList
 import utilities.exists
 import utilities.prefer
 import java.util.*
@@ -45,7 +46,7 @@ internal class DiscordReader {
         """(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#-]*[\w@?^=%&\/~+#-])"""
     )
 
-    suspend internal fun readAllMessages(): List<ScrapedMod>? {
+    internal suspend fun readAllMessages(): List<ScrapedMod>? {
         val props = getProperties() ?: return null
         val authToken = props["auth_token"]?.toString() ?: run {
             Timber.w { "No auth token found in ${Main.configFilePath}." }
@@ -64,16 +65,26 @@ internal class DiscordReader {
         println("Scraping Discord's #mod_updates...")
         return getMessages(httpClient, authToken)
             .map { message ->
+                val link = message.content?.lines()
+                    ?.mapNotNull { urlFinderRegex.find(it)?.value }
+                    ?.prefer { it.contains("fractalsoftworks") }
+                    ?.prefer { it.contains("/releases/download") }
+                    ?.prefer { it.contains("/releases") }
+                    ?.prefer { it.contains("dropbox") }
+                    ?.prefer { it.contains("drive.google") }
+                    ?.prefer { it.contains("patreon") }
+                    ?.prefer { it.contains("bitbucket") }
+                    ?.prefer { it.contains("github") }
+                    ?.firstOrNull()
+                    ?.let { kotlin.runCatching { Url(it) }.onFailure { Timber.w(it) }.getOrNull() }
                 ScrapedMod(
                     name = message.content?.lines()?.firstOrNull()?.trim('*', '_') ?: "(Discord Mod)",
                     description = message.content,
                     gameVersionReq = "",
                     authors = message.author?.username ?: "",
-                    forumPostLink = message.content?.lines()
-                        ?.mapNotNull { urlFinderRegex.find(it)?.value }
-                        ?.prefer { it.contains("fractal") }
-                        ?.firstOrNull()
-                        ?.let { kotlin.runCatching { Url(it) }.onFailure { Timber.w(it) }.getOrNull() },
+                    authorsList = message.author?.username.asList(),
+                    forumPostLink = link,
+                    link = link,
                     discordMessageLink = Url("https://discord.com/channels/$serverId/$modUpdatesChannelId/${message.id}"),
                     source = ModSource.Discord,
                     sources = listOf(ModSource.Discord),
@@ -81,6 +92,7 @@ internal class DiscordReader {
                 )
             }
             .map { cleanUpMod(it) }
+            .filter { it.name.isNotBlank() } // Remove any posts that don't contain text.
     }
 
     private fun getProperties() =

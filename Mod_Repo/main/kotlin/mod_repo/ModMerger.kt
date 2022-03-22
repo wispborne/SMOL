@@ -13,10 +13,13 @@
 package mod_repo
 
 import com.github.androidpasswordstore.sublimefuzzy.Fuzzy
+import kotlinx.coroutines.sync.Semaphore
 import timber.ktx.Timber
+import utilities.asList
+import utilities.equalsAny
 import utilities.parallelMap
 import java.time.Instant
-import kotlin.streams.toList
+import java.util.Collections.swap
 
 /**
  * This file is distributed under the GPLv3. An informal description follows:
@@ -30,11 +33,36 @@ import kotlin.streams.toList
  * The full license is available from <https://www.gnu.org/licenses/gpl-3.0.txt>.
  */
 internal class ModMerger {
+
+    val authorAliases = listOf(
+        listOf("Soren", "Søren", "Harmful Mechanic"),
+        listOf("RustyCabbage", "rubi"),
+        listOf("Wisp", "Wispborne"),
+        listOf("Caymon Joestar", "Haze"),
+        listOf("DesperatePeter", "Jannes"),
+        listOf("shoi", "gettag"),
+        listOf("Dark.Revenant", "DR"),
+        listOf("LazyWizard", "Lazy"),
+        listOf("Techpriest", "Timid"),
+        listOf("Nick XR", "Nick"),
+        listOf("Iridescens", "President Matt Damon"),
+        listOf("PMMeCuteBugPhotos", "MrFluffster"),
+        listOf("Dazs", "Spiritfox"),
+        listOf("Histidine, Zaphide", "Histidine"),
+        listOf("Snrasha", "Snrasha, the tinkerer"),
+        listOf("Hotpics", "jackwolfskin"),
+        listOf("cptdash", "SpeedRacer"),
+        listOf("Elseud", "Elseudo"),
+        listOf("TobiaF", "Toby"),
+    )
+
+
     suspend fun merge(mods: List<ScrapedMod>): List<ScrapedMod> {
         val startTime = Instant.now()
 
         // Mods that are also listed from another, more preferable source.
         val modsAlreadyAddedToAGroup = mutableListOf<ScrapedMod>()
+        val lock = Semaphore(permits = 1)
         val summary = StringBuilder()
 
         return mods
@@ -44,85 +72,70 @@ internal class ModMerger {
 
                 // For each mod, look for all similar mods and return a group of similar mods
                 scrapedMods
-                    .mapNotNull { outerLoopMod ->
+                    .mapIndexed { index, outerLoopMod ->
                         if (outerLoopMod in modsAlreadyAddedToAGroup) {
-                            return@mapNotNull null
+                            return@mapIndexed null
                         }
 
-                        // Add the mod and then look for and add all similar ones
-                        return@mapNotNull listOf(outerLoopMod) + scrapedMods
-                            .parallelStream()
-                            .filter { innerLoopMod ->
-                                val bestNameResult = listOf(
-                                    Fuzzy.fuzzyMatch(
-                                        outerLoopMod.name.prepForMatching(),
-                                        innerLoopMod.name.prepForMatching()
-                                    ),
-                                    Fuzzy.fuzzyMatch(
-                                        innerLoopMod.name.prepForMatching(),
-                                        outerLoopMod.name.prepForMatching()
-                                    )
-                                )
-                                    .maxByOrNull { it.second }!!
-
-                                val bestAuthorsResult = (listOf(
-                                    Fuzzy.fuzzyMatch(
-                                        outerLoopMod.authors.prepForMatching(),
-                                        innerLoopMod.authors.prepForMatching()
-                                    ),
-                                    Fuzzy.fuzzyMatch(
-                                        innerLoopMod.authors.prepForMatching(),
-                                        outerLoopMod.authors.prepForMatching()
-                                    )
-                                ) + getOtherMatchingAliases(innerLoopMod.authors)
-                                    .flatMap { alias ->
-                                        listOf(
-                                            Fuzzy.fuzzyMatch(
-                                                outerLoopMod.authors.prepForMatching(),
-                                                alias.prepForMatching()
-                                            ),
-                                            Fuzzy.fuzzyMatch(
-                                                alias.prepForMatching(),
-                                                outerLoopMod.authors.prepForMatching()
-                                            )
-                                        )
-                                    } + getOtherMatchingAliases(outerLoopMod.authors)
-                                    .flatMap { alias ->
-                                        listOf(
-                                            Fuzzy.fuzzyMatch(
-                                                outerLoopMod.authors.prepForMatching(),
-                                                alias.prepForMatching()
-                                            ),
-                                            Fuzzy.fuzzyMatch(
-                                                alias.prepForMatching(),
-                                                outerLoopMod.authors.prepForMatching()
-                                            )
-                                        )
+                        // Add the mod and then look for and add all similar ones, starting from location of the outer loop
+                        return@mapIndexed listOf(outerLoopMod)
+                            .plus(scrapedMods.subList(index, scrapedMods.count())
+                                .parallelMap { innerLoopMod ->
+                                    // Skip comparing the mod to itself.
+                                    // Skip comparing mods from the same source; there shouldn't be duplicates in the same place.
+                                    if (innerLoopMod === outerLoopMod
+                                        || outerLoopMod.sources().containsAll(innerLoopMod.sources())
+                                    ) {
+                                        return@parallelMap innerLoopMod to false
                                     }
+
+                                    val outer = outerLoopMod.name.prepForMatching()
+                                    val inner = innerLoopMod.name.prepForMatching()
+
+                                    val bestNameResult = Main.compareToFindBestMatch(
+                                        leftList = outer.asList(),
+                                        rightList = inner.asList()
+                                    )
+
+                                    val bestAuthorsResult =
+                                        Main.compareToFindBestMatch(
+                                            leftList = listOf(
+                                                outerLoopMod.authors.asList(),
+                                                getOtherMatchingAliases(outerLoopMod.authors),
+                                            )
+                                                .flatten()
+                                                .distinct()
+                                                .map { it.prepForMatching() },
+                                            rightList = listOf(
+                                                innerLoopMod.authors.asList(),
+                                                getOtherMatchingAliases(innerLoopMod.authors),
+                                            )
+                                                .flatten()
+                                                .distinct()
+                                                .map { it.prepForMatching() }
                                         )
-                                    .maxByOrNull { it.second }!!
 
-                                val isMatch = bestNameResult.first && bestAuthorsResult.first
+                                    val isMatch = bestNameResult.isMatch && bestAuthorsResult.isMatch
 
-//                                if (Main.verboseOutput && (bestNameResult.second > 0 || bestAuthorsResult.second > 0)) {
-//                                    Timber.d {
-//                                        buildString {
-//                                            appendLine("Compared '${outerLoopMod.name}' to '${innerLoopMod.name}':")
-//                                            appendLine("  '${outerLoopMod.name.prepForMatching()}'<-->'${innerLoopMod.name.prepForMatching()}'==>${bestNameResult.second}")
-//                                            append("  '${outerLoopMod.authors.prepForMatching()}'<-->'${innerLoopMod.authors.prepForMatching()}'==>${bestAuthorsResult.second}")
-//                                        }
-//                                    }
-//                                }
+                                    if (isMatch) {
+                                        Timber.d {
+                                            "Matched names $bestNameResult and authors $bestAuthorsResult."
+                                        }
+                                    }
 
-                                if (isMatch) {
-                                    modsAlreadyAddedToAGroup.add(innerLoopMod)
-                                    true
-                                } else {
-                                    false
+                                    if (isMatch) {
+                                        lock.acquire()
+                                        modsAlreadyAddedToAGroup.add(innerLoopMod)
+                                        lock.release()
+                                        innerLoopMod to true
+                                    } else {
+                                        innerLoopMod to false
+                                    }
                                 }
-                            }
-                            .toList<ScrapedMod>()
+                                .filter { it.second }
+                                .map { it.first })
                     }
+                    .filterNotNull()
             }
             .also { modGroups ->
                 val msg =
@@ -137,7 +150,18 @@ internal class ModMerger {
                             buildString {
                                 appendLine("Mod group of ${modGroup.count()}:")
                                 modGroup.forEach { mod ->
-                                    appendLine("  '${mod.name}' by '${mod.authors}' from ${mod.sources}")
+                                    appendLine(
+                                        "  '${mod.name}' by '${
+                                            mod.authors().joinToString()
+                                        }' from ${mod.sources} (${
+                                            when (mod.sources().firstOrNull()) {
+                                                ModSource.Index -> mod.forumPostLink
+                                                ModSource.ModdingSubforum -> mod.forumPostLink
+                                                ModSource.Discord -> mod.discordMessageLink
+                                                null -> "no source"
+                                            }.toString()
+                                        })"
+                                    )
                                 }
                             }
                         }
@@ -157,7 +181,7 @@ internal class ModMerger {
             .let { mergedMods ->
                 cleanUpMods(mergedMods)
             }
-            .onEach { Timber.i { it.toString() } }
+            .onEach { Timber.v { it.toString() } }
             .also { Timber.i { summary.toString() } }
             .also {
                 Timber.i {
@@ -168,20 +192,32 @@ internal class ModMerger {
             }
     }
 
-    val authorAliases = listOf(
-        listOf("Soren", "Søren", "Harmful Mechanic"),
-        listOf("RustyCabbage", "rubi"),
-        listOf("Wisp", "Wispborne"),
-        listOf("Caymon Joestar", "Haze"),
-    )
+    private fun getOtherMatchingAliases(author: String, fuzzyMatchAliases: Boolean = false): List<String> {
+        return if (fuzzyMatchAliases) {
+            authorAliases.firstOrNull { aliases ->
+                aliases.any { alias ->
+                    val match1 = Fuzzy.fuzzyMatch(author, alias)
+                    if (match1.first) {
+                        Timber.v { "Matched alias '$author' with '$alias' with score ${match1.second}." }
+                        return@any true
+                    }
 
-    private fun getOtherMatchingAliases(author: String): List<String> =
-        authorAliases.firstOrNull { aliases ->
-            aliases.any { alias ->
-                Fuzzy.fuzzyMatch(author, alias).first || Fuzzy.fuzzyMatch(alias, author).first
+                    val match2 = Fuzzy.fuzzyMatch(alias, author)
+                    if (match2.first) {
+                        Timber.v { "Matched alias '$author' with '$alias' with score ${match2.second}." }
+                        return@any true
+                    }
+
+                    return@any false
+                }
             }
+                .orEmpty()
+        } else {
+            authorAliases
+                .firstOrNull() { author.equalsAny(*it.toTypedArray(), ignoreCase = true) }
+                .orEmpty()
         }
-            .orEmpty()
+    }
 
     private fun mergeSimilarMods(mods: List<ScrapedMod>): ScrapedMod {
         return mods
@@ -201,7 +237,7 @@ internal class ModMerger {
                         false
                     }
 
-                mergedMod.copy(
+                ScrapedMod(
                     name = chooseBest(
                         left = mergedMod.name.ifBlank { null },
                         right = modToFoldIn.name.ifBlank { null },
@@ -222,9 +258,15 @@ internal class ModMerger {
                         right = modToFoldIn.authors.ifBlank { null },
                         doesRightHavePriority = doesNewModHavePriority
                     ) ?: "",
+                    authorsList = (mergedMod.authors() + modToFoldIn.authors()).distinct(),
                     forumPostLink = chooseBest(
                         left = mergedMod.forumPostLink,
                         right = modToFoldIn.forumPostLink,
+                        doesRightHavePriority = doesNewModHavePriority
+                    ),
+                    link = chooseBest(
+                        left = mergedMod.link,
+                        right = modToFoldIn.link,
                         doesRightHavePriority = doesNewModHavePriority
                     ),
                     discordMessageLink = chooseBest(
@@ -261,4 +303,31 @@ internal class ModMerger {
             }
 
     private fun String.prepForMatching() = this.lowercase().filter { it.isLetter() }
+
+    /**
+     * Usage: listOf(1, 2, 3).permutations()
+     * Output: [[1, 2, 3], [2, 1, 3], [3, 1, 2], [1, 3, 2], [2, 3, 1], [3, 2, 1]]
+     */
+    fun <V> List<V>.permutations(): List<List<V>> {
+        val retVal: MutableList<List<V>> = mutableListOf()
+
+        fun generate(k: Int, list: List<V>) {
+            // If only 1 element, just output the array
+            if (k == 1) {
+                retVal.add(list.toList())
+            } else {
+                for (i in 0 until k) {
+                    generate(k - 1, list)
+                    if (k % 2 == 0) {
+                        swap(list, i, k - 1)
+                    } else {
+                        swap(list, 0, k - 1)
+                    }
+                }
+            }
+        }
+
+        generate(this.count(), this.toList())
+        return retVal
+    }
 }

@@ -14,9 +14,11 @@ package smol_app.util
 
 import com.github.androidpasswordstore.sublimefuzzy.Fuzzy
 import me.xdrop.fuzzywuzzy.FuzzySearch
+import mod_repo.Main
 import mod_repo.ScrapedMod
 import org.tinylog.Logger
 import timber.ktx.Timber
+import utilities.asList
 
 internal fun filterModPosts(query: String, mods: List<ScrapedMod>): List<ScrapedMod> {
     val split = splitSearchQuery(query)
@@ -49,11 +51,11 @@ internal fun filterModPosts(query: String, mods: List<ScrapedMod>): List<Scraped
 private fun sublimeFuzzyModPostSearch(query: String, mod: ScrapedMod): Pair<ScrapedMod, MutableMap<String, Int>> {
     val results = mutableMapOf<String, Int>() // match field name and value
 
-    fun Pair<Boolean, Int>.filterAndAdd(name: String) {
-        Timber.d { "${Filter.searchMethod}: ${mod.name} has a score of $this for '$query' in text \"${name}\" with match status: ${this.first}." }
+    fun Pair<Boolean, Int>.filterAndAdd(matchedText: String) {
+        Timber.d { "${Filter.searchMethod}: ${mod.name} has a score of $this for '$query' in text \"${matchedText}\" with match status: ${this.first}." }
 
         if (this.first) {
-            results += name to this.second
+            results += matchedText to this.second
         }
     }
 
@@ -66,12 +68,12 @@ private fun sublimeFuzzyModPostSearch(query: String, mod: ScrapedMod): Pair<Scra
 
     Fuzzy.fuzzyMatch(query, mod.name)
         .run { filterAndAdd(mod.name) }
-    Fuzzy.fuzzyMatch(query, mod.authors)
-        .run { filterAndAdd(mod.authors) }
-    if (mod.source != null) {
-        Fuzzy.fuzzyMatch(query, mod.source!!.name)
-            .run { filterAndAdd(mod.source!!.name) }
-    }
+
+    Main.compareToFindBestMatch(leftList = query.asList(), rightList = mod.authors())
+        .let { (it.isMatch to it.score).filterAndAdd(it.rightMatch) }
+    Main.compareToFindBestMatch(leftList = query.asList(), rightList = mod.sources().map { it.name })
+        .let { (it.isMatch to it.score).filterAndAdd(it.rightMatch) }
+
     if (mod.categories != null) {
         Fuzzy.fuzzyMatch(query, mod.categories!!.joinToString())
             .run { filterAndAdd(mod.categories!!.joinToString()) }
@@ -81,6 +83,7 @@ private fun sublimeFuzzyModPostSearch(query: String, mod: ScrapedMod): Pair<Scra
     return mod to results
 }
 
+@Deprecated("Using `Fuzzy` now, from sublimetext.")
 private fun fuzzyWuzzyModPostSearch(query: String, mod: ScrapedMod): Pair<ScrapedMod, MutableMap<String, Int>> {
     val results = mutableMapOf<String, Int>() // match field name and value
 
@@ -98,11 +101,14 @@ private fun fuzzyWuzzyModPostSearch(query: String, mod: ScrapedMod): Pair<Scrape
 
     FuzzySearch.partialRatio(query, mod.name) { it.lowercase() }
         .run { filterAndAdd(mod.name) }
-    FuzzySearch.partialRatio(query, mod.authors) { it.lowercase() }
-        .run { filterAndAdd(mod.authors) }
-    if (mod.source != null) {
-        FuzzySearch.partialRatio(query, mod.source!!.name) { it.lowercase() }
-            .run { filterAndAdd(mod.source!!.name) }
+
+    mod.authors().forEach { author ->
+        FuzzySearch.partialRatio(query, author) { it.lowercase() }
+            .run { filterAndAdd(author) }
+    }
+    mod.sources().forEach { source ->
+        FuzzySearch.partialRatio(query, source.name) { it.lowercase() }
+            .run { filterAndAdd(source.name) }
     }
     if (mod.categories != null) {
         FuzzySearch.partialRatio(query, mod.categories!!.joinToString()) { it.lowercase() }

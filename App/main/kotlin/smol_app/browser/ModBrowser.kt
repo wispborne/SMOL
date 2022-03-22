@@ -86,7 +86,6 @@ fun AppScope.ModBrowserView(
     val linkLoader = remember { mutableStateOf<((String) -> Unit)?>(null) }
     var alertDialogMessage: String? by remember { mutableStateOf(null) }
     val showLogPanel = remember { mutableStateOf(false) }
-    val coroutineScope = rememberCoroutineScope()
     var isBrowserFullscreen by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -100,7 +99,7 @@ fun AppScope.ModBrowserView(
                         .padding(start = 16.dp),
                     tooltip = {
                         SmolTooltipText(text = buildString {
-                            appendLine("The Mod Browser lists mods scraped from the official forum, with permission.")
+                            appendLine("The Mod Browser lists mods scraped from the official forum and from the Unofficial Discord Chat, with permission.")
                             appendLine("The list is <b>not</b> live; it is fetched from an online cache, which is updated periodically so as to avoid excessive load on the forum.")
                             append("If a mod has been added to the forum but doesn't yet show up in the list, simply navigate to it using the browser and download it.")
                         }.parseHtml())
@@ -249,7 +248,7 @@ fun AppScope.ModBrowserView(
                                             this.items(
                                                 items = shownMods
                                                     .filterNotNull()
-                                                    .sortedWith(compareByDescending { it.name })
+                                                    .sortedWith(compareBy { it.name })
                                             ) { mod -> scrapedModCard(mod, linkLoader) }
                                         }
                                         VerticalScrollbar(

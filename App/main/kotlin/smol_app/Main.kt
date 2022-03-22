@@ -129,7 +129,7 @@ fun main() = application {
             }
 
         LaunchedEffect(Unit) {
-            kotlin.runCatching { SL.modRepo.refreshFromInternet() }
+            kotlin.runCatching { SL.modRepo.refreshFromInternet(SL.appConfig.updateChannel) }
                 .onFailure { Timber.w(it) }
         }
     }
