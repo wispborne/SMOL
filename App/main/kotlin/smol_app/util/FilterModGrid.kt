@@ -16,6 +16,8 @@ import com.github.androidpasswordstore.sublimefuzzy.Fuzzy
 import me.xdrop.fuzzywuzzy.FuzzySearch
 import mod_repo.ModRepoUtils
 import smol_access.Access
+import smol_access.SL
+import smol_access.business.dependencies
 import smol_access.model.Mod
 import smol_access.model.ModVariant
 import smol_app.util.Filter.searchMethod
@@ -28,6 +30,7 @@ object Filter {
 
 enum class FilterType {
     SublimeSearch,
+
     @Deprecated("moved to sublime")
     FuzzyWuzzySearch
 }
@@ -96,6 +99,13 @@ private fun sublimeFuzzyModSearch(query: String, variant: ModVariant, access: Ac
 
     if (modAuthors.any()) {
         ModRepoUtils.compareToFindBestMatch(query.asList(), modAuthors)
+            .let { (it.isMatch to it.score).filterAndAdd(it.rightMatch) }
+    }
+
+    val dependencies = variant.dependencies(SL.dependencyFinder, SL.access.mods.value?.mods.orEmpty())
+
+    if (dependencies.any()) {
+        ModRepoUtils.compareToFindBestMatch(query.asList(), dependencies.mapNotNull { it.first.name })
             .let { (it.isMatch to it.score).filterAndAdd(it.rightMatch) }
     }
 
