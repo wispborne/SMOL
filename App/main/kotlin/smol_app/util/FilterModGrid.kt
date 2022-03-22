@@ -14,11 +14,13 @@ package smol_app.util
 
 import com.github.androidpasswordstore.sublimefuzzy.Fuzzy
 import me.xdrop.fuzzywuzzy.FuzzySearch
+import mod_repo.ModRepoUtils
 import smol_access.Access
 import smol_access.model.Mod
 import smol_access.model.ModVariant
 import smol_app.util.Filter.searchMethod
 import timber.ktx.Timber
+import utilities.asList
 
 object Filter {
     var searchMethod = FilterType.SublimeSearch
@@ -26,7 +28,8 @@ object Filter {
 
 enum class FilterType {
     SublimeSearch,
-    @Deprecated("moved to sublime") FuzzyWuzzySearch
+    @Deprecated("moved to sublime")
+    FuzzyWuzzySearch
 }
 
 internal fun filterModGrid(query: String, mods: List<Mod>, access: Access): List<Mod> {
@@ -63,7 +66,9 @@ internal fun filterModGrid(query: String, mods: List<Mod>, access: Access): List
 private fun sublimeFuzzyModSearch(query: String, variant: ModVariant, access: Access): Pair<Mod, Map<String, Int>> {
     val results = mutableMapOf<String, Int>() // match field name and value
     val modName = variant.modInfo.name
-    val modAuthor = variant.modInfo.author
+    val modAuthors = variant.modInfo.author
+        ?.let { it.asList().plus(ModRepoUtils.getOtherMatchingAliases(it)).distinct() }
+        .orEmpty()
 
     fun Pair<Boolean, Int>.filterAndAdd(name: String) {
         Timber.d { "$searchMethod: $modName has a score of $this for '$query' in text \"${name}\" with match status: ${this.first}." }
@@ -89,15 +94,16 @@ private fun sublimeFuzzyModSearch(query: String, variant: ModVariant, access: Ac
     Fuzzy.fuzzyMatch(query, variant.modInfo.version.toString())
         .run { filterAndAdd(variant.modInfo.version.toString()) }
 
-    if (modAuthor != null) {
-        Fuzzy.fuzzyMatch(query, modAuthor)
-            .run { filterAndAdd(modAuthor) }
+    if (modAuthors.any()) {
+        ModRepoUtils.compareToFindBestMatch(query.asList(), modAuthors)
+            .let { (it.isMatch to it.score).filterAndAdd(it.rightMatch) }
     }
 
     Timber.d { "$modName's match of '$query' had a total score of ${results.values.sum()} and single highest of ${results.values.maxOrNull()}." }
     return variant.mod(access) to results
 }
 
+@Deprecated("switch to sublime fuzzy")
 private fun fuzzyWuzzyModSearch(query: String, variant: ModVariant, access: Access): Pair<Mod, Map<String, Int>> {
     val results = mutableMapOf<String, Int>() // match field name and value
     val modName = variant.modInfo.name

@@ -15,6 +15,7 @@ package smol_app.util
 import com.github.androidpasswordstore.sublimefuzzy.Fuzzy
 import me.xdrop.fuzzywuzzy.FuzzySearch
 import mod_repo.Main
+import mod_repo.ModRepoUtils
 import mod_repo.ScrapedMod
 import org.tinylog.Logger
 import timber.ktx.Timber
@@ -69,9 +70,9 @@ private fun sublimeFuzzyModPostSearch(query: String, mod: ScrapedMod): Pair<Scra
     Fuzzy.fuzzyMatch(query, mod.name)
         .run { filterAndAdd(mod.name) }
 
-    Main.compareToFindBestMatch(leftList = query.asList(), rightList = mod.authors())
+    ModRepoUtils.compareToFindBestMatch(leftList = query.asList(), rightList = mod.authorsWithAliases())
         .let { (it.isMatch to it.score).filterAndAdd(it.rightMatch) }
-    Main.compareToFindBestMatch(leftList = query.asList(), rightList = mod.sources().map { it.name })
+    ModRepoUtils.compareToFindBestMatch(leftList = query.asList(), rightList = mod.sources().map { it.name })
         .let { (it.isMatch to it.score).filterAndAdd(it.rightMatch) }
 
     if (mod.categories != null) {

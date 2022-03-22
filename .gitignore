@@ -172,3 +172,5 @@ SMOL-data
 ModRepo.json
 
 config.properties
+# written by SMOL when it's launched, don't commit it
+App/UpdateInstaller-fat.jar

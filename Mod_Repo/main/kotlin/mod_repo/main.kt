@@ -122,42 +122,5 @@ class Main {
                 }
             }
         }
-
-        fun compareToFindBestMatch(
-            leftList: List<String>,
-            rightList: List<String>,
-            stopAtFirstMatch: Boolean = true,
-            scoreThreshold: Int = 100
-        ): MatchResult {
-            Timber.v { "Comparing left: ${leftList.joinToString()} to right: ${rightList.joinToString()}." }
-            return leftList
-                .flatMap { i ->
-                    // Generate all pairs
-                    rightList
-                        .map { j ->
-                            i to j
-                        }
-                }
-                .map { pair ->
-                    val fuzzyMatch = Fuzzy.fuzzyMatch(pair.first, pair.second)
-                    val obj = MatchResult(
-                        leftMatch = pair.first,
-                        rightMatch = pair.second,
-                        isMatch = fuzzyMatch.first,
-                        score = fuzzyMatch.second
-                    )
-
-                    Timber.v { "Compared: $obj." }
-
-                    if (stopAtFirstMatch && fuzzyMatch.second > scoreThreshold)
-                        return obj
-                    obj
-                }
-                .maxByOrNull { it.score }
-                ?.let { highestMatch -> if (highestMatch.score > scoreThreshold) highestMatch else null }
-                ?: MatchResult(leftMatch = "", rightMatch = "", isMatch = false, score = 0)
-        }
-
-        data class MatchResult(val leftMatch: String, val rightMatch: String, val isMatch: Boolean, val score: Int)
     }
 }

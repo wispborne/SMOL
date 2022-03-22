@@ -34,27 +34,6 @@ import java.util.Collections.swap
  */
 internal class ModMerger {
 
-    val authorAliases = listOf(
-        listOf("Soren", "Søren", "Harmful Mechanic"),
-        listOf("RustyCabbage", "rubi"),
-        listOf("Wisp", "Wispborne"),
-        listOf("DesperatePeter", "Jannes"),
-        listOf("shoi", "gettag"),
-        listOf("Dark.Revenant", "DR"),
-        listOf("LazyWizard", "Lazy"),
-        listOf("Techpriest", "Timid"),
-        listOf("Nick XR", "Nick"),
-        listOf("PMMeCuteBugPhotos", "MrFluffster"),
-        listOf("Dazs", "Spiritfox"),
-        listOf("Histidine, Zaphide", "Histidine"),
-        listOf("Snrasha", "Snrasha, the tinkerer"),
-        listOf("Hotpics", "jackwolfskin"),
-        listOf("cptdash", "SpeedRacer"),
-        listOf("Elseud", "Elseudo"),
-        listOf("TobiaF", "Toby"),
-    )
-
-
     suspend fun merge(mods: List<ScrapedMod>): List<ScrapedMod> {
         val startTime = Instant.now()
 
@@ -90,23 +69,23 @@ internal class ModMerger {
                                     val outer = outerLoopMod.name.prepForMatching()
                                     val inner = innerLoopMod.name.prepForMatching()
 
-                                    val bestNameResult = Main.compareToFindBestMatch(
+                                    val bestNameResult = ModRepoUtils.compareToFindBestMatch(
                                         leftList = outer.asList(),
                                         rightList = inner.asList()
                                     )
 
                                     val bestAuthorsResult =
-                                        Main.compareToFindBestMatch(
+                                        ModRepoUtils.compareToFindBestMatch(
                                             leftList = listOf(
                                                 outerLoopMod.authors.asList(),
-                                                getOtherMatchingAliases(outerLoopMod.authors),
+                                                ModRepoUtils.getOtherMatchingAliases(outerLoopMod.authors),
                                             )
                                                 .flatten()
                                                 .distinct()
                                                 .map { it.prepForMatching() },
                                             rightList = listOf(
                                                 innerLoopMod.authors.asList(),
-                                                getOtherMatchingAliases(innerLoopMod.authors),
+                                                ModRepoUtils.getOtherMatchingAliases(innerLoopMod.authors),
                                             )
                                                 .flatten()
                                                 .distinct()
@@ -188,33 +167,6 @@ internal class ModMerger {
                     }ms."
                 }
             }
-    }
-
-    private fun getOtherMatchingAliases(author: String, fuzzyMatchAliases: Boolean = false): List<String> {
-        return if (fuzzyMatchAliases) {
-            authorAliases.firstOrNull { aliases ->
-                aliases.any { alias ->
-                    val match1 = Fuzzy.fuzzyMatch(author, alias)
-                    if (match1.first) {
-                        Timber.v { "Matched alias '$author' with '$alias' with score ${match1.second}." }
-                        return@any true
-                    }
-
-                    val match2 = Fuzzy.fuzzyMatch(alias, author)
-                    if (match2.first) {
-                        Timber.v { "Matched alias '$author' with '$alias' with score ${match2.second}." }
-                        return@any true
-                    }
-
-                    return@any false
-                }
-            }
-                .orEmpty()
-        } else {
-            authorAliases
-                .firstOrNull() { author.equalsAny(*it.toTypedArray(), ignoreCase = true) }
-                .orEmpty()
-        }
     }
 
     private fun mergeSimilarMods(mods: List<ScrapedMod>): ScrapedMod {

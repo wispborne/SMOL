@@ -29,6 +29,10 @@ data class ScrapedMod(
     val categories: List<String>?
 ) {
     fun authors() = authorsList.orEmpty()
+    fun authorsWithAliases() = authorsList.orEmpty()
+        .flatMap { ModRepoUtils.getOtherMatchingAliases(it) }
+        .distinct()
+
     fun sources() = sources.orEmpty()
 }
 
