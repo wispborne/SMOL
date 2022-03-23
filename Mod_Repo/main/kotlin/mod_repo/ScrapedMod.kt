@@ -14,11 +14,14 @@ package mod_repo
 
 import io.ktor.http.*
 
+/**
+ * @param authors The higher prioritized author name (ie from Index).
+ */
 data class ScrapedMod(
     val name: String,
     val description: String?,
     val gameVersionReq: String?,
-    @Deprecated("Use `authorsList` which contains author aliases.") val authors: String,
+    val authors: String,
     val authorsList: List<String>?,
     val link: Url?,
     @Deprecated("Use `link` instead, as the mod isn't necessarily on the forum.") val forumPostLink: Url?,

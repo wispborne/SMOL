@@ -58,4 +58,5 @@ fun SmolTooltipBackground(modifier: Modifier = Modifier, content: @Composable ()
 
 object SmolTooltipArea {
     const val shortDelay = 300
+    const val longDelay = 700
 }

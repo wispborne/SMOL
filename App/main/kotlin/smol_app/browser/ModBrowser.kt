@@ -34,6 +34,7 @@ import androidx.compose.ui.awt.SwingPanel
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
@@ -249,7 +250,9 @@ fun AppScope.ModBrowserView(
                                                 items = shownMods
                                                     .filterNotNull()
                                                     .sortedWith(compareBy { it.name })
-                                            ) { mod -> scrapedModCard(mod, linkLoader) }
+                                            ) { mod ->
+                                                scrapedModCard(mod, linkLoader)
+                                            }
                                         }
                                         VerticalScrollbar(
                                             adapter = ScrollbarAdapter(scrollState),
@@ -355,6 +358,12 @@ fun AppScope.ModBrowserView(
             Timber.i { "Loading Mod Browser with default url $defaultUrl." }
             browser.value?.loadUrl(defaultUrl)
         }
+    }
+}
+
+class ModBrowserLinkLoader(private val linkLoader: MutableState<((String) -> Unit)?>) : UriHandler {
+    override fun openUri(uri: String) {
+        linkLoader.value?.invoke(uri)
     }
 }
 

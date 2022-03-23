@@ -78,7 +78,7 @@ internal class DiscordReader {
                     ?.firstOrNull()
                     ?.let { kotlin.runCatching { Url(it) }.onFailure { Timber.w(it) }.getOrNull() }
                 ScrapedMod(
-                    name = message.content?.lines()?.firstOrNull()?.removeSurroundingMarkdown() ?: "(Discord Mod)",
+                    name = message.content?.lines()?.firstOrNull()?.removeMarkdownFromName() ?: "(Discord Mod)",
                     description = message.content,
                     gameVersionReq = "",
                     authors = message.author?.username ?: "",
@@ -95,14 +95,19 @@ internal class DiscordReader {
             .filter { it.name.isNotBlank() } // Remove any posts that don't contain text.
     }
 
-    private val markdownStyleSymbols = "_*~`"
-    private val surroundingMarkdownRegex = Regex("""^[$markdownStyleSymbols](.*)[$markdownStyleSymbols]$""")
+    private val markdownStyleSymbols = listOf("_", "*", "~", "`")
+    private val surroundingMarkdownRegexes = markdownStyleSymbols.map { symbol ->
+        Regex("""(.*)[$symbol](.*)[$symbol](.*)""")
+    }
 
-    private fun String.removeSurroundingMarkdown(): String {
+    private fun String.removeMarkdownFromName(): String {
         var str = this
 
         while (true) {
-            val replaced = surroundingMarkdownRegex.matchEntire(str)?.groupValues?.get(1) ?: str
+            val replaced: String = surroundingMarkdownRegexes.fold(str) { prev, regex ->
+                regex.matchEntire(prev)?.groupValues?.drop(1)?.joinToString(separator = "") ?: prev
+            }
+
             if (str == replaced) return str
             str = replaced
         }

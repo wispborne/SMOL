@@ -15,13 +15,8 @@ package smol_app.browser
 import AppScope
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.desktop.ui.tooling.preview.Preview
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.mouseClickable
-import androidx.compose.foundation.text.ClickableText
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,34 +27,31 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerMoveFilter
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mikepenz.markdown.Markdown
 import io.ktor.http.*
 import mod_repo.ModSource
 import mod_repo.ScrapedMod
 import org.tinylog.kotlin.Logger
 import smol_app.WindowState
-import smol_app.composables.SmolAlertDialog
-import smol_app.composables.SmolButton
-import smol_app.composables.SmolTooltipArea
-import smol_app.composables.SmolTooltipText
+import smol_app.composables.*
 import smol_app.themes.SmolTheme
-import smol_app.themes.SmolTheme.hyperlink
 import smol_app.themes.SmolTheme.lighten
-import smol_app.util.MarkdownParser
 import smol_app.util.onEnterKeyPressed
 import smol_app.util.openAsUriInBrowser
 import smol_app.util.smolPreview
-import utilities.asList
 import java.awt.Cursor
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
 @Composable
 fun AppScope.scrapedModCard(mod: ScrapedMod, linkLoader: MutableState<((String) -> Unit)?>) {
     var isBeingHovered by remember { mutableStateOf(false) }
+    val markdownWidth = 800
 
     Card(
         modifier = Modifier
@@ -70,7 +62,7 @@ fun AppScope.scrapedModCard(mod: ScrapedMod, linkLoader: MutableState<((String) 
                 shape = SmolTheme.smolFullyClippedButtonShape()
             )
             .clickable {
-                mod.forumPostLink?.run { linkLoader.value?.invoke(this.toString()) }
+                mod.link?.run { linkLoader.value?.invoke(this.toString()) }
             }
             .pointerMoveFilter(
                 onEnter = { isBeingHovered = true; false },
@@ -88,16 +80,19 @@ fun AppScope.scrapedModCard(mod: ScrapedMod, linkLoader: MutableState<((String) 
                 SmolTooltipArea(
                     tooltip = {
                         mod.description?.let {
-                            SmolTooltipText(
-                                text = MarkdownParser.messageFormatter(
-                                    text = it,
-                                    linkColor = MaterialTheme.colors.hyperlink
-                                )
-                            )
+                            SmolTooltipBackground {
+                                CompositionLocalProvider(LocalUriHandler provides ModBrowserLinkLoader(linkLoader)) {
+                                    Markdown(
+                                        it,
+                                        modifier = Modifier
+                                            .widthIn(max = markdownWidth.dp)
+                                    )
+                                }
+                            }
                         }
                     },
                     delayMillis = if (mod.description != null)
-                        SmolTooltipArea.shortDelay
+                        SmolTooltipArea.longDelay
                     else Int.MAX_VALUE
                 ) {
                     Column {
@@ -125,37 +120,16 @@ fun AppScope.scrapedModCard(mod: ScrapedMod, linkLoader: MutableState<((String) 
                                 onClick = {
                                     alertDialogSetter.invoke {
                                         SmolAlertDialog(
-                                            title = {
-                                                SelectionContainer {
-                                                    Text(
-                                                        text = mod.name,
-                                                        style = SmolTheme.alertDialogTitle(),
+                                            text = {
+                                                CompositionLocalProvider(
+                                                    LocalUriHandler provides ModBrowserLinkLoader(linkLoader)
+                                                ) {
+                                                    Markdown(
+                                                        content = mod.description!!,
+                                                        modifier = Modifier
+                                                            .verticalScroll(rememberScrollState())
                                                     )
                                                 }
-                                            },
-                                            text = {
-//                                                SelectionContainer {
-                                                val text = MarkdownParser.messageFormatter(
-                                                    text = mod.description!!,
-                                                    linkColor = MaterialTheme.colors.hyperlink
-                                                )
-                                                ClickableText(
-                                                    text = text,
-                                                    style = SmolTheme.alertDialogBody()
-                                                        .copy(color = MaterialTheme.colors.onSurface),
-                                                    onClick = {
-                                                        text.getStringAnnotations(
-                                                            tag = MarkdownParser.SymbolAnnotationType.LINK.name,
-                                                            start = it,
-                                                            end = it
-                                                        ).firstOrNull()
-                                                            ?.item
-                                                            ?.also {
-                                                                linkLoader.value?.invoke(it)
-                                                            }
-                                                    }
-                                                )
-//                                                }
                                             },
                                             onDismissRequest = { alertDialogSetter.invoke(null) },
                                             confirmButton = {
@@ -165,7 +139,7 @@ fun AppScope.scrapedModCard(mod: ScrapedMod, linkLoader: MutableState<((String) 
                                             },
                                             modifier = Modifier
                                                 .padding(24.dp)
-                                                .widthIn(min = 600.dp)
+                                                .width(markdownWidth.dp)
                                                 .onEnterKeyPressed { alertDialogSetter.invoke(null); true }
                                         )
                                     }
@@ -245,11 +219,12 @@ fun scrapedModCardPreview() = smolPreview {
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun BrowserIcon(modifier: Modifier = Modifier, iconModifier: Modifier = Modifier, mod: ScrapedMod) {
-    if (mod.forumPostLink?.toString()?.isBlank() == false) {
+    if (mod.link?.toString()?.isBlank() == false) {
         val descText = "Open in an external browser.\n${mod.forumPostLink}"
         SmolTooltipArea(
             modifier = modifier,
             tooltip = { SmolTooltipText(text = descText) }) {
+            val uriHandler = LocalUriHandler.current
             Icon(
                 painter = painterResource("icon-web.svg"),
                 contentDescription = descText,
@@ -259,7 +234,7 @@ fun BrowserIcon(modifier: Modifier = Modifier, iconModifier: Modifier = Modifier
                     .mouseClickable {
                         if (this.buttons.isPrimaryPressed) {
                             runCatching {
-                                mod.forumPostLink?.toString()?.openAsUriInBrowser()
+                                mod.link?.toString()?.let { uriHandler.openUri(it) }
                             }
                                 .onFailure { Logger.warn(it) }
                         }

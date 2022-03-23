@@ -71,6 +71,9 @@ dependencies {
     // List diffing
     implementation("dev.andrewbailey.difference:difference:1.0.0")
 
+    // Markdown
+    implementation("com.mikepenz:multiplatform-markdown-renderer-jvm:0.4.0")
+
     // Navigation
     val decomposeVer = "0.3.1"
     api("com.arkivanov.decompose:decompose:$decomposeVer")
