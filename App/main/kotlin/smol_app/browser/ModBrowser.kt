@@ -94,26 +94,6 @@ fun AppScope.ModBrowserView(
         topBar = {
             TopAppBar(modifier = Modifier.height(SmolTheme.topBarHeight)) {
                 toolbar(router.state.value.activeChild.instance as Screen)
-
-                SmolTooltipArea(
-                    modifier = Modifier
-                        .padding(start = 16.dp),
-                    tooltip = {
-                        SmolTooltipText(text = buildString {
-                            appendLine("The Mod Browser lists mods scraped from the official forum and from the Unofficial Discord Chat, with permission.")
-                            appendLine("The list is <b>not</b> live; it is fetched from an online cache, which is updated periodically so as to avoid excessive load on the forum.")
-                            append("If a mod has been added to the forum but doesn't yet show up in the list, simply navigate to it using the browser and download it.")
-                        }.parseHtml())
-                    }) {
-                    Icon(
-                        painter = painterResource("icon-help-circled.svg"),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .width(24.dp)
-                            .height(24.dp),
-                        tint = SmolTheme.dimmedIconColor()
-                    )
-                }
                 Spacer(Modifier.weight(1f))
 
                 // Doesn't seem to work, just restart the app to reload, it only happens once a day anyway.
@@ -197,44 +177,68 @@ fun AppScope.ModBrowserView(
                                             ?: ModBrowserState(modListWidthPercent = splitterState.positionPercentage)
                                 }
                                 Column {
-                                    Row {
-                                        smolSearchField(
-                                            modifier = Modifier
-                                                .focusRequester(searchFocusRequester())
-                                                .widthIn(max = 320.dp)
-                                                .padding(end = 16.dp),
-                                            tooltipText = "Hotkey: Ctrl-F",
-                                            label = "Filter"
-                                        ) { query ->
-                                            if (query.isBlank()) {
-                                                shownMods.replaceAllUsingDifference(
-                                                    scrapedMods,
-                                                    doesOrderMatter = false
-                                                )
-                                            } else {
-                                                shownMods.replaceAllUsingDifference(
-                                                    filterModPosts(query, scrapedMods).ifEmpty { listOf(null) },
-                                                    doesOrderMatter = true
-                                                )
+                                    Row(Modifier.padding(bottom = 16.dp)) {
+                                        Row {
+                                            smolSearchField(
+                                                modifier = Modifier
+                                                    .focusRequester(searchFocusRequester())
+                                                    .widthIn(max = 320.dp)
+                                                    .padding(end = 16.dp),
+                                                tooltipText = "Hotkey: Ctrl-F",
+                                                label = "Filter"
+                                            ) { query ->
+                                                if (query.isBlank()) {
+                                                    shownMods.replaceAllUsingDifference(
+                                                        scrapedMods,
+                                                        doesOrderMatter = false
+                                                    )
+                                                } else {
+                                                    shownMods.replaceAllUsingDifference(
+                                                        filterModPosts(query, scrapedMods).ifEmpty { listOf(null) },
+                                                        doesOrderMatter = true
+                                                    )
+                                                }
                                             }
                                         }
-                                    }
 
-                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                                        val lastUpdated = SL.modRepo.lastUpdated.collectAsState().value
-                                        Text(
-                                            modifier = Modifier.padding(vertical = 4.dp, horizontal = 16.dp),
-                                            text = "Mod list generated on: ${
-                                                lastUpdated?.format(
-                                                    DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
-                                                        .withZone(ZoneId.systemDefault())
-                                                )?.plus(
-                                                    " " + ZoneId.systemDefault()
-                                                        .getDisplayName(TextStyle.SHORT, Locale.getDefault())
-                                                ) ?: "unknown"
-                                            }",
-                                            style = MaterialTheme.typography.overline
-                                        )
+                                        Spacer(Modifier.weight(1f))
+
+                                        Column(modifier = Modifier.align(Alignment.Bottom)) {
+                                            SmolTooltipArea(
+                                                modifier = Modifier
+                                                    .padding(vertical = 4.dp, horizontal = 16.dp)
+                                                    .align(Alignment.End),
+                                                tooltip = {
+                                                    SmolTooltipText(text = buildString {
+                                                        appendLine("The Mod Browser lists mods scraped from the official forum and from the Unofficial Discord Chat, with permission.")
+                                                        appendLine("The list is <b>not</b> live; it is fetched from an online cache, which is updated periodically so as to avoid excessive load on the forum.")
+                                                        append("If a mod has been added to the forum but doesn't yet show up in the list, simply navigate to it using the browser and download it.")
+                                                    }.parseHtml())
+                                                }) {
+                                                Icon(
+                                                    painter = painterResource("icon-help-circled.svg"),
+                                                    contentDescription = null,
+                                                    modifier = Modifier
+                                                        .width(24.dp)
+                                                        .height(24.dp),
+                                                    tint = SmolTheme.dimmedIconColor()
+                                                )
+                                            }
+                                            val lastUpdated = SL.modRepo.lastUpdated.collectAsState().value
+                                            Text(
+                                                modifier = Modifier.padding(top = 8.dp, end = 16.dp),
+                                                text = "Mod list generated on: ${
+                                                    lastUpdated?.format(
+                                                        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
+                                                            .withZone(ZoneId.systemDefault())
+                                                    )?.plus(
+                                                        " " + ZoneId.systemDefault()
+                                                            .getDisplayName(TextStyle.SHORT, Locale.getDefault())
+                                                    ) ?: "unknown"
+                                                }",
+                                                style = MaterialTheme.typography.overline
+                                            )
+                                        }
                                     }
 
                                     val scrollState = rememberLazyListState()
