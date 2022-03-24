@@ -245,3 +245,11 @@ fun Path.mountOf(): Path? {
 
     return mountp
 }
+
+@Suppress("NOTHING_TO_INLINE")
+/**
+ * Returns a list containing all elements except first [n] elements.
+ *
+ * @throws IllegalArgumentException if [n] is negative.
+ */
+inline fun <T> List<T>.skip(n: Int) = drop(n)

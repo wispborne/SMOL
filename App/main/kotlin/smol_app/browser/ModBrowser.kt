@@ -18,8 +18,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollbarAdapter
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.GridCells
-import androidx.compose.foundation.lazy.LazyVerticalGrid
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.*
@@ -243,12 +242,13 @@ fun AppScope.ModBrowserView(
 
                                     val scrollState = rememberLazyListState()
                                     Row {
-                                        LazyVerticalGrid(
-                                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                                            cells = GridCells.Adaptive(240.dp),
-                                            state = scrollState,
-                                            modifier = Modifier.weight(1f)
+                                        LazyColumn(
+//                                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+//                                            verticalArrangement = Arrangement.spacedBy(16.dp),
+//                                            cells = GridCells.Adaptive(240.dp),
+//                                            state = scrollState,
+                                            modifier = Modifier.weight(1f),
+                                            verticalArrangement = Arrangement.spacedBy(16.dp)
                                         ) {
                                             this.items(
                                                 items = shownMods
@@ -256,7 +256,7 @@ fun AppScope.ModBrowserView(
                                                     .sortedWith(compareBy { it.name })
                                             ) { mod ->
                                                 scrapedModCard(
-                                                    modifier = Modifier.fillMaxHeight(),
+                                                    modifier = Modifier.fillMaxWidth(),
                                                     mod = mod,
                                                     linkLoader = linkLoader
                                                 )
