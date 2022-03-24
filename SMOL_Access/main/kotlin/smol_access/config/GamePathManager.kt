@@ -83,11 +83,13 @@ class GamePathManager internal constructor(
         val mods = starsectorPath.resolve(Constants.MODS_FOLDER_NAME)
 
         IOLock.write {
-            if (!mods.isWritable()) {
-                Timber.e { "Unable to write to ${mods.absolutePathString()}. Ensure that it exists and SMOL has write permission (run as admin?)." }
-                return null
-            } else {
-                mods.createDirectories()
+            if (!mods.exists()) {
+                if (!mods.isWritable()) {
+                    Timber.e { "Unable to write to ${mods.absolutePathString()}. Ensure that it exists and SMOL has write permission (run as admin?)." }
+                    return null
+                } else {
+                    mods.createDirectories()
+                }
             }
         }
 
