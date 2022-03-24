@@ -21,11 +21,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.mouseClickable
 import androidx.compose.material.ContentAlpha
+import androidx.compose.material.LocalContentColor
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.input.pointer.pointerHoverIcon
@@ -39,6 +41,7 @@ import smol_access.model.VersionCheckerInfo
 import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
 import smol_app.navigation.Screen
+import smol_app.themes.SmolTheme
 import smol_app.util.*
 import timber.ktx.Timber
 import java.awt.Cursor
@@ -53,106 +56,162 @@ fun AppScope.ModUpdateIcon(
     mod: Mod
 ) {
     Row(modifier) {
-        if (highestLocalVersion != null && onlineVersion != null && onlineVersion > highestLocalVersion && onlineVersionInfo != null) {
-            val ddUrl =
-                onlineVersionInfo.directDownloadURL?.ifBlank { null }
-                    ?: mod.findHighestVersion?.versionCheckerInfo?.directDownloadURL
-            if (ddUrl != null) {
-                SmolTooltipArea(tooltip = {
-                    SmolTooltipText(
-                        text = buildString {
-                            append("Newer version available: ${onlineVersionInfo.modVersion}")
-                            append("\nCurrent version: $highestLocalVersion.")
-                            append("\n\nClick to download and update.")
-                        }
-                    )
-                }, modifier = Modifier.mouseClickable {
-                    if (this.buttons.isPrimaryPressed) {
-                        alertDialogSetter {
-                            DirectDownloadAlertDialog(
-                                ddUrl = ddUrl,
-                                mod = mod,
-                                onlineVersion = onlineVersion
-                            )
+        // If successfully version checked...
+        if (highestLocalVersion != null && onlineVersion != null) {
+            // ...and if an update was found.
+            if (onlineVersion > highestLocalVersion && onlineVersionInfo != null) {
+                val ddUrl =
+                    onlineVersionInfo.directDownloadURL?.ifBlank { null }
+                        ?: mod.findHighestVersion?.versionCheckerInfo?.directDownloadURL
+                if (ddUrl != null) {
+                    SmolTooltipArea(tooltip = {
+                        SmolTooltipText(
+                            text = buildAnnotatedString {
+                                append("Newer version available: ${onlineVersionInfo.modVersion}")
+                                append("\nCurrent version: $highestLocalVersion.")
+                                append("\n\n<i>Update information is provided by the mod author, not SMOL, and cannot be guaranteed.</i>".parseHtml())
+                                append("\n\nClick to download and update.")
+                            }
+                        )
+                    }, modifier = Modifier.mouseClickable {
+                        if (this.buttons.isPrimaryPressed) {
+                            alertDialogSetter {
+                                DirectDownloadAlertDialog(
+                                    ddUrl = ddUrl,
+                                    mod = mod,
+                                    onlineVersion = onlineVersion
+                                )
+                            }
                         }
                     }
-                }
-                    .align(androidx.compose.ui.Alignment.CenterVertically)) {
-                    Image(
-                        painter = painterResource("icon-direct-install.svg"),
-                        contentDescription = null,
-                        colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(color = androidx.compose.material.MaterialTheme.colors.secondary),
-                        modifier = Modifier.width(28.dp).height(28.dp)
-                            .padding(end = 8.dp)
-                            .align(androidx.compose.ui.Alignment.CenterVertically)
-                            .pointerHoverIcon(
-                                PointerIcon(
-                                    java.awt.Cursor.getPredefinedCursor(
-                                        java.awt.Cursor.HAND_CURSOR
+                        .align(Alignment.CenterVertically)) {
+                        Image(
+                            painter = painterResource("icon-direct-install.svg"),
+                            contentDescription = null,
+                            colorFilter = ColorFilter.tint(color = MaterialTheme.colors.secondary),
+                            modifier = Modifier.width(SmolTheme.modUpdateIconSize.dp).height(SmolTheme.modUpdateIconSize.dp)
+                                .padding(end = 8.dp)
+                                .align(Alignment.CenterVertically)
+                                .pointerHoverIcon(
+                                    PointerIcon(
+                                        Cursor.getPredefinedCursor(
+                                            Cursor.HAND_CURSOR
+                                        )
                                     )
                                 )
-                            )
+                        )
+                    }
+                } else {
+                    val modThreadId =
+                        mod.findHighestVersion?.versionCheckerInfo?.modThreadId
+                    val hasModThread = modThreadId?.isNotBlank() == true
+                    SmolTooltipArea(tooltip = {
+                        SmolTooltipText(
+                            text = buildAnnotatedString {
+                                append("Newer version available: ${onlineVersionInfo.modVersion}.")
+                                append("\nCurrent version: $highestLocalVersion.")
+                                append("\n\n<i>Update information is provided by the mod author, not SMOL, and cannot be guaranteed.</i>".parseHtml())
+                                if (ddUrl == null) append("\n<i>This mod does not support direct download and should be downloaded manually.</i>".parseHtml())
+                                if (hasModThread) {
+                                    append("\n\nClick to open <code>${modThreadId?.getModThreadUrl()}</code>.".parseHtml())
+                                } else {
+                                    append("\n\n<b>No mod thread provided. Click to search on Google.</b>".parseHtml())
+                                }
+                            }
+                        )
+                    }, modifier = Modifier.mouseClickable {
+                        if (this.buttons.isPrimaryPressed) {
+                            if (hasModThread) {
+                                if (Constants.isModBrowserEnabled()) {
+                                    router.replaceCurrent(Screen.ModBrowser(modThreadId?.getModThreadUrl()))
+                                } else {
+                                    kotlin.runCatching {
+                                        modThreadId?.getModThreadUrl()
+                                            ?.openAsUriInBrowser()
+                                    }
+                                        .onFailure { Timber.w(it) }
+                                }
+                            } else {
+                                createGoogleSearchFor("starsector ${mod.findHighestVersion?.modInfo?.name}")
+                                    .openAsUriInBrowser()
+                            }
+                        }
+                    }
+                        .align(Alignment.CenterVertically)) {
+                        Image(
+                            painter = painterResource(
+                                if (hasModThread) "icon-new-update.svg"
+                                else "icon-new-update-search.svg"
+                            ),
+                            contentDescription = null,
+                            colorFilter = ColorFilter.tint(
+                                color =
+                                if (ddUrl == null) MaterialTheme.colors.secondary
+                                else MaterialTheme.colors.secondary.copy(alpha = ContentAlpha.disabled)
+                            ),
+                            modifier = Modifier.width(SmolTheme.modUpdateIconSize.dp).height(SmolTheme.modUpdateIconSize.dp)
+                                .padding(end = 8.dp)
+                                .align(Alignment.CenterVertically)
+                                .pointerHoverIcon(
+                                    PointerIcon(
+                                        Cursor.getPredefinedCursor(
+                                            Cursor.HAND_CURSOR
+                                        )
+                                    )
+                                )
+                        )
+                    }
+                }
+            } else {
+                // ...and no update was found.
+                SmolTooltipArea(
+                    tooltip = { SmolTooltipText("Up to date!") }
+                ) {
+                    Image(
+                        painter = painterResource("icon-check.svg"),
+                        contentDescription = null,
+                        colorFilter = ColorFilter.tint(
+                            color = LocalContentColor.current.copy(alpha = 0.2f),
+                        ),
+                        alpha = 0f,
+                        modifier = Modifier.width(SmolTheme.modUpdateIconSize.dp).height(SmolTheme.modUpdateIconSize.dp)
+                            .padding(end = 8.dp)
+                            .align(Alignment.CenterVertically)
                     )
                 }
             }
-
-            val modThreadId =
-                mod.findHighestVersion?.versionCheckerInfo?.modThreadId
-            val hasModThread = modThreadId?.isNotBlank() == true
-            SmolTooltipArea(tooltip = {
-                SmolTooltipText(
-                    text = buildAnnotatedString {
-                        append("Newer version available: ${onlineVersionInfo.modVersion}.")
-                        append("\nCurrent version: $highestLocalVersion.")
-                        append("\n\n<i>Update information is provided by the mod author, not SMOL, and cannot be guaranteed.</i>".parseHtml())
-                        if (ddUrl == null) append("\n<i>This mod does not support direct download and should be downloaded manually.</i>".parseHtml())
-                        if (hasModThread) {
-                            append("\n\nClick to open <code>${modThreadId?.getModThreadUrl()}</code>.".parseHtml())
-                        } else {
-                            append("\n\n<b>No mod thread provided. Click to search on Google.</b>".parseHtml())
-                        }
-                    }
-                )
-            }, modifier = Modifier.mouseClickable {
-                if (this.buttons.isPrimaryPressed) {
-                    if (hasModThread) {
-                        if (smol_access.Constants.isModBrowserEnabled()) {
-                            router.replaceCurrent(smol_app.navigation.Screen.ModBrowser(modThreadId?.getModThreadUrl()))
-                        } else {
-                            kotlin.runCatching {
-                                modThreadId?.getModThreadUrl()
-                                    ?.openAsUriInBrowser()
-                            }
-                                .onFailure { timber.ktx.Timber.w(it) }
-                        }
-                    } else {
-                        createGoogleSearchFor("starsector ${mod.findHighestVersion?.modInfo?.name}")
-                            .openAsUriInBrowser()
-                    }
-                }
-            }
-                .align(androidx.compose.ui.Alignment.CenterVertically)) {
+        } else if (highestLocalVersion == null) {
+            // If Version Checker isn't supported
+            SmolTooltipArea(
+                tooltip = { SmolTooltipText("This mod does not support Version Checker.\nPlease visit the mod page to manually find updates.") }
+            ) {
                 Image(
-                    painter = painterResource(
-                        if (hasModThread) "icon-new-update.svg"
-                        else "icon-new-update-search.svg"
-                    ),
+                    painter = painterResource("icon-yawn.svg"),
                     contentDescription = null,
-                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(
-                        color =
-                        if (ddUrl == null) androidx.compose.material.MaterialTheme.colors.secondary
-                        else androidx.compose.material.MaterialTheme.colors.secondary.copy(alpha = androidx.compose.material.ContentAlpha.disabled)
-                    ),
-                    modifier = Modifier.width(28.dp).height(28.dp)
+                    colorFilter = ColorFilter
+                        .colorMatrix(ColorMatrix().apply {
+                            setToSaturation(0F)
+                        }),
+                    alpha = 0.2f,
+                    modifier = Modifier.width(SmolTheme.modUpdateIconSize.dp).height(SmolTheme.modUpdateIconSize.dp)
                         .padding(end = 8.dp)
-                        .align(androidx.compose.ui.Alignment.CenterVertically)
-                        .pointerHoverIcon(
-                            PointerIcon(
-                                java.awt.Cursor.getPredefinedCursor(
-                                    java.awt.Cursor.HAND_CURSOR
-                                )
-                            )
-                        )
+                        .align(Alignment.CenterVertically)
+                )
+            }
+        } else {
+            // If Version Checker is supported but checking for the online version failed.
+            SmolTooltipArea(
+                tooltip = { SmolTooltipText("This mod supports Version Checker but there was a problem checking the online version.\nPlease visit the mod page to manually find updates.") }
+            ) {
+                Image(
+                    painter = painterResource("icon-exclamation.svg"),
+                    contentDescription = null,
+                    colorFilter = ColorFilter.tint(
+                        color = LocalContentColor.current.copy(alpha = 0.2f),
+                    ),
+                    modifier = Modifier.width(SmolTheme.modUpdateIconSize.dp).height(SmolTheme.modUpdateIconSize.dp)
+                        .padding(end = 8.dp)
+                        .align(Alignment.CenterVertically)
                 )
             }
         }

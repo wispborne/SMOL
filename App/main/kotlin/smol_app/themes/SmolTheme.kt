@@ -33,6 +33,7 @@ object SmolTheme {
     val cornerClipping = 8.dp
     val bottomBarHeight = 64.dp
     val topBarHeight = 72.dp
+    const val modUpdateIconSize = 28
     fun smolNormalButtonShape() = CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp)
     fun smolFullyClippedButtonShape() = CutCornerShape(size = cornerClipping)
 

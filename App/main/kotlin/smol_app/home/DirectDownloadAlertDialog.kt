@@ -22,14 +22,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.arkivanov.decompose.replaceCurrent
+import smol_access.Constants
 import smol_access.model.Mod
 import smol_access.model.VersionCheckerInfo
 import smol_app.UI
 import smol_app.composables.SmolAlertDialog
 import smol_app.composables.SmolButton
 import smol_app.composables.SmolSecondaryButton
+import smol_app.navigation.Screen
+import smol_app.util.getModThreadUrl
+import smol_app.util.isModBrowserEnabled
 import smol_app.util.openModThread
 import smol_app.util.parseHtml
+import timber.ktx.Timber
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
@@ -103,13 +109,23 @@ fun AppScope.DirectDownloadAlertDialog(
                         modifier = androidx.compose.ui.Modifier.padding(
                             top = 16.dp
                         ),
-                        onClick = { modThreadId.openModThread() }) {
+                        onClick = {
+                            if (Constants.isModBrowserEnabled()) {
+                                router.replaceCurrent(Screen.ModBrowser(modThreadId.getModThreadUrl()))
+                                alertDialogSetter(null)
+                            } else {
+                                kotlin.runCatching {
+                                    modThreadId.openModThread()
+                                }
+                                    .onFailure { Timber.w(it) }
+                            }
+                        }) {
                         Icon(
                             modifier = androidx.compose.ui.Modifier.padding(
                                 end = 8.dp
                             ),
                             painter = painterResource(
-                                "icon-open-in-new.svg"
+                                "icon-open-in-app.svg"
                             ),
                             contentDescription = null
                         )

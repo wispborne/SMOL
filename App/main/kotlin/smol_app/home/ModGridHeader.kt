@@ -23,9 +23,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.GlobalScope
@@ -34,6 +37,7 @@ import smol_access.model.Mod
 import smol_access.model.UserProfile
 import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
+import smol_app.themes.SmolTheme
 import smol_app.util.replaceAllUsingDifference
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -50,12 +54,12 @@ fun AppScope.ModGridHeader(
 ) {
     Row {
         Spacer(
-            modifier = androidx.compose.ui.Modifier.width(favoritesWidth)
-                .align(androidx.compose.ui.Alignment.CenterVertically)
+            modifier = Modifier.width(favoritesWidth)
+                .align(Alignment.CenterVertically)
         )
         Box(
-            modifier = androidx.compose.ui.Modifier.width(modGridViewDropdownWidth.dp)
-                .align(androidx.compose.ui.Alignment.CenterVertically)
+            modifier = Modifier.width(modGridViewDropdownWidth.dp)
+                .align(Alignment.CenterVertically)
         ) {
             refreshButton {
                 GlobalScope.launch(kotlinx.coroutines.Dispatchers.Default) {
@@ -65,34 +69,37 @@ fun AppScope.ModGridHeader(
         }
 
         SortableHeader(
-            modifier = androidx.compose.ui.Modifier.weight(1f).align(androidx.compose.ui.Alignment.CenterVertically),
+            modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
             columnSortField = ModGridSortField.Name,
             activeSortField = activeSortField,
             profile = profile
         ) {
-            Text("Name", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+            Text("Name", fontWeight = FontWeight.Bold)
         }
 
         SortableHeader(
-            modifier = androidx.compose.ui.Modifier.weight(1f).align(androidx.compose.ui.Alignment.CenterVertically),
+            modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
             columnSortField = ModGridSortField.Author,
             activeSortField = activeSortField,
             profile = profile
         ) {
-            Text("Author", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+            Text("Author", fontWeight = FontWeight.Bold)
         }
 
         SmolTooltipArea(
-            modifier = androidx.compose.ui.Modifier.weight(1f).align(androidx.compose.ui.Alignment.CenterVertically),
+            modifier = Modifier
+                .weight(1f)
+                .align(Alignment.CenterVertically)
+                .padding(start = SmolTheme.modUpdateIconSize.dp),
             tooltip = { SmolTooltipText(text = "The version(s) tracked by SMOL.") },
             delayMillis = SmolTooltipArea.shortDelay
         ) {
-            Text(text = "Version(s)", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+            Text(text = "Version(s)", fontWeight = FontWeight.Bold)
         }
 
-        Row(modifier = androidx.compose.ui.Modifier
+        Row(modifier = Modifier
             .weight(1f)
-            .align(androidx.compose.ui.Alignment.CenterVertically)
+            .align(Alignment.CenterVertically)
             .onGloballyPositioned { vramPosition.value = it.boundsInParent().left.dp }) {
             SmolTooltipArea(
                 tooltip = {
@@ -107,9 +114,9 @@ fun AppScope.ModGridHeader(
                     columnSortField = ModGridSortField.VramImpact,
                     activeSortField = activeSortField,
                     profile = profile,
-                    modifier = androidx.compose.ui.Modifier.align(androidx.compose.ui.Alignment.CenterVertically)
+                    modifier = Modifier.align(Alignment.CenterVertically)
                 ) {
-                    Text(text = "VRAM Impact", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                    Text(text = "VRAM Impact", fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -123,10 +130,10 @@ fun AppScope.ModGridHeader(
             ) {
                 IconButton(
                     onClick = { showVramRefreshWarning.value = true },
-                    modifier = androidx.compose.ui.Modifier
+                    modifier = Modifier
                         .padding(start = 6.dp)
                         .size(20.dp)
-                        .align(androidx.compose.ui.Alignment.CenterVertically)
+                        .align(Alignment.CenterVertically)
                 ) {
                     Icon(
                         painter = painterResource("icon-refresh.svg"),
@@ -138,15 +145,15 @@ fun AppScope.ModGridHeader(
 
         Text(
             text = "Game Version",
-            modifier = androidx.compose.ui.Modifier.weight(1f).align(androidx.compose.ui.Alignment.CenterVertically),
-            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+            modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
+            fontWeight = FontWeight.Bold
         )
         Row(
-            modifier = androidx.compose.ui.Modifier.width(checkboxesWidth)
-                .align(androidx.compose.ui.Alignment.CenterVertically)
+            modifier = Modifier.width(checkboxesWidth)
+                .align(Alignment.CenterVertically)
         ) {
             modGridBulkActionMenu(
-                modifier = androidx.compose.ui.Modifier.align(androidx.compose.ui.Alignment.CenterVertically),
+                modifier = Modifier.align(Alignment.CenterVertically),
                 checkedRows = checkedRows
             )
             Checkbox(

@@ -27,7 +27,9 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.*
+import androidx.compose.ui.input.pointer.isPrimaryPressed
+import androidx.compose.ui.input.pointer.isSecondaryPressed
+import androidx.compose.ui.input.pointer.pointerMoveFilter
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -53,7 +55,7 @@ fun AppScope.ModGridRow(
 ) {
     val mod = modRow.mod
     var showContextMenu by remember { mutableStateOf(false) }
-    val highestLocalVersion =
+    val highestLocalVCVersion =
         mod.findHighestVersion?.versionCheckerInfo?.modVersion
     val onlineVersionInfo = smol_access.SL.versionChecker.getOnlineVersion(modId = mod.id)
     val onlineVersion = onlineVersionInfo?.modVersion
@@ -176,7 +178,7 @@ fun AppScope.ModGridRow(
                     // Update badge icon
                     ModUpdateIcon(
                         modifier = Modifier.align(Alignment.CenterVertically),
-                        highestLocalVersion = highestLocalVersion,
+                        highestLocalVersion = highestLocalVCVersion,
                         onlineVersion = onlineVersion,
                         onlineVersionInfo = onlineVersionInfo,
                         mod = mod
