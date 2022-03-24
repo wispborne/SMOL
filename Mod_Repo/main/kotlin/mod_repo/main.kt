@@ -44,8 +44,8 @@ class Main {
         /**
          * Reduces the amount of scraping done for a faster runtime and less load on the server.
          */
-        private const val DEV_MODE = false
-        private val logLevel = LogLevel.DEBUG
+        private const val DEV_MODE = true
+        private val logLevel = LogLevel.VERBOSE
 
         @JvmStatic
         fun main(args: Array<String>) {

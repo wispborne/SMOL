@@ -34,7 +34,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mikepenz.markdown.Markdown
+import io.kamel.image.KamelImage
+import io.kamel.image.lazyPainterResource
 import io.ktor.http.*
+import mod_repo.Image
 import mod_repo.ModSource
 import mod_repo.ScrapedMod
 import org.tinylog.kotlin.Logger
@@ -49,13 +52,17 @@ import java.awt.Cursor
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
 @Composable
-fun AppScope.scrapedModCard(mod: ScrapedMod, linkLoader: MutableState<((String) -> Unit)?>) {
+fun AppScope.scrapedModCard(
+    modifier: Modifier = Modifier,
+    mod: ScrapedMod,
+    linkLoader: MutableState<((String) -> Unit)?>
+) {
     var isBeingHovered by remember { mutableStateOf(false) }
     val markdownWidth = 800
 
     Card(
-        modifier = Modifier
-            .wrapContentHeight()
+        modifier = modifier
+//            .wrapContentHeight()
             .border(
                 width = 1.dp,
                 color = MaterialTheme.colors.surface.lighten(),
@@ -70,126 +77,138 @@ fun AppScope.scrapedModCard(mod: ScrapedMod, linkLoader: MutableState<((String) 
             ),
         shape = SmolTheme.smolFullyClippedButtonShape()
     ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            val mainImage: Image? = mod.images().entries.firstOrNull()?.value
+            if (mainImage?.url != null) {
+                KamelImage(
+                    resource = lazyPainterResource(data = mainImage.url!!),
+                    modifier = Modifier
+                        .sizeIn(maxHeight = 192.dp)
+                        .padding(bottom = 16.dp)
+                        .align(Alignment.CenterHorizontally),
+                    contentDescription = mainImage.description
+                )
+            }
+            Row {
+                Box(
+                    modifier = Modifier.align(Alignment.CenterVertically)
+                        .weight(1f)
+                        .padding(end = 16.dp)
+                ) {
+                    SmolTooltipArea(
+                        tooltip = {
+                            mod.description?.let {
+                                SmolTooltipBackground {
+                                    CompositionLocalProvider(LocalUriHandler provides ModBrowserLinkLoader(linkLoader)) {
+                                        Markdown(
+                                            it,
+                                            modifier = Modifier
+                                                .widthIn(max = markdownWidth.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        },
+                        delayMillis = if (mod.description != null)
+                            SmolTooltipArea.longDelay
+                        else Int.MAX_VALUE
+                    ) {
+                        Column {
+                            Text(
+                                modifier = Modifier,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                fontFamily = SmolTheme.orbitronSpaceFont,
+                                text = mod.name.ifBlank { "???" }
+                            )
+                            if (mod.authors.isNotBlank()) {
+                                Text(
+                                    modifier = Modifier.padding(top = 8.dp),
+                                    fontSize = 11.sp,
+                                    fontStyle = FontStyle.Italic,
+                                    text = mod.authors
+                                )
+                            }
 
-        Row(modifier = Modifier.padding(12.dp)) {
-            Box(
-                modifier = Modifier.align(Alignment.CenterVertically)
-                    .weight(1f)
-                    .padding(end = 16.dp)
-            ) {
-                SmolTooltipArea(
-                    tooltip = {
-                        mod.description?.let {
-                            SmolTooltipBackground {
-                                CompositionLocalProvider(LocalUriHandler provides ModBrowserLinkLoader(linkLoader)) {
-                                    Markdown(
-                                        it,
-                                        modifier = Modifier
-                                            .widthIn(max = markdownWidth.dp)
+                            // Description button
+                            if (!mod.description.isNullOrBlank()) {
+                                OutlinedButton(
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                                    modifier = Modifier.heightIn(min = 24.dp),
+                                    onClick = {
+                                        alertDialogSetter.invoke {
+                                            SmolAlertDialog(
+                                                text = {
+                                                    CompositionLocalProvider(
+                                                        LocalUriHandler provides ModBrowserLinkLoader(linkLoader)
+                                                    ) {
+                                                        Markdown(
+                                                            content = mod.description!!,
+                                                            modifier = Modifier
+                                                                .verticalScroll(rememberScrollState())
+                                                        )
+                                                    }
+                                                },
+                                                onDismissRequest = { alertDialogSetter.invoke(null) },
+                                                confirmButton = {
+                                                    SmolButton(onClick = { alertDialogSetter.invoke(null) }) {
+                                                        Text("Ok")
+                                                    }
+                                                },
+                                                modifier = Modifier
+                                                    .padding(24.dp)
+                                                    .width(markdownWidth.dp)
+                                                    .onEnterKeyPressed { alertDialogSetter.invoke(null); true }
+                                            )
+                                        }
+                                    }) {
+                                    Text(
+                                        text = "View Desc.",
+                                        style = MaterialTheme.typography.caption,
+                                        color = MaterialTheme.colors.onSurface.copy(alpha = 0.9f)
+                                    )
+                                }
+                            }
+
+                            val tags = remember {
+                                mod.categories?.sorted().orEmpty() + mod.sources.orEmpty()
+                                    .sortedWith(
+                                        compareBy<ModSource> { it == ModSource.Index }
+                                            .thenBy { it == ModSource.Discord }
+                                            .thenBy { it == ModSource.ModdingSubforum }
+                                    )
+                                    .map {
+                                        when (it) {
+                                            ModSource.Index -> "Index"
+                                            ModSource.ModdingSubforum -> "Modding Subforum"
+                                            ModSource.Discord -> "Discord"
+                                        }
+                                    }
+
+                            }
+                            if (tags.isNotEmpty()) {
+                                Row(modifier = Modifier.padding(top = 4.dp)) {
+                                    Icon(
+                                        modifier = Modifier.size(12.dp).align(Alignment.CenterVertically),
+                                        painter = painterResource("icon-tag.svg"),
+                                        contentDescription = null
+                                    )
+                                    Text(
+                                        modifier = Modifier.align(Alignment.CenterVertically).padding(start = 6.dp),
+                                        fontSize = 11.sp,
+                                        text = tags.joinToString()
                                     )
                                 }
                             }
                         }
-                    },
-                    delayMillis = if (mod.description != null)
-                        SmolTooltipArea.longDelay
-                    else Int.MAX_VALUE
-                ) {
-                    Column {
-                        Text(
-                            modifier = Modifier,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
-                            fontFamily = SmolTheme.orbitronSpaceFont,
-                            text = mod.name.ifBlank { "???" }
-                        )
-                        if (mod.authors.isNotBlank()) {
-                            Text(
-                                modifier = Modifier.padding(top = 8.dp),
-                                fontSize = 11.sp,
-                                fontStyle = FontStyle.Italic,
-                                text = mod.authors
-                            )
-                        }
-
-                        // Description button
-                        if (!mod.description.isNullOrBlank()) {
-                            OutlinedButton(
-                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                                modifier = Modifier.heightIn(min = 24.dp),
-                                onClick = {
-                                    alertDialogSetter.invoke {
-                                        SmolAlertDialog(
-                                            text = {
-                                                CompositionLocalProvider(
-                                                    LocalUriHandler provides ModBrowserLinkLoader(linkLoader)
-                                                ) {
-                                                    Markdown(
-                                                        content = mod.description!!,
-                                                        modifier = Modifier
-                                                            .verticalScroll(rememberScrollState())
-                                                    )
-                                                }
-                                            },
-                                            onDismissRequest = { alertDialogSetter.invoke(null) },
-                                            confirmButton = {
-                                                SmolButton(onClick = { alertDialogSetter.invoke(null) }) {
-                                                    Text("Ok")
-                                                }
-                                            },
-                                            modifier = Modifier
-                                                .padding(24.dp)
-                                                .width(markdownWidth.dp)
-                                                .onEnterKeyPressed { alertDialogSetter.invoke(null); true }
-                                        )
-                                    }
-                                }) {
-                                Text(
-                                    text = "View Desc.",
-                                    style = MaterialTheme.typography.caption,
-                                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.9f)
-                                )
-                            }
-                        }
-
-                        val tags = remember {
-                            mod.categories?.sorted().orEmpty() + mod.sources.orEmpty()
-                                .sortedWith(
-                                    compareBy<ModSource> { it == ModSource.Index }
-                                        .thenBy { it == ModSource.Discord }
-                                        .thenBy { it == ModSource.ModdingSubforum }
-                                )
-                                .map {
-                                    when (it) {
-                                        ModSource.Index -> "Index"
-                                        ModSource.ModdingSubforum -> "Modding Subforum"
-                                        ModSource.Discord -> "Discord"
-                                    }
-                                }
-
-                        }
-                        if (tags.isNotEmpty()) {
-                            Row(modifier = Modifier.padding(top = 4.dp)) {
-                                Icon(
-                                    modifier = Modifier.size(12.dp).align(Alignment.CenterVertically),
-                                    painter = painterResource("icon-tag.svg"),
-                                    contentDescription = null
-                                )
-                                Text(
-                                    modifier = Modifier.align(Alignment.CenterVertically).padding(start = 6.dp),
-                                    fontSize = 11.sp,
-                                    text = tags.joinToString()
-                                )
-                            }
-                        }
                     }
                 }
-            }
-            Column(modifier = Modifier.align(Alignment.Top)) {
-                val alphaOfHoverDimmedElements =
-                    animateFloatAsState(if (isBeingHovered) 1.0f else 0.7f)
-                BrowserIcon(iconModifier = Modifier.alpha(alphaOfHoverDimmedElements.value), mod = mod)
-                DiscordIcon(iconModifier = Modifier.alpha(alphaOfHoverDimmedElements.value), mod = mod)
+                Column(modifier = Modifier.align(Alignment.Top)) {
+                    val alphaOfHoverDimmedElements =
+                        animateFloatAsState(if (isBeingHovered) 1.0f else 0.7f)
+                    BrowserIcon(iconModifier = Modifier.alpha(alphaOfHoverDimmedElements.value), mod = mod)
+                    DiscordIcon(iconModifier = Modifier.alpha(alphaOfHoverDimmedElements.value), mod = mod)
+                }
             }
         }
     }
@@ -199,7 +218,7 @@ fun AppScope.scrapedModCard(mod: ScrapedMod, linkLoader: MutableState<((String) 
 @Composable
 fun scrapedModCardPreview() = smolPreview {
     AppScope(windowState = WindowState(), recomposer = currentRecomposeScope).scrapedModCard(
-        ScrapedMod(
+        mod = ScrapedMod(
             name = "Archean Order",
             description = "test description",
             gameVersionReq = "0.95a",
@@ -210,9 +229,10 @@ fun scrapedModCardPreview() = smolPreview {
             discordMessageLink = Url("https://discord.com/channels/187635036525166592/537191061156659200/947258123528319097"),
             categories = listOf("Total Conversions"),
             source = ModSource.Index,
-            sources = listOf(ModSource.Index, ModSource.Discord)
+            sources = listOf(ModSource.Index, ModSource.Discord),
+            images = emptyMap()
         ),
-        mutableStateOf({})
+        linkLoader = mutableStateOf({})
     )
 }
 

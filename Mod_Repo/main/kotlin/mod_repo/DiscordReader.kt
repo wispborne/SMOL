@@ -88,7 +88,20 @@ internal class DiscordReader {
                     discordMessageLink = Url("https://discord.com/channels/$serverId/$modUpdatesChannelId/${message.id}"),
                     source = ModSource.Discord,
                     sources = listOf(ModSource.Discord),
-                    categories = emptyList()
+                    categories = emptyList(),
+                    images = message.attachments
+                        ?.filter { it.content_type?.startsWith("image/") ?: false }
+                        ?.associate {
+                            it.id to Image(
+                                id = it.id,
+                                filename = it.filename,
+                                description = it.description,
+                                content_type = it.content_type,
+                                size = it.size,
+                                url = it.url,
+                                proxy_url = it.proxy_url
+                            )
+                        }
                 )
             }
             .map { cleanUpMod(it) }
@@ -147,6 +160,7 @@ internal class DiscordReader {
 
             Timber.i { "Found ${newMessages.count()} posts in Discord #mod_updates." }
             messages += newMessages
+            Timber.v { newMessages.joinToString(separator = "\n") }
             runs++
 
             if (newMessages.isEmpty() || newMessages.size < perRequestLimit) {

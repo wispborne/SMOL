@@ -29,14 +29,17 @@ data class ScrapedMod(
     @Deprecated("Use `sources` because similar mods are now merged.")
     val source: ModSource?,
     val sources: List<ModSource>?,
-    val categories: List<String>?
+    val categories: List<String>?,
+    val images: Map<String, Image>?
 ) {
     fun authors() = authorsList.orEmpty()
     fun authorsWithAliases() = authorsList.orEmpty()
         .flatMap { ModRepoUtils.getOtherMatchingAliases(it) }
         .distinct()
 
+    fun categories() = categories.orEmpty()
     fun sources() = sources.orEmpty()
+    fun images() = images.orEmpty()
 }
 
 enum class ModSource {
@@ -44,3 +47,13 @@ enum class ModSource {
     ModdingSubforum,
     Discord
 }
+
+data class Image(
+    val id: String,
+    val filename: String?,
+    val description: String?,
+    val content_type: String?,
+    val size: Int?,
+    val url: String?,
+    val proxy_url: String?
+)

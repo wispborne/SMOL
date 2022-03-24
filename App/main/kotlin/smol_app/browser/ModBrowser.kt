@@ -246,7 +246,7 @@ fun AppScope.ModBrowserView(
                                         LazyVerticalGrid(
                                             horizontalArrangement = Arrangement.spacedBy(16.dp),
                                             verticalArrangement = Arrangement.spacedBy(16.dp),
-                                            cells = GridCells.Adaptive(200.dp),
+                                            cells = GridCells.Adaptive(240.dp),
                                             state = scrollState,
                                             modifier = Modifier.weight(1f)
                                         ) {
@@ -255,7 +255,11 @@ fun AppScope.ModBrowserView(
                                                     .filterNotNull()
                                                     .sortedWith(compareBy { it.name })
                                             ) { mod ->
-                                                scrapedModCard(mod, linkLoader)
+                                                scrapedModCard(
+                                                    modifier = Modifier.fillMaxHeight(),
+                                                    mod = mod,
+                                                    linkLoader = linkLoader
+                                                )
                                             }
                                         }
                                         VerticalScrollbar(

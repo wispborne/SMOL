@@ -12,11 +12,9 @@
 
 package mod_repo
 
-import com.github.androidpasswordstore.sublimefuzzy.Fuzzy
 import kotlinx.coroutines.sync.Semaphore
 import timber.ktx.Timber
 import utilities.asList
-import utilities.equalsAny
 import utilities.parallelMap
 import java.time.Instant
 import java.util.Collections.swap
@@ -229,8 +227,9 @@ internal class ModMerger {
                         right = modToFoldIn.source,
                         doesRightHavePriority = doesNewModHavePriority
                     ),
-                    sources = (modToFoldIn.sources.orEmpty() + mergedMod.sources.orEmpty()).distinct(),
-                    categories = (modToFoldIn.categories.orEmpty() + mergedMod.categories.orEmpty()).distinct(),
+                    sources = (modToFoldIn.sources() + mergedMod.sources()).distinct(),
+                    categories = (modToFoldIn.categories() + mergedMod.categories()).distinct(),
+                    images = (modToFoldIn.images() + mergedMod.images()),
                 )
             }
     }

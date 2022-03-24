@@ -79,7 +79,8 @@ class ForumScraper(
                             discordMessageLink = null,
                             source = ModSource.Index,
                             sources = listOf(ModSource.Index),
-                            categories = listOf(category)
+                            categories = listOf(category),
+                            images = emptyMap(),
                         )
                     }
                 }
@@ -146,7 +147,8 @@ class ForumScraper(
                                 discordMessageLink = null,
                                 source = ModSource.ModdingSubforum,
                                 sources = listOf(ModSource.ModdingSubforum),
-                                categories = emptyList()
+                                categories = emptyList(),
+                                images = emptyMap(),
                             )
                         }
                         .filter { !it.gameVersionReq.isNullOrBlank() }

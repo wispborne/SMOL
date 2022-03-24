@@ -53,13 +53,18 @@ class ModRepo internal constructor(private val jsanity: Jsanity, private val htt
         }
 
         withContext(Dispatchers.IO) {
+            val localModRepo = Path.of("../Mod_Repo/ModRepo.json")
             val freshIndexMods =
                 kotlin.runCatching {
                     // Try to read from local file first, for debugging, in ./App/ModRepo.json.
-                    if (false)
-                        Path.of("ModRepo.json").readText()
-                    else throw NotImplementedError()
+                    if (true) {
+                        localModRepo.readText()
+                    } else
+                        throw NotImplementedError()
                 }
+                    .onFailure {
+                        Timber.d(it) { "No local mod repo found at $localModRepo for testing, fetching latest online." }
+                    }
                     .recoverCatching {
                         httpClientBuilder.invoke().use { client ->
                             client.get<HttpResponse>(modRepoUrl).receive()

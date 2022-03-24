@@ -79,6 +79,9 @@ dependencies {
     api("com.arkivanov.decompose:decompose:$decomposeVer")
     api("com.arkivanov.decompose:extensions-compose-jetbrains:$decomposeVer")
 
+    // Image loading
+    implementation("com.alialbaali.kamel:kamel-image:0.3.0")
+
     // Unit testing? ughhhhh
     testImplementation(kotlin("test"))
 }
