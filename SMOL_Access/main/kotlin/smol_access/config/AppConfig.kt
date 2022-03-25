@@ -12,15 +12,17 @@
 
 package smol_access.config
 
+import kotlinx.coroutines.flow.MutableStateFlow
 import smol_access.Constants
+import smol_access.StateFlowWrapper
 import smol_access.model.UserProfile
-import utilities.Config
 import utilities.InMemoryPrefStorage
 import utilities.Jsanity
 import utilities.JsonFilePrefStorage
+import kotlin.reflect.typeOf
 
 class AppConfig(gson: Jsanity) :
-    Config(
+    StateFlowWrapper(
         InMemoryPrefStorage(
             JsonFilePrefStorage(
                 gson = gson,
@@ -28,6 +30,12 @@ class AppConfig(gson: Jsanity) :
             )
         )
     ) {
+//    val updateChannel: MutableStateFlow<UpdateChannel> by stateFlowPref(
+//        prefKey = "updateChannel",
+//        defaultValue = UpdateChannel.Unstable,
+//        property = this::updateChannel
+//    )
+
     var updateChannel: UpdateChannel by pref(prefKey = "updateChannel", defaultValue = UpdateChannel.Unstable)
     internal var gamePath: String? by pref(prefKey = "gamePath", defaultValue = null)
     var lastFilePickerDirectory: String? by pref(prefKey = "lastFilePickerDirectory", defaultValue = null)
@@ -37,6 +45,12 @@ class AppConfig(gson: Jsanity) :
     )
     internal var userProfile: UserProfile? by pref(prefKey = "userProfile", defaultValue = null)
     var showGameLauncherWarning: Boolean by pref(prefKey = "showGameLauncherWarning", defaultValue = true)
+
+    val launchButtonAction: MutableStateFlow<LaunchButtonAction> by stateFlowPref(
+        prefKey = "launchButtonAction",
+        defaultValue = LaunchButtonAction.DirectLaunch,
+        typeOf<LaunchButtonAction>()
+    )
 
     override fun toString(): String {
         return "AppConfig(" +
@@ -52,5 +66,10 @@ class AppConfig(gson: Jsanity) :
         Stable,
         Unstable,
         Test,
+    }
+
+    enum class LaunchButtonAction {
+        DirectLaunch,
+        OpenFolder
     }
 }

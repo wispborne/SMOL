@@ -34,6 +34,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import smol_access.SL
 import smol_access.business.JreEntry
+import smol_access.config.AppConfig
 import smol_access.config.SettingsPath
 import smol_app.composables.*
 import smol_app.navigation.Screen
@@ -184,6 +185,31 @@ fun AppScope.settingsView(
                                     themeDropdown(Modifier.padding(start = 16.dp, top = 24.dp))
 
                                     updateSection(scope)
+                                }
+                            }
+
+                            item {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(start = 16.dp, top = 16.dp)
+                                ) {
+                                    val launchButtonAction = SL.appConfig.launchButtonAction.collectAsState().value
+                                    val isChecked = launchButtonAction == AppConfig.LaunchButtonAction.OpenFolder
+                                    CheckboxWithText(
+                                        checked = isChecked,
+                                        onCheckedChange = { checked ->
+                                            SL.appConfig.launchButtonAction.value = if (checked) {
+                                                AppConfig.LaunchButtonAction.OpenFolder
+                                            } else {
+                                                AppConfig.LaunchButtonAction.DirectLaunch
+                                            }
+                                        }
+                                    ) { modifier ->
+                                        Text(
+                                            text = "Open game folder instead of launching Starsector.",
+                                            modifier = modifier
+                                        )
+                                    }
                                 }
                             }
 

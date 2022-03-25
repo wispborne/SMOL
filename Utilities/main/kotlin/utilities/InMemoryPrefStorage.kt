@@ -19,28 +19,29 @@ import kotlinx.coroutines.launch
 import timber.ktx.Timber
 import java.util.prefs.Preferences
 import kotlin.reflect.KProperty
+import kotlin.reflect.KType
 
-class InMemoryPrefStorage(private val wrapped: Config.PrefStorage) : Config.PrefStorage {
+class InMemoryPrefStorage(private val wrapped: IConfig.PrefStorage) : IConfig.PrefStorage {
     private val memory = mutableMapOf<String, Any?>()
     private val scope = CoroutineScope(Job())
 
     @OptIn(ExperimentalStdlibApi::class)
-    override fun <T> get(key: String, defaultValue: T, property: KProperty<T>): T =
+    override fun <T> get(key: String, defaultValue: T, type: KType): T =
         if (memory.containsKey(key)) {
             (memory[key] as? T) ?: defaultValue
         } else {
-            wrapped.get(key, defaultValue, property)
+            wrapped.get(key, defaultValue, type)
                 .also {
                     if (it != null) memory[key] = it
                 }
         }
 
     @OptIn(ExperimentalStdlibApi::class)
-    override fun <T> put(key: String, value: T?, property: KProperty<T>) {
+    override fun <T> put(key: String, value: T?, type: KType) {
         memory[key] = value
         scope.launch(Dispatchers.IO) {
             kotlin.runCatching {
-                wrapped.put(key, value, property)
+                wrapped.put(key, value, type)
             }
                 .onFailure { Timber.w(it) }
         }

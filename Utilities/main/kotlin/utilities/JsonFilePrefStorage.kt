@@ -21,10 +21,11 @@ import kotlin.io.path.createFile
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 import kotlin.reflect.KProperty
+import kotlin.reflect.KType
 import kotlin.reflect.javaType
 import kotlin.reflect.typeOf
 
-class JsonFilePrefStorage(private val gson: Jsanity, private val file: Path) : Config.PrefStorage {
+class JsonFilePrefStorage(private val gson: Jsanity, private val file: Path) : IConfig.PrefStorage {
     init {
         if (!file.exists()) {
             file.parent?.createDirectories()
@@ -33,7 +34,7 @@ class JsonFilePrefStorage(private val gson: Jsanity, private val file: Path) : C
     }
 
     @OptIn(ExperimentalStdlibApi::class)
-    override fun <T> get(key: String, defaultValue: T, property: KProperty<T>): T =
+    override fun <T> get(key: String, defaultValue: T, type: KType): T =
         IOLock.read {
             ((gson.fromJson<Map<*, JsonElement>>(
                 json = file.readText(),
@@ -41,13 +42,13 @@ class JsonFilePrefStorage(private val gson: Jsanity, private val file: Path) : C
                 shouldStripComments = false
             )
                 .get(key))
-                ?.run { gson.fromJson<T>(this, property.returnType.javaType) }
+                ?.run { gson.fromJson<T>(this, type.javaType) }
                 ?: defaultValue)
                 .also { Timber.v { "Read '$key' as '$it' in '${file.fileName}'." } }
         }
 
     @OptIn(ExperimentalStdlibApi::class)
-    override fun <T> put(key: String, value: T?, property: KProperty<T>) =
+    override fun <T> put(key: String, value: T?, type: KType) =
         IOLock.write {
             (gson.fromJson<Map<*, *>>(
                 json = file.readText(),

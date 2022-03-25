@@ -15,40 +15,48 @@ package utilities
 import com.google.gson.Gson
 import java.util.prefs.Preferences
 import kotlin.reflect.KProperty
+import kotlin.reflect.KType
 import kotlin.reflect.javaType
 
-abstract class Config(
-    @Transient private val prefStorage: PrefStorage
-) {
-
-    @OptIn(ExperimentalStdlibApi::class)
-    inner class pref<T>(val prefKey: String? = null, val defaultValue: T) {
-        operator fun getValue(thisRef: Any?, property: KProperty<*>): T =
-            prefStorage.get(
-                key = prefKey ?: property.name,
-                defaultValue = defaultValue,
-                property = property as KProperty<T>
-            )
-
-        operator fun setValue(thisRef: Any?, property: KProperty<*>, value: T) =
-            prefStorage.put(prefKey ?: property.name, value ?: defaultValue, property)
-    }
-
-    fun clear() = prefStorage.clear()
-
-    fun reload() = prefStorage.reload()
-
+interface IConfig {
+//    val prefStorage: PrefStorage
+    fun clear()
+    fun reload()
     interface PrefStorage {
-        fun <T> get(key: String, defaultValue: T, property: KProperty<T>): T
-        fun <T> put(key: String, value: T?, property: KProperty<T>)
+        fun <T> get(key: String, defaultValue: T, type: KType): T
+        fun <T> put(key: String, value: T?, type: KType)
         fun clear()
         fun reload()
     }
+}
 
-    class JavaRegistryPrefStorage(private val gson: Gson) : PrefStorage {
+abstract class Config(
+    protected val prefStorage: IConfig.PrefStorage
+) : IConfig {
+
+    @OptIn(ExperimentalStdlibApi::class)
+    open inner class pref<T>(val prefKey: String? = null, val defaultValue: T) {
+        open operator fun getValue(thisRef: Any?, property: KProperty<*>): T =
+            prefStorage.get(
+                key = getPrefKey(prefKey, property),
+                defaultValue = defaultValue,
+                type = property.returnType
+            )
+
+        open operator fun setValue(thisRef: Any?, property: KProperty<*>, value: T) =
+            prefStorage.put(getPrefKey(prefKey, property), value ?: defaultValue, property.returnType)
+
+        private fun getPrefKey(prefKey: String? = null, property: KProperty<*>) = prefKey ?: property.name
+    }
+
+    override fun clear() = prefStorage.clear()
+
+    override fun reload() = prefStorage.reload()
+
+    class JavaRegistryPrefStorage(private val gson: Gson) : IConfig.PrefStorage {
         @OptIn(ExperimentalStdlibApi::class)
-        override fun <T> get(key: String, defaultValue: T, property: KProperty<T>): T =
-            when (property.returnType) {
+        override fun <T> get(key: String, defaultValue: T, type: KType): T =
+            when (type) {
                 String::class ->
                     Preferences.userRoot().get(key, defaultValue as String) as T
                 Int::class ->
@@ -62,12 +70,12 @@ abstract class Config(
                 else ->
                     (Preferences.userRoot().get(key, defaultValue as String? ?: ""))
                         .let {
-                            gson.fromJson<T>(it, property.returnType.javaType)
+                            gson.fromJson<T>(it, type.javaType)
                         } ?: defaultValue
             }
 
-        override fun <T> put(key: String, value: T?, property: KProperty<T>) =
-            when (property.returnType) {
+        override fun <T> put(key: String, value: T?, type: KType) =
+            when (type) {
                 String::class ->
                     Preferences.userRoot().put(key, value as String)
                 Int::class ->

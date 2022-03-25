@@ -38,6 +38,7 @@ import kotlinx.coroutines.*
 import org.tinylog.Logger
 import smol_access.Constants
 import smol_access.SL
+import smol_access.config.AppConfig
 import smol_app.composables.*
 import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
@@ -137,6 +138,14 @@ data class StarsectorLaunchPrefs(
 @Composable
 fun AppScope.launchButton(modifier: Modifier = Modifier) {
     val launchText = remember { launchQuotes.weightedRandom() }
+
+    fun onLaunchButtonConfirmed() {
+        when (SL.appConfig.launchButtonAction.value) {
+            AppConfig.LaunchButtonAction.DirectLaunch -> launchStarsector()
+            AppConfig.LaunchButtonAction.OpenFolder -> SL.gamePathManager.path.value?.openInDesktop()
+        }
+    }
+
     SmolTooltipArea(
         tooltip = {
             SmolTooltipText(
@@ -153,6 +162,8 @@ fun AppScope.launchButton(modifier: Modifier = Modifier) {
                 if (SL.appConfig.showGameLauncherWarning) {
                     alertDialogSetter.invoke {
                         var showGameLauncherWarning by mutableStateOf(SL.appConfig.showGameLauncherWarning)
+                        val launchButtonAction = SL.appConfig.launchButtonAction.collectAsState().value
+                        val snapshotOfLaunchButtonAction = SL.appConfig.launchButtonAction.value
 
                         SmolAlertDialog(
                             onDismissRequest = { alertDialogSetter.invoke(null) },
@@ -175,13 +186,31 @@ fun AppScope.launchButton(modifier: Modifier = Modifier) {
                                         verticalAlignment = Alignment.CenterVertically,
                                         modifier = Modifier.padding(top = 16.dp)
                                     ) {
-                                        Checkbox(
+                                        CheckboxWithText(
+                                            checked = launchButtonAction == AppConfig.LaunchButtonAction.OpenFolder,
+                                            onCheckedChange = { checked ->
+                                                SL.appConfig.launchButtonAction.value = if (checked) {
+                                                    AppConfig.LaunchButtonAction.OpenFolder
+                                                } else {
+                                                    snapshotOfLaunchButtonAction
+                                                }
+                                            }
+                                        ) {
+                                            Text("Open game folder instead of launching Starsector.", modifier = it)
+                                        }
+                                    }
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(top = 16.dp)
+                                    ) {
+                                        CheckboxWithText(
                                             checked = !showGameLauncherWarning,
                                             onCheckedChange = { checked ->
                                                 showGameLauncherWarning = !checked
                                             }
-                                        )
-                                        Text("Don't show again")
+                                        ) {
+                                            Text("Don't show again", modifier = it)
+                                        }
                                     }
                                 }
                             },
@@ -189,13 +218,13 @@ fun AppScope.launchButton(modifier: Modifier = Modifier) {
                                 SmolButton(onClick = {
                                     alertDialogSetter.invoke(null)
                                     SL.appConfig.showGameLauncherWarning = showGameLauncherWarning
-                                    launchStarsector()
+                                    onLaunchButtonConfirmed()
                                 }) { Text("Ok") }
                             }
                         )
                     }
                 } else {
-                    launchStarsector()
+                    onLaunchButtonConfirmed()
                 }
 
                 // Putting router here is a dumb hack that triggers a recompose when the app UI is invalidated,
