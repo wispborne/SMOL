@@ -26,6 +26,7 @@ import kotlin.reflect.KType
 open class StateFlowWrapper(wrapped: IConfig.PrefStorage) : Config(wrapped) {
     private val scope = CoroutineScope(Job())
 
+    @Suppress("ClassName")
     inner class stateFlowPref<T>(prefKey: String, defaultValue: T, type: KType) :
         MutableStateFlow<T> by MutableStateFlow(
             prefStorage.get(

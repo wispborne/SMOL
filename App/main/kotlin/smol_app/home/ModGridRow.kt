@@ -50,8 +50,7 @@ fun AppScope.ModGridRow(
     largestVramUsage: MutableState<Long?>,
     checkboxesWidth: Dp,
     modInDebugDialog: MutableState<Mod?>,
-    mods: SnapshotStateList<Mod?>,
-    variantToConfirmDeletionOf: MutableState<ModVariant?>
+    mods: SnapshotStateList<Mod?>
 ) {
     val mod = modRow.mod
     var showContextMenu by remember { mutableStateOf(false) }
@@ -144,8 +143,7 @@ fun AppScope.ModGridRow(
                     modifier = Modifier
                         .width(modGridViewDropdownWidth.dp)
                         .align(Alignment.CenterVertically),
-                    mod = mod,
-                    variantToConfirmDeletionOf = variantToConfirmDeletionOf
+                    mod = mod
                 )
 
                 // Mod name

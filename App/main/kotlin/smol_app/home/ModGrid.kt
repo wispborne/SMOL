@@ -24,7 +24,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
-import androidx.compose.material.Checkbox
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ListItem
 import androidx.compose.material.Text
@@ -36,10 +35,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import smol_access.SL
 import smol_access.config.VramCheckerCache
 import smol_access.model.Mod
@@ -51,13 +48,7 @@ import smol_app.composables.SmolButton
 import smol_app.composables.SmolPopupMenu
 import smol_app.composables.SmolSecondaryButton
 import smol_app.themes.SmolTheme
-import smol_app.util.bytesAsShortReadableMB
 import smol_app.util.uiEnabled
-import timber.ktx.Timber
-import utilities.calculateFileSize
-import kotlin.io.path.absolutePathString
-import kotlin.io.path.exists
-import kotlin.io.path.name
 
 const val modGridViewDropdownWidth = 180
 
@@ -85,7 +76,6 @@ fun AppScope.ModGridView(
         kotlin.runCatching { ModGridSortField.valueOf(it) }.getOrNull()
     }
     val showVramRefreshWarning = remember { mutableStateOf(false) }
-    val variantToConfirmDeletionOf = remember { mutableStateOf<ModVariant?>(null) }
 
     Box(modifier.padding(top = contentPadding, bottom = contentPadding)) {
         Column(Modifier) {
@@ -159,8 +149,7 @@ fun AppScope.ModGridView(
                                         largestVramUsage,
                                         checkboxesWidth,
                                         modInDebugDialog,
-                                        mods,
-                                        variantToConfirmDeletionOf
+                                        mods
                                     )
                                 }
                             }
@@ -210,81 +199,6 @@ fun AppScope.ModGridView(
                         text = "Calculating VRAM may take a long time, with high CPU and disk usage causing SMOL to stutter.\n\nAre you sure you want to continue?",
                         style = SmolTheme.alertDialogBody()
                     )
-                }
-            )
-        }
-
-        if (variantToConfirmDeletionOf.value != null) {
-            val modVariantBeingRemoved = variantToConfirmDeletionOf.value!!
-            var shouldRemoveStagingAndMods by remember { mutableStateOf(true) }
-
-            SmolAlertDialog(
-                title = {
-                    Text(
-                        text = "Delete ${modVariantBeingRemoved.modInfo.name} ${modVariantBeingRemoved.modInfo.version}?",
-                        style = SmolTheme.alertDialogTitle()
-                    )
-                },
-                text = {
-                    Column {
-                        Text(
-                            text = "Are you sure you want to permanently delete:",
-                            modifier = Modifier.padding(bottom = 8.dp),
-                            style = SmolTheme.alertDialogBody()
-                        )
-
-                        val looseFilesToShow = modVariantBeingRemoved.modsFolderInfo.folder
-
-                        if (looseFilesToShow.exists()) {
-                            Row {
-                                Checkbox(
-                                    modifier = Modifier.align(Alignment.CenterVertically),
-                                    checked = shouldRemoveStagingAndMods,
-                                    onCheckedChange = { shouldRemoveStagingAndMods = shouldRemoveStagingAndMods.not() }
-                                )
-                                var folderSize by remember { mutableStateOf<String?>("calculating") }
-
-                                LaunchedEffect(looseFilesToShow.absolutePathString()) {
-                                    withContext(Dispatchers.Default) {
-                                        folderSize = kotlin.runCatching {
-                                            looseFilesToShow.calculateFileSize()
-                                        }
-                                            .onFailure { Timber.w(it) }
-                                            .getOrNull()?.bytesAsShortReadableMB
-                                    }
-                                }
-
-                                Text(
-                                    text = "${looseFilesToShow.name} ${
-                                        folderSize.let { "($it)" }
-                                    }",
-                                    modifier = Modifier.align(Alignment.CenterVertically),
-                                    style = SmolTheme.alertDialogBody()
-                                )
-                            }
-                        } else {
-                            shouldRemoveStagingAndMods = false
-                        }
-                    }
-                },
-                onDismissRequest = { variantToConfirmDeletionOf.value = null },
-                dismissButton = {
-                    SmolSecondaryButton(onClick = { variantToConfirmDeletionOf.value = null }) {
-                        Text("Cancel")
-                    }
-                },
-                confirmButton = {
-                    SmolButton(
-                        modifier = Modifier.padding(end = 4.dp),
-                        onClick = {
-                            variantToConfirmDeletionOf.value = null
-                            SL.access.deleteVariant(
-                                modVariant = modVariantBeingRemoved,
-                                removeUncompressedFolder = shouldRemoveStagingAndMods
-                            )
-                        }) {
-                        Text(text = "Delete")
-                    }
                 }
             )
         }

@@ -105,6 +105,7 @@ class Access internal constructor(
     sealed class ModModificationState {
         object Ready : ModModificationState()
         object DisablingVariants : ModModificationState()
+        object DeletingVariants : ModModificationState()
         object EnablingVariant : ModModificationState()
     }
 
@@ -217,7 +218,7 @@ class Access internal constructor(
             }
             return staging.disableMod(mod)
         } finally {
-            staging.manualReloadTrigger.trigger.emit("Mod unstaged: $mod")
+            staging.manualReloadTrigger.trigger.emit("Disabled mod: $mod")
             modModificationState.update { it.toMutableMap().apply { this[mod.id] = ModModificationState.Ready } }
         }
     }
@@ -230,29 +231,38 @@ class Access internal constructor(
             }
             return staging.disableModVariant(modVariant)
         } finally {
-            staging.manualReloadTrigger.trigger.emit("Disabled mod: $modVariant")
+            staging.manualReloadTrigger.trigger.emit("Disabled mod variant: $modVariant")
             modModificationState.update { it.toMutableMap().apply { this[mod.id] = ModModificationState.Ready } }
         }
     }
 
-    fun deleteVariant(modVariant: ModVariant, removeUncompressedFolder: Boolean) {
+    suspend fun deleteVariant(modVariant: ModVariant, removeUncompressedFolder: Boolean) {
         Timber.i { "Deleting mod variant ${modVariant.smolId} folders. Remove staging/mods files? $removeUncompressedFolder." }
         trace(onFinished = { _, millis ->
             Timber.i { "Deleted mod variant ${modVariant.smolId} folders in ${millis}ms. Remove staging/mods files? $removeUncompressedFolder." }
         }) {
-            IOLock.write(IOLocks.modFolderLock) {
-                if (removeUncompressedFolder) {
-                    val gameModsFolder = modVariant.modsFolderInfo.folder
+            val mod = modVariant.mod(this@Access)
+            try {
+                modModificationState.update {
+                    it.toMutableMap().apply { this[mod.id] = ModModificationState.DeletingVariants }
+                }
+                IOLock.write(IOLocks.modFolderLock) {
+                    if (removeUncompressedFolder) {
+                        val gameModsFolder = modVariant.modsFolderInfo.folder
 
-                    if (!gameModsFolder.exists()) {
-                        Timber.w { "Unable to delete folder for variant ${modVariant.smolId}. File: $gameModsFolder." }
-                    } else {
-                        kotlin.runCatching { gameModsFolder.deleteRecursively() }
-                            .onFailure {
-                                Timber.e(it) { "Unable to delete game mods folder for variant ${modVariant.smolId}." }
-                            }
+                        if (!gameModsFolder.exists()) {
+                            Timber.w { "Unable to delete folder for variant ${modVariant.smolId}. File: $gameModsFolder." }
+                        } else {
+                            kotlin.runCatching { gameModsFolder.deleteRecursively() }
+                                .onFailure {
+                                    Timber.e(it) { "Unable to delete game mods folder for variant ${modVariant.smolId}." }
+                                }
+                        }
                     }
                 }
+            } finally {
+                staging.manualReloadTrigger.trigger.emit("Deleted mod variant: $modVariant")
+                modModificationState.update { it.toMutableMap().apply { this[mod.id] = ModModificationState.Ready } }
             }
         }
     }

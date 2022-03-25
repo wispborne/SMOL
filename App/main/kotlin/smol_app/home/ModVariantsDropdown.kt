@@ -12,6 +12,7 @@
 
 package smol_app.home
 
+import AppScope
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -48,10 +49,9 @@ sealed class DropdownAction {
 @ExperimentalFoundationApi
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun ModVariantsDropdown(
+fun AppScope.ModVariantsDropdown(
     modifier: Modifier = Modifier,
-    mod: Mod,
-    variantToConfirmDeletionOf: MutableState<ModVariant?>
+    mod: Mod
 ) {
     val firstEnabledVariant = mod.findFirstEnabled
     val font = SmolTheme.orbitronSpaceFont
@@ -263,7 +263,12 @@ fun ModVariantsDropdown(
                                             SmolIconButton(
                                                 onClick = {
                                                     expanded = false
-                                                    variantToConfirmDeletionOf.value = action.variant
+                                                    this@ModVariantsDropdown.alertDialogSetter.invoke {
+                                                        DeleteModVariantDialog(
+                                                            variantToConfirmDeletionOf = action.variant,
+                                                            onDismiss = this@ModVariantsDropdown::dismissAlertDialog
+                                                        )
+                                                    }
                                                 },
                                                 modifier = Modifier
                                                     .align(Alignment.CenterVertically),
