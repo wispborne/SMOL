@@ -68,6 +68,7 @@ fun AppScope.ModGridHeader(
             }
         }
 
+        // Name
         SortableHeader(
             modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
             columnSortField = ModGridSortField.Name,
@@ -77,6 +78,7 @@ fun AppScope.ModGridHeader(
             Text("Name", fontWeight = FontWeight.Bold)
         }
 
+        // Author
         SortableHeader(
             modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
             columnSortField = ModGridSortField.Author,
@@ -86,6 +88,7 @@ fun AppScope.ModGridHeader(
             Text("Author", fontWeight = FontWeight.Bold)
         }
 
+        // Versions
         SmolTooltipArea(
             modifier = Modifier
                 .weight(1f)
@@ -97,6 +100,7 @@ fun AppScope.ModGridHeader(
             Text(text = "Version(s)", fontWeight = FontWeight.Bold)
         }
 
+        // VRAM
         Row(modifier = Modifier
             .weight(1f)
             .align(Alignment.CenterVertically)
@@ -143,6 +147,10 @@ fun AppScope.ModGridHeader(
             }
         }
 
+        // Mod Icon, paddingEnd + width
+        Spacer(Modifier.width((16 + 24).dp))
+
+        // Game Version
         Text(
             text = "Game Version",
             modifier = Modifier.weight(1f).align(Alignment.CenterVertically),

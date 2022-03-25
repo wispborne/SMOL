@@ -157,7 +157,7 @@ fun AppScope.ModVariantsDropdown(
                             }
                             hasSingleVariant && !hasEnabledVariant -> "Enable"
                             // If no enabled variant, show "Disabled"
-                            else -> "Disabled"
+                            else -> "Enable"
                         },
                         fontWeight = FontWeight.Bold,
                         fontFamily = font,

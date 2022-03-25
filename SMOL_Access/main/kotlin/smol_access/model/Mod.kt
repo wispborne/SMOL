@@ -67,14 +67,15 @@ data class Mod(
                         id = "mock",
                         name = "Mock Mod",
                         author = "Wisp",
-                        isUtilityMod = false,
+                        isUtilityMod = true,
                         description = "An isolationist authoritarian Theocracy thrust into Persean politics by necessity, this high-tech faction utilises flexible pulse-based energy weapons and unique solar shielding.",
                         gameVersion = "0.95.1-RC15",
                         jars = listOf("jar.jar"),
                         modPlugin = "mod/plugin",
                         dependencies = listOf(Dependency(id = "lw_lazylib", name = null, version = null)),
                         version = Version(raw = "1.0.0"),
-                        requiredMemoryMB = null
+                        requiredMemoryMB = null,
+                        isTotalConversion = false
                     ),
                     versionCheckerInfo = null,
                     modsFolderInfo = ModsFolderInfo(Path.of(""))

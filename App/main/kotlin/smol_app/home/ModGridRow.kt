@@ -30,13 +30,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.pointerMoveFilter
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import smol_access.model.Mod
-import smol_access.model.ModVariant
 import smol_access.model.UserProfile
 import smol_app.composables.SmolText
+import smol_app.composables.SmolTooltipArea
+import smol_app.composables.SmolTooltipText
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
@@ -212,6 +214,38 @@ fun AppScope.ModGridRow(
                 // VRAM
                 Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {
                     vramBar(mod, largestVramUsage.value)
+                }
+
+                // Mod Icon
+                Box(Modifier.padding(end = 16.dp).align(Alignment.CenterVertically)) {
+                    val modInfo = mod.findFirstEnabledOrHighestVersion?.modInfo
+                    val alpha = 0.7f
+
+                    when {
+                        modInfo?.isTotalConversion == true -> {
+                            SmolTooltipArea(tooltip = { SmolTooltipText(text = "Total Conversion mods should not be run with any other mods, except for Utility Mods, unless explicitly stated to be compatible.") }) {
+                                Icon(
+                                    painter = painterResource("icon-death-star.svg"),
+                                    modifier = Modifier.size(24.dp),
+                                    contentDescription = null,
+                                    tint = LocalContentColor.current.copy(alpha = alpha),
+                                )
+                            }
+                        }
+                        modInfo?.isUtilityMod == true -> {
+                            SmolTooltipArea(tooltip = { SmolTooltipText(text = "Utility mods may be added or removed from a save at will.") }) {
+                                Icon(
+                                    painter = painterResource("icon-utility-mod.svg"),
+                                    modifier = Modifier.size(24.dp),
+                                    contentDescription = null,
+                                    tint = LocalContentColor.current.copy(alpha = alpha),
+                                )
+                            }
+                        }
+                        else -> {
+                            Spacer(Modifier.size(24.dp))
+                        }
+                    }
                 }
 
                 // Game version (for active or highest)

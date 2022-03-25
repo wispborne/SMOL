@@ -47,6 +47,9 @@ object GsonBuilder {
                     isUtilityMod = kotlin.runCatching { json["utility"].bool }
                         .onFailure { Timber.d(it) }
                         .getOrElse { false },
+                    isTotalConversion = kotlin.runCatching { json["totalConversion"].bool }
+                        .onFailure { Timber.d(it) }
+                        .getOrElse { false },
                     jars = kotlin.runCatching { json.getNullable("jars")!!.array.map { it.string } }
                         .onFailure { Timber.d(it) }
                         .getOrElse { emptyList() },

@@ -29,6 +29,7 @@ data class ModInfo(
     val version: Version,
     val dependencies: List<Dependency>,
     val isUtilityMod: Boolean,
+    val isTotalConversion: Boolean
 )
 
 data class Dependency(

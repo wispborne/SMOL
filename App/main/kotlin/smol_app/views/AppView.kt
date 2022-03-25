@@ -137,7 +137,7 @@ fun WindowState.appView() {
 
             // Toasts
             toaster(
-                modifier = Modifier.align(Alignment.BottomStart).padding(start = 56.dp, bottom = 8.dp, end = 8.dp),
+                modifier = Modifier.align(Alignment.BottomStart).padding(start = 64.dp, bottom = 8.dp, end = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             )
 
