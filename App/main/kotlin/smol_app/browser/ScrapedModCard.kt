@@ -49,6 +49,7 @@ import smol_app.themes.SmolTheme.lighten
 import smol_app.util.onEnterKeyPressed
 import smol_app.util.openAsUriInBrowser
 import smol_app.util.smolPreview
+import timber.ktx.Timber
 import java.awt.Cursor
 
 private const val imageWidth = 192
@@ -66,6 +67,7 @@ fun AppScope.scrapedModCard(
 
     Card(
         modifier = modifier
+            .height(IntrinsicSize.Min)
             .heightIn(min = height.dp)
             .border(
                 width = 1.dp,
@@ -81,33 +83,12 @@ fun AppScope.scrapedModCard(
             ),
         shape = SmolTheme.smolFullyClippedButtonShape()
     ) {
-        Row(modifier = Modifier.padding(12.dp)) {
-            val mainImage: Image? = mod.images().entries.firstOrNull()?.value
-            if (mainImage?.url != null) {
-                KamelImage(
-                    resource = lazyPainterResource(data = mainImage.url!!),
-                    modifier = Modifier
-                        .width(imageWidth.dp)
-                        .padding(end = 16.dp)
-                        .align(Alignment.CenterVertically),
-                    contentDescription = mainImage.description
-                )
-            } else {
-                Box(
-                    Modifier
-                        .width(imageWidth.dp)
-                        .padding(end = 16.dp)
-                        .align(Alignment.CenterVertically)
-                ) {
-                    Image(
-                        modifier = Modifier.size(96.dp)
-                            .align(Alignment.Center),
-                        painter = painterResource("icon-image.svg"),
-                        contentDescription = null,
-                        colorFilter = ColorFilter.tint(LocalContentColor.current.copy(alpha = ContentAlpha.medium))
-                    )
-                }
-            }
+        Row(modifier = Modifier.padding(12.dp).fillMaxHeight()) {
+            ModImage(
+                modifier = Modifier
+                    .align(Alignment.CenterVertically),
+                mod = mod
+            )
             Box(
                 modifier = Modifier
                     .align(Alignment.Top)
@@ -152,7 +133,12 @@ fun AppScope.scrapedModCard(
                         if (!mod.description.isNullOrBlank()) {
                             // Description text
                             SmolText(
-                                text = mod.description!!.lines().drop(1).take(2).joinToString(separator = "\n"),
+                                text = mod.description!!
+                                    .lines()
+                                    .filter { it.isNotBlank() }
+                                    .drop(1)
+                                    .take(2)
+                                    .joinToString(separator = "\n"),
                                 style = MaterialTheme.typography.caption,
                                 color = LocalContentColor.current.copy(alpha = ContentAlpha.medium),
                                 modifier = Modifier.padding(top = 4.dp)
@@ -197,36 +183,8 @@ fun AppScope.scrapedModCard(
                             }
                         }
 
-                        val tags = remember {
-                            mod.categories?.sorted().orEmpty() + mod.sources.orEmpty()
-                                .sortedWith(
-                                    compareBy<ModSource> { it == ModSource.Index }
-                                        .thenBy { it == ModSource.Discord }
-                                        .thenBy { it == ModSource.ModdingSubforum }
-                                )
-                                .map {
-                                    when (it) {
-                                        ModSource.Index -> "Index"
-                                        ModSource.ModdingSubforum -> "Modding Subforum"
-                                        ModSource.Discord -> "Discord"
-                                    }
-                                }
-
-                        }
-                        if (tags.isNotEmpty()) {
-                            Row(modifier = Modifier.padding(top = 4.dp)) {
-                                Icon(
-                                    modifier = Modifier.size(12.dp).align(Alignment.CenterVertically),
-                                    painter = painterResource("icon-tag.svg"),
-                                    contentDescription = null
-                                )
-                                Text(
-                                    modifier = Modifier.align(Alignment.CenterVertically).padding(start = 6.dp),
-                                    fontSize = 11.sp,
-                                    text = tags.joinToString()
-                                )
-                            }
-                        }
+                        Spacer(Modifier.weight(1f))
+                        tags(mod = mod)
                     }
                 }
             }
@@ -236,6 +194,106 @@ fun AppScope.scrapedModCard(
                 BrowserIcon(iconModifier = Modifier.alpha(alphaOfHoverDimmedElements.value), mod = mod)
                 DiscordIcon(iconModifier = Modifier.alpha(alphaOfHoverDimmedElements.value), mod = mod)
             }
+        }
+    }
+}
+
+@Composable
+private fun tags(modifier: Modifier = Modifier, mod: ScrapedMod) {
+    val tags = remember {
+        mod.categories?.sorted().orEmpty() + mod.sources.orEmpty()
+            .sortedWith(
+                compareBy<ModSource> { it == ModSource.Index }
+                    .thenBy { it == ModSource.Discord }
+                    .thenBy { it == ModSource.ModdingSubforum }
+            )
+            .map {
+                when (it) {
+                    ModSource.Index -> "Index"
+                    ModSource.ModdingSubforum -> "Modding Subforum"
+                    ModSource.Discord -> "Discord"
+                }
+            }
+
+    }
+    if (tags.isNotEmpty()) {
+        Row(modifier = modifier
+            .padding(top = 4.dp)) {
+            Icon(
+                modifier = Modifier.size(12.dp).align(Alignment.Bottom),
+                painter = painterResource("icon-tag.svg"),
+                contentDescription = null
+            )
+            Text(
+                modifier = Modifier.align(Alignment.Bottom).padding(start = 6.dp),
+                fontSize = 11.sp,
+                text = tags.joinToString()
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun ModImage(modifier: Modifier = Modifier, mod: ScrapedMod) {
+    val mainImage: Image? = mod.images().entries.firstOrNull()?.value
+
+    @Composable
+    fun defaultImage() {
+        Box(
+            Modifier
+                .width(imageWidth.dp)
+                .padding(end = 16.dp)
+        ) {
+            Image(
+                modifier = Modifier.size(64.dp)
+                    .align(Alignment.Center),
+                painter = painterResource("icon-image.svg"),
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(LocalContentColor.current.copy(alpha = ContentAlpha.disabled))
+            )
+        }
+    }
+
+    Box(modifier) {
+        if (mainImage?.url != null) {
+            SmolTooltipArea(
+                tooltip = {
+                    SmolTooltipBackground {
+                        KamelImage(
+                            resource = lazyPainterResource(data = mainImage.url!!),
+                            modifier = Modifier,
+                            onLoading = {
+                                defaultImage()
+                            },
+                            onFailure = {
+                                defaultImage()
+                            },
+                            crossfade = true,
+                            contentDescription = mainImage.description
+                        )
+                    }
+                },
+                delayMillis = SmolTooltipArea.longDelay
+            ) {
+                KamelImage(
+                    resource = lazyPainterResource(data = mainImage.url!!),
+                    modifier = Modifier
+                        .width(imageWidth.dp)
+                        .padding(end = 16.dp),
+                    onLoading = {
+                        defaultImage()
+                    },
+                    onFailure = {
+                        Timber.w(it)
+                        defaultImage()
+                    },
+                    crossfade = true,
+                    contentDescription = mainImage.description
+                )
+            }
+        } else {
+            defaultImage()
         }
     }
 }

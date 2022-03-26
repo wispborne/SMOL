@@ -242,13 +242,14 @@ fun AppScope.ModBrowserView(
 
                                     val scrollState = rememberLazyListState()
                                     Row {
+                                        VerticalScrollbar(
+                                            adapter = ScrollbarAdapter(scrollState),
+                                            modifier = Modifier.padding(start = 4.dp, end = 4.dp)
+                                        )
                                         LazyColumn(
-//                                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-//                                            verticalArrangement = Arrangement.spacedBy(16.dp),
-//                                            cells = GridCells.Adaptive(240.dp),
-//                                            state = scrollState,
-                                            modifier = Modifier.weight(1f),
-                                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                                            modifier = Modifier.weight(1f).padding(end = 8.dp),
+                                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                                            state = scrollState
                                         ) {
                                             this.items(
                                                 items = shownMods
@@ -262,10 +263,6 @@ fun AppScope.ModBrowserView(
                                                 )
                                             }
                                         }
-                                        VerticalScrollbar(
-                                            adapter = ScrollbarAdapter(scrollState),
-                                            modifier = Modifier.padding(start = 4.dp, end = 8.dp)
-                                        )
                                     }
                                 }
                             }
