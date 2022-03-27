@@ -14,11 +14,11 @@ package smol_access.business
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import smol_access.config.AppConfig
 import smol_access.model.UserProfile
+import smol_access.themes.ThemeManager
 import timber.ktx.Timber
 import java.util.*
 
@@ -41,28 +41,57 @@ class UserManager internal constructor(
             versionCheckerIntervalMillis = VersionChecker.DEFAULT_CHECK_INTERVAL_MILLIS,
             modProfiles = listOf(defaultModProfile),
             profileVersion = 0,
-            theme = "kemet",
+            theme = ThemeManager.defaultTheme.first,
             favoriteMods = emptyList(),
-            modGridPrefs = UserProfile.ModGridPrefs(sortField = null, isSortDescending = true)
+            modGridPrefs = UserProfile.ModGridPrefs(
+                sortField = null,
+                isSortDescending = true,
+                columnSettings = mapOf(
+                    UserProfile.ModGridHeader.Favorites to UserProfile.ModGridColumnSetting(
+                        position = 0
+                    ),
+                    UserProfile.ModGridHeader.ChangeVariantButton to UserProfile.ModGridColumnSetting(
+                        position = 1
+                    ),
+                    UserProfile.ModGridHeader.Name to UserProfile.ModGridColumnSetting(
+                        position = 2
+                    ),
+                    UserProfile.ModGridHeader.Author to UserProfile.ModGridColumnSetting(
+                        position = 3
+                    ),
+                    UserProfile.ModGridHeader.Version to UserProfile.ModGridColumnSetting(
+                        position = 4
+                    ),
+                    UserProfile.ModGridHeader.VramImpact to UserProfile.ModGridColumnSetting(
+                        position = 5
+                    ),
+                    UserProfile.ModGridHeader.Icons to UserProfile.ModGridColumnSetting(
+                        position = 6
+                    ),
+                    UserProfile.ModGridHeader.GameVersion to UserProfile.ModGridColumnSetting(
+                        position = 7
+                    ),
+                )
+            ),
+            showGameLauncherWarning = true,
+            launchButtonAction = UserProfile.LaunchButtonAction.OpenFolder
         )
     }
 
-    private val activeProfileInner = MutableStateFlow(appConfig.userProfile ?: defaultProfile)
-
-    val activeProfile = activeProfileInner.asStateFlow()
+    val activeProfile = appConfig.userProfile.asStateFlow()
 
     init {
         // Update config whenever value changes.
         CoroutineScope(Dispatchers.Default).launch {
             activeProfile.collect {
-                appConfig.userProfile = it
+                appConfig.userProfile.value = it
             }
         }
     }
 
     fun updateUserProfile(mutator: (oldProfile: UserProfile) -> UserProfile): UserProfile {
         val newProfile = mutator(activeProfile.value)
-        activeProfileInner.value = newProfile
+        appConfig.userProfile.value = newProfile
         Timber.i { "Updated active profile ${newProfile.username} to $newProfile" }
         return newProfile
     }
@@ -109,6 +138,6 @@ class UserManager internal constructor(
 
     fun reloadUser() {
         appConfig.reload()
-        activeProfileInner.value = appConfig.userProfile ?: return
+//        appConfig.userProfile.value = appConfig.userProfile.value ?: return
     }
 }

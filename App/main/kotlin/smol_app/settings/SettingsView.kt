@@ -34,8 +34,8 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import smol_access.SL
 import smol_access.business.JreEntry
-import smol_access.config.AppConfig
 import smol_access.config.SettingsPath
+import smol_access.model.UserProfile
 import smol_app.composables.*
 import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
@@ -193,15 +193,20 @@ fun AppScope.settingsView(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier.padding(start = 16.dp, top = 16.dp)
                                 ) {
-                                    val launchButtonAction = SL.appConfig.launchButtonAction.collectAsState().value
-                                    val isChecked = launchButtonAction == AppConfig.LaunchButtonAction.OpenFolder
+                                    val launchButtonAction =
+                                        SL.userManager.activeProfile.collectAsState().value.launchButtonAction
+                                    val isChecked = launchButtonAction == UserProfile.LaunchButtonAction.OpenFolder
                                     CheckboxWithText(
                                         checked = isChecked,
                                         onCheckedChange = { checked ->
-                                            SL.appConfig.launchButtonAction.value = if (checked) {
-                                                AppConfig.LaunchButtonAction.OpenFolder
-                                            } else {
-                                                AppConfig.LaunchButtonAction.DirectLaunch
+                                            SL.userManager.updateUserProfile {
+                                                it.copy(
+                                                    launchButtonAction = if (checked) {
+                                                        UserProfile.LaunchButtonAction.OpenFolder
+                                                    } else {
+                                                        UserProfile.LaunchButtonAction.DirectLaunch
+                                                    }
+                                                )
                                             }
                                         }
                                     ) { modifier ->

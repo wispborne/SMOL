@@ -21,7 +21,9 @@ data class UserProfile(
     val profileVersion: Int,
     val theme: String?,
     val favoriteMods: List<ModId>,
-    val modGridPrefs: ModGridPrefs
+    val modGridPrefs: ModGridPrefs,
+    val showGameLauncherWarning: Boolean,
+    val launchButtonAction: LaunchButtonAction,
 ) {
     val activeModProfile: ModProfile
         get() = modProfiles.firstOrNull { it.id == activeModProfileId } ?: modProfiles.first()
@@ -42,8 +44,30 @@ data class UserProfile(
         )
     }
 
+    enum class ModGridHeader {
+        Favorites,
+        ChangeVariantButton,
+        Name,
+        Author,
+        Version,
+        VramImpact,
+        Icons,
+        GameVersion,
+    }
+
     data class ModGridPrefs(
         val sortField: String?,
-        val isSortDescending: Boolean = true
+        val isSortDescending: Boolean = true,
+        val columnSettings: Map<ModGridHeader, ModGridColumnSetting>?
     )
+
+    data class ModGridColumnSetting(
+        val position: Int,
+        val isVisible: Boolean = true
+    )
+
+    enum class LaunchButtonAction {
+        DirectLaunch,
+        OpenFolder
+    }
 }

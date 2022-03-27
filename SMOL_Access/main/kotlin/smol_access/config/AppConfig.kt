@@ -15,6 +15,7 @@ package smol_access.config
 import kotlinx.coroutines.flow.MutableStateFlow
 import smol_access.Constants
 import smol_access.StateFlowWrapper
+import smol_access.business.UserManager
 import smol_access.model.UserProfile
 import utilities.InMemoryPrefStorage
 import utilities.Jsanity
@@ -43,14 +44,12 @@ class AppConfig(gson: Jsanity) :
         prefKey = "jre8Url",
         defaultValue = "https://drive.google.com/uc?id=155Lk0ml9AUGp5NwtTZGpdu7e7Ehdyeth&export=download"
     )
-    internal var userProfile: UserProfile? by pref(prefKey = "userProfile", defaultValue = null)
-    var showGameLauncherWarning: Boolean by pref(prefKey = "showGameLauncherWarning", defaultValue = true)
-
-    val launchButtonAction: MutableStateFlow<LaunchButtonAction> by stateFlowPref(
-        prefKey = "launchButtonAction",
-        defaultValue = LaunchButtonAction.DirectLaunch,
-        typeOf<LaunchButtonAction>()
+    internal var userProfile: MutableStateFlow<UserProfile> = stateFlowPref(
+        prefKey = "userProfile",
+        defaultValue = UserManager.defaultProfile,
+        type = typeOf<UserProfile>()
     )
+
 
     override fun toString(): String {
         return "AppConfig(" +
@@ -66,10 +65,5 @@ class AppConfig(gson: Jsanity) :
         Stable,
         Unstable,
         Test,
-    }
-
-    enum class LaunchButtonAction {
-        DirectLaunch,
-        OpenFolder
     }
 }

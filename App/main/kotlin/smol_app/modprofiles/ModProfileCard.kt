@@ -639,6 +639,31 @@ private val mockUserProfile = UserProfile(
     theme = null,
     favoriteMods = emptyList(),
     modGridPrefs = UserProfile.ModGridPrefs(
-        sortField = null
-    )
+        sortField = null,
+        columnSettings = mapOf(
+            UserProfile.ModGridHeader.ChangeVariantButton to UserProfile.ModGridColumnSetting(
+                position = 0
+            ),
+            UserProfile.ModGridHeader.Name to UserProfile.ModGridColumnSetting(
+                position = 1
+            ),
+            UserProfile.ModGridHeader.Author to UserProfile.ModGridColumnSetting(
+                position = 2
+            ),
+            UserProfile.ModGridHeader.Version to UserProfile.ModGridColumnSetting(
+                position = 3
+            ),
+            UserProfile.ModGridHeader.VramImpact to UserProfile.ModGridColumnSetting(
+                position = 4
+            ),
+            UserProfile.ModGridHeader.Icons to UserProfile.ModGridColumnSetting(
+                position = 5
+            ),
+            UserProfile.ModGridHeader.GameVersion to UserProfile.ModGridColumnSetting(
+                position = 6
+            ),
+        )
+    ),
+    showGameLauncherWarning = true,
+    launchButtonAction = UserProfile.LaunchButtonAction.OpenFolder
 )

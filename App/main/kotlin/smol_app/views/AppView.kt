@@ -290,7 +290,7 @@ private suspend fun reloadModsInner() {
                 listOf(
                     async {
                         SL.versionChecker.lookUpVersions(
-                            forceLookup = false,
+                            forceLookup = true,
                             mods = mods
                         )
                     },
