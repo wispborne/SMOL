@@ -15,7 +15,6 @@ package smol_app.home
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Checkbox
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
@@ -28,6 +27,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import smol_access.SL
 import smol_access.model.ModVariant
+import smol_app.composables.CheckboxWithText
 import smol_app.composables.SmolAlertDialog
 import smol_app.composables.SmolButton
 import smol_app.composables.SmolSecondaryButton
@@ -42,16 +42,20 @@ import kotlin.io.path.name
 @Composable
 @OptIn(ExperimentalMaterialApi::class)
 fun DeleteModVariantDialog(
-    variantToConfirmDeletionOf: ModVariant,
+    variantsToConfirmDeletionOf: List<ModVariant>,
     onDismiss: () -> Unit
 ) {
-    val modVariantBeingRemoved = variantToConfirmDeletionOf
-    var shouldRemoveStagingAndMods by remember { mutableStateOf(true) }
+    val variantSelections = remember { mutableStateMapOf<ModVariant, Boolean>() }
+
+    if (variantsToConfirmDeletionOf.isEmpty()) {
+        onDismiss.invoke()
+        return
+    }
 
     SmolAlertDialog(
         title = {
             Text(
-                text = "Delete ${modVariantBeingRemoved.modInfo.name} ${modVariantBeingRemoved.modInfo.version}?",
+                text = "Delete ${variantsToConfirmDeletionOf.first().modInfo.name} ${variantsToConfirmDeletionOf.joinToString { it.modInfo.version.toString() }}?",
                 style = SmolTheme.alertDialogTitle()
             )
         },
@@ -63,37 +67,41 @@ fun DeleteModVariantDialog(
                     style = SmolTheme.alertDialogBody()
                 )
 
-                val looseFilesToShow = modVariantBeingRemoved.modsFolderInfo.folder
+                variantsToConfirmDeletionOf.forEach { variant ->
+                    val looseFilesToShow = variant.modsFolderInfo.folder
 
-                if (looseFilesToShow.exists()) {
-                    Row {
-                        Checkbox(
-                            modifier = Modifier.align(Alignment.CenterVertically),
-                            checked = shouldRemoveStagingAndMods,
-                            onCheckedChange = { shouldRemoveStagingAndMods = shouldRemoveStagingAndMods.not() }
-                        )
-                        var folderSize by remember { mutableStateOf<String?>("calculating") }
+                    if (looseFilesToShow.exists()) {
+                        val isChecked = variantSelections[variant] ?: true
 
-                        LaunchedEffect(looseFilesToShow.absolutePathString()) {
-                            withContext(Dispatchers.Default) {
-                                folderSize = kotlin.runCatching {
-                                    looseFilesToShow.calculateFileSize()
+                        Row {
+                            var folderSize by remember { mutableStateOf<String?>("calculating") }
+
+                            LaunchedEffect(looseFilesToShow.absolutePathString()) {
+                                withContext(Dispatchers.Default) {
+                                    folderSize = kotlin.runCatching {
+                                        looseFilesToShow.calculateFileSize()
+                                    }
+                                        .onFailure { Timber.w(it) }
+                                        .getOrNull()?.bytesAsShortReadableMB
                                 }
-                                    .onFailure { Timber.w(it) }
-                                    .getOrNull()?.bytesAsShortReadableMB
                             }
-                        }
 
-                        Text(
-                            text = "${looseFilesToShow.name} ${
-                                folderSize.let { "($it)" }
-                            }",
-                            modifier = Modifier.align(Alignment.CenterVertically),
-                            style = SmolTheme.alertDialogBody()
-                        )
+                            CheckboxWithText(
+                                modifier = Modifier.align(Alignment.CenterVertically),
+                                checked = isChecked,
+                                onCheckedChange = { variantSelections[variant] = isChecked.not() }
+                            ) {
+                                Text(
+                                    text = "${looseFilesToShow.name} ${
+                                        folderSize.let { "($it)" }
+                                    }",
+                                    modifier = it.align(Alignment.CenterVertically),
+                                    style = SmolTheme.alertDialogBody()
+                                )
+                            }
+
+                        }
                     }
-                } else {
-                    shouldRemoveStagingAndMods = false
                 }
             }
         },
@@ -109,10 +117,14 @@ fun DeleteModVariantDialog(
                 onClick = {
                     onDismiss.invoke()
                     GlobalScope.launch {
-                        SL.access.deleteVariant(
-                            modVariant = modVariantBeingRemoved,
-                            removeUncompressedFolder = shouldRemoveStagingAndMods
-                        )
+                        variantsToConfirmDeletionOf
+                            .filter { variantSelections[it] ?: true }
+                            .forEach { variant ->
+                                SL.access.deleteVariant(
+                                    modVariant = variant,
+                                    removeUncompressedFolder = true
+                                )
+                            }
                     }
                 }) {
                 Text(text = "Delete")

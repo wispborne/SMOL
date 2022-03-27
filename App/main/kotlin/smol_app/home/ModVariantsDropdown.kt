@@ -39,6 +39,7 @@ import smol_app.composables.*
 import smol_app.themes.SmolTheme
 import smol_app.util.ModState
 import smol_app.util.state
+import utilities.asList
 
 
 sealed class DropdownAction {
@@ -265,7 +266,7 @@ fun AppScope.ModVariantsDropdown(
                                                     expanded = false
                                                     this@ModVariantsDropdown.alertDialogSetter.invoke {
                                                         DeleteModVariantDialog(
-                                                            variantToConfirmDeletionOf = action.variant,
+                                                            variantsToConfirmDeletionOf = action.variant.asList(),
                                                             onDismiss = this@ModVariantsDropdown::dismissAlertDialog
                                                         )
                                                     }

@@ -103,7 +103,7 @@ private fun AppScope.modGridSingleModMenu(
                 modifier = Modifier.padding(end = 12.dp).size(24.dp),
                 contentDescription = null
             )
-            Text("Open Folder")
+            Text("Open folder")
         }
     }
 
@@ -189,7 +189,26 @@ private fun AppScope.modGridSingleModMenu(
             modifier = Modifier.padding(end = 12.dp).size(24.dp),
             contentDescription = null
         )
-        Text("Check VRAM Impact")
+        Text("Check VRAM impact")
+    }
+
+    DropdownMenuItem(onClick = {
+
+        this@modGridSingleModMenu.alertDialogSetter.invoke {
+            DeleteModVariantDialog(
+                variantsToConfirmDeletionOf = mod.variants,
+                onDismiss = this@modGridSingleModMenu::dismissAlertDialog
+            )
+        }
+        onShowContextMenuChange(false)
+    }) {
+        Image(
+            painter = painterResource("icon-trash.svg"),
+            colorFilter = ColorFilter.tint(MaterialTheme.colors.onSurface),
+            modifier = Modifier.padding(end = 12.dp).size(24.dp),
+            contentDescription = null
+        )
+        Text("Delete files")
     }
 
     DropdownMenuItem(onClick = {
@@ -202,7 +221,7 @@ private fun AppScope.modGridSingleModMenu(
             modifier = Modifier.padding(end = 12.dp).size(24.dp),
             contentDescription = null
         )
-        Text("Debug Info")
+        Text("Debug info")
     }
 }
 
@@ -211,7 +230,7 @@ private fun AppScope.modGridSingleModMenu(
 fun AppScope.modGridBulkActionMenuItems(checkedRows: SnapshotStateList<Mod>) =
     buildList {
         add(SmolDropdownMenuItemTemplate(
-            text = "Enable All",
+            text = "Enable all",
             onClick = {
                 val allModVariants = SL.access.mods.value?.mods?.flatMap { it.variants }
                 val doAnyModsHaveMultipleVariants =
@@ -250,7 +269,7 @@ fun AppScope.modGridBulkActionMenuItems(checkedRows: SnapshotStateList<Mod>) =
 
         if (checkedRows.any { it.uiEnabled }) {
             add(SmolDropdownMenuItemTemplate(
-                text = "Disable All",
+                text = "Disable all",
                 onClick = {
                     GlobalScope.launch(Dispatchers.IO) {
                         checkedRows

@@ -152,6 +152,21 @@ fun BoxScope.detailsPanel(
                             }
                         }
                     }
+                    if (modInfo?.isTotalConversion == true) {
+                        SmolTooltipArea(tooltip = { SmolTooltipText(text = "Total Conversion mods should not be run with any other mods, except for Utility Mods, unless explicitly stated to be compatible.") }) {
+                            Row(
+                                modifier = Modifier.padding(top = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    painter = painterResource("icon-death-star.svg"),
+                                    modifier = Modifier.padding(end = 4.dp).size(24.dp),
+                                    contentDescription = null
+                                )
+                                Text("Total Conversion", fontSize = 15.sp)
+                            }
+                        }
+                    }
                     Text("Author", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
                     Text(modInfo?.author ?: "(no author specified)", modifier = Modifier.padding(top = 2.dp))
                     Text("Description", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
