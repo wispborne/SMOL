@@ -159,9 +159,9 @@ fun AppScope.launchButton(modifier: Modifier = Modifier) {
     ) {
         SmolButton(
             onClick = {
-                if (SL.userManager.activeProfile.value.showGameLauncherWarning) {
+                if (SL.userManager.activeProfile.value.showGameLauncherWarning != false) {
                     alertDialogSetter.invoke {
-                        var showGameLauncherWarning by mutableStateOf(SL.userManager.activeProfile.value.showGameLauncherWarning)
+                        var showGameLauncherWarning by mutableStateOf(SL.userManager.activeProfile.value.showGameLauncherWarning ?: true)
                         val launchButtonAction = SL.userManager.activeProfile.collectAsState().value.launchButtonAction
                         val snapshotOfLaunchButtonAction = SL.userManager.activeProfile.value.launchButtonAction
 
@@ -208,7 +208,7 @@ fun AppScope.launchButton(modifier: Modifier = Modifier) {
                                         modifier = Modifier.padding(top = 16.dp)
                                     ) {
                                         CheckboxWithText(
-                                            checked = !showGameLauncherWarning,
+                                            checked = !(showGameLauncherWarning),
                                             onCheckedChange = { checked ->
                                                 showGameLauncherWarning = !checked
                                             }

@@ -22,8 +22,8 @@ data class UserProfile(
     val theme: String?,
     val favoriteMods: List<ModId>,
     val modGridPrefs: ModGridPrefs,
-    val showGameLauncherWarning: Boolean,
-    val launchButtonAction: LaunchButtonAction,
+    val showGameLauncherWarning: Boolean?,
+    val launchButtonAction: LaunchButtonAction?,
 ) {
     val activeModProfile: ModProfile
         get() = modProfiles.firstOrNull { it.id == activeModProfileId } ?: modProfiles.first()
