@@ -102,7 +102,7 @@ private fun sublimeFuzzyModSearch(query: String, variant: ModVariant, access: Ac
             .let { (it.isMatch to it.score).filterAndAdd(it.rightMatch) }
     }
 
-    val dependencies = variant.dependencies(SL.dependencyFinder, SL.access.mods.value?.mods.orEmpty())
+    val dependencies = variant.dependencies(SL.dependencyFinder)
 
     if (dependencies.any()) {
         ModRepoUtils.compareToFindBestMatch(query.asList(), dependencies.mapNotNull { it.first.name })

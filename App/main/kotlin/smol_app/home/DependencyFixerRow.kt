@@ -41,7 +41,7 @@ fun DependencyFixerRow(
 ) {
     val dependencyFinder =
         (mod.findFirstEnabled ?: mod.findHighestVersion)
-            ?.run { SL.dependencyFinder.findDependencyStates(modVariant = this, mods = allMods) }
+            ?.run { SL.dependencyFinder.findDependencyStates(modVariant = this) }
             ?.sortedWith(compareByDescending { it is DependencyFinder.DependencyState.Disabled })
             ?: emptyList()
     Column {

@@ -172,7 +172,7 @@ fun BoxScope.detailsPanel(
                     Text("Description", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
                     Text(modInfo?.description ?: "", modifier = Modifier.padding(top = 2.dp))
                     val dependencies =
-                        modVariant?.run { SL.dependencyFinder.findDependencies(modVariant = this, mods = mods) }
+                        modVariant?.run { SL.dependencyFinder.findDependencies(modVariant = this) }
                             ?: emptyList()
                     if (dependencies.isNotEmpty()) {
                         Text("Dependencies", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))

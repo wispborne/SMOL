@@ -17,16 +17,16 @@ import smol_access.model.Mod
 import smol_access.model.ModVariant
 import timber.ktx.Timber
 
-fun ModVariant.dependencies(finder: DependencyFinder, mods: List<Mod>) = finder.findDependencies(this, mods)
+fun ModVariant.dependencies(finder: DependencyFinder) = finder.findDependencies(this)
 
 class DependencyFinder internal constructor(private val modsCache: ModsCache) {
 
-    fun findDependencies(modVariant: ModVariant, mods: List<Mod>): List<Pair<Dependency, Mod?>> =
+    fun findDependencies(modVariant: ModVariant): List<Pair<Dependency, Mod?>> =
         modVariant.modInfo.dependencies
-            .map { dep -> dep to mods.firstOrNull { it.id == dep.id } }
+            .map { dep -> dep to (modsCache.mods.value?.mods ?: emptyList()).firstOrNull { it.id == dep.id } }
 
-    fun findDependencyStates(modVariant: ModVariant, mods: List<Mod>): List<DependencyState> =
-        (modVariant.mod(modsCache).findFirstEnabled?.run { findDependencies(modVariant = this, mods = mods) }
+    fun findDependencyStates(modVariant: ModVariant): List<DependencyState> =
+        (modVariant.mod(modsCache).findFirstEnabled?.run { findDependencies(modVariant = this) }
             ?: emptyList())
             .map { (dependency, foundDependencyMod) ->
                 // Mod not found or has no variants, it's missing.
