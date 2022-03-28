@@ -80,8 +80,9 @@ internal class VersionChecker(
                             .mapNotNull { it.findHighestVersion }
                             .filter { !it.versionCheckerInfo?.masterVersionFile.isNullOrBlank() }
                             .parallelMap { modVariant ->
+                                val fixedUrl = fixUrl(modVariant.versionCheckerInfo?.masterVersionFile ?: "")
                                 kotlin.runCatching {
-                                    client.get<HttpResponse>(modVariant.versionCheckerInfo!!.masterVersionFile!!)
+                                    client.get<HttpResponse>(fixedUrl)
                                         .receive<String>()
                                         .let {
                                             modVariant.mod(modsCache) to gson.fromJson<VersionCheckerInfo>(
@@ -92,7 +93,7 @@ internal class VersionChecker(
                                 }
                                     .onFailure {
                                         fun message(error: String?) =
-                                            "Version check failed for ${modVariant.modInfo.name}: $error (url: ${modVariant.versionCheckerInfo?.masterVersionFile})"
+                                            "Version check failed for ${modVariant.modInfo.name}: $error (url: ${fixedUrl})"
                                         if (it is ClientRequestException) {
                                             Timber.w {
                                                 // API errors tend to include the entire webpage html in the error message,
@@ -120,5 +121,37 @@ internal class VersionChecker(
                 versionCheckerCache.lastCheckTimestamp = Instant.now().toEpochMilli()
             }
         }
+    }
+
+    /**
+     * User linked to the page for their version file on github instead of to the raw file.
+     */
+    private val githubFilePageRegex =
+        Regex("""https://github.com/.+/blob/.+/assets/.+.version""", RegexOption.IGNORE_CASE)
+
+    /**
+     * User set dl=0 instead of dl=1 when hosted on dropbox.
+     */
+    private val dropboxDlPageRegex = Regex("""https://www.dropbox.com/s/.+/.+.version\?dl=0""", RegexOption.IGNORE_CASE)
+
+
+    private fun fixUrl(urlString: String): String {
+        return when {
+            urlString.matches(githubFilePageRegex) -> {
+                urlString
+                    .replace("github.com", "raw.githubusercontent.com", ignoreCase = true)
+                    .replace("blob/", "", ignoreCase = true)
+            }
+            urlString.matches(dropboxDlPageRegex) -> {
+                urlString
+                    .replace("dl=0", "dl=1", ignoreCase = true)
+            }
+            else -> urlString
+        }
+            .also {
+                if (urlString != it) {
+                    Timber.i { "Fixed Version Checker url from '$urlString' to '$it'." }
+                }
+            }
     }
 }
