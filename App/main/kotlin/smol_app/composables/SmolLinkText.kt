@@ -12,64 +12,150 @@
 
 package smol_app.composables
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.material.LocalTextStyle
+import androidx.compose.material.LocalContentColor
 import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.input.pointer.pointerHoverIcon
-import androidx.compose.ui.text.TextLayoutResult
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.*
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.TextUnit
+import smol_access.Constants
 import smol_app.themes.SmolTheme.hyperlink
-import java.awt.Cursor
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
+
+/**
+ * Autolinkifies text, written by Wisp.
+ */
 @Composable
 fun SmolLinkText(
     text: String,
     modifier: Modifier = Modifier,
-    color: Color = Color.Unspecified,
-    fontSize: TextUnit = TextUnit.Unspecified,
-    fontStyle: FontStyle? = null,
-    fontWeight: FontWeight? = null,
-    fontFamily: FontFamily? = null,
-    letterSpacing: TextUnit = TextUnit.Unspecified,
-    textDecoration: TextDecoration? = null,
-    textAlign: TextAlign? = null,
-    lineHeight: TextUnit = TextUnit.Unspecified,
-    overflow: TextOverflow = TextOverflow.Clip,
+    style: TextStyle = TextStyle.Default,
     softWrap: Boolean = true,
+    overflow: TextOverflow = TextOverflow.Clip,
     maxLines: Int = Int.MAX_VALUE,
     onTextLayout: (TextLayoutResult) -> Unit = {},
-    style: TextStyle = LocalTextStyle.current
 ) {
-    Text(
-        text = text,
-        modifier = modifier.pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR))),
-        color = if (color != Color.Unspecified) color else MaterialTheme.colors.hyperlink,
-        fontSize = fontSize,
-        fontStyle = fontStyle,
-        fontWeight = fontWeight,
-        fontFamily = fontFamily,
-        letterSpacing = letterSpacing,
-        textDecoration = textDecoration ?: TextDecoration.Underline,
-        textAlign = textAlign,
-        lineHeight = lineHeight,
-        overflow = overflow,
+    val matches = Constants.URI_REGEX.findAll(text)
+    val slices = matches.map { it.groups.firstOrNull()?.range }.toList()
+    var index = 0
+    val data = mutableListOf<LinkTextData>()
+
+    while (index < text.length) {
+        if (slices.any { it?.first == index }) {
+            val url = buildString {
+                while (slices.none { it?.last == (index) }) {
+                    append(text[index])
+                    index++
+                }
+                append(text[index])
+            }
+
+            data += LinkTextData(
+                text = url,
+                url = url
+            )
+            index++
+        } else {
+            data += LinkTextData(
+                text = buildString {
+                    while (slices.none { it?.first == index } && index < text.length) {
+                        append(text[index])
+                        index++
+                    }
+                },
+            )
+        }
+    }
+
+    SmolLinkText(
+        linkTextData = data,
+        modifier = modifier,
+        style = style,
         softWrap = softWrap,
+        overflow = overflow,
         maxLines = maxLines,
         onTextLayout = onTextLayout,
-        style = style,
     )
+}
+
+data class LinkTextData(
+    val text: String,
+    val url: String? = null,
+    val onClick: ((str: AnnotatedString.Range<String>) -> Unit)? = null,
+)
+
+@Composable
+fun SmolLinkText(
+    linkTextData: List<LinkTextData>,
+    modifier: Modifier = Modifier,
+    style: TextStyle = TextStyle.Default.copy(color = LocalContentColor.current),
+    softWrap: Boolean = true,
+    overflow: TextOverflow = TextOverflow.Clip,
+    maxLines: Int = Int.MAX_VALUE,
+    onTextLayout: (TextLayoutResult) -> Unit = {},
+) {
+    val annotatedString = createAnnotatedString(linkTextData)
+    val uriHandler = LocalUriHandler.current
+
+    SmolClickableText(
+        text = annotatedString,
+        onClick = { offset ->
+            linkTextData.forEach { annotatedStringData ->
+                if (annotatedStringData.url != null) {
+                    annotatedString.getStringAnnotations(
+                        tag = annotatedStringData.url,
+                        start = offset,
+                        end = offset,
+                    )
+                        .firstOrNull()
+                        ?.let {
+                            if (annotatedStringData.onClick != null) {
+                                annotatedStringData.onClick.invoke(it)
+                            } else {
+                                uriHandler.openUri(annotatedStringData.url)
+                            }
+                        }
+                }
+            }
+        },
+        modifier = modifier,
+        style = style,
+        softWrap = softWrap,
+        overflow = overflow,
+        maxLines = maxLines,
+        onTextLayout = onTextLayout,
+    )
+}
+
+@Composable
+private fun createAnnotatedString(data: List<LinkTextData>): AnnotatedString {
+    return buildAnnotatedString {
+        data.forEach { linkTextData ->
+            if (linkTextData.url != null) {
+                pushStringAnnotation(
+                    tag = linkTextData.url,
+                    annotation = linkTextData.url,
+                )
+                withStyle(
+                    style = SpanStyle(
+                        color = MaterialTheme.colors.hyperlink,
+                        textDecoration = TextDecoration.Underline,
+                    ),
+                ) {
+                    append(linkTextData.text)
+                }
+                pop()
+            } else {
+                withStyle(
+                    style = SpanStyle(
+                        color = LocalContentColor.current,
+                    ),
+                ) {
+                    append(linkTextData.text)
+                }
+            }
+        }
+    }
 }

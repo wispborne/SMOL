@@ -12,11 +12,13 @@
 
 package smol_app.util
 
+import AppScope
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Typography
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.currentRecomposeScope
 import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -27,11 +29,17 @@ import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.res.useResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import com.arkivanov.decompose.Router
+import com.arkivanov.decompose.RouterState
+import com.arkivanov.decompose.value.Value
 import dev.andrewbailey.diff.differenceOf
 import smol_access.Constants
 import smol_access.SL
 import smol_access.model.Mod
 import smol_access.themes.ThemeManager
+import smol_app.WindowState
+import smol_app.navigation.Screen
+import smol_app.navigation.rememberRouter
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.toColors
 import timber.ktx.Timber
@@ -181,7 +189,7 @@ fun Modifier.onEscKeyPressed(onKeyEvent: () -> Boolean): Modifier {
 }
 
 @Composable
-fun smolPreview(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+fun smolPreview(modifier: Modifier = Modifier, content: @Composable AppScope.() -> Unit) {
     MaterialTheme(
         colors = ThemeManager.defaultTheme.second.toColors(),
         typography = Typography(
@@ -189,7 +197,15 @@ fun smolPreview(modifier: Modifier = Modifier, content: @Composable () -> Unit) 
         )
     ) {
         Box(modifier.padding(24.dp)) {
-            content.invoke()
+            content.invoke(AppScope(windowState = WindowState()
+                .apply {
+                    router = rememberRouter(
+                        initialConfiguration = { Screen.Home },
+                        handleBackButton = true
+                    )
+                }, recomposer = currentRecomposeScope
+            )
+            )
         }
     }
 }

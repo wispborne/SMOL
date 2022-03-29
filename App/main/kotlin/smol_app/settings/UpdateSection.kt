@@ -15,11 +15,11 @@ package smol_app.settings
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.mouseClickable
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CoroutineScope
@@ -28,14 +28,11 @@ import org.update4j.Configuration
 import smol_access.Constants
 import smol_access.SL
 import smol_app.UI
-import smol_app.composables.SmolButton
-import smol_app.composables.SmolDropdownMenuItemTemplate
-import smol_app.composables.SmolDropdownWithButton
-import smol_app.composables.SmolLinkText
+import smol_app.composables.*
 import smol_app.updater.UpdateSmolToast
-import smol_app.util.openAsUriInBrowser
 import timber.ktx.Timber
 import updatestager.BaseAppUpdater
+import utilities.asList
 import java.io.FileNotFoundException
 import java.net.UnknownHostException
 
@@ -122,13 +119,10 @@ fun updateSection(scope: CoroutineScope) {
             style = MaterialTheme.typography.caption
         )
         SmolLinkText(
-            text = "View All Releases",
+            linkTextData = LinkTextData(text = "View All Releases", url = Constants.SMOL_RELEASES_URL).asList(),
             modifier = Modifier
-                .padding(top = 8.dp)
-                .mouseClickable {
-                    Constants.SMOL_RELEASES_URL.openAsUriInBrowser()
-                },
-            fontSize = 13.sp
+                .padding(top = 8.dp),
+            style = TextStyle.Default.copy(fontSize = 13.sp),
         )
     }
 }

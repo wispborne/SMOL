@@ -30,18 +30,22 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 import smol_access.SL
 import smol_access.model.Mod
+import smol_app.composables.LinkTextData
 import smol_app.composables.SmolLinkText
 import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.withAdjustedBrightness
-import smol_app.util.*
+import smol_app.util.getModThreadId
+import smol_app.util.getModThreadUrl
+import smol_app.util.getNexusId
+import smol_app.util.getNexusModsUrl
+import utilities.asList
 
 
 @Composable
@@ -192,13 +196,11 @@ fun BoxScope.detailsPanel(
                     if (modThreadId != null) {
                         DisableSelection {
                             SmolLinkText(
-                                text = "Forum Thread",
+                                linkTextData = LinkTextData(
+                                    text = "Forum Thread",
+                                    url = modThreadId.getModThreadUrl()
+                                ).asList(),
                                 modifier = Modifier.padding(top = 16.dp)
-                                    .mouseClickable {
-                                        if (this.buttons.isPrimaryPressed) {
-                                            modThreadId.openModThread()
-                                        }
-                                    }
                             )
                         }
                     }
@@ -207,13 +209,11 @@ fun BoxScope.detailsPanel(
                     if (nexusId != null) {
                         DisableSelection {
                             SmolLinkText(
-                                text = "NexusMods",
+                                linkTextData = LinkTextData(
+                                    text = "NexusMods",
+                                    url = nexusId.getNexusModsUrl()
+                                ).asList(),
                                 modifier = Modifier.padding(top = 16.dp)
-                                    .mouseClickable {
-                                        if (this.buttons.isPrimaryPressed) {
-                                            nexusId.getNexusModsUrl().openAsUriInBrowser()
-                                        }
-                                    }
                             )
                         }
                     }

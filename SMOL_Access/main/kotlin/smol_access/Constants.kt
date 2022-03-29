@@ -68,4 +68,10 @@ object Constants {
     val TEMP_DIR = System.getProperty("java.io.tmpdir")?.let { Path.of(it) } ?: APP_FOLDER_DEFAULT
 
     const val TAG_TRACE = "trace"
+
+    /**
+     * From <https://stackoverflow.com/a/3809435/1622788>.
+     */
+    val URI_REGEX =
+        Regex("""(http(s)?://.)?(www\.)?[-a-zA-Z0-9@:%._+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_+.~#?&/=]*)""")
 }

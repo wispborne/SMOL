@@ -89,7 +89,8 @@ fun AppScope.homeView(
                     modifier = Modifier
                         .weight(1f)
                         .padding(start = 16.dp),
-                    horizontalArrangement = Arrangement.End
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     smolSearchField(
                         modifier = Modifier
@@ -120,6 +121,19 @@ fun AppScope.homeView(
                                 .offset(y = (-3).dp)
                                 .align(Alignment.CenterVertically)
                         )
+                    }
+
+                    SmolTooltipArea(tooltip = { SmolTooltipText("About") }) {
+                        IconButton(
+                            onClick = { router.replaceCurrent(Screen.About) },
+                            modifier = Modifier.align(Alignment.CenterVertically)
+                        ) {
+                            Icon(
+                                painter = painterResource("icon-info.svg"),
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp).align(Alignment.CenterVertically),
+                            )
+                        }
                     }
                 }
             }

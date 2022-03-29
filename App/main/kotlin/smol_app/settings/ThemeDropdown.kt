@@ -17,19 +17,21 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.mouseClickable
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import smol_access.SL
+import smol_app.composables.SmolClickableText
 import smol_app.composables.SmolDropdownMenuItem
 import smol_app.composables.SmolDropdownMenuItemCustom
 import smol_app.composables.SmolDropdownWithButton
-import smol_app.composables.SmolLinkText
 import smol_app.themes.SmolTheme
+import smol_app.themes.SmolTheme.hyperlink
 import smol_app.themes.SmolTheme.toColors
 import smol_app.util.openInDesktop
 
@@ -98,21 +100,26 @@ fun AppScope.themeDropdown(modifier: Modifier = Modifier): String {
                 initiallySelectedIndex = themes.map { it.key }.indexOf(themeName).coerceAtLeast(0),
                 canSelectItems = true
             )
-            SmolLinkText(
+            SmolClickableText(
                 modifier = Modifier
                     .padding(start = 16.dp)
-                    .align(Alignment.CenterVertically)
-                    .mouseClickable { SL.themeManager.editTheme(SL.themeManager.activeTheme.value.first).openInDesktop() }, text = "Edit"
+                    .align(Alignment.CenterVertically),
+                text = "Edit",
+                color = MaterialTheme.colors.hyperlink,
+                textDecoration = TextDecoration.Underline,
+                onClick = { SL.themeManager.editTheme(SL.themeManager.activeTheme.value.first).openInDesktop() }
             )
-            SmolLinkText(
+            SmolClickableText(
                 modifier = Modifier
                     .padding(start = 16.dp)
-                    .align(Alignment.CenterVertically)
-                    .mouseClickable {
-                        SL.themeManager.reloadThemes()
-                        recomposeScope.invalidate()
-                    },
-                text = "Refresh"
+                    .align(Alignment.CenterVertically),
+                text = "Refresh",
+                color = MaterialTheme.colors.hyperlink,
+                textDecoration = TextDecoration.Underline,
+                onClick = {
+                    SL.themeManager.reloadThemes()
+                    recomposeScope.invalidate()
+                }
             )
         }
     }

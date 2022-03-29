@@ -35,6 +35,7 @@ import smol_access.business.asWatchChannel
 import smol_app.IWindowState
 import smol_app.UI
 import smol_app.WindowState
+import smol_app.about.AboutView
 import smol_app.browser.ModBrowserView
 import smol_app.home.homeView
 import smol_app.modprofiles.ModProfilesView
@@ -127,6 +128,7 @@ fun WindowState.appView() {
                         is Screen.Settings -> appScope.settingsView()
                         is Screen.Profiles -> appScope.ModProfilesView()
                         is Screen.ModBrowser -> appScope.ModBrowserView(defaultUrl = configuration.defaultUri)
+                        is Screen.About -> appScope.AboutView()
                     }.run { }
                 }
             }
