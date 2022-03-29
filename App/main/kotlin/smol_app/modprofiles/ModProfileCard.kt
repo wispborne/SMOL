@@ -353,7 +353,7 @@ fun modList(
 
 @Preview
 @Composable
-fun AppScope.profileControlsPreview() = smolPreview {
+fun profileControlsPreview() = smolPreview {
     Column {
         profileControls(
             modProfile = mockModProfile,
@@ -372,7 +372,8 @@ fun AppScope.profileControls(
     isBeingHovered: Boolean
 ) {
     Row(
-        modifier = modifier
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         val modsModificationState = SL.access.modModificationState.collectAsState()
         val areAllModsSettled = modsModificationState.value.all { it.value == Access.ModModificationState.Ready }
@@ -395,53 +396,7 @@ fun AppScope.profileControls(
 
                     if (missingVariants.any()) {
                         alertDialogSetter.invoke {
-                            SmolAlertDialog(
-                                title = {
-                                    Text(
-                                        text = "Warning",
-                                        style = SmolTheme.alertDialogTitle()
-                                    )
-                                },
-                                text = {
-                                    Column {
-                                        Text(
-                                            text = "The following mods are missing:",
-                                            style = SmolTheme.alertDialogBody()
-                                        )
-                                        modList(
-                                            modifier = Modifier.padding(top = 16.dp),
-                                            modVariants = missingVariants,
-                                            modVariantsToDisplay = missingVariants
-                                        )
-                                        SmolButton(
-                                            modifier = Modifier.padding(top = 32.dp),
-                                            onClick = {
-                                                copyToClipboard(
-                                                    missingVariants.joinToString(separator = "\n") { "${it.modName} (${it.modId}) ${it.version}" }
-                                                )
-                                            }
-                                        ) {
-                                            Text("Copy to clipboard")
-                                        }
-                                    }
-                                },
-                                onDismissRequest = { alertDialogSetter.invoke(null) },
-                                confirmButton = {
-                                    SmolButton(
-                                        onClick = {
-                                            swapModProfile(modProfile)
-                                            alertDialogSetter.invoke(null)
-                                        }
-                                    ) {
-                                        Text("Swap without ${missingVariants.count()} mod${if (missingVariants.count() != 1) "s" else ""}")
-                                    }
-                                },
-                                dismissButton = {
-                                    SmolSecondaryButton(
-                                        onClick = { alertDialogSetter.invoke(null) }
-                                    ) { Text("Cancel") }
-                                }
-                            )
+                            MissingModVariantsAlertDialog(missingVariants, modProfile)
                         }
                     } else {
                         swapModProfile(modProfile)
@@ -504,13 +459,31 @@ fun AppScope.profileControls(
             }
         }
 
+        val alphaOfHoverDimmedElements = animateFloatAsState(if (isBeingHovered) 0.8f else 0.5f).value
+
+        SmolTooltipArea(tooltip = { SmolTooltipText(text = "Copy mod list.") }) {
+            IconButton(
+                modifier = Modifier
+                    .align(Alignment.CenterVertically)
+                    .size(20.dp),
+                onClick = {
+                    copyModProfile(modProfile = modProfile)
+                }
+            ) {
+                Icon(
+                    painter = painterResource("icon-copy.svg"),
+                    contentDescription = null,
+                    tint = MaterialTheme.colors.onSurface.copy(alpha = alphaOfHoverDimmedElements),
+                )
+            }
+        }
+
         if (!isActiveProfile) {
             SmolTooltipArea(tooltip = { SmolTooltipText(text = "Delete profile.") }) {
                 IconButton(
                     modifier = Modifier
                         .align(Alignment.CenterVertically)
-                        .height(SmolTheme.iconHeightWidth())
-                        .width(SmolTheme.iconHeightWidth()),
+                        .size(SmolTheme.iconHeightWidth()),
                     onClick = {
                         alertDialogSetter.invoke {
                             val profile = modProfile
@@ -538,7 +511,6 @@ fun AppScope.profileControls(
                         }
                     }
                 ) {
-                    val alphaOfHoverDimmedElements = animateFloatAsState(if (isBeingHovered) 0.8f else 0.5f).value
                     Icon(
                         painter = painterResource("icon-trash.svg"),
                         contentDescription = null,
@@ -548,6 +520,61 @@ fun AppScope.profileControls(
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+private fun AppScope.MissingModVariantsAlertDialog(
+    missingVariants: List<UserProfile.ModProfile.ShallowModVariant>,
+    modProfile: ModProfileCardInfo
+) {
+    SmolAlertDialog(
+        title = {
+            Text(
+                text = "Warning",
+                style = SmolTheme.alertDialogTitle()
+            )
+        },
+        text = {
+            Column {
+                Text(
+                    text = "The following mods are missing:",
+                    style = SmolTheme.alertDialogBody()
+                )
+                modList(
+                    modifier = Modifier.padding(top = 16.dp),
+                    modVariants = missingVariants,
+                    modVariantsToDisplay = missingVariants
+                )
+                SmolButton(
+                    modifier = Modifier.padding(top = 32.dp),
+                    onClick = {
+                        copyToClipboard(
+                            missingVariants.joinToString(separator = "\n") { "${it.modName} (${it.modId}) ${it.version}" }
+                        )
+                    }
+                ) {
+                    Text("Copy to clipboard")
+                }
+            }
+        },
+        onDismissRequest = { alertDialogSetter.invoke(null) },
+        confirmButton = {
+            SmolButton(
+                onClick = {
+                    swapModProfile(modProfile)
+                    alertDialogSetter.invoke(null)
+                }
+            ) {
+                Text("Swap without ${missingVariants.count()} mod${if (missingVariants.count() != 1) "s" else ""}")
+            }
+        },
+        dismissButton = {
+            SmolSecondaryButton(
+                onClick = { alertDialogSetter.invoke(null) }
+            ) { Text("Cancel") }
+        }
+    )
 }
 
 private fun swapModProfile(modProfile: ModProfileCardInfo) {
@@ -667,3 +694,15 @@ private val mockUserProfile = UserProfile(
     showGameLauncherWarning = true,
     launchButtonAction = UserProfile.LaunchButtonAction.OpenFolder
 )
+
+fun copyModProfile(modProfile: ModProfileCardInfo) {
+    val modList = buildString {
+        modProfile.name.ifBlank { null }?.run { appendLine(modProfile.name) }
+        modProfile.description.ifBlank { null }?.run { appendLine(modProfile.description) }
+        appendLine("⎯⎯⎯⎯⎯⎯⎯⎯⎯")
+        appendLine(modProfile.enabledModVariants.joinToString(separator = "\n") { mod ->
+            "${mod.modName?.ifBlank { null } ?: mod.modId}: ${mod.version?.raw ?: "(version unknown)"}"
+        })
+    }
+    copyToClipboard(modList)
+}
