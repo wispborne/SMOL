@@ -1,6 +1,8 @@
 # SMOL
 
-Starsector Mod Organizer & Launcher
+**Starsector Mod Organizer & Launcher**
+
+![GitHub all SMOL releases](https://img.shields.io/github/downloads/davidwhitman/SMOL_Dist/total?color=blue&logo=github)
 
 For Windows only. Unix users, see if [AtlanticAccent's MOSS](https://fractalsoftworks.com/forum/index.php?topic=21995.msg332186#msg332186) will work for you.
 
