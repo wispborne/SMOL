@@ -77,7 +77,7 @@ fun AppScope.homeView(
     Scaffold(
         modifier = modifier,
         topBar = {
-            TopAppBar(modifier = Modifier.height(SmolTheme.topBarHeight)) {
+            SmolTopAppBar(modifier = Modifier.height(SmolTheme.topBarHeight)) {
                 toolbar(router.state.value.activeChild.instance as Screen)
 
                 if (isWriteLocked.value) {
@@ -172,7 +172,7 @@ fun AppScope.homeView(
             }
         },
         bottomBar = {
-            BottomAppBar(
+            SmolBottomAppBar(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {

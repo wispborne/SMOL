@@ -35,6 +35,7 @@ import smol_access.Constants
 import smol_app.composables.SmolLinkText
 import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
+import smol_app.composables.SmolTopAppBar
 import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
 import smol_app.toolbar.toolbar
@@ -47,7 +48,7 @@ fun AppScope.AboutView(modifier: Modifier = Modifier) {
     Scaffold(
         modifier = modifier,
         topBar = {
-            TopAppBar(modifier = Modifier.height(SmolTheme.topBarHeight)) {
+            SmolTopAppBar(modifier = Modifier.height(SmolTheme.topBarHeight)) {
                 toolbar(router.state.value.activeChild.instance as Screen)
 
                 Spacer(Modifier.weight(1f))

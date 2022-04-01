@@ -12,7 +12,9 @@
 
 package mod_repo
 
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.withContext
 import timber.ktx.Timber
 import utilities.asList
 import utilities.parallelMap
@@ -56,55 +58,57 @@ internal class ModMerger {
                         return@mapIndexed listOf(outerLoopMod)
                             .plus(scrapedMods.subList(index, scrapedMods.count())
                                 .parallelMap { innerLoopMod ->
-                                    // Skip comparing the mod to itself.
-                                    // Skip comparing mods from the same source; there shouldn't be duplicates in the same place.
-                                    if (innerLoopMod === outerLoopMod
-                                        || outerLoopMod.sources().containsAll(innerLoopMod.sources())
-                                    ) {
-                                        return@parallelMap innerLoopMod to false
-                                    }
+                                    withContext(Dispatchers.Default) {
+                                        // Skip comparing the mod to itself.
+                                        // Skip comparing mods from the same source; there shouldn't be duplicates in the same place.
+                                        if (innerLoopMod === outerLoopMod
+                                            || outerLoopMod.sources().containsAll(innerLoopMod.sources())
+                                        ) {
+                                            return@withContext innerLoopMod to false
+                                        }
 
-                                    val outer = outerLoopMod.name.prepForMatching()
-                                    val inner = innerLoopMod.name.prepForMatching()
+                                        val outer = outerLoopMod.name.prepForMatching()
+                                        val inner = innerLoopMod.name.prepForMatching()
 
-                                    val bestNameResult = ModRepoUtils.compareToFindBestMatch(
-                                        leftList = outer.asList(),
-                                        rightList = inner.asList()
-                                    )
-
-                                    val bestAuthorsResult =
-                                        ModRepoUtils.compareToFindBestMatch(
-                                            leftList = listOf(
-                                                outerLoopMod.authors.asList(),
-                                                ModRepoUtils.getOtherMatchingAliases(outerLoopMod.authors),
-                                            )
-                                                .flatten()
-                                                .distinct()
-                                                .map { it.prepForMatching() },
-                                            rightList = listOf(
-                                                innerLoopMod.authors.asList(),
-                                                ModRepoUtils.getOtherMatchingAliases(innerLoopMod.authors),
-                                            )
-                                                .flatten()
-                                                .distinct()
-                                                .map { it.prepForMatching() }
+                                        val bestNameResult = ModRepoUtils.compareToFindBestMatch(
+                                            leftList = outer.asList(),
+                                            rightList = inner.asList()
                                         )
 
-                                    val isMatch = bestNameResult.isMatch && bestAuthorsResult.isMatch
+                                        val bestAuthorsResult =
+                                            ModRepoUtils.compareToFindBestMatch(
+                                                leftList = listOf(
+                                                    outerLoopMod.authors.asList(),
+                                                    ModRepoUtils.getOtherMatchingAliases(outerLoopMod.authors),
+                                                )
+                                                    .flatten()
+                                                    .distinct()
+                                                    .map { it.prepForMatching() },
+                                                rightList = listOf(
+                                                    innerLoopMod.authors.asList(),
+                                                    ModRepoUtils.getOtherMatchingAliases(innerLoopMod.authors),
+                                                )
+                                                    .flatten()
+                                                    .distinct()
+                                                    .map { it.prepForMatching() }
+                                            )
 
-                                    if (isMatch) {
-                                        Timber.d {
-                                            "Matched names $bestNameResult and authors $bestAuthorsResult."
+                                        val isMatch = bestNameResult.isMatch && bestAuthorsResult.isMatch
+
+                                        if (isMatch) {
+                                            Timber.d {
+                                                "Matched names $bestNameResult and authors $bestAuthorsResult."
+                                            }
                                         }
-                                    }
 
-                                    if (isMatch) {
-                                        lock.acquire()
-                                        modsAlreadyAddedToAGroup.add(innerLoopMod)
-                                        lock.release()
-                                        innerLoopMod to true
-                                    } else {
-                                        innerLoopMod to false
+                                        if (isMatch) {
+                                            lock.acquire()
+                                            modsAlreadyAddedToAGroup.add(innerLoopMod)
+                                            lock.release()
+                                            innerLoopMod to true
+                                        } else {
+                                            innerLoopMod to false
+                                        }
                                     }
                                 }
                                 .filter { it.second }

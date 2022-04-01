@@ -91,7 +91,7 @@ fun AppScope.ModBrowserView(
     Scaffold(
         modifier = modifier,
         topBar = {
-            TopAppBar(modifier = Modifier.height(SmolTheme.topBarHeight)) {
+            SmolTopAppBar(modifier = Modifier.height(SmolTheme.topBarHeight)) {
                 toolbar(router.state.value.activeChild.instance as Screen)
                 Spacer(Modifier.weight(1f))
 
@@ -343,7 +343,7 @@ fun AppScope.ModBrowserView(
             }
         },
         bottomBar = {
-            BottomAppBar(
+            SmolBottomAppBar(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 logButtonAndErrorDisplay(showLogPanel = showLogPanel)

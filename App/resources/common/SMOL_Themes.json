@@ -10,7 +10,7 @@
       "secondaryVariant": "#0000C0",
       "surface": "#C60000"
     },
-    "Aurica": {
+    "Aurica (light)": {
       "background": "#FFFFFF",
       "hyperlink": "#00B5B5",
       "isDark": false,
@@ -19,6 +19,18 @@
       "secondary": "#FFDE00",
       "secondaryVariant": "#FFE739",
       "surface": "#F0F0F0"
+    },
+    "Trans (light)": {
+      "background": "#0AACEA",
+      "hyperlink": "#F5A9B8",
+      "isDark": false,
+      "onPrimary": "#FDFDFD",
+      "primary": "#F5A9B8",
+      "primaryVariant": "#EE8398",
+      "secondary": "#5BCEFA",
+      "secondaryVariant": "#FFFFFF",
+      "surface": "#EE8398",
+      "onSurface": "#282C34"
     },
     "Comes": {
       "background": "#383049",

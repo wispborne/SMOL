@@ -63,7 +63,7 @@ fun AppScope.settingsView(
 ) {
     val showLogPanel = remember { mutableStateOf(false) }
     Scaffold(topBar = {
-        TopAppBar(modifier = Modifier.height(SmolTheme.topBarHeight)) {
+        SmolTopAppBar(modifier = Modifier.height(SmolTheme.topBarHeight)) {
             toolbar(router.state.value.activeChild.instance as Screen)
         }
     },
@@ -266,7 +266,7 @@ fun AppScope.settingsView(
             }
         },
         bottomBar = {
-            BottomAppBar(
+            SmolBottomAppBar(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 logButtonAndErrorDisplay(showLogPanel = showLogPanel)

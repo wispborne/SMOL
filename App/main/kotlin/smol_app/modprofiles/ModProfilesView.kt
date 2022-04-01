@@ -71,7 +71,7 @@ fun AppScope.ModProfilesView(
 
     Scaffold(
         topBar = {
-            TopAppBar(modifier = Modifier.height(SmolTheme.topBarHeight)) {
+            SmolTopAppBar(modifier = Modifier.height(SmolTheme.topBarHeight)) {
                 toolbar(router.state.value.activeChild.instance as Screen)
             }
         }, content = {
@@ -184,7 +184,7 @@ fun AppScope.ModProfilesView(
             }
         },
         bottomBar = {
-            BottomAppBar(
+            SmolBottomAppBar(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 logButtonAndErrorDisplay(showLogPanel = showLogPanel)
