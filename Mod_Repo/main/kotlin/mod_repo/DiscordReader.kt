@@ -22,10 +22,8 @@ import io.ktor.http.*
 import kotlinx.coroutines.delay
 import timber.ktx.Timber
 import utilities.asList
-import utilities.exists
 import utilities.prefer
 import java.util.*
-import kotlin.io.path.bufferedReader
 
 /**
  * This file is distributed under the GPLv3. An informal description follows:
@@ -38,7 +36,7 @@ import kotlin.io.path.bufferedReader
  * - The software author or license can not be held liable for any damages inflicted by the software.
  * The full license is available from <https://www.gnu.org/licenses/gpl-3.0.txt>.
  */
-internal class DiscordReader {
+internal object DiscordReader {
     private val baseUrl = "https://discord.com/api"
     val serverId = "187635036525166592"
     val modUpdatesChannelId = "825068217361760306"
@@ -46,9 +44,8 @@ internal class DiscordReader {
         """(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#-]*[\w@?^=%&\/~+#-])"""
     )
 
-    internal suspend fun readAllMessages(): List<ScrapedMod>? {
-        val props = getProperties() ?: return null
-        val authToken = props["auth_token"]?.toString() ?: run {
+    internal suspend fun readAllMessages(config: Main.Companion.Config): List<ScrapedMod>? {
+        val authToken = config.discordAuthToken ?: run {
             Timber.w { "No auth token found in ${Main.configFilePath}." }
             return@readAllMessages null
         }
@@ -79,7 +76,9 @@ internal class DiscordReader {
                     ?.let { kotlin.runCatching { Url(it) }.onFailure { Timber.w(it) }.getOrNull() }
                 ScrapedMod(
                     name = message.content?.lines()?.firstOrNull()?.removeMarkdownFromName() ?: "(Discord Mod)",
-                    description = message.content,
+                    summary = message.content?.drop(1)?.take(2),
+                    description = message.content?.drop(1),
+                    modVersion = null,
                     gameVersionReq = "",
                     authors = message.author?.username ?: "",
                     authorsList = message.author?.username.asList(),
@@ -125,16 +124,6 @@ internal class DiscordReader {
             str = replaced
         }
     }
-
-    private fun getProperties() =
-        if (kotlin.runCatching { Main.configFilePath.exists() }
-                .onFailure { Timber.w(it) }
-                .getOrNull() == true)
-            Properties().apply { this.load(Main.configFilePath.bufferedReader()) }
-        else {
-            Timber.w { "Unable to find ${Main.configFilePath}." }
-            null
-        }
 
     private suspend fun getMessages(
         httpClient: HttpClient,
@@ -182,7 +171,7 @@ internal class DiscordReader {
             description = mod.description?.replace(discordUnrecognizedEmojiRegex, "")?.trim(),
         )
 
-    internal data class Message(
+    private data class Message(
         val id: String,
         val author: User?,
         val content: String?,
@@ -192,13 +181,13 @@ internal class DiscordReader {
         val embeds: List<Embed>?,
     )
 
-    internal data class User(
+    private data class User(
         val id: String,
         val username: String?,
         val discriminator: String?,
     )
 
-    internal data class Attachment(
+    private data class Attachment(
         val id: String,
         val filename: String?,
         val description: String?,
@@ -208,7 +197,7 @@ internal class DiscordReader {
         val proxy_url: String?
     )
 
-    internal data class Embed(
+    private data class Embed(
         val title: String?,
         val description: String?,
         val url: String?

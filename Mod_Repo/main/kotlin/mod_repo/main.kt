@@ -12,7 +12,6 @@
 
 package mod_repo
 
-import com.github.androidpasswordstore.sublimefuzzy.Fuzzy
 import com.github.salomonbrys.kotson.registerTypeAdapter
 import com.github.salomonbrys.kotson.string
 import com.github.salomonbrys.kotson.toJson
@@ -25,13 +24,12 @@ import kotlinx.coroutines.runBlocking
 import timber.LogLevel
 import timber.ktx.Timber
 import utilities.Jsanity
+import utilities.exists
 import java.nio.file.Path
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import kotlin.io.path.absolutePathString
-import kotlin.io.path.bufferedWriter
-import kotlin.io.path.createFile
-import kotlin.io.path.deleteIfExists
+import java.util.*
+import kotlin.io.path.*
 
 
 class Main {
@@ -41,14 +39,21 @@ class Main {
         internal val configFilePath = Path.of("config.properties")
         internal const val verboseOutput = true
 
-        /**
-         * Reduces the amount of scraping done for a faster runtime and less load on the server.
-         */
-        private const val DEV_MODE = false
-        private val logLevel = LogLevel.INFO
+        data class Config(
+            val lessScraping: Boolean,
+            val enableForums: Boolean,
+            val enableDiscord: Boolean,
+            val enableNexus: Boolean,
+            val logLevel: String,
+            val discordAuthToken: String?,
+            val nexusApiToken: String?
+        )
 
         @JvmStatic
         fun main(args: Array<String>) {
+            val config = readConfig() ?: return
+            val logLevel = LogLevel.valueOf(config.logLevel)
+
             val logFile = Path.of("ModRepo.log")
             val logOut = logFile
                 .apply {
@@ -84,10 +89,13 @@ class Main {
 
             val scrapeJob = GlobalScope.async {
                 kotlin.runCatching {
-                    ForumScraper(
-                        moddingForumPagesToScrape = if (DEV_MODE) 3 else 15,
-                        modForumPagesToScrape = if (DEV_MODE) 3 else 12
-                    ).run()
+                    if (config.enableForums) {
+                        ForumScraper.run(
+                            config = config,
+                            moddingForumPagesToScrape = if (config.lessScraping) 3 else 15,
+                            modForumPagesToScrape = if (config.lessScraping) 3 else 12
+                        )
+                    } else emptyList()
                 }
                     .onFailure { Timber.e(it) }
                     .getOrNull()
@@ -95,7 +103,23 @@ class Main {
 
             val discordJob = GlobalScope.async {
                 kotlin.runCatching {
-                    DiscordReader().readAllMessages()
+                    if (config.enableDiscord) {
+                        DiscordReader.readAllMessages(
+                            config = config
+                        )
+                    } else emptyList()
+                }
+                    .onFailure { Timber.e(it) }
+                    .getOrNull()
+            }
+
+            val nexusModsJob = GlobalScope.async {
+                kotlin.runCatching {
+                    if (config.enableNexus) {
+                        NexusReader.readAllMessages(
+                            config = config
+                        )
+                    } else emptyList()
                 }
                     .onFailure { Timber.e(it) }
                     .getOrNull()
@@ -104,9 +128,10 @@ class Main {
             runBlocking {
                 val forumMods = scrapeJob.await() ?: emptyList()
                 val discordMods = discordJob.await() ?: emptyList()
+                val nexusMods = nexusModsJob.await() ?: emptyList()
 
                 ModMerger()
-                    .merge(forumMods + discordMods)
+                    .merge(forumMods + discordMods + nexusMods)
                     .run {
                         println("Saving ${this.count()} mods to ${ModRepoCache.location.toAbsolutePath()}...")
                         modRepoCache.items = this
@@ -122,5 +147,26 @@ class Main {
                 }
             }
         }
+
+        private fun readConfig(): Config? =
+            if (kotlin.runCatching { configFilePath.exists() }
+                    .onFailure { Timber.w(it) }
+                    .getOrNull() == true)
+                Properties().apply { this.load(configFilePath.bufferedReader()) }
+                    .let {
+                        Config(
+                            lessScraping = it["less_scraping"].toString().toBoolean(),
+                            enableForums = it["enable_forums"].toString().toBoolean(),
+                            enableDiscord = it["enable_discord"].toString().toBoolean(),
+                            enableNexus = it["enable_nexus"].toString().toBoolean(),
+                            logLevel = it["log_level"].toString(),
+                            discordAuthToken = it["auth_token"]?.toString(),
+                            nexusApiToken = it["nexus_api_token"]?.toString(),
+                        )
+                    }
+            else {
+                Timber.w { "Unable to find $configFilePath." }
+                null
+            }
     }
 }

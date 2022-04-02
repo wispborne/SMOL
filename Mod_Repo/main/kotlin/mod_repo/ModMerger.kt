@@ -137,6 +137,7 @@ internal class ModMerger {
                                                 ModSource.Index -> mod.forumPostLink
                                                 ModSource.ModdingSubforum -> mod.forumPostLink
                                                 ModSource.Discord -> mod.discordMessageLink
+                                                ModSource.NexusMods -> mod.link
                                                 null -> "no source"
                                             }.toString()
                                         })"
@@ -195,9 +196,19 @@ internal class ModMerger {
                         right = modToFoldIn.name.ifBlank { null },
                         doesRightHavePriority = doesNewModHavePriority
                     ) ?: "",
+                    summary = chooseBest(
+                        left = mergedMod.summary?.ifBlank { null },
+                        right = modToFoldIn.summary?.ifBlank { null },
+                        doesRightHavePriority = doesNewModHavePriority
+                    ),
                     description = chooseBest(
                         left = mergedMod.description?.ifBlank { null },
                         right = modToFoldIn.description?.ifBlank { null },
+                        doesRightHavePriority = doesNewModHavePriority
+                    ),
+                    modVersion = chooseBest(
+                        left = mergedMod.modVersion?.ifBlank { null },
+                        right = modToFoldIn.modVersion?.ifBlank { null },
                         doesRightHavePriority = doesNewModHavePriority
                     ),
                     gameVersionReq = chooseBest(
@@ -250,7 +261,7 @@ internal class ModMerger {
     private fun cleanUpMods(mods: List<ScrapedMod>): List<ScrapedMod> =
         mods
             .filter {
-                val hasLink = it.forumPostLink != null
+                val hasLink = it.link != null
                 if (!hasLink) Timber.i { "Removing mod without a forum link: '${it.name}' by '${it.authors}'." }
                 hasLink
             }

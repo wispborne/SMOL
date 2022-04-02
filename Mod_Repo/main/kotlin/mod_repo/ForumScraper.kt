@@ -35,16 +35,17 @@ private const val i = 15
  * - The software author or license can not be held liable for any damages inflicted by the software.
  * The full license is available from <https://www.gnu.org/licenses/gpl-3.0.txt>.
  */
-class ForumScraper(
-    val moddingForumPagesToScrape: Int,
-    val modForumPagesToScrape: Int
-) {
+internal object ForumScraper {
     private val postsPerPage = 20
 
-    fun run(): List<ScrapedMod>? {
+    fun run(
+        config: Main.Companion.Config,
+        moddingForumPagesToScrape: Int,
+        modForumPagesToScrape: Int
+    ): List<ScrapedMod>? {
         return (scrapeModIndexLinks() ?: emptyList())
-            .plus(runBlocking { scrapeModdingForumLinks() } ?: emptyList())
-            .plus(runBlocking { scrapeModForumLinks() } ?: emptyList())
+            .plus(runBlocking { scrapeModdingForumLinks(moddingForumPagesToScrape) } ?: emptyList())
+            .plus(runBlocking { scrapeModForumLinks(modForumPagesToScrape) } ?: emptyList())
             .map { mod -> cleanUpMod(mod) }
             .ifEmpty { null }
     }
@@ -70,7 +71,9 @@ class ForumScraper(
 
                         ScrapedMod(
                             name = link.text(),
+                            summary = null,
                             description = null,
+                            modVersion = null,
                             gameVersionReq = modElement.select("strong span").text(),
                             authors = modElement.select("em strong").text(),
                             authorsList = modElement.select("em strong").text().asList(),
@@ -89,7 +92,7 @@ class ForumScraper(
             .getOrNull()
     }
 
-    private suspend fun scrapeModdingForumLinks(): List<ScrapedMod>? {
+    private suspend fun scrapeModdingForumLinks(moddingForumPagesToScrape: Int): List<ScrapedMod>? {
         Timber.i { "Scraping Modding Forum..." }
         return scrapeSubforumLinks(
             forumBaseUrl = Main.FORUM_BASE_URL,
@@ -98,7 +101,7 @@ class ForumScraper(
         )
     }
 
-    private suspend fun scrapeModForumLinks(): List<ScrapedMod>? {
+    private suspend fun scrapeModForumLinks(modForumPagesToScrape: Int): List<ScrapedMod>? {
         Timber.i { "Scraping Mod Forum..." }
         return scrapeSubforumLinks(
             forumBaseUrl = Main.FORUM_BASE_URL,
@@ -136,7 +139,9 @@ class ForumScraper(
 
                             ScrapedMod(
                                 name = titleLinkElement.text().replace(versionRegex, "").trim(),
+                                summary = null,
                                 description = null,
+                                modVersion = null,
                                 gameVersionReq = versionRegex.find(titleLinkElement.text())?.groupValues?.getOrNull(1)
                                     ?.trim()
                                     ?: "",

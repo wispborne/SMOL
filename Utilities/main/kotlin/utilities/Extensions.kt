@@ -114,6 +114,8 @@ fun Float.makeFinite() =
     if (!this.isFinite()) 0f
     else this
 
+inline fun String.nullIfBlank() = this.ifBlank { null }
+
 /**
  * From FileUtils in apache commons.
  */

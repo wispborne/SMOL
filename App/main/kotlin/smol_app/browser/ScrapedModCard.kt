@@ -130,13 +130,13 @@ fun AppScope.scrapedModCard(
                             )
                         }
 
-                        if (!mod.description.isNullOrBlank()) {
+                        val summary = mod.summary?.ifBlank { null } ?: mod.description?.ifBlank { null }
+                        if (summary != null) {
                             // Description text
                             SmolText(
-                                text = mod.description!!
+                                text = summary
                                     .lines()
                                     .filter { it.isNotBlank() }
-                                    .drop(1)
                                     .take(2)
                                     .joinToString(separator = "\n"),
                                 style = MaterialTheme.typography.caption,
@@ -150,13 +150,16 @@ fun AppScope.scrapedModCard(
                                 modifier = Modifier.heightIn(min = 24.dp),
                                 onClick = {
                                     alertDialogSetter.invoke {
+                                        val description =
+                                            mod.description?.ifBlank { null } ?: mod.summary?.ifBlank { null } ?: ""
+
                                         SmolAlertDialog(
                                             text = {
                                                 CompositionLocalProvider(
                                                     LocalUriHandler provides ModBrowserLinkLoader(linkLoader)
                                                 ) {
                                                     Markdown(
-                                                        content = mod.description!!,
+                                                        content = description,
                                                         modifier = Modifier
                                                             .verticalScroll(rememberScrollState())
                                                     )
@@ -212,13 +215,16 @@ private fun tags(modifier: Modifier = Modifier, mod: ScrapedMod) {
                     ModSource.Index -> "Index"
                     ModSource.ModdingSubforum -> "Modding Subforum"
                     ModSource.Discord -> "Discord"
+                    ModSource.NexusMods -> "NexusMods"
                 }
             }
 
     }
     if (tags.isNotEmpty()) {
-        Row(modifier = modifier
-            .padding(top = 4.dp)) {
+        Row(
+            modifier = modifier
+                .padding(top = 4.dp)
+        ) {
             Icon(
                 modifier = Modifier.size(12.dp).align(Alignment.Bottom),
                 painter = painterResource("icon-tag.svg"),
@@ -304,7 +310,9 @@ fun scrapedModCardPreview() = smolPreview {
     AppScope(windowState = WindowState(), recomposer = currentRecomposeScope).scrapedModCard(
         mod = ScrapedMod(
             name = "Archean Order",
-            description = "test description",
+            summary = "test summary",
+            description = "test description which is a longer summary",
+            modVersion = null,
             gameVersionReq = "0.95a",
             authors = "Morrokain",
             authorsList = listOf("Morrokain"),

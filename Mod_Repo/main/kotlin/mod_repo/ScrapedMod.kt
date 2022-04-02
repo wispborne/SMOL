@@ -19,7 +19,9 @@ import io.ktor.http.*
  */
 data class ScrapedMod(
     val name: String,
+    val summary: String?,
     val description: String?,
+    val modVersion: String?,
     val gameVersionReq: String?,
     val authors: String,
     val authorsList: List<String>?,
@@ -45,7 +47,8 @@ data class ScrapedMod(
 enum class ModSource {
     Index,
     ModdingSubforum,
-    Discord
+    Discord,
+    NexusMods,
 }
 
 data class Image(
