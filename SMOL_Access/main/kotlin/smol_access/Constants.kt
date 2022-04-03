@@ -14,7 +14,6 @@ package smol_access
 
 import utilities.toPathOrNull
 import java.nio.file.Path
-import kotlin.io.path.Path
 
 object Constants {
     const val APP_NAME = "SMOL"
@@ -42,14 +41,14 @@ object Constants {
     const val FORUM_HOSTNAME = "fractalsoftworks.com"
 
     const val APP_FOLDER_NAME = "SMOL-data"
-    val APP_FOLDER_DEFAULT: Path = Path("", APP_FOLDER_NAME)
-    val STAGING_FOLDER_DEFAULT: Path = APP_FOLDER_DEFAULT.resolve("staging")
-    val UI_CONFIG_PATH: Path = APP_FOLDER_DEFAULT.resolve("SMOL_UIConfig.json")
-    val APP_CONFIG_PATH: Path = APP_FOLDER_DEFAULT.resolve("SMOL_AppConfig.json")
+    val APP_FOLDER_PATH: Path = Path.of("").toAbsolutePath().resolve(APP_FOLDER_NAME)
+    val UI_CONFIG_PATH: Path = APP_FOLDER_PATH.resolve("SMOL_UIConfig.json")
+    val APP_CONFIG_PATH: Path = APP_FOLDER_PATH.resolve("SMOL_AppConfig.json")
+    val CEF_STORAGE_PATH: Path = APP_FOLDER_PATH.resolve("browser")
     internal val BASE_THEME_CONFIG_PATH: Path? = resourcesDir?.resolve("SMOL_Themes.json")
-    internal val USER_THEME_CONFIG_PATH: Path? = APP_FOLDER_DEFAULT.resolve("SMOL_UserThemes.json")
-    val VERCHECK_CACHE_PATH: Path = APP_FOLDER_DEFAULT.resolve("SMOL_VerCheckCache.json")
-    val VRAM_CHECKER_RESULTS_PATH: Path = APP_FOLDER_DEFAULT.resolve("SMOL_VRAMCheckResults.json")
+    internal val USER_THEME_CONFIG_PATH: Path? = APP_FOLDER_PATH.resolve("SMOL_UserThemes.json")
+    val VERCHECK_CACHE_PATH: Path = APP_FOLDER_PATH.resolve("SMOL_VerCheckCache.json")
+    val VRAM_CHECKER_RESULTS_PATH: Path = APP_FOLDER_PATH.resolve("SMOL_VRAMCheckResults.json")
 
     const val SMOL_RELEASES_URL = "https://github.com/davidwhitman/SMOL_Dist/releases"
 
@@ -65,7 +64,7 @@ object Constants {
     const val UPDATE_URL_UNSTABLE = "$baseUpdateUrl/unstable"
     const val UPDATE_URL_TEST = "$baseUpdateUrl/test"
 
-    val TEMP_DIR = System.getProperty("java.io.tmpdir")?.let { Path.of(it) } ?: APP_FOLDER_DEFAULT
+    val TEMP_DIR = System.getProperty("java.io.tmpdir")?.let { Path.of(it) } ?: APP_FOLDER_PATH
 
     const val TAG_TRACE = "trace"
 

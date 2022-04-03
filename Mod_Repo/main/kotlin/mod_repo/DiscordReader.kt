@@ -62,9 +62,14 @@ internal object DiscordReader {
         println("Scraping Discord's #mod_updates...")
         return getMessages(httpClient, authToken)
             .map { message ->
-                val link = message.content?.lines()
+                val messageLines = message.content?.lines()
+                val forumUrl = messageLines
                     ?.mapNotNull { urlFinderRegex.find(it)?.value }
-                    ?.prefer { it.contains("fractalsoftworks") }
+                    ?.firstOrNull { it.contains("fractalsoftworks") }
+                    ?.let { kotlin.runCatching { Url(it) }.onFailure { Timber.w(it) }.getOrNull() }
+
+                val downloadUrl = messageLines
+                    ?.mapNotNull { urlFinderRegex.find(it)?.value }
                     ?.prefer { it.contains("/releases/download") }
                     ?.prefer { it.contains("/releases") }
                     ?.prefer { it.contains("dropbox") }
@@ -72,19 +77,23 @@ internal object DiscordReader {
                     ?.prefer { it.contains("patreon") }
                     ?.prefer { it.contains("bitbucket") }
                     ?.prefer { it.contains("github") }
+                    ?.prefer { it.contains("fractalsoftworks") }
                     ?.firstOrNull()
                     ?.let { kotlin.runCatching { Url(it) }.onFailure { Timber.w(it) }.getOrNull() }
                 ScrapedMod(
-                    name = message.content?.lines()?.firstOrNull()?.removeMarkdownFromName() ?: "(Discord Mod)",
-                    summary = message.content?.drop(1)?.take(2),
-                    description = message.content?.drop(1),
+                    name = messageLines?.firstOrNull()?.removeMarkdownFromName() ?: "(Discord Mod)",
+                    summary = messageLines?.drop(1)?.take(2)?.joinToString(separator = "\n"),
+                    description = messageLines?.drop(1)?.joinToString(separator = "\n"),
                     modVersion = null,
                     gameVersionReq = "",
                     authors = message.author?.username ?: "",
                     authorsList = message.author?.username.asList(),
-                    forumPostLink = link,
-                    link = link,
-                    discordMessageLink = Url("https://discord.com/channels/$serverId/$modUpdatesChannelId/${message.id}"),
+                    forumPostLink = forumUrl,
+                    link = downloadUrl,
+                    urls = listOfNotNull(
+                        forumUrl?.let { ModUrlType.Forum to forumUrl },
+                        ModUrlType.Discord to Url("https://discord.com/channels/$serverId/$modUpdatesChannelId/${message.id}"),
+                    ).toMap(),
                     source = ModSource.Discord,
                     sources = listOf(ModSource.Discord),
                     categories = emptyList(),

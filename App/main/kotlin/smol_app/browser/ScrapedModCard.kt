@@ -40,6 +40,7 @@ import io.kamel.image.lazyPainterResource
 import io.ktor.http.*
 import mod_repo.Image
 import mod_repo.ModSource
+import mod_repo.ModUrlType
 import mod_repo.ScrapedMod
 import org.tinylog.kotlin.Logger
 import smol_app.WindowState
@@ -121,12 +122,12 @@ fun AppScope.scrapedModCard(
                             fontFamily = SmolTheme.orbitronSpaceFont,
                             text = mod.name.ifBlank { "???" }
                         )
-                        if (mod.authors.isNotBlank()) {
+                        if (mod.authors().isNotEmpty()) {
                             Text(
                                 modifier = Modifier.padding(top = 8.dp),
                                 fontSize = 11.sp,
                                 fontStyle = FontStyle.Italic,
-                                text = mod.authors
+                                text = mod.authors().joinToString()
                             )
                         }
 
@@ -196,6 +197,7 @@ fun AppScope.scrapedModCard(
                     animateFloatAsState(if (isBeingHovered) 1.0f else 0.7f)
                 BrowserIcon(iconModifier = Modifier.alpha(alphaOfHoverDimmedElements.value), mod = mod)
                 DiscordIcon(iconModifier = Modifier.alpha(alphaOfHoverDimmedElements.value), mod = mod)
+                NexusModsIcon(iconModifier = Modifier.alpha(alphaOfHoverDimmedElements.value), mod = mod)
             }
         }
     }
@@ -204,7 +206,7 @@ fun AppScope.scrapedModCard(
 @Composable
 private fun tags(modifier: Modifier = Modifier, mod: ScrapedMod) {
     val tags = remember {
-        mod.categories?.sorted().orEmpty() + mod.sources.orEmpty()
+        mod.categories().sorted() + mod.sources()
             .sortedWith(
                 compareBy<ModSource> { it == ModSource.Index }
                     .thenBy { it == ModSource.Discord }
@@ -318,7 +320,7 @@ fun scrapedModCardPreview() = smolPreview {
             authorsList = listOf("Morrokain"),
             forumPostLink = Url("index0026.html?topic=13183.0"),
             link = Url("index0026.html?topic=13183.0"),
-            discordMessageLink = Url("https://discord.com/channels/187635036525166592/537191061156659200/947258123528319097"),
+            urls = mapOf(ModUrlType.Discord to Url("https://discord.com/channels/187635036525166592/537191061156659200/947258123528319097")),
             categories = listOf("Total Conversions"),
             source = ModSource.Index,
             sources = listOf(ModSource.Index, ModSource.Discord),
@@ -331,8 +333,10 @@ fun scrapedModCardPreview() = smolPreview {
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun BrowserIcon(modifier: Modifier = Modifier, iconModifier: Modifier = Modifier, mod: ScrapedMod) {
-    if (mod.link?.toString()?.isBlank() == false) {
-        val descText = "Open in an external browser.\n${mod.forumPostLink}"
+    val forumUrl = mod.urls()[ModUrlType.Forum]?.toString()
+
+    if (forumUrl?.isBlank() == false) {
+        val descText = "Open in an external browser.\n${forumUrl}"
         SmolTooltipArea(
             modifier = modifier,
             tooltip = { SmolTooltipText(text = descText) }) {
@@ -346,7 +350,7 @@ fun BrowserIcon(modifier: Modifier = Modifier, iconModifier: Modifier = Modifier
                     .mouseClickable {
                         if (this.buttons.isPrimaryPressed) {
                             runCatching {
-                                mod.link?.toString()?.let { uriHandler.openUri(it) }
+                                forumUrl.let { uriHandler.openUri(it) }
                             }
                                 .onFailure { Logger.warn(it) }
                         }
@@ -360,8 +364,10 @@ fun BrowserIcon(modifier: Modifier = Modifier, iconModifier: Modifier = Modifier
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun DiscordIcon(modifier: Modifier = Modifier, iconModifier: Modifier = Modifier, mod: ScrapedMod) {
-    if (mod.discordMessageLink?.toString()?.isBlank() == false) {
-        val descText = "Open in web Discord.\n${mod.discordMessageLink}"
+    val discordUrl = mod.urls()[ModUrlType.Discord]
+
+    if (discordUrl?.toString()?.isBlank() == false) {
+        val descText = "Open in web Discord.\n${discordUrl}"
         SmolTooltipArea(
             modifier = modifier,
             tooltip = { SmolTooltipText(text = descText) }) {
@@ -376,7 +382,39 @@ fun DiscordIcon(modifier: Modifier = Modifier, iconModifier: Modifier = Modifier
                     .mouseClickable {
                         if (this.buttons.isPrimaryPressed) {
                             runCatching {
-                                mod.discordMessageLink?.toString()?.openAsUriInBrowser()
+                                discordUrl.toString().openAsUriInBrowser()
+                            }
+                                .onFailure { Logger.warn(it) }
+                        }
+                    },
+                tint = SmolTheme.dimmedIconColor()
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
+@Composable
+fun NexusModsIcon(modifier: Modifier = Modifier, iconModifier: Modifier = Modifier, mod: ScrapedMod) {
+    val nexusModsUrl = mod.urls()[ModUrlType.NexusMods]
+
+    if (nexusModsUrl?.toString()?.isBlank() == false) {
+        val descText = "Open in web NexusMods.\n$nexusModsUrl"
+        SmolTooltipArea(
+            modifier = modifier,
+            tooltip = { SmolTooltipText(text = descText) }) {
+            Icon(
+                painter = painterResource("icon-nexus.svg"),
+                contentDescription = descText,
+                modifier = iconModifier
+                    .padding(top = 8.dp)
+                    .size(16.dp)
+                    .padding(1.dp)
+                    .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)))
+                    .mouseClickable {
+                        if (this.buttons.isPrimaryPressed) {
+                            runCatching {
+                                nexusModsUrl.toString().openAsUriInBrowser()
                             }
                                 .onFailure { Logger.warn(it) }
                         }

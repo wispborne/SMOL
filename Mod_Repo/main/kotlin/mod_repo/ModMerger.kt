@@ -134,10 +134,10 @@ internal class ModMerger {
                                             mod.authors().joinToString()
                                         }' from ${mod.sources} (${
                                             when (mod.sources().firstOrNull()) {
-                                                ModSource.Index -> mod.forumPostLink
-                                                ModSource.ModdingSubforum -> mod.forumPostLink
-                                                ModSource.Discord -> mod.discordMessageLink
-                                                ModSource.NexusMods -> mod.link
+                                                ModSource.Index -> mod.urls()[ModUrlType.Forum]?.toString()
+                                                ModSource.ModdingSubforum -> mod.urls()[ModUrlType.Forum]?.toString()
+                                                ModSource.Discord -> mod.urls()[ModUrlType.Discord]?.toString()
+                                                ModSource.NexusMods -> mod.urls()[ModUrlType.NexusMods]?.toString()
                                                 null -> "no source"
                                             }.toString()
                                         })"
@@ -232,11 +232,7 @@ internal class ModMerger {
                         right = modToFoldIn.link,
                         doesRightHavePriority = doesNewModHavePriority
                     ),
-                    discordMessageLink = chooseBest(
-                        left = mergedMod.discordMessageLink,
-                        right = modToFoldIn.discordMessageLink,
-                        doesRightHavePriority = doesNewModHavePriority
-                    ),
+                    urls = mergedMod.urls() + modToFoldIn.urls(),
                     source = chooseBest(
                         left = mergedMod.source,
                         right = modToFoldIn.source,

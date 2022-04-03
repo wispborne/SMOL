@@ -13,10 +13,11 @@
 package mod_repo
 
 import utilities.Config
+import utilities.IJsanity
 import utilities.Jsanity
 import utilities.JsonFilePrefStorage
 
-class ModRepoCache(gson: Jsanity) : Config(
+class ModRepoCache(gson: IJsanity) : Config(
     prefStorage = JsonFilePrefStorage(
         gson = gson,
         file = location

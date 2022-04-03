@@ -25,13 +25,14 @@ import mod_repo.ModRepoCache
 import mod_repo.ScrapedMod
 import smol_access.config.AppConfig
 import timber.ktx.Timber
+import utilities.IJsanity
 import utilities.Jsanity
 import java.nio.file.Path
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.io.path.readText
 
-class ModRepo internal constructor(private val jsanity: Jsanity, private val httpClientBuilder: HttpClientBuilder) {
+class ModRepo internal constructor(private val jsanity: IJsanity, private val httpClientBuilder: HttpClientBuilder) {
     private val modRepoCache = ModRepoCache(jsanity)
     private val scope = CoroutineScope(Job())
     private val items_ = MutableStateFlow(emptyList<ScrapedMod>())
@@ -74,7 +75,7 @@ class ModRepo internal constructor(private val jsanity: Jsanity, private val htt
                         Timber.w(it) { "Unable to fetch mods from $modRepoUrl." }
                     }
                     .getOrNull()
-                    ?.let { jsanity.fromJson<ScrapedModsRepo>(json = it, shouldStripComments = false) }
+                    ?.let { jsanity.fromJson<ScrapedModsRepo>(json = it, typeOfT = ScrapedModsRepo::class.java, shouldStripComments = false) }
 
             if (freshIndexMods != null) {
                 Timber.i { "Updated scraped mods. Previous: ${modRepoCache.items.count()}, now: ${freshIndexMods.items.count()}" }

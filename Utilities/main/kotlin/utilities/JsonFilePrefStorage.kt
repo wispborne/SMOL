@@ -20,12 +20,11 @@ import kotlin.io.path.createDirectories
 import kotlin.io.path.createFile
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
-import kotlin.reflect.KProperty
 import kotlin.reflect.KType
 import kotlin.reflect.javaType
 import kotlin.reflect.typeOf
 
-class JsonFilePrefStorage(private val gson: Jsanity, private val file: Path) : IConfig.PrefStorage {
+class JsonFilePrefStorage(private val gson: IJsanity, private val file: Path) : IConfig.PrefStorage {
     init {
         if (!file.exists()) {
             file.parent?.createDirectories()
@@ -56,7 +55,7 @@ class JsonFilePrefStorage(private val gson: Jsanity, private val file: Path) : I
                 shouldStripComments = false
             )
                 .toMutableMap().apply { this[key] = value as T }
-                .run { file.writeText(gson.toJson(this)) })
+                .run { file.writeText(gson.toJson(this, type::class.java)) })
                 .also { Timber.v { "Set '$key' as '$it' in '${file.fileName}'." } }
         }
 

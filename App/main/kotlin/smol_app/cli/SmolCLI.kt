@@ -135,7 +135,7 @@ class SmolCLI(
                 VramChecker(
                     enabledModIds = access.reload()?.mods?.filter { it.hasEnabledVariant }?.map { it.id },
                     modIdsToCheck = null,
-                    foldersToCheck = listOfNotNull(gamePathManager.getModsPath(), Constants.STAGING_FOLDER_DEFAULT),
+                    foldersToCheck = listOfNotNull(gamePathManager.getModsPath()),
                     showGfxLibDebugOutput = false,
                     showPerformance = false,
                     showSkippedFiles = false,

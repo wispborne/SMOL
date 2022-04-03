@@ -75,9 +75,9 @@ private fun sublimeFuzzyModPostSearch(query: String, mod: ScrapedMod): Pair<Scra
     ModRepoUtils.compareToFindBestMatch(leftList = query.asList(), rightList = mod.sources().map { it.name })
         .let { (it.isMatch to it.score).filterAndAdd(it.rightMatch) }
 
-    if (mod.categories != null) {
-        Fuzzy.fuzzyMatch(query, mod.categories!!.joinToString())
-            .run { filterAndAdd(mod.categories!!.joinToString()) }
+    if (mod.categories().isNotEmpty()) {
+        Fuzzy.fuzzyMatch(query, mod.categories().joinToString())
+            .run { filterAndAdd(mod.categories().joinToString()) }
     }
 
     Timber.d { "${mod.name}'s match of '$query' had a total score of ${results.values.sum()} and single highest of ${results.values.maxOrNull()}." }
@@ -111,9 +111,9 @@ private fun fuzzyWuzzyModPostSearch(query: String, mod: ScrapedMod): Pair<Scrape
         FuzzySearch.partialRatio(query, source.name) { it.lowercase() }
             .run { filterAndAdd(source.name) }
     }
-    if (mod.categories != null) {
-        FuzzySearch.partialRatio(query, mod.categories!!.joinToString()) { it.lowercase() }
-            .run { filterAndAdd(mod.categories!!.joinToString()) }
+    if (mod.categories().isNotEmpty()) {
+        FuzzySearch.partialRatio(query, mod.categories().joinToString()) { it.lowercase() }
+            .run { filterAndAdd(mod.categories().joinToString()) }
     }
 
     Logger.info { "${mod.name}'s match of '$query' had a total score of ${results.values.sum()} and single highest of ${results.values.maxOrNull()}." }

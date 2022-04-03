@@ -45,7 +45,7 @@ class VramCheckerManager(
         val results = VramChecker(
             enabledModIds = mods.filter { it.hasEnabledVariant }.map { it.id },
             modIdsToCheck = modIdsToUpdate,
-            foldersToCheck = listOfNotNull(modsPath, Constants.STAGING_FOLDER_DEFAULT),
+            foldersToCheck = listOfNotNull(modsPath),
             showGfxLibDebugOutput = false,
             showPerformance = false,
             showSkippedFiles = false,

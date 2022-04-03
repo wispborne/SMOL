@@ -23,16 +23,18 @@ data class ScrapedMod(
     val description: String?,
     val modVersion: String?,
     val gameVersionReq: String?,
-    val authors: String,
-    val authorsList: List<String>?,
+    internal val authors: String,
+    internal val authorsList: List<String>?,
+    @Deprecated("Use `links` instead.")
     val link: Url?,
-    @Deprecated("Use `link` instead, as the mod isn't necessarily on the forum.") val forumPostLink: Url?,
-    val discordMessageLink: Url?,
+    @Deprecated("Use `links` instead.")
+    val forumPostLink: Url?,
+    internal val urls: Map<ModUrlType, Url>?,
     @Deprecated("Use `sources` because similar mods are now merged.")
-    val source: ModSource?,
-    val sources: List<ModSource>?,
-    val categories: List<String>?,
-    val images: Map<String, Image>?
+    internal val source: ModSource?,
+    internal val sources: List<ModSource>?,
+    internal val categories: List<String>?,
+    internal val images: Map<String, Image>?
 ) {
     fun authors() = authorsList.orEmpty()
     fun authorsWithAliases() = authorsList.orEmpty()
@@ -42,6 +44,7 @@ data class ScrapedMod(
     fun categories() = categories.orEmpty()
     fun sources() = sources.orEmpty()
     fun images() = images.orEmpty()
+    fun urls() = urls.orEmpty()
 }
 
 enum class ModSource {
@@ -49,6 +52,13 @@ enum class ModSource {
     ModdingSubforum,
     Discord,
     NexusMods,
+}
+
+enum class ModUrlType {
+    Forum,
+    Discord,
+    NexusMods,
+    Download
 }
 
 data class Image(

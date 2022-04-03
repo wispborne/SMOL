@@ -105,6 +105,7 @@ class ServiceLocator internal constructor(
         userManager = userManager, access = access, modsCache = modsCache
     ),
     val themeManager: ThemeManager = ThemeManager(userManager = userManager, jsanity = jsanity),
+//    val moshanity: Moshanity = Moshanity(),
     val modRepo: ModRepo = ModRepo(jsanity = jsanity, httpClientBuilder = httpClientBuilder)
 ) {
     companion object {

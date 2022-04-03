@@ -108,6 +108,7 @@ internal object NexusReader {
                 }
 
                 val author = mod.author?.nullIfBlank() ?: mod.uploadedBy?.nullIfBlank() ?: mod.user?.name ?: ""
+                val nexusModsUrl = kotlin.runCatching { getWebLinkForModId(modId) }.getOrNull()
                 ScrapedMod(
                     name = mod.name ?: "(no name)",
                     summary = mod.summary,
@@ -116,9 +117,9 @@ internal object NexusReader {
                     gameVersionReq = null,
                     authors = author,
                     authorsList = author.asList(),
-                    link = kotlin.runCatching { getWebLinkForModId(modId) }.getOrNull(),
+                    link = nexusModsUrl,
                     forumPostLink = null,
-                    discordMessageLink = null,
+                    urls = nexusModsUrl?.let { mapOf(ModUrlType.NexusMods to nexusModsUrl) } ?: emptyMap(),
                     source = ModSource.NexusMods,
                     sources = ModSource.NexusMods.asList(),
                     categories = (mod.categoryId?.let { categories.getOrNull(it) }?.name)?.asList(),

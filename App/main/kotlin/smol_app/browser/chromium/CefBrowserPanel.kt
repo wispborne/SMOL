@@ -30,6 +30,7 @@ import org.cef.handler.CefLifeSpanHandlerAdapter
 import org.cef.handler.CefLoadHandler
 import org.cef.handler.CefLoadHandler.ErrorCode
 import org.cef.network.CefRequest.TransitionType
+import smol_access.Constants
 import smol_app.browser.DownloadHander
 import tests.detailed.handler.MessageRouterHandler
 import tests.detailed.handler.MessageRouterHandlerEx
@@ -139,7 +140,10 @@ class CefBrowserPanel
     init {
         if (cefApp == null) {
             val settings = CefSettings()
-            settings.windowless_rendering_enabled = useOSR
+                .apply {
+                    windowless_rendering_enabled = useOSR
+                    cache_path = Constants.CEF_STORAGE_PATH.absolutePathString()
+                }
             cefApp = CefApp.getInstance(settings)
 
             // (2) JCEF can handle one to many browser instances simultaneous. These

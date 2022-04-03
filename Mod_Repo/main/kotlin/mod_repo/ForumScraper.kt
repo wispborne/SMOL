@@ -69,6 +69,7 @@ internal object ForumScraper {
                     categoryElement.select("li").map { modElement ->
                         val link = modElement.select("a.bbc_link")
 
+                        val forumPostLink = link.attr("href").ifBlank { null }?.let { Url(it) }
                         ScrapedMod(
                             name = link.text(),
                             summary = null,
@@ -77,9 +78,11 @@ internal object ForumScraper {
                             gameVersionReq = modElement.select("strong span").text(),
                             authors = modElement.select("em strong").text(),
                             authorsList = modElement.select("em strong").text().asList(),
-                            forumPostLink = link.attr("href").ifBlank { null }?.let { Url(it) },
-                            link = link.attr("href").ifBlank { null }?.let { Url(it) },
-                            discordMessageLink = null,
+                            forumPostLink = forumPostLink,
+                            link = forumPostLink,
+                            urls = listOfNotNull(
+                                forumPostLink?.let { ModUrlType.Forum to forumPostLink }
+                            ).toMap(),
                             source = ModSource.Index,
                             sources = listOf(ModSource.Index),
                             categories = listOf(category),
@@ -137,6 +140,7 @@ internal object ForumScraper {
                             val titleLinkElement = postElement.select("td.subject span a")
                             val authorLinkElement = postElement.select("td.starter a")
 
+                            val forumPostLink = titleLinkElement.attr("href").ifBlank { null }?.let { Url(it) }
                             ScrapedMod(
                                 name = titleLinkElement.text().replace(versionRegex, "").trim(),
                                 summary = null,
@@ -147,9 +151,11 @@ internal object ForumScraper {
                                     ?: "",
                                 authors = authorLinkElement.text(),
                                 authorsList = authorLinkElement.text().asList(),
-                                forumPostLink = titleLinkElement.attr("href").ifBlank { null }?.let { Url(it) },
-                                link = titleLinkElement.attr("href").ifBlank { null }?.let { Url(it) },
-                                discordMessageLink = null,
+                                forumPostLink = forumPostLink,
+                                link = forumPostLink,
+                                urls = listOfNotNull(
+                                    forumPostLink?.let { ModUrlType.Forum to forumPostLink }
+                                ).toMap(),
                                 source = ModSource.ModdingSubforum,
                                 sources = listOf(ModSource.ModdingSubforum),
                                 categories = emptyList(),

@@ -23,8 +23,9 @@ import utilities.Jsanity
 import java.nio.file.Path
 import kotlin.io.path.copyTo
 import kotlin.io.path.exists
+import kotlin.io.path.outputStream
 import kotlin.io.path.reader
-import kotlin.io.path.writer
+import kotlin.reflect.typeOf
 
 class GameEnabledMods(
     private val gson: Jsanity,
@@ -36,8 +37,12 @@ class GameEnabledMods(
                 val enabledModsFile = getEnabledModsFile() ?: return null
 
                 if (!enabledModsFile.exists()) {
-                    enabledModsFile.writer().use { outStream ->
-                        gson.toJson(EnabledMods(emptyList()), outStream)
+                    enabledModsFile.outputStream().use { outStream ->
+                        gson.toJson(
+                            obj = EnabledMods(emptyList()),
+                            typeOfT = typeOf<EnabledMods>().javaClass,
+                            writer = outStream
+                        )
                     }
                 }
 
@@ -101,9 +106,9 @@ class GameEnabledMods(
                 createBackupFileIfDoesntExist(enabledModsFile ?: return)
                 val prevEnabledMods = getEnabledMods()
 
-                enabledModsFile.writer().use { outStream ->
+                enabledModsFile.outputStream().use { outStream ->
                     val enabledMods = mutator(prevEnabledMods) ?: prevEnabledMods
-                    gson.toJson(enabledMods, outStream)
+                    gson.toJson(obj = enabledMods, typeOfT = EnabledMods::class.java, writer = outStream)
                 }
             }
         }
