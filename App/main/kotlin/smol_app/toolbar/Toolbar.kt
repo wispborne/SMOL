@@ -163,7 +163,6 @@ fun AppScope.launchButton(modifier: Modifier = Modifier) {
                     alertDialogSetter.invoke {
                         var showGameLauncherWarning by mutableStateOf(SL.userManager.activeProfile.value.showGameLauncherWarning ?: true)
                         val launchButtonAction = SL.userManager.activeProfile.collectAsState().value.launchButtonAction
-                        val snapshotOfLaunchButtonAction = SL.userManager.activeProfile.value.launchButtonAction
 
                         SmolAlertDialog(
                             onDismissRequest = { alertDialogSetter.invoke(null) },
@@ -194,7 +193,7 @@ fun AppScope.launchButton(modifier: Modifier = Modifier) {
                                                         launchButtonAction = if (checked) {
                                                             UserProfile.LaunchButtonAction.OpenFolder
                                                         } else {
-                                                            snapshotOfLaunchButtonAction
+                                                            UserProfile.LaunchButtonAction.DirectLaunch
                                                         }
                                                     )
                                                 }
@@ -225,7 +224,7 @@ fun AppScope.launchButton(modifier: Modifier = Modifier) {
                                         it.copy(showGameLauncherWarning = showGameLauncherWarning)
                                     }
                                     onLaunchButtonConfirmed()
-                                }) { Text("Ok") }
+                                }) { Text("Launch") }
                             }
                         )
                     }
