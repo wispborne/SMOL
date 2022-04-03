@@ -125,5 +125,5 @@ data class SaveFile(
 data class SaveFileMod(
     val id: String,
     val name: String,
-    val version: Version
+    val version: Version?
 )

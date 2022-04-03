@@ -297,7 +297,8 @@ private suspend fun reloadModsInner() {
                         )
                     },
                     async {
-                        SL.saveReader.readAllSaves()
+                        kotlin.runCatching { SL.saveReader.readAllSaves() }
+                            .onFailure { Timber.w(it) }
                     }
                 ).awaitAll()
             }

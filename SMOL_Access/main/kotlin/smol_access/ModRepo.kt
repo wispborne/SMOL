@@ -26,10 +26,10 @@ import mod_repo.ScrapedMod
 import smol_access.config.AppConfig
 import timber.ktx.Timber
 import utilities.IJsanity
-import utilities.Jsanity
 import java.nio.file.Path
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import kotlin.io.path.absolutePathString
 import kotlin.io.path.readText
 
 class ModRepo internal constructor(private val jsanity: IJsanity, private val httpClientBuilder: HttpClientBuilder) {
@@ -60,6 +60,7 @@ class ModRepo internal constructor(private val jsanity: IJsanity, private val ht
                     // Try to read from local file first, for debugging, in ./App/ModRepo.json.
                     if (true) {
                         localModRepo.readText()
+                            .also { Timber.i { "Read local mod repo from ${localModRepo.absolutePathString()}." } }
                     } else
                         throw NotImplementedError()
                 }
@@ -71,11 +72,16 @@ class ModRepo internal constructor(private val jsanity: IJsanity, private val ht
                             client.get<HttpResponse>(modRepoUrl).receive()
                         }
                     }
-                    .onFailure {
-                        Timber.w(it) { "Unable to fetch mods from $modRepoUrl." }
-                    }
+                    .onSuccess { Timber.i { "Fetched mod repo from $modRepoUrl." } }
+                    .onFailure { Timber.w(it) { "Unable to fetch mods from $modRepoUrl." } }
                     .getOrNull()
-                    ?.let { jsanity.fromJson<ScrapedModsRepo>(json = it, typeOfT = ScrapedModsRepo::class.java, shouldStripComments = false) }
+                    ?.let {
+                        jsanity.fromJson<ScrapedModsRepo>(
+                            json = it,
+                            typeOfT = ScrapedModsRepo::class.java,
+                            shouldStripComments = false
+                        )
+                    }
 
             if (freshIndexMods != null) {
                 Timber.i { "Updated scraped mods. Previous: ${modRepoCache.items.count()}, now: ${freshIndexMods.items.count()}" }

@@ -35,6 +35,7 @@ import smol_access.business.SaveFile
 import smol_access.model.ModVariant
 import smol_access.model.SmolId
 import smol_access.model.UserProfile
+import smol_access.model.Version
 import smol_app.composables.*
 import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
@@ -155,7 +156,7 @@ fun AppScope.ModProfilesView(
                                                 UserProfile.ModProfile.ShallowModVariant(
                                                     modId = it.id,
                                                     modName = it.name,
-                                                    smolVariantId = ModVariant.createSmolId(it.id, it.version),
+                                                    smolVariantId = ModVariant.createSmolId(it.id, it.version ?: Version.parse("1.0.0")),
                                                     version = it.version
                                                 )
                                             },
