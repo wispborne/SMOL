@@ -17,8 +17,12 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import org.tinylog.Level
 import org.tinylog.Logger
 import org.tinylog.configuration.Configuration
+import smol_access.Constants
 import timber.LogLevel
 import timber.Timber
+import java.nio.file.Path
+import kotlin.io.path.absolute
+import kotlin.io.path.name
 import kotlin.properties.Delegates
 
 object Logging {
@@ -28,6 +32,8 @@ object Logging {
         extraBufferCapacity = 200,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
+
+    val logPath = Path.of("").absolute().resolve("SMOL.log")
 
     data class LogMessage(val logLevel: LogLevel, val message: String)
 
@@ -57,7 +63,7 @@ object Logging {
                     "writerRoll.level" to tinyLogLevelLower,
                     "writerRoll.format" to format,
                     "writerRoll.file" to "SMOL.{count}.log",
-                    "writerRoll.latest" to "SMOL.log",
+                    "writerRoll.latest" to logPath.name,
                     "writerRoll.buffered" to "true",
                     "writerRoll.backups" to "2",
                     "writerRoll.policies" to "size: 50mb",

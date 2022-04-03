@@ -18,34 +18,33 @@ import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonIOException
 import com.google.gson.JsonSyntaxException
-import com.google.gson.stream.JsonWriter
 import org.hjson.JsonValue
 import org.hjson.Stringify
 import timber.ktx.Timber
-import java.io.OutputStream
 import java.lang.reflect.Type
 
 
 class Jsanity(
     private val gson: Gson
-) : IJsanity() {
+) {
     @Throws(JsonSyntaxException::class)
-    override fun <T> fromJson(json: String, typeOfT: Type, shouldStripComments: Boolean): T {
+    fun <T> fromJson(json: String, typeOfT: Type, shouldStripComments: Boolean): T {
         return fromJsonString(json, typeOfT, shouldStripComments)
     }
 
     @Throws(JsonSyntaxException::class)
-    override fun <T> fromJson(json: String, classOfT: Class<T>, shouldStripComments: Boolean): T {
+    fun <T> fromJson(json: String, classOfT: Class<T>, shouldStripComments: Boolean): T {
         return fromJson(json, classOfT as Type, shouldStripComments)
     }
 
     @Throws(JsonSyntaxException::class)
-    override fun <T> fromJson(json: JsonElement, typeOfT: Type): T =
-        gson.fromJson(json, typeOfT)
+    fun <T> fromJson(json: JsonElement, classOfT: Class<T>?): T {
+        return gson.fromJson(json, classOfT)
+    }
 
     @Throws(JsonSyntaxException::class)
-    override fun <T> fromJson(json: Any, typeOfT: Type): T =
-        gson.fromJson(json.toString(), typeOfT)
+    fun <T> fromJson(json: JsonElement, typeOfT: Type): T =
+        gson.fromJson(json, typeOfT)
 
 //    fun <T> fromJson(json: Reader, typeToken: Type): T = gson.fromJson(json, typeToken)
 
@@ -66,13 +65,7 @@ class Jsanity(
         val hjson = kotlin.runCatching {
             JsonValue.readHjson(strippedJson).toString(Stringify.FORMATTED)
         }
-            .onFailure {
-                Timber.w(it) {
-                    "HJson error parsing: \n${
-                        strippedJson.lines().take(10).joinToString(separator = "\n")
-                    }"
-                }
-            }
+            .onFailure { Timber.w(it) { "HJson error parsing: \n${strippedJson.lines().take(10).joinToString(separator = "\n")}" } }
             .getOrThrow()
 
         // Jackson
@@ -95,13 +88,17 @@ class Jsanity(
             .getOrThrow()
     }
 
-    override fun <T> toJson(obj: T, typeOfT: Type): String {
+    fun toJson(obj: Any?): String {
         return gson.toJson(obj)
     }
 
     @Throws(JsonIOException::class)
-    override fun <T> toJson(obj: T, typeOfT: Type, writer: OutputStream) {
-        gson.toJson(obj, typeOfT, JsonWriter(writer.bufferedWriter()))
+    fun toJson(src: Any?, writer: Appendable?) = gson.toJson(src, writer)
+
+    fun stripJsonComments(json: String): String {
+        // Fast but chokes on
+        // "#t"# comment
+        return json.replace(Regex("(\"*?\")*((?<!\")#.*(?!\"))", RegexOption.MULTILINE), "")
     }
 }
 

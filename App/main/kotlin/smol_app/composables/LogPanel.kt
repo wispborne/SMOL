@@ -22,6 +22,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
@@ -35,10 +36,12 @@ import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.splitpane.ExperimentalSplitPaneApi
 import org.jetbrains.compose.splitpane.HorizontalSplitPane
 import org.jetbrains.compose.splitpane.rememberSplitPaneState
+import smol_access.Constants
 import smol_access.SL
 import smol_app.Logging
 import smol_app.UI
 import smol_app.themes.SmolTheme
+import smol_app.util.openInDesktop
 import smol_app.util.replaceTabsWithSpaces
 import timber.LogLevel
 
@@ -93,6 +96,13 @@ fun AppScope.logPanel(
                                 initiallySelectedIndex = selectedLogLevel.ordinal
                             )
                             Spacer(Modifier.weight(1f))
+                            IconButton(
+                                onClick = { Logging.logPath.openInDesktop() }) {
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = null
+                                )
+                            }
                             IconButton(
                                 onClick = { onHideModPanel() }) {
                                 Icon(
