@@ -46,7 +46,6 @@ internal object ForumScraper {
         return (scrapeModIndexLinks() ?: emptyList())
             .plus(runBlocking { scrapeModdingForumLinks(moddingForumPagesToScrape) } ?: emptyList())
             .plus(runBlocking { scrapeModForumLinks(modForumPagesToScrape) } ?: emptyList())
-            .map { mod -> cleanUpMod(mod) }
             .ifEmpty { null }
     }
 
@@ -69,7 +68,7 @@ internal object ForumScraper {
                     categoryElement.select("li").map { modElement ->
                         val link = modElement.select("a.bbc_link")
 
-                        val forumPostLink = link.attr("href").ifBlank { null }?.let { Url(it) }
+                        val forumPostLink = link.attr("href").ifBlank { null }?.let { Url(it) }?.cleanForumUrl()
                         ScrapedMod(
                             name = link.text(),
                             summary = null,
@@ -113,18 +112,11 @@ internal object ForumScraper {
         )
     }
 
-    private fun cleanUpMod(mod: ScrapedMod): ScrapedMod =
-        mod.copy(
-            forumPostLink = mod.forumPostLink?.copy(
-                parameters = mod.forumPostLink.parameters
-                    .filter { key, _ -> !key.equals("PHPSESSID", ignoreCase = true) }
-                    .let { Parameters.build { appendAll(it) } }),
-            link = mod.link?.copy(
-                parameters = mod.link.parameters
-                    .filter { key, _ -> !key.equals("PHPSESSID", ignoreCase = true) }
-                    .let { Parameters.build { appendAll(it) } })
-        )
-
+    private fun Url?.cleanForumUrl() =
+        this?.copy(
+            parameters = parameters
+                .filter { key, _ -> !key.equals("PHPSESSID", ignoreCase = true) }
+                .let { Parameters.build { appendAll(it) } })
 
     private suspend fun scrapeSubforumLinks(forumBaseUrl: String, subforumNumber: Int, take: Int): List<ScrapedMod>? {
         return kotlin.runCatching {
@@ -140,7 +132,7 @@ internal object ForumScraper {
                             val titleLinkElement = postElement.select("td.subject span a")
                             val authorLinkElement = postElement.select("td.starter a")
 
-                            val forumPostLink = titleLinkElement.attr("href").ifBlank { null }?.let { Url(it) }
+                            val forumPostLink = titleLinkElement.attr("href").ifBlank { null }?.let { Url(it) }.cleanForumUrl()
                             ScrapedMod(
                                 name = titleLinkElement.text().replace(versionRegex, "").trim(),
                                 summary = null,
