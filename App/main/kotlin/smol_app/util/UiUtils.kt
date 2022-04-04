@@ -29,9 +29,6 @@ import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.res.useResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import com.arkivanov.decompose.Router
-import com.arkivanov.decompose.RouterState
-import com.arkivanov.decompose.value.Value
 import dev.andrewbailey.diff.differenceOf
 import smol_access.Constants
 import smol_access.SL
@@ -197,14 +194,16 @@ fun smolPreview(modifier: Modifier = Modifier, content: @Composable AppScope.() 
         )
     ) {
         Box(modifier.padding(24.dp)) {
-            content.invoke(AppScope(windowState = WindowState()
-                .apply {
-                    router = rememberRouter(
-                        initialConfiguration = { Screen.Home },
-                        handleBackButton = true
-                    )
-                }, recomposer = currentRecomposeScope
-            )
+            content.invoke(
+                AppScope(
+                    windowState = WindowState()
+                        .apply {
+                            router = rememberRouter(
+                                initialConfiguration = { Screen.Home },
+                                handleBackButton = true
+                            )
+                        }, recomposer = currentRecomposeScope
+                )
             )
         }
     }
@@ -217,7 +216,7 @@ fun Constants.isJCEFEnabled() =
         .onFailure { Timber.d { it.message ?: "Couldn't find jcef" } }
         .getOrElse { false }
 
-fun Constants.isModBrowserEnabled() = isJCEFEnabled() && doesGamePathExist()
+fun Constants.isModBrowserEnabled() = doesGamePathExist()
 fun Constants.isModProfilesEnabled() = doesGamePathExist()
 fun Constants.doesGamePathExist() = SL.gamePathManager.path.value.exists()
 

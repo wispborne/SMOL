@@ -119,43 +119,45 @@ fun AppScope.ModBrowserView(
 //                        )
 //                    }
 //                }
-                SmolTooltipArea(
-                    modifier = Modifier
-                        .padding(end = 8.dp),
-                    tooltip = { SmolTooltipText(text = "Open in an external browser") }) {
-                    IconButton(
-                        onClick = {
-                            runCatching {
-                                browser.value?.currentUrl?.value?.first?.openAsUriInBrowser()
+                if (Constants.isJCEFEnabled()) {
+                    SmolTooltipArea(
+                        modifier = Modifier
+                            .padding(end = 8.dp),
+                        tooltip = { SmolTooltipText(text = "Open in an external browser") }) {
+                        IconButton(
+                            onClick = {
+                                runCatching {
+                                    browser.value?.currentUrl?.value?.first?.openAsUriInBrowser()
+                                }
+                                    .onFailure { Logger.warn(it) }
                             }
-                                .onFailure { Logger.warn(it) }
+                        ) {
+                            Icon(
+                                painter = painterResource("icon-web.svg"),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .width(24.dp)
+                                    .height(24.dp)
+                                    .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)))
+                            )
                         }
-                    ) {
-                        Icon(
-                            painter = painterResource("icon-web.svg"),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .width(24.dp)
-                                .height(24.dp)
-                                .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)))
-                        )
                     }
-                }
-                SmolTooltipArea(
-                    modifier = Modifier,
-                    tooltip = { SmolTooltipText(text = "Toggle full-width browser") }) {
-                    IconButton(
-                        onClick = {
-                            isBrowserFullscreen = !isBrowserFullscreen
+                    SmolTooltipArea(
+                        modifier = Modifier,
+                        tooltip = { SmolTooltipText(text = "Toggle full-width browser") }) {
+                        IconButton(
+                            onClick = {
+                                isBrowserFullscreen = !isBrowserFullscreen
+                            }
+                        ) {
+                            Icon(
+                                painter = painterResource("icon-maximize.svg"),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .width(24.dp)
+                                    .height(24.dp)
+                            )
                         }
-                    ) {
-                        Icon(
-                            painter = painterResource("icon-maximize.svg"),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .width(24.dp)
-                                .height(24.dp)
-                        )
                     }
                 }
                 Spacer(modifier = Modifier.width(16.dp))
@@ -269,68 +271,75 @@ fun AppScope.ModBrowserView(
                         }
                         second {
                             Column {
-                                Row(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 8.dp)) {
-                                    var canGoBack by remember { mutableStateOf(browser.value?.canGoBack ?: false) }
-                                    var canGoForward by remember {
-                                        mutableStateOf(
-                                            browser.value?.canGoForward ?: false
-                                        )
-                                    }
-                                    SmolSecondaryButton(
-                                        modifier = Modifier.padding(start = 8.dp)
-                                            .align(Alignment.CenterVertically),
-                                        onClick = { linkLoader.value?.invoke(Constants.FORUM_MOD_INDEX_URL) }
-                                    ) { Text("Index") }
-                                    SmolSecondaryButton(
-                                        modifier = Modifier.padding(start = 8.dp)
-                                            .align(Alignment.CenterVertically),
-                                        onClick = { linkLoader.value?.invoke(Constants.FORUM_MODDING_SUBFORUM_URL) }
-                                    ) { Text("Modding") }
-                                    IconButton(
-                                        modifier = Modifier.padding(start = 8.dp)
-                                            .align(Alignment.CenterVertically),
-                                        enabled = canGoBack,
-                                        onClick = { browser.value?.goBack() }
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.ArrowBack,
-                                            contentDescription = null
-                                        )
-                                    }
-                                    IconButton(
-                                        modifier = Modifier.padding(start = 8.dp, end = 8.dp)
-                                            .align(Alignment.CenterVertically),
-                                        enabled = canGoForward,
-                                        onClick = { browser.value?.goForward() }
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.ArrowForward,
-                                            contentDescription = null
-                                        )
-                                    }
-                                    var enteredUrl by remember { mutableStateOf("") }
-                                    LaunchedEffect(Unit) {
-                                        browser.value?.currentUrl?.collect {
-                                            enteredUrl = it.first
-                                            canGoBack = browser.value?.canGoBack ?: false
-                                            canGoForward = browser.value?.canGoForward ?: false
+                                if (Constants.isJCEFEnabled()) {
+                                    Row(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 8.dp)) {
+                                        var canGoBack by remember { mutableStateOf(browser.value?.canGoBack ?: false) }
+                                        var canGoForward by remember {
+                                            mutableStateOf(
+                                                browser.value?.canGoForward ?: false
+                                            )
                                         }
+                                        SmolSecondaryButton(
+                                            modifier = Modifier.padding(start = 8.dp)
+                                                .align(Alignment.CenterVertically),
+                                            onClick = { linkLoader.value?.invoke(Constants.FORUM_MOD_INDEX_URL) }
+                                        ) { Text("Index") }
+                                        SmolSecondaryButton(
+                                            modifier = Modifier.padding(start = 8.dp)
+                                                .align(Alignment.CenterVertically),
+                                            onClick = { linkLoader.value?.invoke(Constants.FORUM_MODDING_SUBFORUM_URL) }
+                                        ) { Text("Modding") }
+                                        IconButton(
+                                            modifier = Modifier.padding(start = 8.dp)
+                                                .align(Alignment.CenterVertically),
+                                            enabled = canGoBack,
+                                            onClick = { browser.value?.goBack() }
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.ArrowBack,
+                                                contentDescription = null
+                                            )
+                                        }
+                                        IconButton(
+                                            modifier = Modifier.padding(start = 8.dp, end = 8.dp)
+                                                .align(Alignment.CenterVertically),
+                                            enabled = canGoForward,
+                                            onClick = { browser.value?.goForward() }
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.ArrowForward,
+                                                contentDescription = null
+                                            )
+                                        }
+                                        var enteredUrl by remember { mutableStateOf("") }
+                                        LaunchedEffect(Unit) {
+                                            browser.value?.currentUrl?.collect {
+                                                enteredUrl = it.first
+                                                canGoBack = browser.value?.canGoBack ?: false
+                                                canGoForward = browser.value?.canGoForward ?: false
+                                            }
+                                        }
+                                        SmolOutlinedTextField(
+                                            modifier = Modifier.weight(1f)
+                                                .align(Alignment.CenterVertically)
+                                                .onEnterKeyPressed {
+                                                    browser.value?.loadUrl(enteredUrl)
+                                                    true
+                                                },
+                                            value = enteredUrl,
+                                            onValueChange = { enteredUrl = it },
+                                            label = { Text("Address") },
+                                            maxLines = 1,
+                                            singleLine = true
+                                        )
                                     }
-                                    SmolOutlinedTextField(
-                                        modifier = Modifier.weight(1f)
-                                            .align(Alignment.CenterVertically)
-                                            .onEnterKeyPressed {
-                                                browser.value?.loadUrl(enteredUrl)
-                                                true
-                                            },
-                                        value = enteredUrl,
-                                        onValueChange = { enteredUrl = it },
-                                        label = { Text("Address") },
-                                        maxLines = 1,
-                                        singleLine = true
+                                    embeddedBrowser(browser, linkLoader, defaultUrl ?: Constants.FORUM_MOD_INDEX_URL)
+                                } else {
+                                    Text(
+                                        text = "CEF (Chromium browser) not found.",
+                                        modifier = Modifier.align(Alignment.CenterHorizontally)
                                     )
                                 }
-                                embeddedBrowser(browser, linkLoader, defaultUrl ?: Constants.FORUM_MOD_INDEX_URL)
                             }
                         }
                         horizontalSplitter()
@@ -379,7 +388,7 @@ private fun AppScope.embeddedBrowser(
     startUrl: String
 ) {
     val background = MaterialTheme.colors.background
-    val useCEF = true
+    val useCEF = Constants.isJCEFEnabled()
 
     if (useCEF) {
         SwingPanel(

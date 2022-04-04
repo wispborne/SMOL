@@ -455,7 +455,6 @@ fun AppScope.modBrowserButton(modifier: Modifier = Modifier, isSelected: Boolean
         tooltip = {
             SmolTooltipText(
                 when {
-                    !Constants.isJCEFEnabled() -> "JCEF not found; add to /libs to enable the Mod Browser."
                     !Constants.doesGamePathExist() -> "Set a valid game path."
                     else -> "View and install mods from the internet."
                 }
