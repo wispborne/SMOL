@@ -58,8 +58,7 @@ fun AppScope.ModGridHeader(
     mods: SnapshotStateList<Mod?>
 ) {
     Row {
-        (SL.userManager.activeProfile.collectAsState().value.modGridPrefs.columnSettings
-            ?: UserManager.defaultProfile.modGridPrefs.columnSettings!!)
+        SL.userManager.activeProfile.collectAsState().value.modGridPrefs.columnSettings!!
             .entries
             .filter { it.value.isVisible }
             .sortedBy { it.value.position }
@@ -185,12 +184,16 @@ fun AppScope.ModGridHeader(
                         )
                     }
                     UserProfile.ModGridHeader.Category ->
-                        // Game Version
-                        Text(
-                            text = "Category",
+                        // Category
+
+                        SortableHeader(
                             modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
-                            fontWeight = FontWeight.Bold
-                        )
+                            columnSortField = ModGridSortField.Category,
+                            activeSortField = activeSortField,
+                            profile = profile
+                        ) {
+                            Text("Category", fontWeight = FontWeight.Bold)
+                        }
                 }.exhaustiveWhen()
             }
 

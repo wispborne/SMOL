@@ -14,10 +14,11 @@
 
 package utilities
 
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.stateIn
 import org.apache.commons.io.FileUtils
 import timber.ktx.Timber
 import java.awt.Toolkit
@@ -32,6 +33,12 @@ import java.nio.file.LinkOption
 import java.nio.file.Path
 import kotlin.io.path.*
 import kotlin.random.Random
+import kotlin.reflect.KClass
+import kotlin.reflect.KParameter
+import kotlin.reflect.KProperty1
+import kotlin.reflect.full.declaredMemberProperties
+import kotlin.reflect.full.isSubclassOf
+import kotlin.reflect.full.primaryConstructor
 import kotlin.streams.asSequence
 import kotlin.system.measureTimeMillis
 
@@ -258,4 +265,56 @@ fun Path.mountOf(): Path? {
  */
 inline fun <T> List<T>.skip(n: Int) = drop(n)
 
-inline fun Any.exhaustiveWhen() = this.run {  }
+inline fun Any.exhaustiveWhen() = this.run { }
+
+fun <T> mergeData(property: KProperty1<out T, Any?>, left: T, right: T): Any? {
+    val leftValue = property.getter.call(left)
+    val rightValue = property.getter.call(right)
+    return rightValue?.let {
+        if ((property.returnType.classifier as KClass<*>).isSubclassOf(Map::class)) (leftValue as? Map<*, *>)?.plus(it as Map<*, *>)
+        else leftValue?.merge(it)
+    } ?: rightValue ?: leftValue
+}
+
+fun <T> lastNonNull(property: KProperty1<out T, Any?>, left: T, right: T) =
+    property.getter.call(right) ?: property.getter.call(left)
+
+/**
+ * <https://stackoverflow.com/a/59958123/1622788>
+ */
+fun <T : Any> T.merge(preferredObj: T): T {
+    val nameToProperty = this::class.declaredMemberProperties.associateBy { it.name }
+    val primaryConstructor = this::class.primaryConstructor!!
+    val args: Map<KParameter, Any?> = primaryConstructor.parameters.associateWith { parameter ->
+        val property = nameToProperty[parameter.name]!!
+        val type = property.returnType.classifier as KClass<*>
+        when {
+            type.isData || type.isSubclassOf(Map::class) -> mergeData(property, this, preferredObj)
+            else -> lastNonNull(property, this, preferredObj)
+        }
+    }
+    return primaryConstructor.callBy(args)
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
+fun <T, K> StateFlow<T>.mapState(
+    scope: CoroutineScope,
+    transform: (data: T) -> K
+): StateFlow<K> {
+    return mapLatest {
+        transform(it)
+    }
+        .stateIn(scope, SharingStarted.Eagerly, transform(value))
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
+fun <T, K> StateFlow<T>.mapState(
+    initialValue: K,
+    scope: CoroutineScope,
+    transform: suspend (data: T) -> K
+): StateFlow<K> {
+    return mapLatest {
+        transform(it)
+    }
+        .stateIn(scope, SharingStarted.Eagerly, initialValue)
+}

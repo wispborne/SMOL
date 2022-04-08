@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import smol_access.SL
+import smol_access.business.metadata
 import smol_access.config.VramCheckerCache
 import smol_access.model.Mod
 import smol_access.model.SmolId
@@ -48,6 +49,7 @@ import smol_app.composables.SmolPopupMenu
 import smol_app.composables.SmolSecondaryButton
 import smol_app.themes.SmolTheme
 import smol_app.util.uiEnabled
+import utilities.nullIfBlank
 
 const val modGridViewDropdownWidth = 180
 
@@ -113,33 +115,41 @@ fun AppScope.ModGridView(
                                 ModGridSectionHeader(contentPadding, isCollapsed, groupName, modsInGroup, vramPosition)
                             }
                             if (!isCollapsed.value) {
+                                fun getSortValue(modRow: ModRow): Comparable<*>? {
+                                    return when (activeSortField) {
+                                        ModGridSortField.Name -> modRow.mod.findFirstEnabledOrHighestVersion?.modInfo?.name?.lowercase()
+                                        ModGridSortField.Author -> modRow.mod.findFirstEnabledOrHighestVersion?.modInfo?.author?.lowercase()
+                                        ModGridSortField.VramImpact -> getVramImpactForMod(
+                                            modRow.mod,
+                                            vramUsage
+                                        )?.bytesForMod
+                                        ModGridSortField.Category -> modRow.mod.metadata(SL.modMetadata)?.category?.lowercase()
+                                            ?.nullIfBlank()
+                                        null -> null
+                                    }
+                                }
+
                                 this.items(
                                     items = modsInGroup
                                         .map { ModRow(mod = it) }
                                         .sortedWith(
                                             compareByDescending<ModRow> { it.mod.id in profile.value.favoriteMods }
-                                                .run {
-                                                    fun getSortValue(modRow: ModRow): Comparable<*>? {
-                                                        return when (activeSortField) {
-                                                            ModGridSortField.Name -> modRow.mod.findFirstEnabledOrHighestVersion?.modInfo?.name?.lowercase()
-                                                            ModGridSortField.Author -> modRow.mod.findFirstEnabledOrHighestVersion?.modInfo?.author?.lowercase()
-                                                            ModGridSortField.VramImpact -> getVramImpactForMod(
-                                                                modRow.mod,
-                                                                vramUsage
-                                                            )?.bytesForMod
-                                                            else -> null
-                                                        }
-                                                    }
-                                                    return@run when {
-                                                        activeSortField == null -> thenBy { null }
+                                                .let { comparator ->
+                                                    when {
+                                                        activeSortField == null -> comparator.thenBy { null }
                                                         profile.value.modGridPrefs.isSortDescending ->
-                                                            thenByDescending { getSortValue(it) }
+                                                            comparator.thenByDescending(nullsFirst<Comparable<*>>()) {
+                                                                getSortValue(it)
+                                                            }
                                                         else -> {
-                                                            thenBy { getSortValue(it) }
+                                                            comparator.thenBy(nullsLast<Comparable<*>>()) {
+                                                                getSortValue(it)
+                                                            }
                                                         }
                                                     }
                                                 }
-                                                .thenBy { it.mod.findFirstEnabledOrHighestVersion?.modInfo?.name })
+                                                .thenBy { it.mod.findFirstEnabledOrHighestVersion?.modInfo?.name }
+                                        )
                                 ) { modRow ->
                                     ModGridRow(
                                         modifier = Modifier,

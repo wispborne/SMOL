@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import smol_access.config.ModMetadata
 import smol_access.config.ModMetadataStore
+import smol_access.model.Mod
 import smol_access.model.ModId
 import timber.ktx.Timber
 
@@ -62,3 +63,5 @@ class ModMetadataManager(
         }
     }
 }
+
+fun Mod.metadata(metadataManager: ModMetadataManager): ModMetadata? = metadataManager.mergedData.value[this.id]

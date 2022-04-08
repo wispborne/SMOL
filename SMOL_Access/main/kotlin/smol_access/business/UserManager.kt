@@ -14,12 +14,16 @@ package smol_access.business
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import smol_access.config.AppConfig
 import smol_access.model.UserProfile
 import smol_access.themes.ThemeManager
 import timber.ktx.Timber
+import utilities.mapState
+import utilities.merge
 import java.util.*
 
 class UserManager internal constructor(
@@ -81,7 +85,12 @@ class UserManager internal constructor(
         )
     }
 
-    val activeProfile = appConfig.userProfile.asStateFlow()
+    private val scope = CoroutineScope(Job())
+
+    val activeProfile: StateFlow<UserProfile> = appConfig.userProfile.asStateFlow()
+        .mapState(scope = scope) {
+            defaultProfile.merge(preferredObj = it)
+        }
 
     init {
         // Update config whenever value changes.
