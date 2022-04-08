@@ -71,6 +71,9 @@ class UserManager internal constructor(
                     UserProfile.ModGridHeader.GameVersion to UserProfile.ModGridColumnSetting(
                         position = 7
                     ),
+                    UserProfile.ModGridHeader.Category to UserProfile.ModGridColumnSetting(
+                        position = 8
+                    ),
                 )
             ),
             showGameLauncherWarning = true,

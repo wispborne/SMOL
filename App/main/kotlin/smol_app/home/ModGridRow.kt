@@ -32,6 +32,8 @@ import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.pointerMoveFilter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,10 +44,13 @@ import smol_access.model.UserProfile
 import smol_app.composables.SmolText
 import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
+import smol_app.themes.SmolTheme
+import utilities.exhaustiveWhen
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun AppScope.ModGridRow(
+    modifier: Modifier = Modifier,
     modRow: ModRow,
     checkedRows: SnapshotStateList<Mod>,
     selectedRow: MutableState<ModRow?>,
@@ -66,7 +71,7 @@ fun AppScope.ModGridRow(
     var isRowHighlighted by remember { mutableStateOf(false) }
 
     ListItem(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .mouseClickable {
                 if (this.buttons.isPrimaryPressed) {
@@ -136,10 +141,10 @@ fun AppScope.ModGridRow(
                                     text = (mod.findFirstEnabled
                                         ?: mod.findHighestVersion)?.modInfo?.name
                                         ?: "",
-                                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                                    fontWeight = FontWeight.SemiBold,
                                     maxLines = 2,
-                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                    fontFamily = smol_app.themes.SmolTheme.orbitronSpaceFont,
+                                    overflow = TextOverflow.Ellipsis,
+                                    fontFamily = SmolTheme.orbitronSpaceFont,
                                     fontSize = 14.sp
                                 )
                             }
@@ -148,11 +153,11 @@ fun AppScope.ModGridRow(
                                 SmolText(
                                     text = (mod.findFirstEnabledOrHighestVersion)?.modInfo?.author
                                         ?: "",
-                                    color = smol_app.themes.SmolTheme.dimmedTextColor(),
+                                    color = SmolTheme.dimmedTextColor(),
                                     modifier = Modifier.weight(1f)
                                         .align(Alignment.CenterVertically),
                                     maxLines = 1,
-                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                             UserProfile.ModGridHeader.Version -> {
@@ -240,11 +245,21 @@ fun AppScope.ModGridRow(
                                         text = (mod.findFirstEnabled
                                             ?: mod.findHighestVersion)?.modInfo?.gameVersion ?: "",
                                         modifier = Modifier.align(Alignment.CenterVertically),
-                                        color = smol_app.themes.SmolTheme.dimmedTextColor()
+                                        color = SmolTheme.dimmedTextColor()
                                     )
                                 }
                             }
-                        }
+                            UserProfile.ModGridHeader.Category ->
+                                // Category
+                                Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {
+                                    val metadata = SL.modMetadata.mergedData.value[mod.id]
+                                    Text(
+                                        text = metadata?.category ?: "",
+                                        modifier = Modifier.align(Alignment.CenterVertically),
+                                        color = SmolTheme.dimmedTextColor()
+                                    )
+                                }
+                        }.exhaustiveWhen()
                     }
 
                 // Checkbox

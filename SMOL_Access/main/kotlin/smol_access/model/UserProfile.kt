@@ -53,6 +53,7 @@ data class UserProfile(
         VramImpact,
         Icons,
         GameVersion,
+        Category
     }
 
     data class ModGridPrefs(

@@ -22,10 +22,7 @@ import io.ktor.client.engine.cio.*
 import io.ktor.client.features.*
 import io.ktor.client.features.logging.*
 import smol_access.business.*
-import smol_access.config.AppConfig
-import smol_access.config.GamePathManager
-import smol_access.config.VersionCheckerCache
-import smol_access.config.VramCheckerCache
+import smol_access.config.*
 import smol_access.themes.ThemeManager
 import smol_access.util.ManualReloadTrigger
 import utilities.Jsanity
@@ -47,22 +44,24 @@ class ServiceLocator internal constructor(
             this.followRedirects = true
         }
     },
-    internal val modsCache: ModsCache = ModsCache(),
+    private val modsCache: ModsCache = ModsCache(),
     val jsanity: Jsanity = Jsanity(gson = GsonBuilder.buildGson()),
-    internal val versionCheckerCache: VersionCheckerCache = VersionCheckerCache(gson = jsanity),
+    private val versionCheckerCache: VersionCheckerCache = VersionCheckerCache(gson = jsanity),
+    private val modMetadataStore: ModMetadataStore = ModMetadataStore(gson = jsanity),
+    val modMetadata: ModMetadataManager = ModMetadataManager(modMetadataStore = modMetadataStore),
     val appConfig: AppConfig = AppConfig(gson = jsanity),
     val userManager: UserManager = UserManager(
         appConfig = appConfig
     ),
-    internal val modInfoLoader: ModInfoLoader = ModInfoLoader(gson = jsanity),
+    private val modInfoLoader: ModInfoLoader = ModInfoLoader(gson = jsanity),
     val gamePathManager: GamePathManager = GamePathManager(appConfig = appConfig),
     val saveReader: SaveReader = SaveReader(gamePathManager = gamePathManager),
     val vramChecker: VramCheckerManager = VramCheckerManager(
         gamePathManager = gamePathManager,
         vramCheckerCache = VramCheckerCache(gson = jsanity)
     ),
-    internal val gameEnabledMods: GameEnabledMods = GameEnabledMods(jsanity, gamePathManager),
-    val archives: Archives = Archives(
+    private val gameEnabledMods: GameEnabledMods = GameEnabledMods(jsanity, gamePathManager),
+    private val archives: Archives = Archives(
         modInfoLoader = modInfoLoader,
         jsanity = jsanity
     ),
@@ -72,13 +71,13 @@ class ServiceLocator internal constructor(
         httpClientBuilder = httpClientBuilder,
         archives = archives
     ),
-    internal val staging: Staging = Staging(
+    private val staging: Staging = Staging(
         gamePathManager = gamePathManager,
         modsCache = modsCache,
         gameEnabledMods = gameEnabledMods,
         manualReloadTrigger = manualReloadTrigger
     ),
-    internal val modLoader: ModLoader = ModLoader(
+    private val modLoader: ModLoader = ModLoader(
         gamePathManager = gamePathManager,
         modInfoLoader = modInfoLoader,
         gameEnabledMods = gameEnabledMods,

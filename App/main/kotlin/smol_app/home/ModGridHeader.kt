@@ -15,8 +15,14 @@ package smol_app.home
 import AppScope
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
-import androidx.compose.runtime.*
+import androidx.compose.material.Checkbox
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
+import androidx.compose.material.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,15 +32,18 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import smol_access.SL
 import smol_access.business.UserManager
 import smol_access.model.Mod
 import smol_access.model.UserProfile
-import smol_app.composables.*
+import smol_app.composables.SmolTooltipArea
+import smol_app.composables.SmolTooltipText
 import smol_app.themes.SmolTheme
 import smol_app.util.replaceAllUsingDifference
+import utilities.exhaustiveWhen
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -68,7 +77,7 @@ fun AppScope.ModGridHeader(
                                 .align(Alignment.CenterVertically)
                         ) {
                             refreshButton {
-                                GlobalScope.launch(kotlinx.coroutines.Dispatchers.Default) {
+                                GlobalScope.launch(Dispatchers.Default) {
                                     reloadMods()
                                 }
                             }
@@ -175,7 +184,14 @@ fun AppScope.ModGridHeader(
                             fontWeight = FontWeight.Bold
                         )
                     }
-                }
+                    UserProfile.ModGridHeader.Category ->
+                        // Game Version
+                        Text(
+                            text = "Category",
+                            modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
+                            fontWeight = FontWeight.Bold
+                        )
+                }.exhaustiveWhen()
             }
 
 

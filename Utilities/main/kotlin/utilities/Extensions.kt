@@ -10,6 +10,8 @@
  * The full license is available from <https://www.gnu.org/licenses/gpl-3.0.txt>.
  */
 
+@file:Suppress("NOTHING_TO_INLINE")
+
 package utilities
 
 import kotlinx.coroutines.async
@@ -255,3 +257,5 @@ fun Path.mountOf(): Path? {
  * @throws IllegalArgumentException if [n] is negative.
  */
 inline fun <T> List<T>.skip(n: Int) = drop(n)
+
+inline fun Any.exhaustiveWhen() = this.run {  }

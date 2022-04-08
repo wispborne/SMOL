@@ -40,7 +40,6 @@ import kotlinx.coroutines.launch
 import smol_access.SL
 import smol_access.config.VramCheckerCache
 import smol_access.model.Mod
-import smol_access.model.ModVariant
 import smol_access.model.SmolId
 import smol_app.WindowState
 import smol_app.composables.SmolAlertDialog
@@ -77,7 +76,10 @@ fun AppScope.ModGridView(
     }
     val showVramRefreshWarning = remember { mutableStateOf(false) }
 
-    Box(modifier.padding(top = contentPadding, bottom = contentPadding)) {
+    Box(
+        modifier
+            .padding(top = contentPadding, bottom = contentPadding)
+    ) {
         Column(Modifier) {
             val vramPosition = remember { mutableStateOf(0.dp) }
             ListItem(modifier = Modifier.padding(start = contentPadding, end = contentPadding)) {
@@ -140,16 +142,17 @@ fun AppScope.ModGridView(
                                                 .thenBy { it.mod.findFirstEnabledOrHighestVersion?.modInfo?.name })
                                 ) { modRow ->
                                     ModGridRow(
-                                        modRow,
-                                        checkedRows,
-                                        selectedRow,
-                                        contentPadding,
-                                        favoritesWidth,
-                                        profile,
-                                        largestVramUsage,
-                                        checkboxesWidth,
-                                        modInDebugDialog,
-                                        mods
+                                        modifier = Modifier,
+                                        modRow = modRow,
+                                        checkedRows = checkedRows,
+                                        selectedRow = selectedRow,
+                                        contentPadding = contentPadding,
+                                        favoritesWidth = favoritesWidth,
+                                        profile = profile,
+                                        largestVramUsage = largestVramUsage,
+                                        checkboxesWidth = checkboxesWidth,
+                                        modInDebugDialog = modInDebugDialog,
+                                        mods = mods
                                     )
                                 }
                             }

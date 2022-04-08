@@ -144,7 +144,10 @@ class CefBrowserPanel
                     windowless_rendering_enabled = useOSR
                     cache_path = Constants.CEF_STORAGE_PATH.absolutePathString()
                 }
-            cefApp = CefApp.getInstance(settings)
+            cefApp = CefApp.getInstance(
+//                arrayOf("--proxy-server=94.140.14.14"),
+                settings
+            )
 
             // (2) JCEF can handle one to many browser instances simultaneous. These
             //     browser instances are logically grouped together by an instance of

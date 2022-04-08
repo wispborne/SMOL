@@ -44,6 +44,7 @@ import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
 import smol_app.util.*
 import timber.ktx.Timber
+import utilities.nullIfBlank
 import java.awt.Cursor
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -61,8 +62,9 @@ fun AppScope.ModUpdateIcon(
             // ...and if an update was found.
             if (onlineVersion > highestLocalVersion && onlineVersionInfo != null) {
                 val ddUrl =
-                    onlineVersionInfo.directDownloadURL?.ifBlank { null }
-                        ?: mod.findHighestVersion?.versionCheckerInfo?.directDownloadURL
+                    onlineVersionInfo.directDownloadURL?.nullIfBlank()
+                        ?: mod.findHighestVersion?.versionCheckerInfo?.directDownloadURL?.nullIfBlank()
+
                 if (ddUrl != null) {
                     SmolTooltipArea(tooltip = {
                         SmolTooltipText(

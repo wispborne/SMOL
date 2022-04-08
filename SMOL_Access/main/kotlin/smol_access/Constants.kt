@@ -44,6 +44,7 @@ object Constants {
     val APP_FOLDER_PATH: Path = Path.of("").toAbsolutePath().resolve(APP_FOLDER_NAME)
     val UI_CONFIG_PATH: Path = APP_FOLDER_PATH.resolve("SMOL_UIConfig.json")
     val APP_CONFIG_PATH: Path = APP_FOLDER_PATH.resolve("SMOL_AppConfig.json")
+    val MOD_METADATA_STORE_PATH: Path = APP_FOLDER_PATH.resolve("SMOL_ModMetadata.json")
     val CEF_STORAGE_PATH: Path = APP_FOLDER_PATH.resolve("browser")
     internal val BASE_THEME_CONFIG_PATH: Path? = resourcesDir?.resolve("SMOL_Themes.json")
     internal val USER_THEME_CONFIG_PATH: Path? = APP_FOLDER_PATH.resolve("SMOL_UserThemes.json")

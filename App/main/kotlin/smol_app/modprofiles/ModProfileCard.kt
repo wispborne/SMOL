@@ -689,6 +689,9 @@ private val mockUserProfile = UserProfile(
             UserProfile.ModGridHeader.GameVersion to UserProfile.ModGridColumnSetting(
                 position = 6
             ),
+            UserProfile.ModGridHeader.Category to UserProfile.ModGridColumnSetting(
+                position = 7
+            ),
         )
     ),
     showGameLauncherWarning = true,

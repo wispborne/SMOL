@@ -263,7 +263,6 @@ class Archives internal constructor(
         }
             .onFailure {
                 Timber.e(it)
-                throw it
             }
     }
 

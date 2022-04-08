@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,10 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 import smol_access.SL
 import smol_access.model.Mod
-import smol_app.composables.LinkTextData
-import smol_app.composables.SmolLinkText
-import smol_app.composables.SmolTooltipArea
-import smol_app.composables.SmolTooltipText
+import smol_app.composables.*
 import smol_app.themes.SmolTheme
 import smol_app.themes.SmolTheme.withAdjustedBrightness
 import smol_app.util.getModThreadId
@@ -112,36 +110,36 @@ fun BoxScope.detailsPanel(
                     Modifier.padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 24.dp).verticalScroll(state)
                 ) {
                     val modVariant = row.value?.mod?.findFirstEnabled ?: row.value?.mod?.findHighestVersion
-                    val modInfo = modVariant?.modInfo
+                    val modInfo = modVariant?.modInfo ?: return@Column
                     Text(
-                        modInfo?.name ?: "(Unknown Mod)",
+                        modInfo.name ?: "(Unknown Mod)",
                         fontWeight = FontWeight.ExtraBold,
                         fontFamily = SmolTheme.orbitronSpaceFont,
                         fontSize = TextUnit(18f, TextUnitType.Sp)
                     )
                     Text(
-                        "${modInfo?.id ?: "(modid)"} ${modInfo?.version?.toString() ?: "(no version)"}",
+                        "${modInfo.id} ${modInfo.version}",
                         modifier = Modifier.padding(top = 4.dp),
                         fontSize = TextUnit(12f, TextUnitType.Sp),
                         fontFamily = SmolTheme.fireCodeFont
                     )
-                    if (!modInfo?.gameVersion.isNullOrBlank()) {
+                    if (!modInfo.gameVersion.isNullOrBlank()) {
                         Text(
-                            "Starsector ${modInfo?.gameVersion}",
+                            "Starsector ${modInfo.gameVersion}",
                             modifier = Modifier.padding(top = 8.dp),
                             fontSize = TextUnit(12f, TextUnitType.Sp),
                             fontFamily = SmolTheme.fireCodeFont
                         )
                     }
-                    if (!modInfo?.requiredMemoryMB.isNullOrBlank()) {
+                    if (!modInfo.requiredMemoryMB.isNullOrBlank()) {
                         Text(
-                            "Required RAM: ${modInfo?.requiredMemoryMB} MB",
+                            "Required RAM: ${modInfo.requiredMemoryMB} MB",
                             modifier = Modifier.padding(top = 8.dp),
                             fontSize = TextUnit(12f, TextUnitType.Sp),
                             fontFamily = SmolTheme.fireCodeFont
                         )
                     }
-                    if (modInfo?.isUtilityMod == true) {
+                    if (modInfo.isUtilityMod) {
                         SmolTooltipArea(tooltip = { SmolTooltipText(text = "Utility mods may be added or removed from a save at will.") }) {
                             Row(
                                 modifier = Modifier.padding(top = 8.dp),
@@ -156,7 +154,7 @@ fun BoxScope.detailsPanel(
                             }
                         }
                     }
-                    if (modInfo?.isTotalConversion == true) {
+                    if (modInfo.isTotalConversion) {
                         SmolTooltipArea(tooltip = { SmolTooltipText(text = "Total Conversion mods should not be run with any other mods, except for Utility Mods, unless explicitly stated to be compatible.") }) {
                             Row(
                                 modifier = Modifier.padding(top = 8.dp),
@@ -172,11 +170,11 @@ fun BoxScope.detailsPanel(
                         }
                     }
                     Text("Author", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
-                    Text(modInfo?.author ?: "(no author specified)", modifier = Modifier.padding(top = 2.dp))
+                    Text(modInfo.author ?: "(no author specified)", modifier = Modifier.padding(top = 2.dp))
                     Text("Description", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
-                    Text(modInfo?.description ?: "", modifier = Modifier.padding(top = 2.dp))
+                    Text(modInfo.description ?: "", modifier = Modifier.padding(top = 2.dp))
                     val dependencies =
-                        modVariant?.run { SL.dependencyFinder.findDependencies(modVariant = this) }
+                        modVariant.run { SL.dependencyFinder.findDependencies(modVariant = this) }
                             ?: emptyList()
                     if (dependencies.isNotEmpty()) {
                         Text("Dependencies", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
@@ -191,6 +189,19 @@ fun BoxScope.detailsPanel(
                             modifier = Modifier.padding(top = 2.dp)
                         )
                     }
+
+                    val metadata = SL.modMetadata.mergedData.collectAsState().value
+//                    Text("Categories", fontWeight = FontWeight.Bold, modifier = Modifier)
+                    SmolTextField(
+                        value = metadata[modInfo.id]?.category ?: "",
+                        modifier = Modifier.padding(top = 16.dp),
+                        label = { Text("Category") },
+                        singleLine = true,
+                        maxLines = 1,
+                        onValueChange = { newStr ->
+                            SL.modMetadata.update(modInfo.id) { it.copy(category = newStr) }
+                        }
+                    )
 
                     val modThreadId = row.value?.mod?.getModThreadId()
                     if (modThreadId != null) {

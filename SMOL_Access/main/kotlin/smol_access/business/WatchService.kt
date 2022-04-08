@@ -93,17 +93,20 @@ class KWatchChannel(
             clear()
         }
         if (mode == Mode.Recursive) {
-            Files.walkFileTree(path, object : SimpleFileVisitor<Path>() {
-                override fun preVisitDirectory(subPath: Path, attrs: BasicFileAttributes): FileVisitResult {
-                    return if (ignorePatterns.any { ignorePattern -> subPath.toString().matches(ignorePattern) }) {
-                        Timber.i { "Ignored change to file ${subPath.fileName} as it matched one of ${ignorePatterns.joinToString { it.pattern }}" }
-                        FileVisitResult.CONTINUE
-                    } else {
-                        registeredKeys += subPath.register(watchService, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE)
-                        FileVisitResult.CONTINUE
+            kotlin.runCatching {
+                Files.walkFileTree(path, object : SimpleFileVisitor<Path>() {
+                    override fun preVisitDirectory(subPath: Path, attrs: BasicFileAttributes): FileVisitResult {
+                        return if (ignorePatterns.any { ignorePattern -> subPath.toString().matches(ignorePattern) }) {
+                            Timber.i { "Ignored change to file ${subPath.fileName} as it matched one of ${ignorePatterns.joinToString { it.pattern }}" }
+                            FileVisitResult.CONTINUE
+                        } else {
+                            registeredKeys += subPath.register(watchService, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE)
+                            FileVisitResult.CONTINUE
+                        }
                     }
-                }
-            })
+                })
+            }
+                .onFailure { Timber.w(it) }
         } else {
             registeredKeys += path.register(watchService, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE)
         }

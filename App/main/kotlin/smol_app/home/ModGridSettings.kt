@@ -124,6 +124,7 @@ fun ModGridSettings() {
                                     UserProfile.ModGridHeader.VramImpact -> "VRAM Impact"
                                     UserProfile.ModGridHeader.Icons -> "Mod Type"
                                     UserProfile.ModGridHeader.GameVersion -> "Game Version"
+                                    UserProfile.ModGridHeader.Category -> "Category"
                                 },
                                 modifier = Modifier.align(Alignment.CenterVertically)
                             )
