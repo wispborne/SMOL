@@ -47,7 +47,8 @@ import smol_app.util.bytesAsReadableMB
 @Composable
 fun ModGridSectionHeader(
     contentPadding: Dp,
-    isCollapsed: MutableState<Boolean>,
+    isCollapsed: Boolean,
+    setCollapsed: (Boolean) -> Unit,
     groupName: String,
     modsInGroup: List<Mod>,
     vramPosition: MutableState<Dp>
@@ -66,10 +67,10 @@ fun ModGridSectionHeader(
         Box {
             Row(modifier = Modifier.mouseClickable {
                 if (this.buttons.isPrimaryPressed) {
-                    isCollapsed.value = isCollapsed.value.not()
+                    setCollapsed.invoke(isCollapsed.not())
                 }
             }) {
-                val arrowAngle by animateFloatAsState(if (isCollapsed.value) -90f else 0f)
+                val arrowAngle by animateFloatAsState(if (isCollapsed) -90f else 0f)
                 Icon(
                     modifier = Modifier
                         .align(Alignment.CenterVertically)

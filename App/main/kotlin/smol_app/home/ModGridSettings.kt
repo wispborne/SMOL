@@ -12,12 +12,10 @@
 
 package smol_app.home
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.TooltipPlacement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.Card
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
@@ -106,8 +104,10 @@ fun ModGridSettings() {
                     modifier = Modifier
                         .padding(16.dp)
                 ) { (header, setting) ->
-                    Row(Modifier.padding(vertical = 4.dp)
-                        .alpha(if (setting.isVisible) 1f else 0.6f)) {
+                    Row(
+                        Modifier.padding(vertical = 4.dp)
+                            .alpha(if (setting.isVisible) 1f else 0.6f)
+                    ) {
                         Row(Modifier.width(160.dp)) {
                             Icon(
                                 painter = painterResource("icon-drag-horizontal.svg"),
@@ -157,9 +157,47 @@ fun ModGridSettings() {
                                 painter = painterResource(if (setting.isVisible) "icon-show.svg" else "icon-hide.svg")
                             )
                         }
+                        val group = getGroupForHeader(header)
+                        val groupIconModifier = Modifier
+                            .padding(start = 8.dp)
+                            .align(Alignment.CenterVertically)
+                            .size(16.dp)
+                        if (group != null) {
+                            val alpha = if (SL.userManager.activeProfile.collectAsState().value.modGridPrefs.grouping == group) 1f else 0.3f
+                            IconButton(
+                                onClick = {
+                                    SL.userManager.updateUserProfile { profile ->
+                                        profile.copy(
+                                            modGridPrefs = profile.modGridPrefs.copy(
+                                                grouping = group
+                                            )
+                                        )
+                                    }
+                                },
+                                modifier = groupIconModifier
+                            ) {
+                                Icon(
+                                    contentDescription = "grouping",
+                                    painter = painterResource("icon-group.svg"),
+                                    modifier = Modifier.alpha(alpha)
+                                )
+                            }
+                        } else {
+                            Spacer(modifier = groupIconModifier)
+                        }
                     }
                 }
             }
         }
     }
 }
+
+private fun getGroupForHeader(header: UserProfile.ModGridHeader): UserProfile.ModGridGroupEnum? =
+    when (header) {
+        UserProfile.ModGridHeader.ChangeVariantButton -> UserProfile.ModGridGroupEnum.EnabledState
+        UserProfile.ModGridHeader.Author -> UserProfile.ModGridGroupEnum.Author
+        UserProfile.ModGridHeader.Icons -> UserProfile.ModGridGroupEnum.ModType
+        UserProfile.ModGridHeader.GameVersion -> UserProfile.ModGridGroupEnum.GameVersion
+        UserProfile.ModGridHeader.Category -> UserProfile.ModGridGroupEnum.Category
+        else -> null
+    }

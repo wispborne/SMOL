@@ -56,10 +56,19 @@ data class UserProfile(
         Category
     }
 
+    enum class ModGridGroupEnum {
+        EnabledState,
+        Author,
+        Category,
+        ModType,
+        GameVersion,
+    }
+
     data class ModGridPrefs(
         val sortField: String?,
         val isSortDescending: Boolean = true,
-        val columnSettings: Map<ModGridHeader, ModGridColumnSetting>?
+        val columnSettings: Map<ModGridHeader, ModGridColumnSetting>?,
+        val grouping: ModGridGroupEnum?,
     )
 
     data class ModGridColumnSetting(

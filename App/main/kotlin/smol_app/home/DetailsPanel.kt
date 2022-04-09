@@ -197,6 +197,12 @@ fun BoxScope.detailsPanel(
                         modifier = Modifier.padding(top = 16.dp),
                         label = { Text("Category") },
                         singleLine = true,
+                        leadingIcon = {
+                            Icon(
+                                contentDescription = "grouping",
+                                painter = painterResource("icon-group.svg")
+                            )
+                        },
                         maxLines = 1,
                         onValueChange = { newStr ->
                             SL.modMetadata.update(modInfo.id) { it.copy(category = newStr) }

@@ -78,7 +78,8 @@ class UserManager internal constructor(
                     UserProfile.ModGridHeader.Category to UserProfile.ModGridColumnSetting(
                         position = 8
                     ),
-                )
+                ),
+                grouping = UserProfile.ModGridGroupEnum.EnabledState
             ),
             showGameLauncherWarning = true,
             launchButtonAction = UserProfile.LaunchButtonAction.OpenFolder
@@ -87,6 +88,9 @@ class UserManager internal constructor(
 
     private val scope = CoroutineScope(Job())
 
+    /**
+     * The active profile, which has defaults as a base with user overrides merged on top.
+     */
     val activeProfile: StateFlow<UserProfile> = appConfig.userProfile.asStateFlow()
         .mapState(scope = scope) {
             defaultProfile.merge(preferredObj = it)

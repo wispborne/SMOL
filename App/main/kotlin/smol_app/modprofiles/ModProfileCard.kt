@@ -46,6 +46,7 @@ import kotlinx.coroutines.launch
 import smol_access.Access
 import smol_access.SL
 import smol_access.business.SaveFile
+import smol_access.business.UserManager
 import smol_access.model.UserProfile
 import smol_access.model.Version
 import smol_app.WindowState
@@ -656,47 +657,7 @@ private val mockSaveModProfile = ModProfileCardInfo.SaveModProfileCardInfo(
         mods = emptyList()
     )
 )
-private val mockUserProfile = UserProfile(
-    id = 1337,
-    username = "user",
-    activeModProfileId = "0",
-    versionCheckerIntervalMillis = null,
-    modProfiles = emptyList(), //listOf(modProfile),
-    profileVersion = 1,
-    theme = null,
-    favoriteMods = emptyList(),
-    modGridPrefs = UserProfile.ModGridPrefs(
-        sortField = null,
-        columnSettings = mapOf(
-            UserProfile.ModGridHeader.ChangeVariantButton to UserProfile.ModGridColumnSetting(
-                position = 0
-            ),
-            UserProfile.ModGridHeader.Name to UserProfile.ModGridColumnSetting(
-                position = 1
-            ),
-            UserProfile.ModGridHeader.Author to UserProfile.ModGridColumnSetting(
-                position = 2
-            ),
-            UserProfile.ModGridHeader.Version to UserProfile.ModGridColumnSetting(
-                position = 3
-            ),
-            UserProfile.ModGridHeader.VramImpact to UserProfile.ModGridColumnSetting(
-                position = 4
-            ),
-            UserProfile.ModGridHeader.Icons to UserProfile.ModGridColumnSetting(
-                position = 5
-            ),
-            UserProfile.ModGridHeader.GameVersion to UserProfile.ModGridColumnSetting(
-                position = 6
-            ),
-            UserProfile.ModGridHeader.Category to UserProfile.ModGridColumnSetting(
-                position = 7
-            ),
-        )
-    ),
-    showGameLauncherWarning = true,
-    launchButtonAction = UserProfile.LaunchButtonAction.OpenFolder
-)
+private val mockUserProfile = UserManager.defaultProfile
 
 fun copyModProfile(modProfile: ModProfileCardInfo) {
     val modList = buildString {

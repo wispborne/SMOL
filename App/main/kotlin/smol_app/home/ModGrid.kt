@@ -30,10 +30,8 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -48,15 +46,13 @@ import smol_app.composables.SmolButton
 import smol_app.composables.SmolPopupMenu
 import smol_app.composables.SmolSecondaryButton
 import smol_app.themes.SmolTheme
-import smol_app.util.uiEnabled
 import utilities.nullIfBlank
 
 const val modGridViewDropdownWidth = 180
 
 @OptIn(
     ExperimentalMaterialApi::class,
-    ExperimentalFoundationApi::class, ExperimentalUnitApi::class,
-    ExperimentalComposeUiApi::class
+    ExperimentalFoundationApi::class
 )
 @Composable
 fun AppScope.ModGridView(
@@ -97,24 +93,30 @@ fun AppScope.ModGridView(
                 )
             }
             Box {
-                val isEnabledCollapsed = remember { mutableStateOf(false) }
-                val isDisabledCollapsed = remember { mutableStateOf(false) }
                 val listState = rememberLazyListState()
+                val grouping =
+                    SL.userManager.activeProfile.collectAsState().value.modGridPrefs.grouping!!.mapToGroup(SL.modMetadata)
+                val collapseStates = remember { mutableStateMapOf<Any?, Boolean>() }
+
                 LazyColumn(Modifier.fillMaxWidth(), state = listState) {
                     mods
                         .filterNotNull()
-                        .groupBy { it.uiEnabled }
-                        .toSortedMap(compareBy { !it }) // Flip to put Enabled at the top
+                        .groupBy { grouping.getGroupSortValue(it) }
+                        .toSortedMap(compareBy { it })
                         .forEach { (modState, modsInGroup) ->
-                            val isCollapsed = if (modState) isEnabledCollapsed else isDisabledCollapsed
-                            val groupName = when (modState) {
-                                true -> "Enabled"
-                                false -> "Disabled"
-                            }
+                            val isCollapsed = collapseStates[modState] ?: false
+                            val groupName = modsInGroup.firstOrNull()?.let { grouping.getGroupName(it) } ?: ""
                             stickyHeader {
-                                ModGridSectionHeader(contentPadding, isCollapsed, groupName, modsInGroup, vramPosition)
+                                ModGridSectionHeader(
+                                    contentPadding = contentPadding,
+                                    isCollapsed = isCollapsed,
+                                    setCollapsed = { collapseStates[modState] = it },
+                                    groupName = groupName,
+                                    modsInGroup = modsInGroup,
+                                    vramPosition = vramPosition
+                                )
                             }
-                            if (!isCollapsed.value) {
+                            if (!isCollapsed) {
                                 fun getSortValue(modRow: ModRow): Comparable<*>? {
                                     return when (activeSortField) {
                                         ModGridSortField.Name -> modRow.mod.findFirstEnabledOrHighestVersion?.modInfo?.name?.lowercase()
