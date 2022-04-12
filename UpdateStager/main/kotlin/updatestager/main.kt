@@ -13,6 +13,9 @@
 package updatestager
 
 import smol_access.Constants
+import update_installer.BaseAppUpdater
+import update_installer.SmolUpdater
+import update_installer.UpdateChannel
 import utilities.toPathOrNull
 
 class Main {
@@ -24,15 +27,15 @@ class Main {
         @JvmStatic
         fun main(args: Array<String>) {
             val channel = when (args[1].lowercase()) {
-                "stable", "main" -> BaseAppUpdater.UpdateChannel.Stable
-                "unstable" -> BaseAppUpdater.UpdateChannel.Unstable
-                "test" -> BaseAppUpdater.UpdateChannel.Test
+                "stable", "main" -> UpdateChannel.Stable
+                "unstable" -> UpdateChannel.Unstable
+                "test" -> UpdateChannel.Test
                 else -> throw RuntimeException("Unrecognized channel: ${args[0]}.")
             }
             val url = when (channel) {
-                BaseAppUpdater.UpdateChannel.Stable -> Constants.UPDATE_URL_STABLE
-                BaseAppUpdater.UpdateChannel.Unstable -> Constants.UPDATE_URL_UNSTABLE
-                BaseAppUpdater.UpdateChannel.Test -> Constants.UPDATE_URL_TEST
+                UpdateChannel.Stable -> Constants.UPDATE_URL_STABLE
+                UpdateChannel.Unstable -> Constants.UPDATE_URL_UNSTABLE
+                UpdateChannel.Test -> Constants.UPDATE_URL_TEST
             }
 
             WriteLocalUpdateConfig.run(

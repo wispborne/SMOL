@@ -26,6 +26,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib:${project.property("kotlin")!!}")
     implementation(project(":Utilities"))
     implementation(project(":VRAM_Checker"))
+    implementation(project(":UpdateInstaller"))
     api(project(":Mod_Repo"))
 
     implementation("org.jetbrains.kotlin:kotlin-reflect:${project.property("kotlin")!!}")
@@ -37,7 +38,7 @@ dependencies {
     })
 
     // CSV
-    implementation("org.apache.commons:commons-csv:1.8")
+    implementation("org.apache.commons:commons-csv:1.9.0")
     // API
     api("io.ktor:ktor-client-core:1.6.7")
     api("io.ktor:ktor-client-cio:1.6.7")
@@ -45,11 +46,11 @@ dependencies {
 
     // Version Checker Dependencies
     implementation("de.siegmar:fastcsv:2.1.0")
-    implementation("com.fasterxml.jackson.core:jackson-core:2.13.1")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.13.1")
+    implementation("com.fasterxml.jackson.core:jackson-core:2.13.2")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.13.2.2")
 
     // Save file reading
-    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.13.1")
+    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.13.2")
 
     // To calculate checksum for archive files
     // https://mvnrepository.com/artifact/commons-codec/commons-codec

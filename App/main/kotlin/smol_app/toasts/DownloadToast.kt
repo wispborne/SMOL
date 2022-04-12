@@ -36,11 +36,11 @@ import smol_app.UI
 import smol_app.browser.DownloadItem
 import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
-import smol_app.util.bitsToMB
-import smol_app.util.bytesAsShortReadableMB
 import smol_app.util.openInDesktop
 import smol_app.util.smolPreview
 import timber.ktx.Timber
+import utilities.bitsToMB
+import utilities.bytesAsShortReadableMB
 import utilities.equalsAny
 import java.awt.Cursor
 import kotlin.io.path.absolutePathString

@@ -28,15 +28,15 @@ dependencies {
     implementation(fileTree("../libs") {
         include("**/HJson/*.jar")
     })
-    api("org.jetbrains:annotations:22.0.0")
+    api("org.jetbrains:annotations:23.0.0")
 
     // https://mvnrepository.com/artifact/commons-io/commons-io
     implementation("commons-io:commons-io:2.11.0")
 
     // Gson
     api("com.github.salomonbrys.kotson:kotson:2.5.0")
-    api ("com.fasterxml.jackson.core:jackson-databind:2.13.1")
-    api ("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.1")
+    api ("com.fasterxml.jackson.core:jackson-databind:2.13.2.2")
+    api ("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.2")
 
     implementation("org.jetbrains.kotlin:kotlin-reflect:${project.property("kotlin")!!}")
     implementation(project.property("coroutines")!!)
@@ -44,7 +44,8 @@ dependencies {
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     kotlinOptions {
-        jvmTarget = "${project.property("smolJvmTarget")}"
+        jvmTarget = "9"
+//        jvmTarget = "${project.property("smolJvmTarget")}"
         @Suppress("SuspiciousCollectionReassignment")
         freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
     }
@@ -62,4 +63,9 @@ java.sourceSets.main {
 
 tasks.withType<Jar> {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_9
+    targetCompatibility = JavaVersion.VERSION_1_9
 }

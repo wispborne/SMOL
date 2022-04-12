@@ -37,9 +37,9 @@ import smol_app.composables.SmolButton
 import smol_app.composables.dashedBorder
 import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
-import smol_app.util.bytesAsShortReadableMB
 import smol_app.util.parseHtml
 import timber.ktx.Timber
+import utilities.bytesAsShortReadableMB
 import utilities.calculateFileSize
 import java.awt.dnd.DropTarget
 import java.awt.dnd.DropTargetDragEvent

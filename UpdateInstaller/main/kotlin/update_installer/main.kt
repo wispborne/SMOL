@@ -12,31 +12,71 @@
 
 package update_installer
 
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.collectLatest
 import org.update4j.Archive
-import java.io.File
+import timber.LogLevel
+import timber.ktx.Timber
+import utilities.bytesAsShortReadableMB
+import utilities.bytesToMB
+import java.nio.file.Path
+import kotlin.io.path.absolutePathString
+import kotlin.io.path.deleteIfExists
+import kotlin.io.path.exists
 
 class Main {
     companion object {
+        val smolUpdateZipFile: Path = Path.of("smol-update.zip")
+
         /**
          * First arg must be the location of update.zip.
          */
         @JvmStatic
         fun main(args: Array<String>) {
+            Timber.plant(Timber.DebugTree(LogLevel.WARN))
             val updateZipUri = args.getOrNull(0)?.removeSurrounding("\'")?.ifBlank { null }
-                ?: kotlin.run {
-                    System.err.println("First argument must be the relative path to the update zip.")
+                ?: smolUpdateZipFile.toString()
+
+            var updateZipPath = Path.of(updateZipUri)
+
+            if (!updateZipPath.exists()) {
+                Timber.i { "Unable to find ${updateZipPath.absolutePathString()}, we have to download it." }
+
+                val updater = SmolUpdater()
+
+                println("Which channel would you like to update using?")
+                UpdateChannel.values().forEachIndexed { i, channel ->
+                    println("${i + 1}) ${channel.name}")
+                }
+                println("Enter a number:")
+                val channel = readln().toInt().let { UpdateChannel.values()[it - 1] }
+
+                GlobalScope.launch(Dispatchers.Default) {
+                    updater.currentFileDownload.collectLatest {
+                        it ?: return@collectLatest
+                        println("Download status: ${it.name} (${"%.2f".format(updater.totalDownloadedBytes.value.bytesToMB)}/${updater.totalDownloadBytes.value?.bytesAsShortReadableMB}).                                           ")
+                        delay(500)
+                    }
+                }
+
+                runBlocking(Dispatchers.IO) {
+                    kotlin.runCatching {
+                        updateZipPath = updater.downloadUpdateZip(updater.fetchRemoteConfig(channel))!!
+                    }
+                        .onFailure {
+                            Timber.e(it)
+                            updateZipPath.deleteIfExists()
+                        }
+                }
+
+                if (!updateZipPath.exists()) {
+                    Timber.e { "Unable to find ${updateZipPath.absolutePathString()}." }
                     pause()
                     return
                 }
-            val updateZipPath = File(updateZipUri)
-
-            if (!updateZipPath.exists()) {
-                System.err.println("Unable to find ${updateZipPath.absolutePath}.")
-                pause()
-                return
             }
 
-            println("Found update zip at ${updateZipPath.absolutePath}.")
+            println("Found update zip at ${updateZipPath.absolutePathString()}.")
             var success = false
 
             try {
@@ -44,20 +84,20 @@ class Main {
                 Thread.sleep(5000)
                 var timesToRepeat = 3
 
-                println("Installing ${updateZipPath.absolutePath}...")
+                println("Installing ${updateZipPath.absolutePathString()}...")
                 while (timesToRepeat > 0) {
                     kotlin.runCatching {
-                        Archive.read(updateZipPath.absolutePath).install()
+                        Archive.read(updateZipPath.absolutePathString()).install()
                         success = true
                     }
                         .onFailure {
                             timesToRepeat--
-                            System.err.println("Error installing $updateZipPath.")
-                            System.err.println(it.message)
+                            Timber.e { "Error installing $updateZipPath." }
+                            Timber.e { it.message ?: "" }
                             it.printStackTrace()
 
                             if (timesToRepeat > 0) {
-                                System.err.println("Retrying $timesToRepeat more time(s).")
+                                Timber.e { "Retrying $timesToRepeat more time(s)." }
                                 Thread.sleep(3000)
                             }
                         }
@@ -79,7 +119,7 @@ class Main {
             }
 
             if (!success) {
-                System.err.println("Failed to update.")
+                Timber.e { "Failed to update." }
             }
 
             pause()

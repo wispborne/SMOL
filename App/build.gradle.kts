@@ -47,6 +47,7 @@ dependencies {
     implementation(project(":SMOL_Access"))
     implementation(project(":VRAM_Checker"))
     implementation(project(":UpdateStager"))
+    implementation(project(":UpdateInstaller"))
     implementation(project(":Utilities"))
 
     // Logging

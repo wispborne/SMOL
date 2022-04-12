@@ -27,12 +27,13 @@ dependencies {
     implementation(kotlin("stdlib"))
     implementation(project(":Utilities"))
     implementation(project(":SMOL_Access"))
+    implementation(project(":UpdateInstaller"))
 
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.5.21")
     implementation(project.property("coroutines")!!)
 
     // Auto-update
-    api("org.update4j:update4j:1.5.8")
+    api("org.update4j:update4j:1.5.9")
 }
 
 application {

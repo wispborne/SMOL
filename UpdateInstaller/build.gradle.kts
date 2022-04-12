@@ -25,9 +25,12 @@ repositories {
 
 dependencies {
     implementation(kotlin("stdlib"))
+    implementation(project(":Utilities"))
+
+    implementation(project.property("coroutines")!!)
 
     // Auto-update
-    implementation("org.update4j:update4j:1.5.8")
+    implementation("org.update4j:update4j:1.5.9")
 }
 
 application {

@@ -17,9 +17,10 @@ import smol_access.ServiceLocator
 import smol_access.business.VmParamsManager
 import smol_app.browser.DownloadManager
 import smol_app.toasts.ToasterState
+import update_installer.BaseAppUpdater
+import update_installer.SmolUpdater
+import updatestager.UpdateChannelManager
 import updatestager.UpdaterUpdater
-import updatestager.BaseAppUpdater
-import updatestager.SmolUpdater
 import utilities.currentPlatform
 
 var SL_UI = AppServiceLocator()
@@ -30,6 +31,7 @@ class AppServiceLocator internal constructor(
     val toaster: ToasterState = ToasterState(),
     val vmParamsManager: VmParamsManager = VmParamsManager(gamePathManager = SL.gamePathManager, platform = currentPlatform),
     val smolUpdater: BaseAppUpdater = SmolUpdater(),
+    val updateChannelManager: UpdateChannelManager = UpdateChannelManager(),
     val updaterUpdater: BaseAppUpdater = UpdaterUpdater(),
 )
 

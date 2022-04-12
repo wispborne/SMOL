@@ -31,7 +31,7 @@ import smol_app.UI
 import smol_app.composables.*
 import smol_app.updater.UpdateSmolToast
 import timber.ktx.Timber
-import updatestager.BaseAppUpdater
+import update_installer.UpdateChannel
 import utilities.asList
 import java.io.FileNotFoundException
 import java.net.UnknownHostException
@@ -59,7 +59,7 @@ fun updateSection(scope: CoroutineScope) {
                             when (it) {
                                 is UnknownHostException -> "Unable to connect to ${it.message}."
                                 is FileNotFoundException ->
-                                    if (SL.UI.smolUpdater.getUpdateChannelSetting(appConfig = SL.appConfig) == BaseAppUpdater.UpdateChannel.Stable)
+                                    if (SL.UI.updateChannelManager.getUpdateChannelSetting(appConfig = SL.appConfig) == UpdateChannel.Stable)
                                         "There's no stable version...yet." else
                                         "File not found: ${it.message}."
                                 else -> it.toString()
@@ -76,17 +76,17 @@ fun updateSection(scope: CoroutineScope) {
 
         SmolDropdownWithButton(
             modifier = Modifier.padding(top = 4.dp),
-            initiallySelectedIndex = when (SL.UI.smolUpdater.getUpdateChannelSetting(appConfig = SL.appConfig)) {
-                BaseAppUpdater.UpdateChannel.Stable -> 0
-                BaseAppUpdater.UpdateChannel.Unstable -> 1
-                BaseAppUpdater.UpdateChannel.Test -> 2
+            initiallySelectedIndex = when (SL.UI.updateChannelManager.getUpdateChannelSetting(appConfig = SL.appConfig)) {
+                UpdateChannel.Stable -> 0
+                UpdateChannel.Unstable -> 1
+                UpdateChannel.Test -> 2
             },
             items = listOf(
                 SmolDropdownMenuItemTemplate(
                     text = "Stable",
                     iconPath = "icon-stable.svg",
                     onClick = {
-                        SL.UI.smolUpdater.setUpdateChannel(BaseAppUpdater.UpdateChannel.Stable, SL.appConfig)
+                        SL.UI.updateChannelManager.setUpdateChannel(UpdateChannel.Stable, SL.appConfig)
                         doUpdateCheck()
                     }
                 ),
@@ -94,7 +94,7 @@ fun updateSection(scope: CoroutineScope) {
                     text = "Unstable",
                     iconPath = "icon-experimental.svg",
                     onClick = {
-                        SL.UI.smolUpdater.setUpdateChannel(BaseAppUpdater.UpdateChannel.Unstable, SL.appConfig)
+                        SL.UI.updateChannelManager.setUpdateChannel(UpdateChannel.Unstable, SL.appConfig)
                         doUpdateCheck()
                     }
                 ),
@@ -102,7 +102,7 @@ fun updateSection(scope: CoroutineScope) {
                     text = "Test (don't use this)",
                     iconPath = "icon-test-radioactive.svg",
                     onClick = {
-                        SL.UI.smolUpdater.setUpdateChannel(BaseAppUpdater.UpdateChannel.Test, SL.appConfig)
+                        SL.UI.updateChannelManager.setUpdateChannel(UpdateChannel.Test, SL.appConfig)
                         doUpdateCheck()
                     }
                 )
@@ -129,7 +129,7 @@ fun updateSection(scope: CoroutineScope) {
 
 private suspend fun checkForUpdate(): Configuration {
     val remoteConfig =
-        runCatching { SL.UI.smolUpdater.fetchRemoteConfig(SL.appConfig) }
+        runCatching { SL.UI.updateChannelManager.fetchRemoteConfig(SL.UI.smolUpdater, SL.appConfig) }
             .onFailure {
                 UpdateSmolToast().updateUpdateToast(
                     updateConfig = null,
@@ -146,7 +146,7 @@ private suspend fun checkForUpdate(): Configuration {
             }
 
     runCatching {
-        val updaterConfig = SL.UI.updaterUpdater.fetchRemoteConfig(SL.appConfig)
+        val updaterConfig = SL.UI.updateChannelManager.fetchRemoteConfig(SL.UI.smolUpdater, SL.appConfig)
 
         if (updaterConfig.requiresUpdate()) {
             Timber.i { "Found update for the SMOL updater, updating it in the background." }

@@ -16,6 +16,7 @@ import timber.ktx.Timber
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
+import kotlin.math.ceil
 
 /**
  * Runs a command in the OS's command line.
@@ -108,3 +109,41 @@ val currentPlatform: Platform
             "Unsupported platform: $os"
         )
     }
+
+
+/**
+ * Return a string with a maximum length of `length` characters.
+ * If there are more than `length` characters, then string ends with an ellipsis ("...").
+ */
+fun String.ellipsizeAfter(length: Int): String {
+    // The letters [iIl1] are slim enough to only count as half a character.
+    var lengthMod = length
+    lengthMod += ceil(this.replace("[^iIl]".toRegex(), "").length / 2.0).toInt()
+    return if (this.length > lengthMod) {
+        this.substring(0, lengthMod - 3) + "…"
+    } else this
+}
+
+/**
+ * A megabyte is 8^6 bytes.
+ */
+val Long.bitsToMB: Float
+    get() = (this / 8000000f)
+
+/**
+ * A megabyte is 1^6 byte.
+ */
+val Long.bytesToMB: Float
+    get() = (this / 1000000f)
+
+/**
+ * 0.111 MB
+ */
+val Long.bytesAsReadableMB: String
+    get() = "%.3f MB".format(this.bytesToMB)
+
+/**
+ * 0.1 MB
+ */
+val Long.bytesAsShortReadableMB: String
+    get() = "%.2f MB".format(this.bytesToMB)

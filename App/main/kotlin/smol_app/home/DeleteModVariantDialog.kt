@@ -32,8 +32,8 @@ import smol_app.composables.SmolAlertDialog
 import smol_app.composables.SmolButton
 import smol_app.composables.SmolSecondaryButton
 import smol_app.themes.SmolTheme
-import smol_app.util.bytesAsShortReadableMB
 import timber.ktx.Timber
+import utilities.bytesAsShortReadableMB
 import utilities.calculateFileSize
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.exists

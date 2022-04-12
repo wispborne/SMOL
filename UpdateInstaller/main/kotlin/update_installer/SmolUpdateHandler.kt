@@ -10,7 +10,7 @@
  * The full license is available from <https://www.gnu.org/licenses/gpl-3.0.txt>.
  */
 
-package updatestager/*
+package update_installer/*
  * Copyright 2018 Mordechai Meisels
  * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not

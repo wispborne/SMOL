@@ -41,7 +41,7 @@ import smol_access.SL
 import smol_access.model.Mod
 import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
-import smol_app.util.bytesAsReadableMB
+import utilities.bytesAsReadableMB
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable

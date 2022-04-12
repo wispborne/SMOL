@@ -16,6 +16,7 @@ import org.update4j.Archive
 import org.update4j.Configuration
 import org.update4j.FileMetadata
 import timber.ktx.Timber
+import update_installer.BaseAppUpdater
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.relativeTo

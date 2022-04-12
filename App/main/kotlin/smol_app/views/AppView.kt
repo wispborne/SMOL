@@ -36,6 +36,7 @@ import smol_app.IWindowState
 import smol_app.UI
 import smol_app.WindowState
 import smol_app.about.AboutView
+import smol_app.browser.DownloadItem
 import smol_app.browser.ModBrowserView
 import smol_app.home.homeView
 import smol_app.modprofiles.ModProfilesView
@@ -50,9 +51,10 @@ import smol_app.toasts.toaster
 import smol_app.updater.UpdateSmolToast
 import smol_app.views.FileDropper
 import timber.ktx.Timber
-import updatestager.BaseAppUpdater
+import updatestager.UpdateChannelManager
 import utilities.IOLock
 import utilities.exists
+import utilities.isAny
 import kotlin.io.path.exists
 
 @OptIn(ExperimentalStdlibApi::class, ExperimentalDecomposeApi::class)
@@ -76,7 +78,7 @@ fun WindowState.appView() {
 //                onlineUrl = SL.UI.updater.getUpdateConfigUrl(),
 //                localPath = Path.of("dist\\main\\app\\SMOL")
 //            )
-            val updateChannel = BaseAppUpdater.getUpdateChannelSetting(SL.appConfig)
+            val updateChannel = UpdateChannelManager.getUpdateChannelSetting(SL.appConfig)
             val remoteConfigAsync =
                 async { kotlin.runCatching { SL.UI.smolUpdater.fetchRemoteConfig(updateChannel) }.getOrNull() }
             val updaterConfigAsync =
@@ -209,6 +211,13 @@ private fun setUpToasts() {
         SL.UI.downloadManager.downloads.collect { downloads ->
             downloads
                 .filter { it.id !in items.value.map { it.id } }
+                .filter {
+                    !it.status.value.isAny(
+                        DownloadItem.Status.Completed::class,
+                        DownloadItem.Status.Cancelled::class,
+                        DownloadItem.Status.Failed::class
+                    )
+                }
                 .map {
                     val toastId = "download-${it.id}"
                     Toast(id = toastId, timeoutMillis = null, useStandardToastFrame = true) {

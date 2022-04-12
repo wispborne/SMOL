@@ -109,6 +109,7 @@ val String.Companion.empty
 fun Any.equalsAny(vararg other: Any): Boolean = arrayOf(*other).any { this == it }
 fun String.equalsAny(vararg other: String, ignoreCase: Boolean = true): Boolean =
     arrayOf(*other).any { this.equals(it, ignoreCase) }
+fun Any.isAny(vararg other: KClass<*>): Boolean = arrayOf(*other).asList().any { this::class == it }
 
 /**
  * Returns items matching the predicate or, if none are matching, returns the original [Collection].

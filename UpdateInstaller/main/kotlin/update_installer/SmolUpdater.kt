@@ -10,7 +10,7 @@
  * The full license is available from <https://www.gnu.org/licenses/gpl-3.0.txt>.
  */
 
-package updatestager
+package update_installer
 
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -29,7 +29,7 @@ class SmolUpdater : BaseAppUpdater() {
 
     override val configXmlBaseFileNameWithoutExtension: String = "update-config"
     override val versionPropertyKey: String = "smol-version-prop"
-    override val updateZipFile: Path = Path.of("smol-update.zip")
+    override val updateZipFile: Path = Main.smolUpdateZipFile
 
     override fun createConfiguration(
         directoryOfFilesToAddToManifest: Path,

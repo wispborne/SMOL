@@ -28,12 +28,11 @@ import org.update4j.Configuration
 import smol_app.composables.SmolButton
 import smol_app.toasts.Toast
 import smol_app.toasts.ToasterState
-import smol_app.util.bytesAsShortReadableMB
-import smol_app.util.bytesToMB
-import smol_app.util.ellipsizeAfter
 import timber.ktx.Timber
-import updatestager.BaseAppUpdater
-import updatestager.SmolUpdater
+import update_installer.BaseAppUpdater
+import utilities.bytesAsShortReadableMB
+import utilities.bytesToMB
+import utilities.ellipsizeAfter
 import kotlin.system.exitProcess
 
 class UpdateSmolToast {

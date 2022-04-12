@@ -13,6 +13,8 @@
 package updatestager
 
 import org.update4j.Configuration
+import update_installer.BaseAppUpdater
+import update_installer.UpdateChannel
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.writer
@@ -23,7 +25,7 @@ object WriteLocalUpdateConfig {
         onlineUrl: String,
         directoryOfFilesToAddToManifest: Path,
         updater: BaseAppUpdater,
-        channel: BaseAppUpdater.UpdateChannel
+        channel: UpdateChannel
     ): Configuration {
         val dir = directoryOfFilesToAddToManifest
         val config = updater.createConfiguration(dir, onlineUrl)
