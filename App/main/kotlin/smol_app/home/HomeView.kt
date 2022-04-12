@@ -33,6 +33,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.withContext
 import org.tinylog.Logger
+import smol_access.Access
 import smol_access.SL
 import smol_access.model.Mod
 import smol_app.UI
@@ -83,6 +84,10 @@ fun AppScope.homeView(
                 if (isWriteLocked.value) {
                     CircularProgressIndicator(
                         modifier = Modifier.padding(start = 16.dp)
+                    )
+                    SmolText(
+                        text = SL.access.modModificationState.collectAsState().value
+                            .firstNotNullOfOrNull { it.value != Access.ModModificationState.Ready }?.toString() ?: "",
                     )
                 }
                 Row(

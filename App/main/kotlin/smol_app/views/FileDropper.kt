@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.arkivanov.decompose.replaceCurrent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -34,6 +35,7 @@ import smol_access.SL
 import smol_app.composables.SmolAlertDialog
 import smol_app.composables.SmolButton
 import smol_app.composables.dashedBorder
+import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
 import smol_app.util.bytesAsShortReadableMB
 import smol_app.util.parseHtml
@@ -46,7 +48,7 @@ import java.awt.dnd.DropTargetEvent
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
-import kotlin.io.path.name
+import kotlin.io.path.pathString
 
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -54,7 +56,7 @@ import kotlin.io.path.name
 fun AppScope.FileDropper(
     modifier: Modifier = Modifier
 ) {
-    var fileBeingHovered: Path? by remember { mutableStateOf(null) }
+    var fileBeingHovered: Drop? by remember { mutableStateOf(null) }
     var isHovering: Boolean by remember { mutableStateOf(false) }
     var initialized by remember { mutableStateOf(false) }
     var error: Throwable? by remember { mutableStateOf(null) }
@@ -62,11 +64,11 @@ fun AppScope.FileDropper(
 
     if (!initialized) {
         val listener = object : DropTarget() {
-            override fun dragEnter(dtde: DropTargetDragEvent?) {
-                super.dragEnter(dtde)
+            override fun dragEnter(event: DropTargetDragEvent?) {
+                super.dragEnter(event)
                 if (isHovering) return
 
-                dtde ?: kotlin.run {
+                event ?: kotlin.run {
                     fileBeingHovered = null
                     if (isHovering) isHovering = false
                     Logger.debug { "Rejected drag." }
@@ -75,12 +77,18 @@ fun AppScope.FileDropper(
 
                 kotlin.runCatching {
                     val droppedFiles =
-                        dtde.transferable.getTransferData(java.awt.datatransfer.DataFlavor.javaFileListFlavor) as List<*>
+                        event.transferable.getTransferData(java.awt.datatransfer.DataFlavor.javaFileListFlavor) as List<*>
+                    val url = kotlin.runCatching {
+                        event.transferable.getTransferData(java.awt.datatransfer.DataFlavor.stringFlavor) as String
+                    }
+                        .onFailure { Timber.w(it) }
+                        .recover { (droppedFiles.firstOrNull() as? File)?.name ?: "" }
+                        .getOrElse { "" }
 
                     droppedFiles.firstOrNull()?.let {
                         val file = (it as File).toPath()
                         Logger.debug { "Accepted drag." }
-                        fileBeingHovered = file
+                        fileBeingHovered = Drop(path = file, name = url)
                         if (!isHovering) isHovering = true
                         return
                     }
@@ -92,23 +100,35 @@ fun AppScope.FileDropper(
             }
 
             @Synchronized
-            override fun drop(evt: DropTargetDropEvent) {
-                evt.acceptDrop(evt.dropAction)
+            override fun drop(event: DropTargetDropEvent) {
+                event.acceptDrop(event.dropAction)
                 isHovering = false
                 val droppedFiles =
-                    evt.transferable.getTransferData(java.awt.datatransfer.DataFlavor.javaFileListFlavor) as List<*>
+                    event.transferable.getTransferData(java.awt.datatransfer.DataFlavor.javaFileListFlavor) as List<*>
+                val url =
+                    event.transferable.getTransferData(java.awt.datatransfer.DataFlavor.stringFlavor) as String
 
-                droppedFiles.firstOrNull()?.let {
+                droppedFiles.firstOrNull()?.let { filePath ->
                     scope.launch {
                         kotlin.runCatching {
-                            val destinationFolder = SL.gamePathManager.getModsPath()
+                            val path = (filePath as File).toPath()
 
-                            if (destinationFolder != null) {
-                                SL.access.installFromUnknownSource(
-                                    inputFile = (it as File).toPath(),
-                                    destinationFolder = destinationFolder
-                                )
-                                SL.access.reload()
+                            if (path.pathString.endsWith(".url")) {
+                                Timber.i { "User file dropped url '$url'." }
+                                router.replaceCurrent(Screen.ModBrowser(url))
+
+                            } else {
+                                val destinationFolder = SL.gamePathManager.getModsPath()
+
+                                if (destinationFolder != null) {
+                                    withContext(Dispatchers.IO) {
+                                        SL.access.installFromUnknownSource(
+                                            inputFile = path,
+                                            destinationFolder = destinationFolder
+                                        )
+                                    }
+                                    SL.access.reload()
+                                }
                             }
                         }
                             .onFailure { throwable ->
@@ -143,10 +163,10 @@ fun AppScope.FileDropper(
             val file = fileBeingHovered ?: return@Box
             var fileSize by remember { mutableStateOf<Long?>(null) }
 
-            LaunchedEffect(file.absolutePathString()) {
+            LaunchedEffect(file.path.absolutePathString()) {
                 withContext(Dispatchers.Default) {
                     kotlin.runCatching {
-                        fileSize = file.calculateFileSize()
+                        fileSize = file.path.calculateFileSize()
                     }
                         .onFailure { Timber.w(it) }
                 }
@@ -221,3 +241,8 @@ fun AppScope.FileDropper(
         )
     }
 }
+
+private data class Drop(
+    val path: Path,
+    val name: String
+)
