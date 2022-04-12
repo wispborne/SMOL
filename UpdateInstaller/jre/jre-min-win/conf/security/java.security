@@ -116,7 +116,7 @@ security.provider.13=SunPKCS11
 # and "DRBG" SecureRandom implementations in the "Sun" provider.
 # (Other SecureRandom implementations might also use this property.)
 #
-# On Unix-like systems (for example, Linux/MacOS), the
+# On Unix-like systems (for example, Solaris/Linux/MacOS), the
 # "NativePRNG", "SHA1PRNG" and "DRBG" implementations obtains seed data from
 # special device files such as file:/dev/random.
 #
@@ -252,18 +252,15 @@ policy.provider=sun.security.provider.PolicyFile
 policy.url.1=file:${java.home}/conf/security/java.policy
 policy.url.2=file:${user.home}/.java.policy
 
-# Controls whether or not properties are expanded in policy and login
-# configuration files. If set to false, properties (${...}) will not
-# be expanded in policy and login configuration files. If commented out or
-# set to an empty string, the default value is "false" for policy files and
-# "true" for login configuration files.
+# whether or not we expand properties in the policy file
+# if this is set to false, properties (${...}) will not be expanded in policy
+# files.
 #
 policy.expandProperties=true
 
-# Controls whether or not an extra policy or login configuration file is
-# allowed to be passed on the command line with -Djava.security.policy=somefile
-# or -Djava.security.auth.login.config=somefile. If commented out or set to
-# an empty string, the default value is "false".
+# whether or not we allow an extra policy to be passed on the command line
+# with -Djava.security.policy=somefile. Comment out this line to disable
+# this feature.
 #
 policy.allowSystemProperty=true
 
@@ -485,7 +482,16 @@ sun.security.krb5.maxReferrals=5
 # in the jdk.[tls|certpath|jar].disabledAlgorithms properties.  To include this
 # list in any of the disabledAlgorithms properties, add the property name as
 # an entry.
-#jdk.disabled.namedCurves=
+jdk.disabled.namedCurves = secp112r1, secp112r2, secp128r1, secp128r2, \
+    secp160k1, secp160r1, secp160r2, secp192k1, secp192r1, secp224k1, \
+    secp224r1, secp256k1, sect113r1, sect113r2, sect131r1, sect131r2, \
+    sect163k1, sect163r1, sect163r2, sect193r1, sect193r2, sect233k1, \
+    sect233r1, sect239k1, sect283k1, sect283r1, sect409k1, sect409r1, \
+    sect571k1, sect571r1, X9.62 c2tnb191v1, X9.62 c2tnb191v2, \
+    X9.62 c2tnb191v3, X9.62 c2tnb239v1, X9.62 c2tnb239v2, X9.62 c2tnb239v3, \
+    X9.62 c2tnb359v1, X9.62 c2tnb431r1, X9.62 prime192v2, X9.62 prime192v3, \
+    X9.62 prime239v1, X9.62 prime239v2, X9.62 prime239v3, brainpoolP256r1, \
+    brainpoolP320r1, brainpoolP384r1, brainpoolP512r1
 
 #
 # Algorithm restrictions for certification path (CertPath) processing
@@ -623,7 +629,8 @@ sun.security.krb5.maxReferrals=5
 #
 #
 jdk.certpath.disabledAlgorithms=MD2, MD5, SHA1 jdkCA & usage TLSServer, \
-    RSA keySize < 1024, DSA keySize < 1024, EC keySize < 224
+    RSA keySize < 1024, DSA keySize < 1024, EC keySize < 224, \
+    include jdk.disabled.namedCurves
 
 #
 # Legacy algorithms for certification path (CertPath) processing and
@@ -687,7 +694,7 @@ jdk.security.legacyAlgorithms=SHA1, \
 # See "jdk.certpath.disabledAlgorithms" for syntax descriptions.
 #
 jdk.jar.disabledAlgorithms=MD2, MD5, RSA keySize < 1024, \
-      DSA keySize < 1024
+      DSA keySize < 1024, include jdk.disabled.namedCurves
 
 #
 # Algorithm restrictions for Secure Socket Layer/Transport Layer Security
@@ -722,7 +729,8 @@ jdk.jar.disabledAlgorithms=MD2, MD5, RSA keySize < 1024, \
 #   jdk.tls.disabledAlgorithms=MD5, SSLv3, DSA, RSA keySize < 2048, \
 #       rsa_pkcs1_sha1, secp224r1
 jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, RC4, DES, MD5withRSA, \
-    DH keySize < 1024, EC keySize < 224, 3DES_EDE_CBC, anon, NULL
+    DH keySize < 1024, EC keySize < 224, 3DES_EDE_CBC, anon, NULL, \
+    include jdk.disabled.namedCurves
 
 #
 # Legacy algorithms for Secure Socket Layer/Transport Layer Security (SSL/TLS)
@@ -781,7 +789,11 @@ jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, RC4, DES, MD5withRSA, \
 # Example:
 #   jdk.tls.legacyAlgorithms=DH_anon, DES_CBC, SSL_RSA_WITH_RC4_128_MD5
 #
-jdk.tls.legacyAlgorithms=NULL, anon, RC4, DES, 3DES_EDE_CBC
+jdk.tls.legacyAlgorithms= \
+        K_NULL, C_NULL, M_NULL, \
+        DH_anon, ECDH_anon, \
+        RC4_128, RC4_40, DES_CBC, DES40_CBC, \
+        3DES_EDE_CBC
 
 #
 # The pre-defined default finite field Diffie-Hellman ephemeral (DHE)
@@ -962,7 +974,7 @@ jdk.xml.dsig.secureValidationPolicy=\
     noRetrievalMethodLoops
 
 #
-# Serialization system-wide filter
+# Serialization process-wide filter
 #
 # A filter, if configured, is used by java.io.ObjectInputStream during
 # deserialization to check the contents of the stream.
@@ -971,8 +983,8 @@ jdk.xml.dsig.secureValidationPolicy=\
 # Patterns are separated by ";" (semicolon).
 # Whitespace is significant and is considered part of the pattern.
 #
-# If the system property jdk.serialFilter is also specified, it supersedes
-# the security property value defined here.
+# If the system property jdk.serialFilter is also specified on the command
+# line, it supersedes the security property value defined here.
 #
 # If a pattern includes a "=", it sets a limit.
 # If a limit appears more than once the last value is used.
@@ -1064,6 +1076,37 @@ jdk.xml.dsig.secureValidationPolicy=\
 #    java.rmi.dgc.Lease;\
 #    maxdepth=5;maxarray=10000
 
+# CORBA ORBIorTypeCheckRegistryFilter
+# Type check enhancement for ORB::string_to_object processing
+#
+# An IOR type check filter, if configured, is used by an ORB during
+# an ORB::string_to_object invocation to check the veracity of the type encoded
+# in the ior string.
+#
+# The filter pattern consists of a semi-colon separated list of class names.
+# The configured list contains the binary class names of the IDL interface types
+# corresponding to the IDL stub class to be instantiated.
+# As such, a filter specifies a list of IDL stub classes that will be
+# allowed by an ORB when an ORB::string_to_object is invoked.
+# It is used to specify a white list configuration of acceptable
+# IDL stub types which may be contained in a stringified IOR
+# parameter passed as input to an ORB::string_to_object method.
+#
+# Note: This property is currently used by the JDK Reference implementation.
+# It is not guaranteed to be examined and used by other implementations.
+#
+#com.sun.CORBA.ORBIorTypeCheckRegistryFilter=binary_class_name;binary_class_name
+
+# The iteration count used for password-based encryption (PBE) in JCEKS
+# keystores. Values in the range 10000 to 5000000 are considered valid.
+# If the value is out of this range, or is not a number, or is unspecified;
+# a default of 200000 is used.
+#
+# If the system property jdk.jceks.iterationCount is also specified, it
+# supersedes the security property value defined here.
+#
+#jdk.jceks.iterationCount = 200000
+
 #
 # JCEKS Encrypted Key Serial Filter
 #
@@ -1080,16 +1123,6 @@ jdk.xml.dsig.secureValidationPolicy=\
 # and javax.crypto.spec.SecretKeySpec and rejects all the others.
 jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep;\
   java.base/java.security.KeyRep$Type;java.base/javax.crypto.spec.SecretKeySpec;!*
-
-# The iteration count used for password-based encryption (PBE) in JCEKS
-# keystores. Values in the range 10000 to 5000000 are considered valid.
-# If the value is out of this range, or is not a number, or is unspecified;
-# a default of 200000 is used.
-#
-# If the system property jdk.jceks.iterationCount is also specified, it
-# supersedes the security property value defined here.
-#
-#jdk.jceks.iterationCount = 200000
 
 #
 # PKCS12 KeyStore properties
@@ -1155,12 +1188,12 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 # The algorithm used to calculate the optional MacData at the end of a PKCS12
 # file. This can be any HmacPBE algorithm defined in the Mac section of the
 # Java Security Standard Algorithm Names Specification. When set to "NONE",
-# no Mac is generated. The default value is "HmacPBESHA256".
-#keystore.pkcs12.macAlgorithm = HmacPBESHA256
+# no Mac is generated. The default value is "HmacPBESHA1".
+#keystore.pkcs12.macAlgorithm = HmacPBESHA1
 
 # The iteration count used by the MacData algorithm. This value must be a
-# positive integer. The default value is 10000.
-#keystore.pkcs12.macIterationCount = 10000
+# positive integer. The default value is 100000.
+#keystore.pkcs12.macIterationCount = 100000
 
 #
 # Enhanced exception message information
@@ -1183,13 +1216,10 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 #             java.nio.channels package will contain enhanced exception
 #             message information
 #
-#  jar      - enables more detailed information in the IOExceptions thrown
-#             by classes in the java.util.jar package
-#
 # The property setting in this file can be overridden by a system property of
 # the same name, with the same syntax and possible values.
 #
-#jdk.includeInExceptions=hostInfo,jar
+#jdk.includeInExceptions=hostInfo
 
 #
 # Disabled mechanisms for the Simple Authentication and Security Layer (SASL)
@@ -1300,17 +1330,6 @@ jdk.io.permissionsUseCanonicalPath=false
 #
 #jdk.security.allowNonCaAnchor=true
 
-#
-# The default Character set name (java.nio.charset.Charset.forName())
-# for converting TLS ALPN values between byte arrays and Strings.
-# Prior versions of the JDK may use UTF-8 as the default charset. If
-# you experience interoperability issues, setting this property to UTF-8
-# may help.
-#
-# jdk.tls.alpnCharset=UTF-8
-jdk.tls.alpnCharset=ISO_8859_1
-
-#
 # JNDI Object Factories Filter
 #
 # This filter is used by the JNDI runtime to control the set of object factory classes
@@ -1332,3 +1351,13 @@ jdk.tls.alpnCharset=ISO_8859_1
 # The default pattern value allows any object factory class specified by the reference
 # instance to recreate the referenced object.
 #jdk.jndi.object.factoriesFilter=*
+
+#
+# The default Character set name (java.nio.charset.Charset.forName())
+# for converting TLS ALPN values between byte arrays and Strings.
+# Prior versions of the JDK may use UTF-8 as the default charset. If
+# you experience interoperability issues, setting this property to UTF-8
+# may help.
+#
+# jdk.tls.alpnCharset=UTF-8
+jdk.tls.alpnCharset=ISO_8859_1

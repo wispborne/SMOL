@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ enum {
     JVMTI_VERSION_9   = 0x30090000,
     JVMTI_VERSION_11  = 0x300B0000,
 
-    JVMTI_VERSION = 0x30000000 + (16 * 0x10000) + ( 0 * 0x100) + 0  /* version: 16.0.0 */
+    JVMTI_VERSION = 0x30000000 + (11 * 0x10000) + (0 * 0x100) + 0  /* version: 11.0.0 */
 };
 
 JNIEXPORT jint JNICALL
@@ -432,50 +432,50 @@ typedef enum {
 
 
     /* Pre-Declarations */
-struct jvmtiThreadInfo;
-typedef struct jvmtiThreadInfo jvmtiThreadInfo;
-struct jvmtiMonitorStackDepthInfo;
-typedef struct jvmtiMonitorStackDepthInfo jvmtiMonitorStackDepthInfo;
-struct jvmtiThreadGroupInfo;
-typedef struct jvmtiThreadGroupInfo jvmtiThreadGroupInfo;
-struct jvmtiFrameInfo;
-typedef struct jvmtiFrameInfo jvmtiFrameInfo;
-struct jvmtiStackInfo;
-typedef struct jvmtiStackInfo jvmtiStackInfo;
-struct jvmtiHeapReferenceInfoField;
-typedef struct jvmtiHeapReferenceInfoField jvmtiHeapReferenceInfoField;
-struct jvmtiHeapReferenceInfoArray;
-typedef struct jvmtiHeapReferenceInfoArray jvmtiHeapReferenceInfoArray;
-struct jvmtiHeapReferenceInfoConstantPool;
-typedef struct jvmtiHeapReferenceInfoConstantPool jvmtiHeapReferenceInfoConstantPool;
-struct jvmtiHeapReferenceInfoStackLocal;
-typedef struct jvmtiHeapReferenceInfoStackLocal jvmtiHeapReferenceInfoStackLocal;
-struct jvmtiHeapReferenceInfoJniLocal;
-typedef struct jvmtiHeapReferenceInfoJniLocal jvmtiHeapReferenceInfoJniLocal;
-struct jvmtiHeapReferenceInfoReserved;
-typedef struct jvmtiHeapReferenceInfoReserved jvmtiHeapReferenceInfoReserved;
-union jvmtiHeapReferenceInfo;
-typedef union jvmtiHeapReferenceInfo jvmtiHeapReferenceInfo;
-struct jvmtiHeapCallbacks;
-typedef struct jvmtiHeapCallbacks jvmtiHeapCallbacks;
-struct jvmtiClassDefinition;
-typedef struct jvmtiClassDefinition jvmtiClassDefinition;
-struct jvmtiMonitorUsage;
-typedef struct jvmtiMonitorUsage jvmtiMonitorUsage;
-struct jvmtiLineNumberEntry;
-typedef struct jvmtiLineNumberEntry jvmtiLineNumberEntry;
-struct jvmtiLocalVariableEntry;
-typedef struct jvmtiLocalVariableEntry jvmtiLocalVariableEntry;
-struct jvmtiParamInfo;
-typedef struct jvmtiParamInfo jvmtiParamInfo;
-struct jvmtiExtensionFunctionInfo;
-typedef struct jvmtiExtensionFunctionInfo jvmtiExtensionFunctionInfo;
-struct jvmtiExtensionEventInfo;
-typedef struct jvmtiExtensionEventInfo jvmtiExtensionEventInfo;
-struct jvmtiTimerInfo;
-typedef struct jvmtiTimerInfo jvmtiTimerInfo;
-struct jvmtiAddrLocationMap;
-typedef struct jvmtiAddrLocationMap jvmtiAddrLocationMap;
+struct _jvmtiThreadInfo;
+typedef struct _jvmtiThreadInfo jvmtiThreadInfo;
+struct _jvmtiMonitorStackDepthInfo;
+typedef struct _jvmtiMonitorStackDepthInfo jvmtiMonitorStackDepthInfo;
+struct _jvmtiThreadGroupInfo;
+typedef struct _jvmtiThreadGroupInfo jvmtiThreadGroupInfo;
+struct _jvmtiFrameInfo;
+typedef struct _jvmtiFrameInfo jvmtiFrameInfo;
+struct _jvmtiStackInfo;
+typedef struct _jvmtiStackInfo jvmtiStackInfo;
+struct _jvmtiHeapReferenceInfoField;
+typedef struct _jvmtiHeapReferenceInfoField jvmtiHeapReferenceInfoField;
+struct _jvmtiHeapReferenceInfoArray;
+typedef struct _jvmtiHeapReferenceInfoArray jvmtiHeapReferenceInfoArray;
+struct _jvmtiHeapReferenceInfoConstantPool;
+typedef struct _jvmtiHeapReferenceInfoConstantPool jvmtiHeapReferenceInfoConstantPool;
+struct _jvmtiHeapReferenceInfoStackLocal;
+typedef struct _jvmtiHeapReferenceInfoStackLocal jvmtiHeapReferenceInfoStackLocal;
+struct _jvmtiHeapReferenceInfoJniLocal;
+typedef struct _jvmtiHeapReferenceInfoJniLocal jvmtiHeapReferenceInfoJniLocal;
+struct _jvmtiHeapReferenceInfoReserved;
+typedef struct _jvmtiHeapReferenceInfoReserved jvmtiHeapReferenceInfoReserved;
+union _jvmtiHeapReferenceInfo;
+typedef union _jvmtiHeapReferenceInfo jvmtiHeapReferenceInfo;
+struct _jvmtiHeapCallbacks;
+typedef struct _jvmtiHeapCallbacks jvmtiHeapCallbacks;
+struct _jvmtiClassDefinition;
+typedef struct _jvmtiClassDefinition jvmtiClassDefinition;
+struct _jvmtiMonitorUsage;
+typedef struct _jvmtiMonitorUsage jvmtiMonitorUsage;
+struct _jvmtiLineNumberEntry;
+typedef struct _jvmtiLineNumberEntry jvmtiLineNumberEntry;
+struct _jvmtiLocalVariableEntry;
+typedef struct _jvmtiLocalVariableEntry jvmtiLocalVariableEntry;
+struct _jvmtiParamInfo;
+typedef struct _jvmtiParamInfo jvmtiParamInfo;
+struct _jvmtiExtensionFunctionInfo;
+typedef struct _jvmtiExtensionFunctionInfo jvmtiExtensionFunctionInfo;
+struct _jvmtiExtensionEventInfo;
+typedef struct _jvmtiExtensionEventInfo jvmtiExtensionEventInfo;
+struct _jvmtiTimerInfo;
+typedef struct _jvmtiTimerInfo jvmtiTimerInfo;
+struct _jvmtiAddrLocationMap;
+typedef struct _jvmtiAddrLocationMap jvmtiAddrLocationMap;
 
     /* Function Types */
 
@@ -520,43 +520,43 @@ typedef void (JNICALL *jvmtiExtensionEvent)
 
 
     /* Structure Types */
-struct jvmtiThreadInfo {
+struct _jvmtiThreadInfo {
     char* name;
     jint priority;
     jboolean is_daemon;
     jthreadGroup thread_group;
     jobject context_class_loader;
 };
-struct jvmtiMonitorStackDepthInfo {
+struct _jvmtiMonitorStackDepthInfo {
     jobject monitor;
     jint stack_depth;
 };
-struct jvmtiThreadGroupInfo {
+struct _jvmtiThreadGroupInfo {
     jthreadGroup parent;
     char* name;
     jint max_priority;
     jboolean is_daemon;
 };
-struct jvmtiFrameInfo {
+struct _jvmtiFrameInfo {
     jmethodID method;
     jlocation location;
 };
-struct jvmtiStackInfo {
+struct _jvmtiStackInfo {
     jthread thread;
     jint state;
     jvmtiFrameInfo* frame_buffer;
     jint frame_count;
 };
-struct jvmtiHeapReferenceInfoField {
+struct _jvmtiHeapReferenceInfoField {
     jint index;
 };
-struct jvmtiHeapReferenceInfoArray {
+struct _jvmtiHeapReferenceInfoArray {
     jint index;
 };
-struct jvmtiHeapReferenceInfoConstantPool {
+struct _jvmtiHeapReferenceInfoConstantPool {
     jint index;
 };
-struct jvmtiHeapReferenceInfoStackLocal {
+struct _jvmtiHeapReferenceInfoStackLocal {
     jlong thread_tag;
     jlong thread_id;
     jint depth;
@@ -564,13 +564,13 @@ struct jvmtiHeapReferenceInfoStackLocal {
     jlocation location;
     jint slot;
 };
-struct jvmtiHeapReferenceInfoJniLocal {
+struct _jvmtiHeapReferenceInfoJniLocal {
     jlong thread_tag;
     jlong thread_id;
     jint depth;
     jmethodID method;
 };
-struct jvmtiHeapReferenceInfoReserved {
+struct _jvmtiHeapReferenceInfoReserved {
     jlong reserved1;
     jlong reserved2;
     jlong reserved3;
@@ -580,7 +580,7 @@ struct jvmtiHeapReferenceInfoReserved {
     jlong reserved7;
     jlong reserved8;
 };
-union jvmtiHeapReferenceInfo {
+union _jvmtiHeapReferenceInfo {
     jvmtiHeapReferenceInfoField field;
     jvmtiHeapReferenceInfoArray array;
     jvmtiHeapReferenceInfoConstantPool constant_pool;
@@ -588,7 +588,7 @@ union jvmtiHeapReferenceInfo {
     jvmtiHeapReferenceInfoJniLocal jni_local;
     jvmtiHeapReferenceInfoReserved other;
 };
-struct jvmtiHeapCallbacks {
+struct _jvmtiHeapCallbacks {
     jvmtiHeapIterationCallback heap_iteration_callback;
     jvmtiHeapReferenceCallback heap_reference_callback;
     jvmtiPrimitiveFieldCallback primitive_field_callback;
@@ -606,12 +606,12 @@ struct jvmtiHeapCallbacks {
     jvmtiReservedCallback reserved14;
     jvmtiReservedCallback reserved15;
 };
-struct jvmtiClassDefinition {
+struct _jvmtiClassDefinition {
     jclass klass;
     jint class_byte_count;
     const unsigned char* class_bytes;
 };
-struct jvmtiMonitorUsage {
+struct _jvmtiMonitorUsage {
     jthread owner;
     jint entry_count;
     jint waiter_count;
@@ -619,11 +619,11 @@ struct jvmtiMonitorUsage {
     jint notify_waiter_count;
     jthread* notify_waiters;
 };
-struct jvmtiLineNumberEntry {
+struct _jvmtiLineNumberEntry {
     jlocation start_location;
     jint line_number;
 };
-struct jvmtiLocalVariableEntry {
+struct _jvmtiLocalVariableEntry {
     jlocation start_location;
     jint length;
     char* name;
@@ -631,13 +631,13 @@ struct jvmtiLocalVariableEntry {
     char* generic_signature;
     jint slot;
 };
-struct jvmtiParamInfo {
+struct _jvmtiParamInfo {
     char* name;
     jvmtiParamKind kind;
     jvmtiParamTypes base_type;
     jboolean null_ok;
 };
-struct jvmtiExtensionFunctionInfo {
+struct _jvmtiExtensionFunctionInfo {
     jvmtiExtensionFunction func;
     char* id;
     char* short_description;
@@ -646,14 +646,14 @@ struct jvmtiExtensionFunctionInfo {
     jint error_count;
     jvmtiError* errors;
 };
-struct jvmtiExtensionEventInfo {
+struct _jvmtiExtensionEventInfo {
     jint extension_event_index;
     char* id;
     char* short_description;
     jint param_count;
     jvmtiParamInfo* params;
 };
-struct jvmtiTimerInfo {
+struct _jvmtiTimerInfo {
     jlong max_value;
     jboolean may_skip_forward;
     jboolean may_skip_backward;
@@ -661,7 +661,7 @@ struct jvmtiTimerInfo {
     jlong reserved1;
     jlong reserved2;
 };
-struct jvmtiAddrLocationMap {
+struct _jvmtiAddrLocationMap {
     const void* start_address;
     jlocation location;
 };
