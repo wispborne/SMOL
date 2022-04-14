@@ -180,3 +180,17 @@ tasks.register("generateVersionProperties") {
 tasks.named("processResources") {
     dependsOn("generateVersionProperties")
 }
+
+/**
+ * https://github.com/kirill-grouchnikov/artemis/blob/woodland/build.gradle.kts#L57
+ */
+configurations {
+    all {
+        resolutionStrategy.eachDependency {
+            if (requested.group == "org.jetbrains.skiko") {
+                useVersion("0.7.18")
+                because("Pin to version that has shader bindings")
+            }
+        }
+    }
+}

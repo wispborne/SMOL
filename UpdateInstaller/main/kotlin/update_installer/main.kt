@@ -108,6 +108,7 @@ class Main {
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
+                Timber.e { "If updating is not working, try deleting $updateZipPath and then trying again." }
             }
 
             val pathOfAppToStartAfterUpdating = args.getOrNull(1)?.removeSurrounding("\'")?.ifBlank { null }

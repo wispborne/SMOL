@@ -68,7 +68,12 @@ data class UserProfile(
         val sortField: String?,
         val isSortDescending: Boolean = true,
         val columnSettings: Map<ModGridHeader, ModGridColumnSetting>?,
-        val grouping: ModGridGroupEnum?,
+        val groupingSetting: GroupingSetting?,
+    )
+
+    data class GroupingSetting(
+        val grouping: ModGridGroupEnum,
+        val isSortDescending: Boolean = false,
     )
 
     data class ModGridColumnSetting(

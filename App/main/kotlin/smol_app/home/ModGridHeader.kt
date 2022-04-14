@@ -36,7 +36,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import smol_access.SL
-import smol_access.business.UserManager
 import smol_access.model.Mod
 import smol_access.model.UserProfile
 import smol_app.composables.SmolTooltipArea
@@ -71,9 +70,12 @@ fun AppScope.ModGridHeader(
                         )
                     }
                     UserProfile.ModGridHeader.ChangeVariantButton -> {
-                        Box(
-                            modifier = Modifier.width(modGridViewDropdownWidth.dp)
-                                .align(Alignment.CenterVertically)
+                        // Enabled/Disabled
+                        SortableHeader(
+                            modifier = Modifier.width(modGridViewDropdownWidth.dp).align(Alignment.CenterVertically),
+                            columnSortField = ModGridSortField.EnabledState,
+                            activeSortField = activeSortField,
+                            profile = profile
                         ) {
                             refreshButton {
                                 GlobalScope.launch(Dispatchers.Default) {

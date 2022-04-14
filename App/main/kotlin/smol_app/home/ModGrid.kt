@@ -46,6 +46,7 @@ import smol_app.composables.SmolButton
 import smol_app.composables.SmolPopupMenu
 import smol_app.composables.SmolSecondaryButton
 import smol_app.themes.SmolTheme
+import smol_app.util.uiEnabled
 import utilities.nullIfBlank
 
 const val modGridViewDropdownWidth = 180
@@ -94,15 +95,15 @@ fun AppScope.ModGridView(
             }
             Box {
                 val listState = rememberLazyListState()
-                val grouping =
-                    SL.userManager.activeProfile.collectAsState().value.modGridPrefs.grouping!!.mapToGroup(SL.modMetadata)
+                val groupingSetting = SL.userManager.activeProfile.collectAsState().value.modGridPrefs.groupingSetting!!
+                val grouping = groupingSetting.grouping.mapToGroup(SL.modMetadata)
                 val collapseStates = remember { mutableStateMapOf<Any?, Boolean>() }
 
                 LazyColumn(Modifier.fillMaxWidth(), state = listState) {
                     mods
                         .filterNotNull()
                         .groupBy { grouping.getGroupSortValue(it) }
-                        .toSortedMap(compareBy { it })
+                        .toSortedMap(if (groupingSetting.isSortDescending) compareByDescending { it } else compareBy { it })
                         .forEach { (modState, modsInGroup) ->
                             val isCollapsed = collapseStates[modState] ?: false
                             val groupName = modsInGroup.firstOrNull()?.let { grouping.getGroupName(it) } ?: ""
@@ -119,6 +120,7 @@ fun AppScope.ModGridView(
                             if (!isCollapsed) {
                                 fun getSortValue(modRow: ModRow): Comparable<*>? {
                                     return when (activeSortField) {
+                                        ModGridSortField.EnabledState -> modRow.mod.uiEnabled
                                         ModGridSortField.Name -> modRow.mod.findFirstEnabledOrHighestVersion?.modInfo?.name?.lowercase()
                                         ModGridSortField.Author -> modRow.mod.findFirstEnabledOrHighestVersion?.modInfo?.author?.lowercase()
                                         ModGridSortField.VramImpact -> getVramImpactForMod(

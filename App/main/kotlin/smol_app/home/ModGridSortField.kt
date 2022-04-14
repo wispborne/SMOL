@@ -13,6 +13,7 @@
 package smol_app.home
 
 enum class ModGridSortField {
+    EnabledState,
     Name,
     Author,
     VramImpact,

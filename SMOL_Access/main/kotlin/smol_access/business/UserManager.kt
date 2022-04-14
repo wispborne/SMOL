@@ -79,7 +79,10 @@ class UserManager internal constructor(
                         position = 8
                     ),
                 ),
-                grouping = UserProfile.ModGridGroupEnum.EnabledState
+                groupingSetting = UserProfile.GroupingSetting(
+                    grouping = UserProfile.ModGridGroupEnum.EnabledState,
+                    isSortDescending = false
+                )
             ),
             showGameLauncherWarning = true,
             launchButtonAction = UserProfile.LaunchButtonAction.OpenFolder

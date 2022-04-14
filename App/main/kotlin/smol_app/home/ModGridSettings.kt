@@ -12,7 +12,6 @@
 
 package smol_app.home
 
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.TooltipPlacement
 import androidx.compose.foundation.layout.*
@@ -129,6 +128,7 @@ fun ModGridSettings() {
                                 modifier = Modifier.align(Alignment.CenterVertically)
                             )
                         }
+                        // Hide/Show
                         IconButton(
                             onClick = {
                                 SL.userManager.updateUserProfile { profile ->
@@ -157,30 +157,58 @@ fun ModGridSettings() {
                                 painter = painterResource(if (setting.isVisible) "icon-show.svg" else "icon-hide.svg")
                             )
                         }
+
+                        // Grouping
                         val group = getGroupForHeader(header)
+                        val arrowIconWidth = 12
                         val groupIconModifier = Modifier
                             .padding(start = 8.dp)
                             .align(Alignment.CenterVertically)
-                            .size(16.dp)
+                            .size(height = 16.dp, width = (16 + arrowIconWidth).dp)
                         if (group != null) {
-                            val alpha = if (SL.userManager.activeProfile.collectAsState().value.modGridPrefs.grouping == group) 1f else 0.3f
+                            val groupingSetting =
+                                SL.userManager.activeProfile.collectAsState().value.modGridPrefs.groupingSetting
+                            val isActiveGroup = groupingSetting!!.grouping == group
+                            val alpha =
+                                if (isActiveGroup) 1f else 0.3f
                             IconButton(
                                 onClick = {
                                     SL.userManager.updateUserProfile { profile ->
+                                        val groupingSettingSnapshot = profile.modGridPrefs.groupingSetting!!
                                         profile.copy(
                                             modGridPrefs = profile.modGridPrefs.copy(
-                                                grouping = group
+                                                // If clicked the active grouping, flip sorting. Otherwise, make it active
+                                                groupingSetting = when {
+                                                    groupingSettingSnapshot.grouping != group ->
+                                                        UserProfile.GroupingSetting(grouping = group)
+                                                    else -> groupingSettingSnapshot.copy(isSortDescending = groupingSettingSnapshot.isSortDescending.not())
+                                                }
                                             )
                                         )
                                     }
                                 },
                                 modifier = groupIconModifier
                             ) {
-                                Icon(
-                                    contentDescription = "grouping",
-                                    painter = painterResource("icon-group.svg"),
-                                    modifier = Modifier.alpha(alpha)
-                                )
+                                Row {
+                                    Icon(
+                                        contentDescription = "grouping",
+                                        painter = painterResource("icon-group.svg"),
+                                        modifier = Modifier.alpha(alpha).fillMaxHeight()
+                                    )
+                                    if (isActiveGroup) {
+                                        Icon(
+                                            contentDescription = null,
+                                            painter = painterResource(if (!groupingSetting.isSortDescending) "icon-arrow-down.svg" else "icon-arrow-up.svg"),
+                                            modifier = Modifier
+                                                .size(width = arrowIconWidth.dp, height = 16.dp)
+                                                .offset((-2).dp)
+                                                .alpha(alpha)
+                                                .aspectRatio(1f, matchHeightConstraintsFirst = true),
+                                        )
+                                    } else {
+                                        Spacer(Modifier.width(arrowIconWidth.dp))
+                                    }
+                                }
                             }
                         } else {
                             Spacer(modifier = groupIconModifier)
