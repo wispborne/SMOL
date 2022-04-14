@@ -127,6 +127,17 @@
       "secondaryVariant": "#97745D",
       "surface": "#383049"
     },
+    "Ruby Mine": {
+      "isDark": true,
+      "primary": "#F22A51",
+      "primaryVariant": "#771026",
+      "secondary": "#F22A51",
+      "secondaryVariant": "#FFFFFF",
+      "background": "#202020",
+      "surface": "#202020",
+      "onPrimary": "#FDFDFD",
+      "hyperlink": "#EA71C5"
+    },
     "Sigma": {
       "background": "#282C34",
       "hyperlink": "#6FA9E2",
