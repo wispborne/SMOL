@@ -18,10 +18,6 @@ import update_installer.BaseAppUpdater
 import update_installer.UpdateChannel
 
 class UpdateChannelManager {
-
-    fun getUpdateChannelSetting(appConfig: AppConfig): UpdateChannel =
-        getUpdateChannelSetting(appConfig)
-
     /**
      * Sets the release channel for the user.
      */

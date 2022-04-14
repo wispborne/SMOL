@@ -32,6 +32,7 @@ import smol_app.composables.*
 import smol_app.updater.UpdateSmolToast
 import timber.ktx.Timber
 import update_installer.UpdateChannel
+import updatestager.UpdateChannelManager
 import utilities.asList
 import java.io.FileNotFoundException
 import java.net.UnknownHostException
@@ -59,7 +60,7 @@ fun updateSection(scope: CoroutineScope) {
                             when (it) {
                                 is UnknownHostException -> "Unable to connect to ${it.message}."
                                 is FileNotFoundException ->
-                                    if (SL.UI.updateChannelManager.getUpdateChannelSetting(appConfig = SL.appConfig) == UpdateChannel.Stable)
+                                    if (UpdateChannelManager.getUpdateChannelSetting(appConfig = SL.appConfig) == UpdateChannel.Stable)
                                         "There's no stable version...yet." else
                                         "File not found: ${it.message}."
                                 else -> it.toString()
@@ -76,7 +77,7 @@ fun updateSection(scope: CoroutineScope) {
 
         SmolDropdownWithButton(
             modifier = Modifier.padding(top = 4.dp),
-            initiallySelectedIndex = when (SL.UI.updateChannelManager.getUpdateChannelSetting(appConfig = SL.appConfig)) {
+            initiallySelectedIndex = when (UpdateChannelManager.getUpdateChannelSetting(appConfig = SL.appConfig)) {
                 UpdateChannel.Stable -> 0
                 UpdateChannel.Unstable -> 1
                 UpdateChannel.Test -> 2
