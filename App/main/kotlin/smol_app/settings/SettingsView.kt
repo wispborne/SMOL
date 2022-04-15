@@ -62,6 +62,7 @@ fun AppScope.settingsView(
     modifier: Modifier = Modifier
 ) {
     val showLogPanel = remember { mutableStateOf(false) }
+    val userProfile = SL.userManager.activeProfile.collectAsState().value
     Scaffold(topBar = {
         SmolTopAppBar(modifier = Modifier.height(SmolTheme.topBarHeight)) {
             toolbar(router.state.value.activeChild.instance as Screen)
@@ -194,7 +195,7 @@ fun AppScope.settingsView(
                                     modifier = Modifier.padding(start = 16.dp, top = 16.dp)
                                 ) {
                                     val launchButtonAction =
-                                        SL.userManager.activeProfile.collectAsState().value.launchButtonAction
+                                        userProfile.launchButtonAction
                                     val isChecked = launchButtonAction == UserProfile.LaunchButtonAction.OpenFolder
                                     CheckboxWithText(
                                         checked = isChecked,
@@ -212,6 +213,28 @@ fun AppScope.settingsView(
                                     ) { modifier ->
                                         Text(
                                             text = "Open game folder instead of launching Starsector.",
+                                            modifier = modifier
+                                        )
+                                    }
+                                }
+                            }
+
+                            item {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(start = 16.dp)
+                                ) {
+                                    val isChecked = userProfile.useOrbitronNameFont!!
+                                    CheckboxWithText(
+                                        checked = isChecked,
+                                        onCheckedChange = { checked ->
+                                            SL.userManager.updateUserProfile {
+                                                it.copy(useOrbitronNameFont = checked)
+                                            }
+                                        }
+                                    ) { modifier ->
+                                        Text(
+                                            text = "Use Starsector font for mod names.",
                                             modifier = modifier
                                         )
                                     }

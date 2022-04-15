@@ -81,7 +81,7 @@ fun AppScope.FileDropper(
                     val url = kotlin.runCatching {
                         event.transferable.getTransferData(java.awt.datatransfer.DataFlavor.stringFlavor) as String
                     }
-                        .onFailure { Timber.w(it) }
+                        .onFailure { Timber.d(it) }
                         .recover { (droppedFiles.firstOrNull() as? File)?.name ?: "" }
                         .getOrElse { "" }
 
@@ -106,7 +106,9 @@ fun AppScope.FileDropper(
                 val droppedFiles =
                     event.transferable.getTransferData(java.awt.datatransfer.DataFlavor.javaFileListFlavor) as List<*>
                 val url =
-                    event.transferable.getTransferData(java.awt.datatransfer.DataFlavor.stringFlavor) as String
+                    kotlin.runCatching { event.transferable.getTransferData(java.awt.datatransfer.DataFlavor.stringFlavor) as String }
+                        .onFailure { Timber.d(it) }
+                        .getOrNull()
 
                 droppedFiles.firstOrNull()?.let { filePath ->
                     scope.launch {

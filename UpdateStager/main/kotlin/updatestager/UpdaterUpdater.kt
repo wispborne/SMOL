@@ -19,6 +19,7 @@ import timber.ktx.Timber
 import update_installer.BaseAppUpdater
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
+import kotlin.io.path.deleteIfExists
 import kotlin.io.path.relativeTo
 import kotlin.streams.asSequence
 
@@ -26,18 +27,20 @@ class UpdaterUpdater : BaseAppUpdater() {
     override val configXmlBaseFileNameWithoutExtension: String = "updater-config"
     override val versionPropertyKey: String = "updater-version-prop"
     override val updateZipFile: Path = Path.of("updater-update.zip")
+    val standaloneJreFolderName = "jre-min-win"
 
     override fun createConfiguration(
         directoryOfFilesToAddToManifest: Path,
         remoteConfigUrl: String
     ): Configuration {
         val dir = directoryOfFilesToAddToManifest
+        val standaloneJreFolder = dir.resolve(standaloneJreFolderName)
 
         return Configuration.builder()
             .baseUri(remoteConfigUrl)
             .basePath(Path.of("").absolutePathString())
             .files(
-                FileMetadata.streamDirectory(dir.resolve("jre-min-win")).asSequence()
+                FileMetadata.streamDirectory(standaloneJreFolder).asSequence()
                     .plus(FileMetadata.readFrom(dir.resolve("UpdateInstaller-fat.jar")))
                     .onEach { it.path(it.source.relativeTo(dir)) }
                     .onEach { r -> r.classpath(r.source.toString().endsWith(".jar")) }
@@ -47,7 +50,11 @@ class UpdaterUpdater : BaseAppUpdater() {
 
     override fun installUpdateInternal() {
         kotlin.runCatching {
-            Archive.read(updateZipFile).install(true)
+            with(Archive.read(updateZipFile)) {
+                // For some reason, the installer fails if this parent folder exists.
+                Path.of(standaloneJreFolderName).deleteIfExists()
+                install(true)
+            }
         }
             .onFailure { Timber.e(it) }
             .getOrThrow()

@@ -45,7 +45,7 @@ class JreManager(
 ) {
     companion object {
         const val gameJreFolderName = "jre"
-        private val versionRegex = Regex("""(\d+\.\d+\.\d+[\d_\-.+\w]*)""")
+        private val versionRegex = Regex("""\"(\.*?\d+.*?)\"""")
     }
 
     val isMissingAdmin = gamePathManager.path
@@ -75,7 +75,7 @@ class JreManager(
                                 .bufferedReader()
                                 .readLines()
                                 .let { lines ->
-                                    lines.firstNotNullOfOrNull { versionRegex.find(it) }?.value
+                                    lines.firstNotNullOfOrNull { versionRegex.find(it) }?.groups?.get(1)?.value
                                         ?: lines.firstOrNull()
                                 }
                         }
@@ -86,6 +86,7 @@ class JreManager(
                     }
                     .filter { it.path.name != "jre-min-win" } // If user extracted SMOL into their game directory, don't show the standalone jre.
                     .toList()
+                    .onEach { Timber.i { "Found JRE $it" } }
             }
         }
     }

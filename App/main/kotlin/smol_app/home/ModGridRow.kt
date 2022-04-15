@@ -35,6 +35,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import smol_access.SL
@@ -144,8 +145,8 @@ fun AppScope.ModGridRow(
                                     fontWeight = FontWeight.SemiBold,
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis,
-                                    fontFamily = SmolTheme.orbitronSpaceFont,
-                                    fontSize = 14.sp
+                                    fontFamily = if (profile.value.useOrbitronNameFont!!) SmolTheme.orbitronSpaceFont else null,
+                                    fontSize = if (profile.value.useOrbitronNameFont!!) 15.sp else TextUnit.Unspecified
                                 )
                             }
                             UserProfile.ModGridHeader.Author -> {

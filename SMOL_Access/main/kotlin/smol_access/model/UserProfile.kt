@@ -24,6 +24,7 @@ data class UserProfile(
     val modGridPrefs: ModGridPrefs,
     val showGameLauncherWarning: Boolean?,
     val launchButtonAction: LaunchButtonAction?,
+    val useOrbitronNameFont: Boolean?,
 ) {
     val activeModProfile: ModProfile
         get() = modProfiles.firstOrNull { it.id == activeModProfileId } ?: modProfiles.first()

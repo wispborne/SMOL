@@ -85,7 +85,8 @@ class UserManager internal constructor(
                 )
             ),
             showGameLauncherWarning = true,
-            launchButtonAction = UserProfile.LaunchButtonAction.OpenFolder
+            launchButtonAction = UserProfile.LaunchButtonAction.OpenFolder,
+            useOrbitronNameFont = false
         )
     }
 
