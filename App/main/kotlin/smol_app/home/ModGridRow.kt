@@ -32,8 +32,11 @@ import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.pointerMoveFilter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -181,22 +184,26 @@ fun AppScope.ModGridRow(
                                     ) {
                                         val dimColor =
                                             MaterialTheme.colors.onBackground.copy(alpha = 0.4f)
-                                        mod.variants
-                                            .forEachIndexed { index, element ->
-                                                val enabled = mod.isEnabled(element)
-                                                Text(
-                                                    text = buildString {
-                                                        append(element.modInfo.version.toString())
-                                                        append(
-                                                            if (index != mod.variants.count() - 1)
-                                                                ", " else ""
-                                                        )
-                                                    },
-                                                    color = if (enabled)
-                                                        Color.Unspecified
-                                                    else dimColor
-                                                )
-                                            }
+
+                                        SmolText(
+                                            text = buildAnnotatedString {
+                                                mod.variants
+                                                    .forEachIndexed { index, element ->
+                                                        val enabled = mod.isEnabled(element)
+                                                        this.withStyle(
+                                                            SpanStyle(color = if (enabled) Color.Unspecified else dimColor)
+                                                        ) {
+                                                            append(element.modInfo.version.toString())
+                                                            append(
+                                                                if (index != mod.variants.count() - 1)
+                                                                    ", " else ""
+                                                            )
+                                                        }
+                                                    }
+                                            },
+                                            overflow = TextOverflow.Ellipsis,
+                                            maxLines = 1
+                                        )
                                     }
                                 }
                             }
