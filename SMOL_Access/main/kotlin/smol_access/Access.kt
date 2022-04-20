@@ -21,6 +21,7 @@ import smol_access.config.GamePathManager
 import smol_access.config.SettingsPath
 import smol_access.model.Mod
 import smol_access.model.ModId
+import smol_access.model.ModInfo
 import smol_access.model.ModVariant
 import timber.ktx.Timber
 import utilities.*
@@ -122,9 +123,15 @@ class Access internal constructor(
      */
     suspend fun installFromUnknownSource(
         inputFile: Path,
-        destinationFolder: Path
+        destinationFolder: Path,
+        promptUserToReplaceExistingFolder: suspend (modInfo: ModInfo) -> Boolean
     ) {
-        archives.installFromUnknownSource(inputFile, destinationFolder)
+        archives.installFromUnknownSource(
+            inputFile = inputFile,
+            destinationFolder = destinationFolder,
+            existingMods = modsCache.mods.value?.mods.orEmpty(),
+            promptUserToReplaceExistingFolder = promptUserToReplaceExistingFolder
+        )
     }
 
     /**

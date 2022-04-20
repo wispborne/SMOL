@@ -472,7 +472,12 @@ private fun AppScope.embeddedBrowser(
                                             if (destinationFolder != null) {
                                                 SL.access.installFromUnknownSource(
                                                     inputFile = download.path.value!!,
-                                                    destinationFolder = destinationFolder
+                                                    destinationFolder = destinationFolder,
+                                                    promptUserToReplaceExistingFolder = {
+                                                        this@embeddedBrowser.duplicateModAlertDialogState.showDialogBooleo(
+                                                            it
+                                                        )
+                                                    }
                                                 )
                                                 SL.access.reload()
                                             }

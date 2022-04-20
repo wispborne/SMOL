@@ -57,7 +57,8 @@ fun File.mkdirsIfNotExist() {
 }
 
 /**
- * [https://stackoverflow.com/a/35989142/1622788]
+ * Deletes the folder and all files in it if it/they exist.
+ * [source](https://stackoverflow.com/a/35989142/1622788)
  */
 fun Path.deleteRecursively(vararg options: FileVisitOption = arrayOf(FileVisitOption.FOLLOW_LINKS)) {
     if (!this.exists()) return
@@ -109,6 +110,7 @@ val String.Companion.empty
 fun Any.equalsAny(vararg other: Any): Boolean = arrayOf(*other).any { this == it }
 fun String.equalsAny(vararg other: String, ignoreCase: Boolean = true): Boolean =
     arrayOf(*other).any { this.equals(it, ignoreCase) }
+
 fun Any.isAny(vararg other: KClass<*>): Boolean = arrayOf(*other).asList().any { this::class == it }
 
 /**

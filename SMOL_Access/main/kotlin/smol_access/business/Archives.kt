@@ -20,10 +20,7 @@ import net.sf.sevenzipjbinding.SevenZip
 import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream
 import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem
 import smol_access.Constants
-import smol_access.model.ModInfo
-import smol_access.model.ModVariant
-import smol_access.model.VersionCheckerInfo
-import smol_access.model.isModInfoFile
+import smol_access.model.*
 import smol_access.util.ArchiveExtractToFolderCallback
 import smol_access.util.ArchiveExtractToMemoryCallback
 import timber.ktx.Timber
@@ -43,53 +40,15 @@ class Archives internal constructor(
      * @param inputFile A file or folder to try to install.
      * @param destinationFolder The folder to place the result into. Not the mod folder, but the parent of that (eg /mods).
      */
-    suspend fun installFromUnknownSource(inputFile: Path, destinationFolder: Path) {
+    suspend fun installFromUnknownSource(
+        inputFile: Path,
+        destinationFolder: Path,
+        existingMods: List<Mod>,
+        promptUserToReplaceExistingFolder: suspend (modInfo: ModInfo) -> Boolean
+    ) {
         Timber.i { "Installing ${inputFile.absolutePathString()} to ${destinationFolder.absolutePathString()}." }
         if (!inputFile.exists()) throw RuntimeException("File does not exist: ${inputFile.absolutePathString()}")
         if (!destinationFolder.exists()) throw RuntimeException("File does not exist: ${destinationFolder.absolutePathString()}")
-
-        suspend fun copyOrCompressDir(modFolder: Path) {
-            val modInfoFile = (findModInfoFileInFolder(modFolder) ?: run {
-                val ex = RuntimeException("Archive did not have a valid ${Constants.MOD_INFO_FILE} inside!")
-                throw ex
-            })
-
-            val modInfo = modInfoFile.let {
-                IOLock.read(lock = IOLocks.modFolderLock) {
-                    kotlin.runCatching { jsanity.fromJson<ModInfo>(it.readText(), shouldStripComments = true) }
-                        .getOrNull()
-                }
-            }
-
-            val destinationModFolder = destinationFolder.resolve(destinationFolder.resolve(modInfo?.let {
-                ModVariant.generateVariantFolderName(modInfo = it)
-            }
-                ?: modFolder.name))
-
-            if (destinationModFolder.exists() && inputFile.isSameFileAs(destinationModFolder)) {
-                Timber.i { "Not copying the same file to itself: ${inputFile.absolutePathString()}." }
-                return
-            }
-
-            IOLock.write(lock = IOLocks.modFolderLock) {
-                kotlin.runCatching {
-                    // Or just copy the files
-                    withContext(Dispatchers.IO) {
-                        modInfoFile.parent.listDirectoryEntries()
-                            .parallelMap {
-                                it.toFile().copyRecursively(
-                                    target = destinationModFolder.resolve(it.name).toFile(),
-                                    overwrite = true,
-                                    onError = { _, ioException ->
-                                        Timber.e(ioException)
-                                        throw ioException
-                                    }
-                                )
-                            }
-                    }
-                }
-            }
-        }
 
         trace(onFinished = { _, millis: Long -> Timber.d { "Time to install from unknown source: ${millis}ms." } }) {
             if (inputFile.isRegularFile()) {
@@ -99,7 +58,11 @@ class Archives internal constructor(
 
                     if (modFolder.exists() && modFolder.isDirectory()) {
                         kotlin.runCatching {
-                            copyOrCompressDir(modFolder)
+                            copyOrCompressDir(
+                                modFolder = modFolder,
+                                destinationFolder = destinationFolder,
+                                inputFile = inputFile
+                            )
                         }
                             .onFailure { Timber.w(it); throw it }
                         return
@@ -114,9 +77,25 @@ class Archives internal constructor(
 
                     // If mod_info.json was found in archive
                     if (dataFiles != null) {
+                        val modInfo = dataFiles.modInfo
+                        val modFolder =
+                            destinationFolder.resolve(ModVariant.generateVariantFolderName(modInfo = modInfo))
+                        val newSmolId = ModVariant.createSmolId(modInfo)
+
+                        // Mod variant already exists, ask user if we should replace it.
+                        if (existingMods.flatMap { it.variants }.any { it.smolId == newSmolId }) {
+                            Timber.i { "'${modInfo.name}' version '$${modInfo.version}' is already installed to '${modFolder.absolutePathString()}'. Asking user if they want to replace it." }
+                            val shouldReplaceFolder = promptUserToReplaceExistingFolder.invoke(modInfo)
+
+                            if (shouldReplaceFolder) {
+                                IOLock.write {
+                                    Timber.i { "Deleting ${modFolder.absolutePathString()}." }
+                                    modFolder.deleteRecursively()
+                                }
+                            }
+                        }
+
                         IOLock.write {
-                            val extraParentFolder =
-                                destinationFolder.resolve(ModVariant.generateVariantFolderName(modInfo = dataFiles.modInfo))
 
                             RandomAccessFileInStream(
                                 RandomAccessFile(inputFile.toFile(), "r")
@@ -124,12 +103,12 @@ class Archives internal constructor(
                                 SevenZip.openInArchive(null, fileInStream).use { inArchive ->
                                     inArchive.extract(
                                         null, false,
-                                        ArchiveExtractToFolderCallback(extraParentFolder, inArchive)
+                                        ArchiveExtractToFolderCallback(modFolder, inArchive)
                                     )
                                 }
                             }
 
-                            runBlocking { removedNestedFolders(extraParentFolder) }
+                            runBlocking { removedNestedFolders(modFolder) }
                             return
                         }
                     } else {
@@ -140,12 +119,59 @@ class Archives internal constructor(
                 }
             } else if (inputFile.isDirectory()) {
                 kotlin.runCatching {
-                    copyOrCompressDir(modFolder = inputFile)
+                    copyOrCompressDir(
+                        modFolder = inputFile,
+                        destinationFolder = destinationFolder,
+                        inputFile = inputFile
+                    )
                 }
                     .onFailure { Timber.w(it); throw it }
             } else {
                 // Not file or directory?
                 throw RuntimeException("${inputFile.absolutePathString()} not recognized as file or folder.")
+            }
+        }
+    }
+
+    private suspend fun copyOrCompressDir(modFolder: Path, destinationFolder: Path, inputFile: Path) {
+        val modInfoFile = (findModInfoFileInFolder(modFolder) ?: run {
+            val ex = RuntimeException("Archive did not have a valid ${Constants.MOD_INFO_FILE} inside!")
+            throw ex
+        })
+
+        val modInfo = modInfoFile.let {
+            IOLock.read(lock = IOLocks.modFolderLock) {
+                kotlin.runCatching { jsanity.fromJson<ModInfo>(it.readText(), shouldStripComments = true) }
+                    .getOrNull()
+            }
+        }
+
+        val destinationModFolder = destinationFolder.resolve(destinationFolder.resolve(modInfo?.let {
+            ModVariant.generateVariantFolderName(modInfo = it)
+        }
+            ?: modFolder.name))
+
+        if (destinationModFolder.exists() && inputFile.isSameFileAs(destinationModFolder)) {
+            Timber.i { "Not copying the same file to itself: ${inputFile.absolutePathString()}." }
+            return
+        }
+
+        IOLock.write(lock = IOLocks.modFolderLock) {
+            kotlin.runCatching {
+                // Or just copy the files
+                withContext(Dispatchers.IO) {
+                    modInfoFile.parent.listDirectoryEntries()
+                        .parallelMap {
+                            it.toFile().copyRecursively(
+                                target = destinationModFolder.resolve(it.name).toFile(),
+                                overwrite = true,
+                                onError = { _, ioException ->
+                                    Timber.e(ioException)
+                                    throw ioException
+                                }
+                            )
+                        }
+                }
             }
         }
     }

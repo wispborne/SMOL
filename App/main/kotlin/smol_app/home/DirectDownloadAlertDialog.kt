@@ -51,6 +51,7 @@ fun AppScope.DirectDownloadAlertDialog(
                 alertDialogSetter(null)
                 smol_access.SL.UI.downloadManager.downloadFromUrl(
                     url = ddUrl,
+                    appScope = this,
                     shouldInstallAfter = true
                 )
             }) { Text("Take the risk") }

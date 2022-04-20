@@ -49,6 +49,8 @@ import smol_app.toasts.downloadToast
 import smol_app.toasts.toastInstalledCard
 import smol_app.toasts.toaster
 import smol_app.updater.UpdateSmolToast
+import smol_app.views.DuplicateModAlertDialog
+import smol_app.views.DuplicateModAlertDialogState
 import smol_app.views.FileDropper
 import timber.ktx.Timber
 import updatestager.UpdateChannelManager
@@ -164,6 +166,12 @@ fun WindowState.appView() {
             if (alertDialogBuilder != null) {
                 alertDialogBuilder?.invoke { appScope.alertDialogSetter(null) }
             }
+
+            val duplicateModAlertDialogData = appScope.duplicateModAlertDialogState.currentData
+
+            if (duplicateModAlertDialogData != null) {
+                DuplicateModAlertDialog(duplicateModAlertDialogData.modInfo, duplicateModAlertDialogData.continuation)
+            }
         }
     }
 }
@@ -240,20 +248,17 @@ private fun setUpToasts() {
 
 class AppScope(windowState: WindowState, private val recomposer: RecomposeScope) : IWindowState by windowState {
 
-
     /**
      * Usage: alertDialogSetter.invoke { AlertDialog(...) }
      */
     lateinit var alertDialogSetter: (@Composable ((dismiss: () -> Unit) -> Unit)?) -> Unit
-
     fun dismissAlertDialog() = alertDialogSetter.invoke(null)
+    val duplicateModAlertDialogState = DuplicateModAlertDialogState()
 
     suspend fun reloadMods() = reloadModsInner()
     fun recomposeAppUI() = recomposer.invalidate()
 }
 
-
-@OptIn(ExperimentalCoroutinesApi::class)
 private suspend fun watchDirsAndReloadOnChange(scope: CoroutineScope) {
     val NSA: List<Flow<KWatchEvent?>> = listOfNotNull(
         SL.gamePathManager.getModsPath()?.asWatchChannel(scope = scope),

@@ -12,6 +12,7 @@
 
 package smol_app.browser
 
+import AppScope
 import io.ktor.http.*
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -71,6 +72,7 @@ class DownloadManager(
      */
     internal fun downloadFromUrl(
         url: String,
+        appScope: AppScope,
         shouldInstallAfter: Boolean = true,
         allowRedownload: Boolean = true
     ): DownloadItem {
@@ -151,7 +153,11 @@ class DownloadManager(
                 if (shouldInstallAfter) {
                     val destinationFolder = gamePathManager.getModsPath()
                     if (destinationFolder != null) {
-                        access.installFromUnknownSource(inputFile = file, destinationFolder = destinationFolder)
+                        access.installFromUnknownSource(
+                            inputFile = file,
+                            destinationFolder = destinationFolder,
+                            promptUserToReplaceExistingFolder = { appScope.duplicateModAlertDialogState.showDialogBooleo(it) }
+                        )
                         access.reload()
                     }
                 }

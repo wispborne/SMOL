@@ -42,7 +42,10 @@ import smol_access.model.UserProfile
 import smol_app.composables.*
 import smol_app.navigation.Screen
 import smol_app.themes.SmolTheme
-import smol_app.util.*
+import smol_app.util.doesGamePathExist
+import smol_app.util.isModBrowserEnabled
+import smol_app.util.isModProfilesEnabled
+import smol_app.util.openInDesktop
 import timber.ktx.Timber
 import utilities.IOLock
 import utilities.IOLocks
@@ -161,7 +164,9 @@ fun AppScope.launchButton(modifier: Modifier = Modifier) {
             onClick = {
                 if (SL.userManager.activeProfile.value.showGameLauncherWarning != false) {
                     alertDialogSetter.invoke {
-                        var showGameLauncherWarning by mutableStateOf(SL.userManager.activeProfile.value.showGameLauncherWarning ?: true)
+                        var showGameLauncherWarning by mutableStateOf(
+                            SL.userManager.activeProfile.value.showGameLauncherWarning ?: true
+                        )
                         val launchButtonAction = SL.userManager.activeProfile.collectAsState().value.launchButtonAction
 
                         SmolAlertDialog(
@@ -411,7 +416,12 @@ fun AppScope.installModsButton(modifier: Modifier = Modifier) {
                                 if (destinationFolder != null) {
                                     SL.access.installFromUnknownSource(
                                         inputFile = it,
-                                        destinationFolder = destinationFolder
+                                        destinationFolder = destinationFolder,
+                                        promptUserToReplaceExistingFolder = {
+                                            duplicateModAlertDialogState.showDialogBooleo(
+                                                it
+                                            )
+                                        }
                                     )
                                     SL.access.reload()
                                 }

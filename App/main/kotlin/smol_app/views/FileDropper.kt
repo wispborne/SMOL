@@ -126,7 +126,8 @@ fun AppScope.FileDropper(
                                     withContext(Dispatchers.IO) {
                                         SL.access.installFromUnknownSource(
                                             inputFile = path,
-                                            destinationFolder = destinationFolder
+                                            destinationFolder = destinationFolder,
+                                            promptUserToReplaceExistingFolder = { duplicateModAlertDialogState.showDialogBooleo(it)}
                                         )
                                     }
                                     SL.access.reload()
