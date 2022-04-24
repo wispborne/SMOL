@@ -39,7 +39,7 @@ class VramChecker(
         const val VANILLA_BACKGROUND_WIDTH = 2048
         const val VANILLA_BACKGROUND_TEXTURE_SIZE_IN_BYTES = 12582912f
         const val VANILLA_GAME_VRAM_USAGE_IN_BYTES =
-            433586176 // 0.9.1a, per https://fractalsoftworks.com/forum/index.php?topic=8726.0
+            433586176L // 0.9.1a, per https://fractalsoftworks.com/forum/index.php?topic=8726.0
         internal const val OUTPUT_LABEL_WIDTH = 38
 
         /** If one of these strings is in the filename, the file is skipped **/

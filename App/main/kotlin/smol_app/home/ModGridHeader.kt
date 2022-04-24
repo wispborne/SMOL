@@ -13,6 +13,7 @@
 package smol_app.home
 
 import AppScope
+import VramChecker
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Checkbox
@@ -43,6 +44,9 @@ import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
 import smol_app.themes.SmolTheme
 import smol_app.util.replaceAllUsingDifference
+import smol_app.util.uiEnabled
+import utilities.bytesAsReadableMB
+import utilities.bytesAsShortReadableMB
 import utilities.exhaustiveWhen
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -131,6 +135,12 @@ fun AppScope.ModGridHeader(
 
                     UserProfile.ModGridHeader.VramImpact -> {
                         // VRAM
+                        val enabledMods = SL.access.mods.collectAsState().value?.mods?.filter { it.uiEnabled }.orEmpty()
+                        val vramUsage = SL.vramChecker.vramUsage.collectAsState().value
+                        val allImpactsFromMods = enabledMods.map { getVramImpactForMod(it, vramUsage) }
+                        val totalBytesFromMods = allImpactsFromMods.sumOf { it?.bytesForMod ?: 0L }
+                        val imageImpactString =
+                            "${allImpactsFromMods.sumOf { it?.imageCount ?: 0 }} images"
                         Row(modifier = Modifier
                             .weight(1f)
                             .align(Alignment.CenterVertically)
@@ -138,8 +148,14 @@ fun AppScope.ModGridHeader(
                             SmolTooltipArea(
                                 tooltip = {
                                     SmolTooltipText(
-                                        text = "An estimate of how much VRAM the mod will use." +
-                                                "\nAll images are counted, even if not used by the game."
+                                        text = buildString {
+                                            appendLine("An estimate of how much VRAM the mod will use.")
+                                            appendLine("All images are counted, even if not used by the game.")
+                                            appendLine("\nEnabled Mods (${enabledMods.count()})")
+                                            appendLine("${totalBytesFromMods.bytesAsShortReadableMB} ($imageImpactString)")
+                                            appendLine("${VramChecker.VANILLA_GAME_VRAM_USAGE_IN_BYTES.bytesAsShortReadableMB} from vanilla")
+                                            append("Σ ${(totalBytesFromMods + VramChecker.VANILLA_GAME_VRAM_USAGE_IN_BYTES).bytesAsShortReadableMB}")
+                                        }
                                     )
                                 },
                                 delayMillis = SmolTooltipArea.shortDelay

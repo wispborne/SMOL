@@ -12,6 +12,7 @@
 
 package smol_app.home
 
+import VramChecker
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
@@ -42,6 +43,8 @@ import smol_access.model.Mod
 import smol_app.composables.SmolTooltipArea
 import smol_app.composables.SmolTooltipText
 import utilities.bytesAsReadableMB
+import utilities.bytesAsShortReadableMB
+import utilities.ellipsizeAfter
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -88,18 +91,24 @@ fun ModGridSectionHeader(
                 )
             }
             val vramUsage = SL.vramChecker.vramUsage.collectAsState().value
-            val allImpacts = modsInGroup.map { getVramImpactForMod(it, vramUsage) }
-            val totalBytes =
-                allImpacts.sumOf { it?.bytesForMod ?: 0L }.bytesAsReadableMB
-            val totalImages = "${allImpacts.sumOf { it?.imageCount ?: 0 }} images"
+            val allImpactsFromMods = modsInGroup.map { getVramImpactForMod(it, vramUsage) }
+            val totalBytesFromMods =
+                allImpactsFromMods.sumOf { it?.bytesForMod ?: 0L }
+            val imageImpactString = "${allImpactsFromMods.sumOf { it?.imageCount ?: 0 }} images"
             SmolTooltipArea(
-                tooltip = { SmolTooltipText(text = "All ${groupName.lowercase()} mods\n\n$totalBytes\n$totalImages") },
+                tooltip = {
+                    SmolTooltipText(text = buildString {
+                        appendLine("VRAM impact from mods in '${groupName.ellipsizeAfter(40)}'")
+                        appendLine("\n${totalBytesFromMods.bytesAsShortReadableMB} from mods ($imageImpactString)")
+                        append("${VramChecker.VANILLA_GAME_VRAM_USAGE_IN_BYTES.bytesAsShortReadableMB} from vanilla")
+                    })
+                },
                 modifier = Modifier
                     .padding(start = vramPosition.value + 16.dp)
                     .align(Alignment.CenterStart),
             ) {
                 Text(
-                    text = "Σ $totalBytes",
+                    text = "Σ ${(totalBytesFromMods + VramChecker.VANILLA_GAME_VRAM_USAGE_IN_BYTES).bytesAsShortReadableMB}",
                     style = MaterialTheme.typography.body2,
                     modifier = Modifier.alpha(0.7f)
                 )
