@@ -20,17 +20,18 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
@@ -44,6 +45,7 @@ import smol_app.util.getModThreadUrl
 import smol_app.util.getNexusId
 import smol_app.util.getNexusModsUrl
 import utilities.asList
+import utilities.nullIfBlank
 
 
 @Composable
@@ -190,24 +192,62 @@ fun BoxScope.detailsPanel(
                         )
                     }
 
-                    val metadata = SL.modMetadata.mergedData.collectAsState().value
-//                    Text("Categories", fontWeight = FontWeight.Bold, modifier = Modifier)
-                    SmolTextField(
-                        value = metadata[modInfo.id]?.category ?: "",
-                        modifier = Modifier.padding(top = 16.dp),
-                        label = { Text("Category") },
-                        singleLine = true,
-                        leadingIcon = {
-                            Icon(
-                                contentDescription = "grouping",
-                                painter = painterResource("icon-group.svg")
-                            )
-                        },
-                        maxLines = 1,
-                        onValueChange = { newStr ->
-                            SL.modMetadata.update(modInfo.id) { it.copy(category = newStr) }
+                    DisableSelection {
+                        val metadata = SL.modMetadata.mergedData.collectAsState().value
+                        val existingCategories = remember {
+                            metadata.entries
+                                .filter { it.key != modVariant.modInfo.id } // Don't show the category of the mod we're updating
+                                .mapNotNull { it.value.category?.nullIfBlank() }
+                                .distinctBy { it.lowercase() }
                         }
-                    )
+                        var popupItems by remember { mutableStateOf(emptyList<String>()) }
+                        // Allow us to dismiss the popup when the user chooses an item, then show it again if they type something.
+                        var shouldExpandPopup by remember { mutableStateOf(true) }
+                        val focuser = remember { FocusRequester() }
+                        var textfieldSize by remember { mutableStateOf(Size.Zero) }
+
+
+                        SmolTextField(
+                            value = metadata[modInfo.id]?.category?.nullIfBlank() ?: "",
+                            modifier = Modifier
+                                .padding(top = 16.dp)
+                                .focusRequester(focuser)
+                                .onGloballyPositioned { coordinates ->
+                                    //This value is used to assign to the DropDown the same width
+                                    textfieldSize = coordinates.size.toSize()
+                                },
+                            label = { Text("Category") },
+                            singleLine = true,
+                            leadingIcon = {
+                                Icon(
+                                    contentDescription = "grouping",
+                                    painter = painterResource("icon-group.svg")
+                                )
+                            },
+                            maxLines = 1,
+                            onValueChange = { newStr ->
+                                SL.modMetadata.update(modInfo.id) { it.copy(category = newStr) }
+
+                                shouldExpandPopup = true
+                                popupItems = existingCategories.filter {
+                                    it.trim().lowercase().contains(newStr.trim().lowercase())
+                                }
+                            }
+                        )
+                        SmolDropdownMenu(
+                            expanded = mutableStateOf(popupItems.any() && shouldExpandPopup),
+                            focusable = false,
+                            items = popupItems.map { existingCategory ->
+                                SmolDropdownMenuItemTemplate(text = existingCategory) {
+                                    SL.modMetadata.update(modInfo.id) { it.copy(category = existingCategory) }
+                                    shouldExpandPopup = false
+                                }
+                            },
+                            modifier = Modifier
+                                .width(textfieldSize.width.dp)
+                        )
+
+                    }
 
                     val modThreadId = row.value?.mod?.getModThreadId()
                     if (modThreadId != null) {

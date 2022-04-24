@@ -30,6 +30,7 @@ import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
@@ -93,7 +94,7 @@ fun AppScope.ModGridHeader(
                             activeSortField = activeSortField,
                             profile = profile
                         ) {
-                            Text("Name", fontWeight = FontWeight.Bold)
+                            Text("Name", fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
 
@@ -105,7 +106,7 @@ fun AppScope.ModGridHeader(
                             activeSortField = activeSortField,
                             profile = profile
                         ) {
-                            Text("Author", fontWeight = FontWeight.Bold)
+                            Text("Author", fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
 
@@ -119,7 +120,12 @@ fun AppScope.ModGridHeader(
                             tooltip = { SmolTooltipText(text = "The version(s) tracked by SMOL.") },
                             delayMillis = SmolTooltipArea.shortDelay
                         ) {
-                            Text(text = "Version(s)", fontWeight = FontWeight.Bold)
+                            Text(
+                                text = "Version(s)",
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
                     }
 
@@ -182,7 +188,9 @@ fun AppScope.ModGridHeader(
                         Text(
                             text = "Game Version",
                             modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                     UserProfile.ModGridHeader.Category ->
@@ -194,7 +202,12 @@ fun AppScope.ModGridHeader(
                             activeSortField = activeSortField,
                             profile = profile
                         ) {
-                            Text("Category", fontWeight = FontWeight.Bold)
+                            Text(
+                                "Category",
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
                 }.exhaustiveWhen()
             }

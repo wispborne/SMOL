@@ -100,7 +100,7 @@ fun AppScope.homeView(
                     smolSearchField(
                         modifier = Modifier
                             .focusRequester(searchFocusRequester())
-                            .widthIn(max = 300.dp)
+                            .widthIn(min = 100.dp, max = 300.dp)
                             .padding(end = 16.dp)
                             .offset(y = (-3).dp)
                             .align(Alignment.CenterVertically),

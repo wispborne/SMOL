@@ -15,7 +15,6 @@ package smol_app.composables
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -60,7 +59,7 @@ class SmolDropdownMenuItemCustom(
 ) : SmolDropdownMenuItem(onClick, backgroundColor, border)
 
 @Composable
-fun SmolPopupMenu(
+fun SmolOverflowMenu(
     modifier: Modifier = Modifier,
     items: List<SmolDropdownMenuItem>,
 ) {
@@ -88,16 +87,16 @@ fun SmolDropdownWithButton(
     neverShowFirstItemInPopupMenu: Boolean = false,
     customButtonContent: (@Composable (selectedItem: SmolDropdownMenuItem, isExpanded: Boolean, setExpanded: (Boolean) -> Unit) -> Unit)? = null
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    var selectedIndex by remember { mutableStateOf(initiallySelectedIndex) }
-    val selectedItem = items.getOrNull(selectedIndex)
+    val expanded = remember { mutableStateOf(false) }
+    val selectedIndex = remember { mutableStateOf(initiallySelectedIndex) }
+    val selectedItem = items.getOrNull(selectedIndex.value)
     if (selectedItem != null) {
         Box(modifier) {
             val backgroundColor =
                 selectedItem.backgroundColor ?: MaterialTheme.colors.primary
             if (customButtonContent == null) {
                 SmolButton(
-                    onClick = { expanded = expanded.not() },
+                    onClick = { expanded.value = expanded.value.not() },
                     modifier = Modifier.wrapContentWidth()
                         .align(Alignment.CenterStart),
                     shape = SmolTheme.smolFullyClippedButtonShape(),
@@ -125,62 +124,86 @@ fun SmolDropdownWithButton(
                     SmolDropdownArrow(
                         Modifier
                             .align(Alignment.CenterVertically),
-                        expanded
+                        expanded.value
                     )
                 }
             } else {
-                Box(modifier = Modifier.clip(MaterialTheme.shapes.small).clickable { expanded = expanded.not() }) {
-                    customButtonContent.invoke(selectedItem, expanded) { expanded = it }
+                Box(
+                    modifier = Modifier.clip(MaterialTheme.shapes.small)
+                        .clickable { expanded.value = expanded.value.not() }) {
+                    customButtonContent.invoke(selectedItem, expanded.value) { expanded.value = it }
                 }
             }
-            DropdownMenu(
+            SmolDropdownMenu(
                 expanded = expanded,
-                modifier = Modifier
-                    .background(MaterialTheme.colors.background),
-                onDismissRequest = { expanded = false }
-            ) {
-                items.forEachIndexed { index, item ->
-                    if (shouldShowSelectedItemInMenu || index != selectedIndex || !canSelectItems) {
-                        if (!(neverShowFirstItemInPopupMenu && index == 0)) {
-                            DropdownMenuItem(
-                                modifier = Modifier.let {
-                                    if (item.backgroundColor != null)
-                                        it.background(item.backgroundColor) else it
-                                }
-                                    .run {
-                                        if (item.border != null) this.border(
-                                            item.border.borderStroke,
-                                            item.border.shape
-                                        ) else this
-                                    },
-                                onClick = {
-                                    if (canSelectItems) {
-                                        selectedIndex = index
-                                    }
-                                    expanded = false
-                                    items[index].onClick()
-                                }) {
-                                if (item is SmolDropdownMenuItemCustom) {
-                                    item.customItemContent.invoke(this, false)
-                                } else if (item is SmolDropdownMenuItemTemplate) {
-                                    if (!item.iconPath.isNullOrBlank()) {
-                                        Icon(
-                                            painter = painterResource(item.iconPath),
-                                            // For some reason, setting the size prevents the text from wrapping prematurely.
-                                            modifier = Modifier.padding(end = 12.dp).size(24.dp),
-                                            contentDescription = null
-                                        )
-                                    }
-                                    Text(
-                                        text = item.text,
-                                        modifier = Modifier.weight(1f),
-                                        fontWeight = FontWeight.Bold,
-                                        color = item.contentColor ?: contentColorFor(
-                                            item.backgroundColor ?: MaterialTheme.colors.surface
-                                        )
-                                    )
-                                }
+                items = items,
+                shouldShowSelectedItemInMenu = shouldShowSelectedItemInMenu,
+                selectedIndex = selectedIndex,
+                canSelectItems = canSelectItems,
+                neverShowFirstItemInPopupMenu = neverShowFirstItemInPopupMenu
+            )
+        }
+    }
+}
+
+@Composable
+fun SmolDropdownMenu(
+    expanded: MutableState<Boolean>,
+    modifier: Modifier = Modifier,
+    items: List<SmolDropdownMenuItem>,
+    shouldShowSelectedItemInMenu: Boolean = true,
+    selectedIndex: MutableState<Int> = mutableStateOf(0),
+    canSelectItems: Boolean = true,
+    neverShowFirstItemInPopupMenu: Boolean = false,
+    focusable: Boolean = true
+) {
+    DropdownMenu(
+        expanded = expanded.value,
+        focusable = focusable,
+        modifier = modifier
+            .background(MaterialTheme.colors.background),
+        onDismissRequest = { expanded.value = false }
+    ) {
+        items.forEachIndexed { index, item ->
+            if (shouldShowSelectedItemInMenu || index != selectedIndex.value || !canSelectItems) {
+                if (!(neverShowFirstItemInPopupMenu && index == 0)) {
+                    DropdownMenuItem(
+                        modifier = Modifier.let {
+                            if (item.backgroundColor != null)
+                                it.background(item.backgroundColor) else it
+                        }
+                            .run {
+                                if (item.border != null) this.border(
+                                    item.border.borderStroke,
+                                    item.border.shape
+                                ) else this
+                            },
+                        onClick = {
+                            if (canSelectItems) {
+                                selectedIndex.value = index
                             }
+                            expanded.value = false
+                            items[index].onClick()
+                        }) {
+                        if (item is SmolDropdownMenuItemCustom) {
+                            item.customItemContent.invoke(this, false)
+                        } else if (item is SmolDropdownMenuItemTemplate) {
+                            if (!item.iconPath.isNullOrBlank()) {
+                                Icon(
+                                    painter = painterResource(item.iconPath),
+                                    // For some reason, setting the size prevents the text from wrapping prematurely.
+                                    modifier = Modifier.padding(end = 12.dp).size(24.dp),
+                                    contentDescription = null
+                                )
+                            }
+                            Text(
+                                text = item.text,
+                                modifier = Modifier.weight(1f),
+                                fontWeight = FontWeight.Bold,
+                                color = item.contentColor ?: contentColorFor(
+                                    item.backgroundColor ?: MaterialTheme.colors.surface
+                                )
+                            )
                         }
                     }
                 }

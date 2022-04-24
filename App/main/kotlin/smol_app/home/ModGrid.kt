@@ -43,7 +43,7 @@ import smol_access.model.SmolId
 import smol_app.WindowState
 import smol_app.composables.SmolAlertDialog
 import smol_app.composables.SmolButton
-import smol_app.composables.SmolPopupMenu
+import smol_app.composables.SmolOverflowMenu
 import smol_app.composables.SmolSecondaryButton
 import smol_app.themes.SmolTheme
 import smol_app.util.uiEnabled
@@ -229,7 +229,7 @@ fun getVramImpactForMod(mod: Mod, map: Map<SmolId, VramCheckerCache.Result>?) =
 
 @Composable
 fun AppScope.modGridBulkActionMenu(modifier: Modifier = Modifier, checkedRows: SnapshotStateList<Mod>) {
-    SmolPopupMenu(
+    SmolOverflowMenu(
         modifier = modifier
             .padding(end = 8.dp)
             .alpha(if (checkedRows.any()) 1f else 0f),
