@@ -23,7 +23,7 @@ import kotlinx.coroutines.delay
 import timber.ktx.Timber
 import utilities.asList
 import utilities.prefer
-import java.util.*
+import java.time.ZonedDateTime
 
 /**
  * This file is distributed under the GPLv3. An informal description follows:
@@ -109,7 +109,9 @@ internal object DiscordReader {
                                 url = it.url,
                                 proxy_url = it.proxy_url
                             )
-                        }
+                        },
+                    dateTimeCreated = message.timeStamp,
+                    dateTimeEdited = message.edited_timestamp
                 )
             }
             .map { cleanUpMod(it) }
@@ -184,8 +186,8 @@ internal object DiscordReader {
         val id: String,
         val author: User?,
         val content: String?,
-        val timeStamp: Date?,
-        val edited_timestamp: Date?,
+        val timeStamp: ZonedDateTime?,
+        val edited_timestamp: ZonedDateTime?,
         val attachments: List<Attachment>?,
         val embeds: List<Embed>?,
     )

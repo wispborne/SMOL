@@ -23,6 +23,7 @@ import io.ktor.http.*
 import timber.ktx.Timber
 import utilities.asList
 import utilities.nullIfBlank
+import java.time.ZonedDateTime
 
 /**
  * This file is distributed under the GPLv3. An informal description follows:
@@ -137,7 +138,11 @@ internal object NexusReader {
                                 )
                             )
                         }
-                        ?: emptyMap()
+                        ?: emptyMap(),
+                    dateTimeCreated = kotlin.runCatching { ZonedDateTime.parse(mod.createdTime) }
+                        .onFailure { Timber.w(it) }.getOrNull(),
+                    dateTimeEdited = kotlin.runCatching { ZonedDateTime.parse(mod.updatedTime) }
+                        .onFailure { Timber.w(it) }.getOrNull(),
                 )
             }
     }

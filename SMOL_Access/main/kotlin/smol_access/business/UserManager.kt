@@ -120,7 +120,7 @@ class UserManager internal constructor(
         name: String,
         description: String = "",
         sortOrder: Int?,
-        enabledModVariants: List<UserProfile.ModProfile.ShallowModVariant> = emptyList()
+        enabledModVariants: List<UserProfile.ModProfile.ShallowModVariant>
     ): UserProfile {
         return updateUserProfile { userProfile ->
             val newModProfile = UserProfile.ModProfile(

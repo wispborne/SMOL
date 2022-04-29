@@ -28,16 +28,11 @@ dependencies {
     implementation(project.property("coroutines")!!)
 }
 
-buildscript {
-    dependencies {
-        classpath("com.guardsquare:proguard-gradle:7.1.0")
-    }
-}
 
-tasks.withType<proguard.gradle.ProGuardTask>().configureEach {
-    configuration("../proguard.pro")
-    dontoptimize()
-}
+//tasks.withType<proguard.gradle.ProGuardTask>().configureEach {
+//    configuration("../proguard.pro")
+//    dontoptimize()
+//}
 
 tasks.register("buildSmol") {
     dependsOn("App:createDistributable", "UpdateInstaller:uberJar")

@@ -61,12 +61,7 @@ fun AppScope.ModProfilesView(
         ?.associateBy { it.smolId }
         ?: emptyMap())
     val shallowModVariants = modVariants.map {
-        UserProfile.ModProfile.ShallowModVariant(
-            modId = it.value.modInfo.id,
-            modName = it.value.modInfo.name,
-            smolVariantId = it.key,
-            version = it.value.modInfo.version
-        )
+        UserProfile.ModProfile.ShallowModVariant(it.value)
     }
     val splitPageState = rememberSplitPaneState(initialPositionPercentage = 0.50f)
 
@@ -156,7 +151,10 @@ fun AppScope.ModProfilesView(
                                                 UserProfile.ModProfile.ShallowModVariant(
                                                     modId = it.id,
                                                     modName = it.name,
-                                                    smolVariantId = ModVariant.createSmolId(it.id, it.version ?: Version.parse("1.0.0")),
+                                                    smolVariantId = ModVariant.createSmolId(
+                                                        it.id,
+                                                        it.version ?: Version.parse("1.0.0")
+                                                    ),
                                                     version = it.version
                                                 )
                                             },
@@ -226,7 +224,9 @@ private fun NewModProfileCard(onProfileCreated: () -> Unit) {
                     SL.userManager.createModProfile(
                         name = newProfileName.ifBlank { "Unnamed Profile" },
                         sortOrder = (SL.userManager.activeProfile.value.modProfiles.maxOfOrNull { it.sortOrder }
-                            ?: 0) + 1
+                            ?: 0) + 1,
+                        enabledModVariants = SL.access.mods.value?.mods?.flatMap { it.enabledVariants }
+                            ?.map { UserProfile.ModProfile.ShallowModVariant(it) } ?: emptyList()
                     )
                     newProfileName = ""
                     onProfileCreated.invoke()

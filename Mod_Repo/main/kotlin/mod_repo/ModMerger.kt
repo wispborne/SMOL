@@ -241,6 +241,16 @@ internal class ModMerger {
                     sources = (modToFoldIn.sources() + mergedMod.sources()).distinct(),
                     categories = (modToFoldIn.categories() + mergedMod.categories()).distinct(),
                     images = (modToFoldIn.images() + mergedMod.images()),
+                    dateTimeCreated = chooseBest(
+                        left = mergedMod.dateTimeCreated,
+                        right = modToFoldIn.dateTimeCreated,
+                        doesRightHavePriority = doesNewModHavePriority
+                    ),
+                    dateTimeEdited = chooseBest(
+                        left = mergedMod.dateTimeEdited,
+                        right = modToFoldIn.dateTimeEdited,
+                        doesRightHavePriority = doesNewModHavePriority
+                    ),
                 )
             }
     }

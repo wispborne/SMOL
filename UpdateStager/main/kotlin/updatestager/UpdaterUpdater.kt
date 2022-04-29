@@ -49,12 +49,23 @@ class UpdaterUpdater : BaseAppUpdater() {
     }
 
     override fun installUpdateInternal() {
-        kotlin.runCatching {
-            with(Archive.read(updateZipFile)) {
-                // For some reason, the installer fails if this parent folder exists.
-                Path.of(standaloneJreFolderName).deleteIfExists()
-                install(true)
+        val archive = kotlin.runCatching {
+            Archive.read(updateZipFile)
+        }
+            .onFailure { t ->
+                Timber.e(t) { "Reading $updateZipFile failed, deleting it to set up for a redownload." }
+                kotlin.runCatching {
+                    updateZipFile.deleteIfExists()
+                }
+                    .onFailure { Timber.e(it) { "Error deleting $updateZipFile." } }
             }
+            .getOrThrow()
+
+        kotlin.runCatching {
+            // For some reason, the installer fails if this parent folder exists.
+            Path.of(standaloneJreFolderName).deleteIfExists()
+            archive.install(true)
+
         }
             .onFailure { Timber.e(it) }
             .getOrThrow()

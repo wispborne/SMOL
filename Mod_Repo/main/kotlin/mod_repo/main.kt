@@ -150,7 +150,7 @@ class Main {
 
         private fun readConfig(): Config? =
             if (kotlin.runCatching { configFilePath.exists() }
-                    .onFailure { Timber.w(it) }
+                    .onFailure { System.err.println(it) }
                     .getOrNull() == true)
                 Properties().apply { this.load(configFilePath.bufferedReader()) }
                     .let {
@@ -165,7 +165,7 @@ class Main {
                         )
                     }
             else {
-                Timber.w { "Unable to find $configFilePath." }
+                System.err.println("Unable to find ${configFilePath.absolutePathString()}.")
                 null
             }
     }

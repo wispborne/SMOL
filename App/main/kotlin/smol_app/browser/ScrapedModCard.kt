@@ -52,6 +52,7 @@ import smol_app.util.openAsUriInBrowser
 import smol_app.util.smolPreview
 import timber.ktx.Timber
 import java.awt.Cursor
+import java.time.ZonedDateTime
 
 private const val imageWidth = 192
 private const val height = 160
@@ -324,7 +325,9 @@ fun scrapedModCardPreview() = smolPreview {
             categories = listOf("Total Conversions"),
             source = ModSource.Index,
             sources = listOf(ModSource.Index, ModSource.Discord),
-            images = emptyMap()
+            images = emptyMap(),
+            dateTimeCreated = ZonedDateTime.now(),
+            dateTimeEdited = ZonedDateTime.now(),
         ),
         linkLoader = mutableStateOf({})
     )

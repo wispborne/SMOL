@@ -42,7 +42,14 @@ data class UserProfile(
             val modName: String?,
             val smolVariantId: SmolId,
             val version: Version?
-        )
+        ) {
+            constructor(variant: ModVariant) : this(
+                variant.modInfo.id,
+                variant.modInfo.name,
+                variant.smolId,
+                variant.modInfo.version
+            )
+        }
     }
 
     enum class ModGridHeader {

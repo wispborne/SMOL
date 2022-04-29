@@ -20,6 +20,12 @@ plugins {
     id("org.jetbrains.compose") version "1.1.1"
 }
 
+buildscript {
+    dependencies {
+        classpath("com.guardsquare:proguard-gradle:7.2.1")
+    }
+}
+
 group = "com.wisp"
 val smolVersion =
     "1.0.0-beta08" // TODO don't forget to change default channel to "stable" in AppConfig for release.
@@ -113,9 +119,12 @@ tasks.test {
     useJUnitPlatform()
 }
 
+val obfuscate by tasks.registering(proguard.gradle.ProGuardTask::class)
+
 compose.desktop {
     application {
         mainClass = "smol_app.MainKt"
+
         nativeDistributions {
             targetFormats(TargetFormat.Exe)
             outputBaseDir.set(rootProject.projectDir.resolve("dist"))
@@ -166,6 +175,10 @@ compose.desktop {
                 System.err.println("Unable to find ${resources.absolutePath}.")
             }
         }
+
+//        disableDefaultConfiguration()
+//        fromFiles(obfuscate.get().outputs.files.asFileTree)
+//        mainJar.set(tasks.jar.map { RegularFile { mapObfuscatedJarFile(it.archiveFile.get().asFile) } })
     }
 }
 
@@ -193,4 +206,34 @@ configurations {
             }
         }
     }
+}
+
+fun mapObfuscatedJarFile(file: File) =
+    File("${buildDir}/tmp/obfuscated/${file.nameWithoutExtension}.min.jar")
+
+obfuscate.configure {
+    dependsOn(tasks.jar.get())
+    val allJars = tasks.jar.get().outputs.files.plus(
+        project.rootProject.sourceSets.main.get().runtimeClasspath.files
+            .filter { it.path.endsWith(".jar") }
+            .filterNot { // walkaround https://github.com/JetBrains/compose-jb/issues/1971
+                it.name.startsWith("skiko-awt-") && !it.name.startsWith("skiko-awt-runtime-")
+            }
+            .filterNot { it.name.contains("graal", ignoreCase = true) }
+    )
+    println("jars:" + allJars.joinToString { it.absolutePath })
+    for (file in allJars) {
+        injars(file)
+        outjars(mapObfuscatedJarFile(file))
+    }
+
+    val javahome = compose.desktop.application.javaHome ?: "${System.getProperty("java.home")}/jmods"
+    println("javahome: " + javahome)
+    libraryjars(javahome)
+
+//    dontshrink()
+//    dontobfuscate()
+//    dontoptimize()
+//    ignorewarnings() // hmmm.
+    configuration("proguard-rules.pro")
 }

@@ -13,6 +13,7 @@
 package mod_repo
 
 import io.ktor.http.*
+import java.time.ZonedDateTime
 
 /**
  * @param authors The higher prioritized author name (ie from Index).
@@ -23,18 +24,21 @@ data class ScrapedMod(
     val description: String?,
     val modVersion: String?,
     val gameVersionReq: String?,
+    @Deprecated("Use `authorsList` instead.")
     internal val authors: String,
     internal val authorsList: List<String>?,
-    @Deprecated("Use `links` instead.")
+    @Deprecated("Use `urls` instead.")
     val link: Url?,
-    @Deprecated("Use `links` instead.")
+    @Deprecated("Use `urls` instead.")
     val forumPostLink: Url?,
     internal val urls: Map<ModUrlType, Url>?,
     @Deprecated("Use `sources` because similar mods are now merged.")
     internal val source: ModSource?,
     internal val sources: List<ModSource>?,
     internal val categories: List<String>?,
-    internal val images: Map<String, Image>?
+    internal val images: Map<String, Image>?,
+    val dateTimeCreated: ZonedDateTime?,
+    val dateTimeEdited: ZonedDateTime?,
 ) {
     fun authors() = authorsList.orEmpty()
     fun authorsWithAliases() = authorsList.orEmpty()

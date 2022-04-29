@@ -86,6 +86,8 @@ internal object ForumScraper {
                             sources = listOf(ModSource.Index),
                             categories = listOf(category),
                             images = emptyMap(),
+                            dateTimeCreated = null,
+                            dateTimeEdited = null,
                         )
                     }
                 }
@@ -152,6 +154,8 @@ internal object ForumScraper {
                                 sources = listOf(ModSource.ModdingSubforum),
                                 categories = emptyList(),
                                 images = emptyMap(),
+                                dateTimeCreated = null,
+                                dateTimeEdited = null,
                             )
                         }
                         .filter { !it.gameVersionReq.isNullOrBlank() }
