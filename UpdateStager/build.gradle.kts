@@ -37,7 +37,7 @@ dependencies {
 }
 
 application {
-    mainClass.set("updatestager.Main")
+    mainClass.set("smol.updatestager.Main")
 }
 
 fun JavaExec.configureRun(channel: String) {

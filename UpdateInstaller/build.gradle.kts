@@ -34,7 +34,7 @@ dependencies {
 }
 
 application {
-    mainClass.set("update_installer.Main")
+    mainClass.set("smol.update_installer.Main")
 }
 
 // Create uber jar with all dependencies inside.

@@ -1,5 +1,7 @@
+-dontoptimize
+-dontobfuscate
 -printusage
--keep class * { *; }
+-ignorewarnings
 
 -keepclasseswithmembers public class MainKt {
     public static void main(java.lang.String[]);
@@ -8,11 +10,11 @@
 -dontwarn kotlinx.coroutines.debug.*
 -dontwarn org.graalvm.compiler.core.aarch64.*
 
--keep class org.** { *; }
 -keep class kotlin.** { *; }
 -keep class kotlinx.coroutines.** { *; }
 -keep class org.jetbrains.skia.** { *; }
 -keep class org.jetbrains.skiko.** { *; }
+-keep class smol.** { *; }
 
 -assumenosideeffects public class androidx.compose.runtime.ComposerKt {
     void sourceInformation(androidx.compose.runtime.Composer,java.lang.String);

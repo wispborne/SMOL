@@ -12,9 +12,9 @@
 
 //package business
 //
-//import smol_access.model.*
+//import smol.access.model.*
 //import org.junit.jupiter.api.Test
-//import smol_access.business.DependencyFinder
+//import smol.access.business.DependencyFinder
 //import java.nio.file.Path
 //import kotlin.test.assertTrue
 //
@@ -39,7 +39,7 @@
 //            isEnabledInGame = true,
 //            variants = listOf(
 //                ModVariant(
-//                    modInfo = ModInfo.v095(
+//                    modInfo = smol.ModInfo.v095(
 //                        _id = "ungp",
 //                        _name = "Unofficial New Game Plus",
 //                        _author = "Originem\n" +
@@ -73,7 +73,7 @@
 //            isEnabledInGame = false,
 //            variants = listOf(
 //                ModVariant(
-//                    modInfo = ModInfo.v095(
+//                    modInfo = smol.ModInfo.v095(
 //                        _id = "lw_lazylib",
 //                        _name = "LazyLib",
 //                        _author = "LazyWizard",

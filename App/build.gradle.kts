@@ -123,7 +123,7 @@ val obfuscate by tasks.registering(proguard.gradle.ProGuardTask::class)
 
 compose.desktop {
     application {
-        mainClass = "smol_app.MainKt"
+        mainClass = "smol.app.MainKt"
 
         nativeDistributions {
             targetFormats(TargetFormat.Exe)
@@ -176,7 +176,7 @@ compose.desktop {
             }
         }
 
-//        disableDefaultConfiguration()
+        // Disable obfuscation for now, as it removes all
 //        fromFiles(obfuscate.get().outputs.files.asFileTree)
 //        mainJar.set(tasks.jar.map { RegularFile { mapObfuscatedJarFile(it.archiveFile.get().asFile) } })
     }

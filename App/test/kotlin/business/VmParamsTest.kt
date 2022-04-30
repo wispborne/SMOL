@@ -12,7 +12,7 @@
 
 package business
 
-import smol_access.model.Vmparams
+import smol.access.model.Vmparams
 import org.junit.jupiter.api.Test
 import kotlin.test.assertTrue
 
