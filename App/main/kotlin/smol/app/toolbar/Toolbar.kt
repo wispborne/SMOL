@@ -23,7 +23,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
@@ -32,13 +34,11 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.arkivanov.decompose.replaceCurrent
 import kotlinx.coroutines.*
 import org.tinylog.Logger
 import smol.access.Constants
 import smol.access.SL
-import smol.access.model.UserProfile
 import smol.app.composables.*
 import smol.app.navigation.Screen
 import smol.app.themes.SmolTheme
@@ -142,13 +142,6 @@ data class StarsectorLaunchPrefs(
 fun AppScope.launchButton(modifier: Modifier = Modifier) {
     val launchText = remember { launchQuotes.weightedRandom() }
 
-    fun onLaunchButtonConfirmed() {
-        when (SL.userManager.activeProfile.value.launchButtonAction) {
-            UserProfile.LaunchButtonAction.DirectLaunch -> launchStarsector()
-            UserProfile.LaunchButtonAction.OpenFolder -> SL.gamePathManager.path.value?.openInDesktop()
-        }
-    }
-
     SmolTooltipArea(
         tooltip = {
             SmolTooltipText(
@@ -162,80 +155,7 @@ fun AppScope.launchButton(modifier: Modifier = Modifier) {
     ) {
         SmolButton(
             onClick = {
-                if (SL.userManager.activeProfile.value.showGameLauncherWarning != false) {
-                    alertDialogSetter.invoke {
-                        var showGameLauncherWarning by mutableStateOf(
-                            SL.userManager.activeProfile.value.showGameLauncherWarning ?: true
-                        )
-                        val launchButtonAction = SL.userManager.activeProfile.collectAsState().value.launchButtonAction
-
-                        SmolAlertDialog(
-                            onDismissRequest = { alertDialogSetter.invoke(null) },
-                            title = { Text("WARNING") },
-                            text = {
-                                Column {
-                                    Text(
-                                        text = buildString {
-                                            appendLine("Launching Starsector from SMOL may result in buggy behavior on some computers!")
-                                            appendLine()
-                                            appendLine("If you experience scaling/zoomed UI, rotated ships, or other ghastly behavior, please simply launch Starsector without SMOL.")
-                                        },
-                                        style = SmolTheme.alertDialogBody()
-                                    )
-                                    Text(
-                                        text = "I do apologize for the inconvenience and have spent many, many hours trying to solve this to no avail.",
-                                        fontSize = 13.sp
-                                    )
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.padding(top = 16.dp)
-                                    ) {
-                                        CheckboxWithText(
-                                            checked = launchButtonAction == UserProfile.LaunchButtonAction.OpenFolder,
-                                            onCheckedChange = { checked ->
-                                                SL.userManager.updateUserProfile {
-                                                    it.copy(
-                                                        launchButtonAction = if (checked) {
-                                                            UserProfile.LaunchButtonAction.OpenFolder
-                                                        } else {
-                                                            UserProfile.LaunchButtonAction.DirectLaunch
-                                                        }
-                                                    )
-                                                }
-                                            }
-                                        ) {
-                                            Text("Open game folder instead of launching Starsector.", modifier = it)
-                                        }
-                                    }
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.padding(top = 16.dp)
-                                    ) {
-                                        CheckboxWithText(
-                                            checked = !(showGameLauncherWarning),
-                                            onCheckedChange = { checked ->
-                                                showGameLauncherWarning = !checked
-                                            }
-                                        ) {
-                                            Text("Don't show again", modifier = it)
-                                        }
-                                    }
-                                }
-                            },
-                            confirmButton = {
-                                SmolButton(onClick = {
-                                    alertDialogSetter.invoke(null)
-                                    SL.userManager.updateUserProfile {
-                                        it.copy(showGameLauncherWarning = showGameLauncherWarning)
-                                    }
-                                    onLaunchButtonConfirmed()
-                                }) { Text("Launch") }
-                            }
-                        )
-                    }
-                } else {
-                    onLaunchButtonConfirmed()
-                }
+                SL.gamePathManager.path.value?.openInDesktop()
 
                 // Putting router here is a dumb hack that triggers a recompose when the app UI is invalidated,
                 // which we want so that the button enabled state gets reevaluated.

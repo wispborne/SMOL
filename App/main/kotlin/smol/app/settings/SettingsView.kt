@@ -35,7 +35,6 @@ import kotlinx.coroutines.launch
 import smol.access.SL
 import smol.access.business.JreEntry
 import smol.access.config.SettingsPath
-import smol.access.model.UserProfile
 import smol.app.composables.*
 import smol.app.navigation.Screen
 import smol.app.themes.SmolTheme
@@ -186,36 +185,6 @@ fun AppScope.settingsView(
                                     themeDropdown(Modifier.padding(start = 16.dp, top = 24.dp))
 
                                     updateSection(scope)
-                                }
-                            }
-
-                            item {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(start = 16.dp, top = 16.dp)
-                                ) {
-                                    val launchButtonAction =
-                                        userProfile.launchButtonAction
-                                    val isChecked = launchButtonAction == UserProfile.LaunchButtonAction.OpenFolder
-                                    CheckboxWithText(
-                                        checked = isChecked,
-                                        onCheckedChange = { checked ->
-                                            SL.userManager.updateUserProfile {
-                                                it.copy(
-                                                    launchButtonAction = if (checked) {
-                                                        UserProfile.LaunchButtonAction.OpenFolder
-                                                    } else {
-                                                        UserProfile.LaunchButtonAction.DirectLaunch
-                                                    }
-                                                )
-                                            }
-                                        }
-                                    ) { modifier ->
-                                        Text(
-                                            text = "Open game folder instead of launching Starsector.",
-                                            modifier = modifier
-                                        )
-                                    }
                                 }
                             }
 

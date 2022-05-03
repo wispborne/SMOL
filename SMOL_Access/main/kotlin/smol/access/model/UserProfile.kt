@@ -90,6 +90,7 @@ data class UserProfile(
     )
 
     enum class LaunchButtonAction {
+        @Deprecated("Direct launch is just fucked, don't let users do it anymore, it keeps wasting their time with chaos bugs.")
         DirectLaunch,
         OpenFolder
     }
