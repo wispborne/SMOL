@@ -225,9 +225,13 @@ class Archives internal constructor(
                                                 }
                                             }
 
-                                            versionCheckerFile?.let {
-                                                results[versionCheckerFile.itemIndex]?.let {
-                                                    versionCheckerInfo = modInfoLoader.deserializeVersionCheckerFile(it)
+                                            // If getting version checker file fails, swallow the exception because it was already logged.
+                                            kotlin.runCatching {
+                                                versionCheckerFile?.let {
+                                                    results[versionCheckerFile.itemIndex]?.let {
+                                                        versionCheckerInfo =
+                                                            modInfoLoader.deserializeVersionCheckerFile(it)
+                                                    }
                                                 }
                                             }
                                         }
