@@ -17,6 +17,8 @@ import org.update4j.Configuration
 import org.update4j.FileMetadata
 import smol.timber.ktx.Timber
 import smol.update_installer.BaseAppUpdater
+import smol.utilities.deleteRecursively
+import smol.utilities.exists
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.deleteIfExists
@@ -63,7 +65,12 @@ class UpdaterUpdater : BaseAppUpdater() {
 
         kotlin.runCatching {
             // For some reason, the installer fails if this parent folder exists.
-            Path.of(standaloneJreFolderName).deleteIfExists()
+            Path.of(standaloneJreFolderName).also { path ->
+                if (path.exists()) {
+                    Timber.i { "Deleting '${path.absolutePathString()}'." }
+                    path.deleteRecursively()
+                }
+            }
             archive.install(true)
 
         }
