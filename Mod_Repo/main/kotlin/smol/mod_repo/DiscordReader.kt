@@ -177,7 +177,7 @@ internal object DiscordReader {
                 }
             }
 //                .run { jsanity.fromJson<List<Message>>(this, shouldStripComments = false) }
-                .sortedBy { it.timestamp }
+                .sortedByDescending { it.timestamp }
 
             Timber.i { "Found ${newMessages.count()} posts in Discord #mod_updates." }
             messages += newMessages
