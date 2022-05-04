@@ -64,7 +64,7 @@ tasks.register(name = "uberJar", type = Jar::class) {
     manifest {
         attributes["Implementation-Title"] = "SMOL Mod Scraper"
         attributes["Implementation-Version"] = "1.0.0"
-        attributes["Main-Class"] = "mod_repo.Main"
+        attributes["Main-Class"] = "smol.mod_repo.Main"
     }
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
     with(tasks.jar.get() as CopySpec)

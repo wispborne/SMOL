@@ -45,7 +45,7 @@ tasks.register(name = "uberJar", type = Jar::class) {
     manifest {
         attributes["Implementation-Title"] = "SMOL Update Installer"
         attributes["Implementation-Version"] = "1.0.0"
-        attributes["Main-Class"] = "update_installer.Main"
+        attributes["Main-Class"] = "smol.update_installer.Main"
     }
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
     with(tasks.jar.get() as CopySpec)
