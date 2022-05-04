@@ -24,6 +24,7 @@ import smol.access.model.ModVariant
 import smol.timber.ktx.Timber
 import smol.timber.ktx.i
 import smol.utilities.asList
+import smol.utilities.exists
 import smol.utilities.trace
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
@@ -42,7 +43,6 @@ internal class ModLoader internal constructor(
     /**
      * Reads all or specific mods from /mods, staging folders.
      */
-    @OptIn(ExperimentalStdlibApi::class)
     suspend fun reload(modIds: List<ModId>? = null): ModListUpdate? {
         if (isLoading.value) {
             Timber.i { "Mod reload requested, but declined; already reloading." }
@@ -84,7 +84,8 @@ internal class ModLoader internal constructor(
                                 val modVariant = ModVariant(
                                     modInfo = modInfo,
                                     versionCheckerInfo = dataFiles.versionCheckerInfo,
-                                    modsFolderInfo = Mod.ModsFolderInfo(folder = modFolder)
+                                    modsFolderInfo = Mod.ModsFolderInfo(folder = modFolder),
+                                    doesModInfoFileExist = modFolder.resolve(Constants.MOD_INFO_FILE).exists(),
                                 )
                                 Mod(
                                     id = modInfo.id,

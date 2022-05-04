@@ -20,7 +20,7 @@ import java.util.*
 import kotlin.io.path.exists
 import kotlin.math.absoluteValue
 
-data class Mod(
+data class Mod constructor(
     val id: String,
     val isEnabledInGame: Boolean,
     val variants: List<ModVariant>,
@@ -32,7 +32,9 @@ data class Mod(
      * 2. Its mod folder is in the /mods folder.
      */
     fun isEnabled(modVariant: ModVariant) =
-        isEnabledInGame && modVariant.modsFolderInfo.folder.resolve(Constants.MOD_INFO_FILE).exists()
+        isEnabledInGame && modVariant.doesModInfoFileExist
+    // Moved to `ModLoader.reload` and cached, as calling File.exists constantly is expensive.
+    //&& modVariant.modsFolderInfo.folder.resolve(Constants.MOD_INFO_FILE).exists()
 
     data class ModsFolderInfo(
         val folder: Path
@@ -77,17 +79,19 @@ data class Mod(
                         isTotalConversion = false
                     ),
                     versionCheckerInfo = null,
-                    modsFolderInfo = ModsFolderInfo(Path.of(""))
+                    modsFolderInfo = ModsFolderInfo(Path.of("")),
+                    doesModInfoFileExist = true,
                 )
             )
         )
     }
 }
 
-data class ModVariant(
+data class ModVariant constructor(
     val modInfo: ModInfo,
     val versionCheckerInfo: VersionCheckerInfo?,
-    val modsFolderInfo: Mod.ModsFolderInfo
+    val modsFolderInfo: Mod.ModsFolderInfo,
+    val doesModInfoFileExist: Boolean,
 ) {
     companion object {
         private val smolIdAllowedChars = Regex("""[^0-9a-zA-Z\\.\-_]""")
