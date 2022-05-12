@@ -36,82 +36,104 @@ typealias HttpClientBuilder = () -> HttpClient
 
 @OptIn(ExperimentalStdlibApi::class)
 class ServiceLocator internal constructor(
-    val manualReloadTrigger: ManualReloadTrigger = ManualReloadTrigger(),
-    val httpClientBuilder: HttpClientBuilder = {
-        HttpClient(CIO) {
-            install(Logging)
-            install(HttpTimeout)
-            this.followRedirects = true
-        }
-    },
-    private val modsCache: ModsCache = ModsCache(),
-    val jsanity: Jsanity = Jsanity(gson = GsonBuilder.buildGson()),
-    private val versionCheckerCache: VersionCheckerCache = VersionCheckerCache(gson = jsanity),
-    private val modMetadataStore: ModMetadataStore = ModMetadataStore(gson = jsanity),
-    val modMetadata: ModMetadataManager = ModMetadataManager(modMetadataStore = modMetadataStore),
-    val appConfig: AppConfig = AppConfig(gson = jsanity),
-    val userManager: UserManager = UserManager(
-        appConfig = appConfig
-    ),
-    private val modInfoLoader: ModInfoLoader = ModInfoLoader(gson = jsanity),
-    val gamePathManager: GamePathManager = GamePathManager(appConfig = appConfig),
-    val saveReader: SaveReader = SaveReader(gamePathManager = gamePathManager),
-    val vramChecker: VramCheckerManager = VramCheckerManager(
-        gamePathManager = gamePathManager,
-        vramCheckerCache = VramCheckerCache(gson = jsanity)
-    ),
-    private val gameEnabledMods: GameEnabledMods = GameEnabledMods(jsanity, gamePathManager),
-    private val archives: Archives = Archives(
-        modInfoLoader = modInfoLoader,
-        jsanity = jsanity
-    ),
-    val jreManager: JreManager = JreManager(
-        gamePathManager = gamePathManager,
-        appConfig = appConfig,
-        httpClientBuilder = httpClientBuilder,
-        archives = archives
-    ),
-    private val staging: Staging = Staging(
-        gamePathManager = gamePathManager,
-        modsCache = modsCache,
-        gameEnabledMods = gameEnabledMods,
-        manualReloadTrigger = manualReloadTrigger
-    ),
-    private val modLoader: ModLoader = ModLoader(
-        gamePathManager = gamePathManager,
-        modInfoLoader = modInfoLoader,
-        gameEnabledMods = gameEnabledMods,
-        modsCache = modsCache,
-        staging = staging
-    ),
-    val dependencyFinder: DependencyFinder = DependencyFinder(modsCache = modsCache),
-    val versionChecker: IVersionChecker = VersionChecker(
-        gson = jsanity,
-        versionCheckerCache = versionCheckerCache,
-        userManager = userManager,
-        modsCache = modsCache,
-        httpClientBuilder = httpClientBuilder
-    ),
-    val access: smol.access.Access = smol.access.Access(
-        staging = staging,
-        modLoader = modLoader,
-        archives = archives,
-        appConfig = appConfig,
-        gamePathManager = gamePathManager,
-        modsCache = modsCache
-    ),
-    val userModProfileManager: UserModProfileManager = UserModProfileManager(
-        userManager = userManager, access = access, modsCache = modsCache
-    ),
-    val themeManager: ThemeManager = ThemeManager(userManager = userManager, jsanity = jsanity),
-//    val moshanity: Moshanity = Moshanity(),
-    val modRepo: ModRepo = ModRepo(jsanity = jsanity, httpClientBuilder = httpClientBuilder)
 ) {
     companion object {
         fun init() {
             SL = ServiceLocator()
         }
     }
+
+    val manualReloadTrigger: ManualReloadTrigger by lazy { ManualReloadTrigger() }
+    val httpClientBuilder: HttpClientBuilder by lazy {
+        {
+            HttpClient(CIO) {
+                install(Logging)
+                install(HttpTimeout)
+                this.followRedirects = true
+            }
+        }
+    }
+    private val modsCache: ModsCache by lazy { ModsCache() }
+    val jsanity: Jsanity by lazy { Jsanity(gson = GsonBuilder.buildGson()) }
+    private val versionCheckerCache: VersionCheckerCache by lazy { VersionCheckerCache(gson = jsanity) }
+    private val modMetadataStore: ModMetadataStore by lazy { ModMetadataStore(gson = jsanity) }
+    val modMetadata: ModMetadataManager by lazy { ModMetadataManager(modMetadataStore = modMetadataStore) }
+    val appConfig: AppConfig by lazy { AppConfig(gson = jsanity) }
+    val userManager: UserManager by lazy {
+        UserManager(
+            appConfig = appConfig
+        )
+    }
+    private val modInfoLoader: ModInfoLoader by lazy { ModInfoLoader(gson = jsanity) }
+    val gamePathManager: GamePathManager by lazy { GamePathManager(appConfig = appConfig) }
+    val saveReader: SaveReader by lazy { SaveReader(gamePathManager = gamePathManager) }
+    val vramChecker: VramCheckerManager by lazy {
+        VramCheckerManager(
+            gamePathManager = gamePathManager,
+            vramCheckerCache = VramCheckerCache(gson = jsanity)
+        )
+    }
+    private val gameEnabledMods: GameEnabledMods by lazy { GameEnabledMods(jsanity, gamePathManager) }
+    private val archives: Archives by lazy {
+        Archives(
+            modInfoLoader = modInfoLoader,
+            jsanity = jsanity
+        )
+    }
+    val jreManager: JreManager by lazy {
+        JreManager(
+            gamePathManager = gamePathManager,
+            appConfig = appConfig,
+            httpClientBuilder = httpClientBuilder,
+            archives = archives
+        )
+    }
+    private val staging: Staging by lazy {
+        Staging(
+            gamePathManager = gamePathManager,
+            modsCache = modsCache,
+            gameEnabledMods = gameEnabledMods,
+            manualReloadTrigger = manualReloadTrigger
+        )
+    }
+    private val modLoader: ModLoader by lazy {
+        ModLoader(
+            gamePathManager = gamePathManager,
+            modInfoLoader = modInfoLoader,
+            gameEnabledMods = gameEnabledMods,
+            modsCache = modsCache,
+            staging = staging
+        )
+    }
+    val dependencyFinder: DependencyFinder by lazy { DependencyFinder(modsCache = modsCache) }
+    val versionChecker: IVersionChecker by lazy {
+        VersionChecker(
+            gson = jsanity,
+            versionCheckerCache = versionCheckerCache,
+            userManager = userManager,
+            modsCache = modsCache,
+            httpClientBuilder = httpClientBuilder
+        )
+    }
+    val access: Access by lazy {
+        Access(
+            staging = staging,
+            modLoader = modLoader,
+            archives = archives,
+            appConfig = appConfig,
+            gamePathManager = gamePathManager,
+            modsCache = modsCache
+        )
+    }
+    val userModProfileManager: UserModProfileManager by lazy {
+        UserModProfileManager(
+            userManager = userManager, access = access, modsCache = modsCache
+        )
+    }
+    val themeManager: ThemeManager by lazy { ThemeManager(userManager = userManager, jsanity = jsanity) }
+
+    //    val moshanity: Moshanity = Moshanity(),
+    val modRepo: ModRepo by lazy { ModRepo(jsanity = jsanity, httpClientBuilder = httpClientBuilder) }
 }
 
 private fun buildJackson(): ObjectMapper =

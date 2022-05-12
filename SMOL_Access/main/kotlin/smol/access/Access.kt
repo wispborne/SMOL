@@ -281,7 +281,7 @@ class Access internal constructor(
         trace(onFinished = { _, millis ->
             Timber.i { "Deleted mod variant ${modVariant.smolId} folders in ${millis}ms. Remove staging/mods files? $removeUncompressedFolder." }
         }) {
-            val mod = modVariant.mod(this@Access)
+            val mod = modVariant.mod(this)
             try {
                 modModificationState.update {
                     it.toMutableMap().apply {

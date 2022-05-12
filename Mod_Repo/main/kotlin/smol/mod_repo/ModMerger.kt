@@ -93,12 +93,19 @@ internal class ModMerger {
                                                     .map { it.prepForMatching() }
                                             )
 
-                                        val isMatch = bestNameResult.isMatch && bestAuthorsResult.isMatch
+                                        val outerUrl = outerLoopMod.urls()[ModUrlType.Forum]
+                                        val doForumLinksMatch =
+                                            outerUrl != null && outerUrl == innerLoopMod.urls()[ModUrlType.Forum]
+                                        val doNameAndAuthorMatch = bestNameResult.isMatch && bestAuthorsResult.isMatch
 
-                                        if (isMatch) {
-                                            Timber.d {
-                                                "Matched names $bestNameResult and authors $bestAuthorsResult."
-                                            }
+                                        val isMatch = doNameAndAuthorMatch || doForumLinksMatch
+
+                                        if (doNameAndAuthorMatch) {
+                                            Timber.d { "Matched names $bestNameResult and authors $bestAuthorsResult." }
+                                        }
+
+                                        if (doForumLinksMatch) {
+                                            Timber.d { "Matching forum urls for ${outerLoopMod.name} and ${innerLoopMod.name}: $outerUrl." }
                                         }
 
                                         if (isMatch) {

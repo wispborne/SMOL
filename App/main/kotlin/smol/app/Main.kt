@@ -23,8 +23,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
 import appView
 import com.arkivanov.decompose.Router
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import net.sf.sevenzipjbinding.SevenZip
 import org.cef.CefApp
 import org.tinylog.Logger
@@ -41,6 +44,7 @@ import smol.timber.LogLevel
 import smol.timber.ktx.Timber
 import smol.utilities.currentPlatform
 import smol.utilities.makeFinite
+import java.time.Instant
 import java.util.*
 import javax.swing.UIManager
 import javax.swing.plaf.ColorUIResource
@@ -50,37 +54,69 @@ import kotlin.io.path.inputStream
 var safeMode = false
 
 fun main() = application {
-    kotlin.runCatching {
-        ServiceLocator.init()
-    }
-        .onFailure {
-            it.printStackTrace()
-            println("Something terrible has happened and SMOL cannot start. Try 'Run as administrator'.")
-            System.console()?.readLine()
-            // Leave console window open but don't try to open SMOL.
-            // Something awful happened (they probably need to run as admin)
-            return@application
+    val startTime = Instant.now().toEpochMilli()
+    fun sinceStartStr() = "(since start: ${(Instant.now().minusMillis(startTime).toEpochMilli())}ms)"
+    val coroutineScope = rememberCoroutineScope()
+
+    val initServiceLocatorJob = coroutineScope.launch(Dispatchers.Default) {
+        smol.utilities.trace(onFinished = { _, ms -> println("Took ${ms}ms to init ${ServiceLocator::class.simpleName} ${sinceStartStr()}.") }) {
+            kotlin.runCatching {
+                ServiceLocator.init()
+            }
+                .onFailure {
+                    it.printStackTrace()
+                    println("Something terrible has happened and SMOL cannot start. Try 'Run as administrator'.")
+                    System.console()?.readLine()
+                    // Leave console window open but don't try to open SMOL.
+                    // Something awful happened (they probably need to run as admin)
+                    throw it
+                }
         }
+    }
 
     // Logger
-    kotlin.runCatching {
-        Logging.logLevel =
-            if (safeMode) LogLevel.VERBOSE
-            else LogLevel.INFO
-        Logging.setup()
-    }
-        .onFailure {
-            println(it)
+    smol.utilities.trace(onFinished = { _, ms -> println("Took ${ms}ms to init logging ${sinceStartStr()}.") }) {
+        kotlin.runCatching {
+            Logging.logLevel =
+                if (safeMode) LogLevel.VERBOSE
+                else LogLevel.INFO
+            Logging.setup()
         }
+            .onFailure {
+                println(it)
+            }
+    }
+
+    smol.utilities.trace(onFinished = { _, ms -> println("Took ${ms}ms init 7zip ${sinceStartStr()}.") }) {
+        SevenZip.initSevenZipFromPlatformJAR()
+    }
+
+    // Load current version
+    kotlin.runCatching {
+        Constants.VERSION_PROPERTIES_FILE!!.let {
+            val props = Properties()
+            props.load(it.inputStream())
+            props["smol-version"]?.toString()!!
+        }
+    }
+        .onFailure { Timber.w(it) }
+        .getOrNull()
+        ?.also { Constants.APP_VERSION = it }
 
     var appWindowState = rememberWindowState()
 
+    // Service Locator takes some time to init, do any work possible before it that doesn't require it.
+    runBlocking { initServiceLocatorJob.join() }
+    println("${ServiceLocator::class.simpleName} is ready ${sinceStartStr()}.")
+
+    // Load UI Config
     val uiConfig = kotlin.runCatching { SL.UI.uiConfig }
         .onFailure {
             it.printStackTrace()
             Timber.e(it)
         }
         .getOrNull()
+
     val access = kotlin.runCatching { SL.access }
         .onFailure {
             it.printStackTrace()
@@ -88,30 +124,19 @@ fun main() = application {
         }
         .getOrNull()
 
-    kotlin.runCatching {
-        access?.checkAndSetDefaultPaths(currentPlatform)
-    }
-        .onFailure {
-            if (safeMode) {
-                SL.appConfig.clear()
-                Logger.warn(it) { "SAFE MODE: Cleared app config due to error." }
-            }
+    smol.utilities.trace(onFinished = { _, ms -> println("Took ${ms}ms to set default paths ${sinceStartStr()}.") }) {
+        kotlin.runCatching {
+            access?.checkAndSetDefaultPaths(currentPlatform)
         }
+            .onFailure {
+                if (safeMode) {
+                    SL.appConfig.clear()
+                    Logger.warn(it) { "SAFE MODE: Cleared app config due to error." }
+                }
+            }
+    }
 
     if (!safeMode) {
-        SevenZip.initSevenZipFromPlatformJAR()
-
-        kotlin.runCatching {
-            Constants.VERSION_PROPERTIES_FILE!!.let {
-                val props = Properties()
-                props.load(it.inputStream())
-                props["smol-version"]?.toString()!!
-            }
-        }
-            .onFailure { Timber.w(it) }
-            .getOrNull()
-            ?.also { Constants.APP_VERSION = it }
-
         kotlin.runCatching {
             val savedState = uiConfig!!.windowState!!
             rememberWindowState(
@@ -135,7 +160,7 @@ fun main() = application {
     }
 
 
-    Timber.i { "Launched SMOL ${Constants.APP_VERSION}." }
+    Timber.i { "Launched SMOL ${Constants.APP_VERSION} ${sinceStartStr()}." }
 
     val onKeyEventHandlers = remember { mutableListOf<(KeyEvent) -> Boolean>() }
 
@@ -161,7 +186,9 @@ fun main() = application {
 
         saveWindowParamsOnChange(appWindowState, uiConfig!!)
 
-        smolWindowState.appView()
+        smol.utilities.trace(onFinished = { _, ms -> println("Took ${ms}ms to show AppView ${sinceStartStr()}.") }) {
+            smolWindowState.appView()
+        }
     }
 }
 

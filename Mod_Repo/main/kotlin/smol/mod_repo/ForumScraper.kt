@@ -120,6 +120,7 @@ internal object ForumScraper {
                 .filter { key, _ -> !key.equals("PHPSESSID", ignoreCase = true) }
                 .let { Parameters.build { appendAll(it) } })
 
+    private val versionRegex = Regex("""[\[{]([^]}]*?\d+?[^]}]*?)[]}]""")
     private suspend fun scrapeSubforumLinks(forumBaseUrl: String, subforumNumber: Int, take: Int): List<ScrapedMod>? {
         return kotlin.runCatching {
             (0 until take step 20)
@@ -127,7 +128,6 @@ internal object ForumScraper {
                     Timber.i { "Fetching page ${page / postsPerPage} from subforum $subforumNumber." }
                     val doc: Document = Jsoup.connect("$forumBaseUrl?board=$subforumNumber.$page").get()
                     val posts: Elements = doc.select("#messageindex tr")
-                    val versionRegex = Regex("""[\[{](.*?\d.*?)[]}]""")
 
                     posts
                         .map { postElement ->
@@ -159,7 +159,7 @@ internal object ForumScraper {
                             )
                         }
                         .filter { !it.gameVersionReq.isNullOrBlank() }
-                        .filter { !it.name.contains("MOVED", ignoreCase = true) }
+                        .filter { !it.name.trimStart().startsWith("MOVED", ignoreCase = true) }
                         .also {
                             Timber.i { "Found ${it.count()} mods on page ${page / postsPerPage} of subforum $subforumNumber." }
                         }
