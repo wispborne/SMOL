@@ -17,6 +17,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,10 +25,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.input.pointer.isPrimaryPressed
-import androidx.compose.ui.input.pointer.pointerHoverIcon
-import androidx.compose.ui.input.pointer.pointerMoveFilter
+import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
@@ -51,6 +49,7 @@ import smol.mod_repo.ModSource
 import smol.mod_repo.ModUrlType
 import smol.mod_repo.ScrapedMod
 import smol.timber.ktx.Timber
+import smol.utilities.copyToClipboard
 import java.awt.Cursor
 import java.util.*
 
@@ -364,13 +363,13 @@ fun BrowserIcon(modifier: Modifier = Modifier, iconModifier: Modifier = Modifier
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
 @Composable
-fun DiscordIcon(modifier: Modifier = Modifier, iconModifier: Modifier = Modifier, mod: ScrapedMod) {
+fun AppScope.DiscordIcon(modifier: Modifier = Modifier, iconModifier: Modifier = Modifier, mod: ScrapedMod) {
     val discordUrl = mod.urls()[ModUrlType.Discord]
 
     if (discordUrl?.toString()?.isBlank() == false) {
-        val descText = "Open in web Discord.\n${discordUrl}"
+        val descText = "Open in Discord.\n${discordUrl}\nRight-click to copy."
         SmolTooltipArea(
             modifier = modifier,
             tooltip = { SmolTooltipText(text = descText) }) {
@@ -383,12 +382,43 @@ fun DiscordIcon(modifier: Modifier = Modifier, iconModifier: Modifier = Modifier
                     .padding(1.dp)
                     .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)))
                     .mouseClickable {
-                        if (this.buttons.isPrimaryPressed) {
-                            runCatching {
-                                discordUrl.toString().openAsUriInBrowser()
+                        runCatching {
+                            if (this.buttons.isPrimaryPressed) {
+                                this@DiscordIcon.alertDialogSetter.invoke {
+                                    SmolAlertDialog(
+                                        onDismissRequest = ::dismissAlertDialog,
+                                        confirmButton = {
+                                            SmolButton(onClick = {
+                                                discordUrl.toString()
+                                                    .replace("https://", "discord://")
+                                                    .replace("http://", "discord://")
+                                                    .openAsUriInBrowser()
+                                                dismissAlertDialog()
+                                            }) { Text("Open in Discord") }
+                                        },
+                                        dismissButton = {
+                                            SmolSecondaryButton(onClick = ::dismissAlertDialog) {
+                                                Text("Cancel")
+                                            }
+                                        },
+                                        text = {
+                                            Column {
+                                                Text(text = "This will open this post in Discord. Do you want to continue?")
+                                                SelectionContainer {
+                                                    Text(
+                                                        modifier = Modifier.padding(top = 8.dp),
+                                                        text = discordUrl.toString()
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    )
+                                }
+                            } else if (this.buttons.isSecondaryPressed) {
+                                copyToClipboard(discordUrl.toString())
                             }
-                                .onFailure { Logger.warn(it) }
                         }
+                            .onFailure { Logger.warn(it) }
                     },
                 tint = SmolTheme.dimmedIconColor()
             )

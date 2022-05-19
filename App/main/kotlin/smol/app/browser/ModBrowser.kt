@@ -84,6 +84,7 @@ fun AppScope.ModBrowserView(
     var alertDialogMessage: String? by remember { mutableStateOf(null) }
     val showLogPanel = remember { mutableStateOf(false) }
     var isBrowserFullscreen by remember { mutableStateOf(false) }
+    var isModListFullscreen by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = modifier,
@@ -139,23 +140,6 @@ fun AppScope.ModBrowserView(
                             )
                         }
                     }
-                    SmolTooltipArea(
-                        modifier = Modifier,
-                        tooltip = { SmolTooltipText(text = "Toggle full-width browser") }) {
-                        IconButton(
-                            onClick = {
-                                isBrowserFullscreen = !isBrowserFullscreen
-                            }
-                        ) {
-                            Icon(
-                                painter = painterResource("icon-maximize.svg"),
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .width(24.dp)
-                                    .height(24.dp)
-                            )
-                        }
-                    }
                 }
                 Spacer(modifier = Modifier.width(16.dp))
             }
@@ -178,7 +162,7 @@ fun AppScope.ModBrowserView(
                                     Row(Modifier.padding(bottom = 16.dp)) {
                                         Row {
                                             val scope = rememberCoroutineScope()
-                                            smolSearchField(
+                                            SmolFilterField(
                                                 modifier = Modifier
                                                     .focusRequester(searchFocusRequester())
                                                     .widthIn(max = 320.dp)
@@ -210,25 +194,45 @@ fun AppScope.ModBrowserView(
                                         Spacer(Modifier.weight(1f))
 
                                         Column(modifier = Modifier.align(Alignment.Bottom)) {
-                                            SmolTooltipArea(
+                                            Row(
                                                 modifier = Modifier
                                                     .padding(vertical = 4.dp, horizontal = 16.dp)
                                                     .align(Alignment.End),
-                                                tooltip = {
-                                                    SmolTooltipText(text = buildString {
-                                                        appendLine("The Mod Browser lists mods scraped from the official forum and from the Unofficial Discord Chat, with permission.")
-                                                        appendLine("The list is <b>not</b> live; it is fetched from an online cache, which is updated periodically so as to avoid excessive load on the forum.")
-                                                        append("If a mod has been added to the forum but doesn't yet show up in the list, simply navigate to it using the browser and download it.")
-                                                    }.parseHtml())
-                                                }) {
-                                                Icon(
-                                                    painter = painterResource("icon-help-circled.svg"),
-                                                    contentDescription = null,
-                                                    modifier = Modifier
-                                                        .width(24.dp)
-                                                        .height(24.dp),
-                                                    tint = SmolTheme.dimmedIconColor()
-                                                )
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                SmolTooltipArea(
+                                                    tooltip = {
+                                                        SmolTooltipText(text = buildString {
+                                                            appendLine("The Mod Browser lists mods scraped from the official forum and from the Unofficial Discord Chat, with permission.")
+                                                            appendLine("The list is <b>not</b> live; it is fetched from an online cache, which is updated periodically so as to avoid excessive load on the forum.")
+                                                            append("If a mod has been added to the forum but doesn't yet show up in the list, simply navigate to it using the browser and download it.")
+                                                        }.parseHtml())
+                                                    }) {
+                                                    Icon(
+                                                        painter = painterResource("icon-help-circled.svg"),
+                                                        contentDescription = null,
+                                                        modifier = Modifier
+                                                            .width(24.dp)
+                                                            .height(24.dp),
+                                                        tint = SmolTheme.dimmedIconColor()
+                                                    )
+                                                }
+                                                SmolTooltipArea(
+                                                    modifier = Modifier,
+                                                    tooltip = { SmolTooltipText(text = "Toggle full-width mod listing") }) {
+                                                    IconButton(
+                                                        onClick = { isModListFullscreen = !isModListFullscreen }
+                                                    ) {
+                                                        Icon(
+                                                            painter = painterResource("icon-maximize.svg"),
+                                                            contentDescription = null,
+                                                            modifier = Modifier
+                                                                .width(24.dp)
+                                                                .height(24.dp),
+                                                            tint = SmolTheme.dimmedIconColor()
+                                                        )
+                                                    }
+                                                }
                                             }
                                             val lastUpdated = SL.modRepo.lastUpdated.collectAsState().value
                                             Text(
@@ -274,76 +278,105 @@ fun AppScope.ModBrowserView(
                                 }
                             }
                         }
-                        second {
-                            Column {
-                                if (Constants.isJCEFEnabled()) {
-                                    Row(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 8.dp)) {
-                                        var canGoBack by remember { mutableStateOf(browser.value?.canGoBack ?: false) }
-                                        var canGoForward by remember {
-                                            mutableStateOf(
-                                                browser.value?.canGoForward ?: false
-                                            )
-                                        }
-                                        SmolSecondaryButton(
-                                            modifier = Modifier.padding(start = 8.dp)
-                                                .align(Alignment.CenterVertically),
-                                            onClick = { linkLoader.value?.invoke(Constants.FORUM_MOD_INDEX_URL) }
-                                        ) { Text("Index") }
-                                        SmolSecondaryButton(
-                                            modifier = Modifier.padding(start = 8.dp)
-                                                .align(Alignment.CenterVertically),
-                                            onClick = { linkLoader.value?.invoke(Constants.FORUM_MODDING_SUBFORUM_URL) }
-                                        ) { Text("Modding") }
-                                        IconButton(
-                                            modifier = Modifier.padding(start = 8.dp)
-                                                .align(Alignment.CenterVertically),
-                                            enabled = canGoBack,
-                                            onClick = { browser.value?.goBack() }
+                        if (!isModListFullscreen) {
+                            second {
+                                Column {
+                                    if (Constants.isJCEFEnabled()) {
+                                        Row(
+                                            modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Icon(
-                                                imageVector = Icons.Default.ArrowBack,
-                                                contentDescription = null
+                                            var canGoBack by remember {
+                                                mutableStateOf(
+                                                    browser.value?.canGoBack ?: false
+                                                )
+                                            }
+                                            var canGoForward by remember {
+                                                mutableStateOf(
+                                                    browser.value?.canGoForward ?: false
+                                                )
+                                            }
+                                            SmolSecondaryButton(
+                                                modifier = Modifier.padding(start = 8.dp)
+                                                    .align(Alignment.CenterVertically),
+                                                onClick = { linkLoader.value?.invoke(Constants.FORUM_MOD_INDEX_URL) }
+                                            ) { Text("Index") }
+                                            SmolSecondaryButton(
+                                                modifier = Modifier.padding(start = 8.dp)
+                                                    .align(Alignment.CenterVertically),
+                                                onClick = { linkLoader.value?.invoke(Constants.FORUM_MODDING_SUBFORUM_URL) }
+                                            ) { Text("Modding") }
+                                            IconButton(
+                                                modifier = Modifier.padding(start = 8.dp)
+                                                    .align(Alignment.CenterVertically),
+                                                enabled = canGoBack,
+                                                onClick = { browser.value?.goBack() }
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.ArrowBack,
+                                                    contentDescription = null
+                                                )
+                                            }
+                                            IconButton(
+                                                modifier = Modifier.padding(start = 8.dp, end = 8.dp)
+                                                    .align(Alignment.CenterVertically),
+                                                enabled = canGoForward,
+                                                onClick = { browser.value?.goForward() }
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.ArrowForward,
+                                                    contentDescription = null
+                                                )
+                                            }
+                                            var enteredUrl by remember { mutableStateOf("") }
+                                            LaunchedEffect(Unit) {
+                                                browser.value?.currentUrl?.collect {
+                                                    enteredUrl = it.first
+                                                    canGoBack = browser.value?.canGoBack ?: false
+                                                    canGoForward = browser.value?.canGoForward ?: false
+                                                }
+                                            }
+                                            SmolOutlinedTextField(
+                                                modifier = Modifier.weight(1f)
+                                                    .align(Alignment.CenterVertically)
+                                                    .onEnterKeyPressed {
+                                                        browser.value?.loadUrl(enteredUrl)
+                                                        true
+                                                    },
+                                                value = enteredUrl,
+                                                onValueChange = { enteredUrl = it },
+                                                label = { Text("Address") },
+                                                maxLines = 1,
+                                                singleLine = true
                                             )
-                                        }
-                                        IconButton(
-                                            modifier = Modifier.padding(start = 8.dp, end = 8.dp)
-                                                .align(Alignment.CenterVertically),
-                                            enabled = canGoForward,
-                                            onClick = { browser.value?.goForward() }
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.ArrowForward,
-                                                contentDescription = null
-                                            )
-                                        }
-                                        var enteredUrl by remember { mutableStateOf("") }
-                                        LaunchedEffect(Unit) {
-                                            browser.value?.currentUrl?.collect {
-                                                enteredUrl = it.first
-                                                canGoBack = browser.value?.canGoBack ?: false
-                                                canGoForward = browser.value?.canGoForward ?: false
+                                            SmolTooltipArea(
+                                                modifier = Modifier,
+                                                tooltip = { SmolTooltipText(text = "Toggle full-width browser") }) {
+                                                IconButton(
+                                                    onClick = { isBrowserFullscreen = !isBrowserFullscreen }
+                                                ) {
+                                                    Icon(
+                                                        painter = painterResource("icon-maximize.svg"),
+                                                        contentDescription = null,
+                                                        modifier = Modifier
+                                                            .width(24.dp)
+                                                            .height(24.dp),
+                                                        tint = SmolTheme.dimmedIconColor()
+                                                    )
+                                                }
                                             }
                                         }
-                                        SmolOutlinedTextField(
-                                            modifier = Modifier.weight(1f)
-                                                .align(Alignment.CenterVertically)
-                                                .onEnterKeyPressed {
-                                                    browser.value?.loadUrl(enteredUrl)
-                                                    true
-                                                },
-                                            value = enteredUrl,
-                                            onValueChange = { enteredUrl = it },
-                                            label = { Text("Address") },
-                                            maxLines = 1,
-                                            singleLine = true
+                                        embeddedBrowser(
+                                            browser,
+                                            linkLoader,
+                                            defaultUrl ?: Constants.FORUM_MOD_INDEX_URL
+                                        )
+                                    } else {
+                                        Text(
+                                            text = "CEF (Chromium browser) not found.",
+                                            modifier = Modifier.align(Alignment.CenterHorizontally)
                                         )
                                     }
-                                    embeddedBrowser(browser, linkLoader, defaultUrl ?: Constants.FORUM_MOD_INDEX_URL)
-                                } else {
-                                    Text(
-                                        text = "CEF (Chromium browser) not found.",
-                                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                                    )
                                 }
                             }
                         }

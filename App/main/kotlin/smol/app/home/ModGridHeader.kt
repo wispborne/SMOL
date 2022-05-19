@@ -58,7 +58,7 @@ fun AppScope.ModGridHeader(
     showVramRefreshWarning: MutableState<Boolean>,
     checkboxesWidth: Dp,
     checkedRows: SnapshotStateList<Mod>,
-    mods: SnapshotStateList<Mod?>
+    mods: List<Mod?>
 ) {
     Row {
         SL.userManager.activeProfile.collectAsState().value.modGridPrefs.columnSettings!!

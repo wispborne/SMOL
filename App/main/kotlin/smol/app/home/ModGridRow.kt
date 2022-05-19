@@ -64,7 +64,7 @@ fun AppScope.ModGridRow(
     largestVramUsage: MutableState<Long?>,
     checkboxesWidth: Dp,
     modInDebugDialog: MutableState<Mod?>,
-    mods: SnapshotStateList<Mod?>
+    mods: List<Mod?>
 ) {
     val mod = modRow.mod
     var showContextMenu by remember { mutableStateOf(false) }

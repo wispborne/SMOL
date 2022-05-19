@@ -22,16 +22,13 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.replaceCurrent
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.tinylog.Logger
 import smol.access.SL
@@ -45,35 +42,32 @@ import smol.app.toolbar.toolbar
 import smol.app.util.filterModGrid
 import smol.app.util.onEnterKeyPressed
 import smol.app.util.replaceAllUsingDifference
+import smol.timber.ktx.Timber
 import smol.utilities.IOLock
+import kotlin.random.Random
 
+private typealias ModListFilter = suspend (List<Mod>) -> List<Mod>
 
 @OptIn(
-    ExperimentalCoroutinesApi::class, ExperimentalMaterialApi::class,
-    ExperimentalComposeUiApi::class
+    ExperimentalFoundationApi::class
 )
 @Composable
 @Preview
 fun AppScope.homeView(
     modifier: Modifier = Modifier
 ) {
-    val mods: SnapshotStateList<Mod> = remember { mutableStateListOf() }
-    val shownMods: SnapshotStateList<Mod?> = mods.toMutableStateList()
+    val allMods: SnapshotStateList<Mod> = remember { SL.access.mods.value?.mods.orEmpty().toMutableStateList() }
+    var modListFilter: ModListFilter? by remember { mutableStateOf(null) }
+    val shownMods: SnapshotStateList<Mod> = remember { SnapshotStateList() }
+    var modlistUpdateTrigger by remember { mutableStateOf(0) }
     val isWriteLocked = IOLock.stateFlow.collectAsState()
 
-    LaunchedEffect(Unit) {
-        withContext(Dispatchers.Default) {
-            SL.access.mods.collectLatest { freshMods ->
-                if (freshMods != null) {
-                    withContext(Dispatchers.Main) {
-                        mods.replaceAllUsingDifference(freshMods.mods, doesOrderMatter = true)
-                    }
-                }
-            }
-        }
+    LaunchedEffect(modListFilter, modlistUpdateTrigger) {
+        val newList = modListFilter?.invoke(allMods) ?: allMods
+        Timber.d { "Replacing ${shownMods.count()} shown mods with ${newList.count()} new mods." }
+        shownMods.replaceAllUsingDifference(newList, doesOrderMatter = true)
     }
 
-//    var showConfirmMigrateDialog: Boolean by remember { mutableStateOf(false) }
     val showLogPanel = remember { mutableStateOf(false) }
     Scaffold(
         modifier = modifier,
@@ -98,8 +92,7 @@ fun AppScope.homeView(
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val scope = rememberCoroutineScope()
-                    smolSearchField(
+                    SmolFilterField(
                         modifier = Modifier
                             .focusRequester(searchFocusRequester())
                             .widthIn(min = 100.dp, max = 300.dp)
@@ -110,18 +103,14 @@ fun AppScope.homeView(
                         label = "Filter"
                     ) { query ->
                         if (query.isBlank()) {
-                            shownMods.replaceAllUsingDifference(mods, doesOrderMatter = false)
+                            modListFilter = null
+//                            shownModIds.replaceAllUsingDifference(allMods.map { it.id }, doesOrderMatter = false)
                         } else {
-                            scope.launch {
-                                val newModGrid = filterModGrid(query, mods, access = SL.access).ifEmpty { listOf(null) }
-
-                                withContext(Dispatchers.Main) {
-                                    shownMods.replaceAllUsingDifference(
-                                        newModGrid,
-                                        doesOrderMatter = true
-                                    )
-                                }
-                            }
+                            modListFilter = { filterModGrid(query, allMods, access = SL.access) }
+//                                    shownModIds.replaceAllUsingDifference(
+//                                        newModGrid.map { it?.id },
+//                                        doesOrderMatter = true
+//                                    )
                         }
                     }
 
@@ -157,7 +146,7 @@ fun AppScope.homeView(
                 if (validationResult.isSuccess) {
                     ModGridView(
                         modifier = Modifier.fillMaxWidth().fillMaxHeight().padding(bottom = 40.dp),
-                        mods = (if (shownMods.isEmpty()) mods else shownMods) as SnapshotStateList<Mod?>
+                        mods = shownMods
                     )
                 } else {
                     Column(
@@ -194,9 +183,22 @@ fun AppScope.homeView(
             }
         }
     )
+
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.Default) {
+            SL.access.mods.collectLatest { freshMods ->
+                if (freshMods != null) {
+                    withContext(Dispatchers.Main) {
+                        allMods.replaceAllUsingDifference(freshMods.mods, doesOrderMatter = true)
+                        Timber.d { "Updating mod grid with ${freshMods.mods.count()} mods (${shownMods.count()} shown)." }
+                        modlistUpdateTrigger = Random.nextInt()
+                    }
+                }
+            }
+        }
+    }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun AppScope.consoleTextField(
     modifier: Modifier = Modifier

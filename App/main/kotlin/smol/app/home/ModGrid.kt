@@ -47,6 +47,7 @@ import smol.app.composables.SmolOverflowMenu
 import smol.app.composables.SmolSecondaryButton
 import smol.app.themes.SmolTheme
 import smol.app.util.uiEnabled
+import smol.timber.ktx.Timber
 import smol.utilities.nullIfBlank
 
 const val modGridViewDropdownWidth = 180
@@ -58,8 +59,9 @@ const val modGridViewDropdownWidth = 180
 @Composable
 fun AppScope.ModGridView(
     modifier: Modifier = Modifier,
-    mods: SnapshotStateList<Mod?>
+    mods: List<Mod?>
 ) {
+    Timber.i { "Rendering mod grid." }
     val contentPadding = 16.dp
     val favoritesWidth = 40.dp
     val checkboxesWidth = 40.dp

@@ -152,7 +152,7 @@ fun WindowState.appView() {
             LaunchedEffect(refreshTrigger) {
                 scope.launch {
                     Timber.i { "Initial mod refresh." }
-                    reloadModsInner()
+                    reloadModsInner(forceRefreshVersionChecker = true)
                 }
             }
 
@@ -255,7 +255,7 @@ class AppScope(windowState: WindowState, private val recomposer: RecomposeScope)
     fun dismissAlertDialog() = alertDialogSetter.invoke(null)
     val duplicateModAlertDialogState = DuplicateModAlertDialogState()
 
-    suspend fun reloadMods() = reloadModsInner()
+    suspend fun reloadMods() = reloadModsInner(forceRefreshVersionChecker = true)
     fun recomposeAppUI() = recomposer.invalidate()
 }
 
@@ -281,32 +281,35 @@ private suspend fun watchDirsAndReloadOnChange(scope: CoroutineScope) {
                     // Short delay so that if a new file change comes in during this time,
                     // this is canceled in favor of the new change. This should prevent
                     // refreshing 500 times if 500 files are changed in a few millis.
-                    delay(1000)
-                    Logger.info { "Trying to reload to due to file change: $it" }
-                    reloadModsInner()
+                    delay(500)
+                    Timber.i { "Reloading due to file change: $it" }
+                    reloadModsInner(forceRefreshVersionChecker = false)
                 } else {
-                    Logger.info { "Skipping mod reload while IO locked." }
+                    Timber.i { "Skipping mod reload while IO locked." }
                 }
             }
     }
 }
 
-private suspend fun reloadModsInner() {
+private suspend fun reloadModsInner(forceRefreshVersionChecker: Boolean) {
     if (SL.access.areModsLoading.value) {
-        Logger.info { "Skipping reload of mods as they are currently refreshing already." }
+        Timber.i { "Skipping reload of mods as they are currently refreshing already." }
         return
     }
     try {
         coroutineScope {
-            smol.utilities.trace(onFinished = { _, millis -> Timber.i { "Finished reloading everything in ${millis}ms (this is not how long it took to reload just the mods)." } }) {
-                Timber.i { "Reloading mods." }
+            smol.utilities.trace(onFinished = { _, millis -> Timber.i { "Finished reloading mods+VC+saves in ${millis}ms." } }) {
+                Timber.i { "Reloading all mods." }
+                val previousVariantIds = SL.access.mods.value?.mods.orEmpty().flatMap { it.variants }.map { it.smolId }
                 SL.access.reload()
                 val mods = SL.access.mods.value?.mods ?: emptyList()
+                val hasNewVariantBeenAdded = SL.access.mods.value?.mods.orEmpty().flatMap { it.variants }.map { it.smolId }
+                    .any { newVariantId -> newVariantId !in previousVariantIds }
 
                 listOf(
                     async {
                         SL.versionChecker.lookUpVersions(
-                            forceLookup = true,
+                            forceLookup = forceRefreshVersionChecker || hasNewVariantBeenAdded,
                             mods = mods
                         )
                     },

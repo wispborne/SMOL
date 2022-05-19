@@ -18,6 +18,8 @@ import AppScope
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -30,7 +32,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.res.painterResource
 
 @Composable
-fun smolSearchField(
+fun SmolFilterField(
     modifier: Modifier = Modifier,
     focusRequester: FocusRequester? = null,
     tooltipText: String,
@@ -51,7 +53,14 @@ fun smolSearchField(
             },
             singleLine = true,
             maxLines = 1,
-            leadingIcon = { Icon(painter = painterResource("icon-search.svg"), contentDescription = null) }
+            leadingIcon = { Icon(painter = painterResource("icon-search.svg"), contentDescription = null) },
+            trailingIcon = {
+                if (value.isNotEmpty()) {
+                    SmolIconButton(
+                        onClick = { value = ""; onValueChange(value) }
+                    ) { Icon(imageVector = Icons.Default.Clear, contentDescription = null) }
+                }
+            }
         )
     }
 }
