@@ -31,7 +31,7 @@ import org.cef.handler.CefLoadHandler
 import org.cef.handler.CefLoadHandler.ErrorCode
 import org.cef.network.CefRequest.TransitionType
 import smol.access.Constants
-import smol.app.browser.DownloadHander
+import smol.app.browser.DownloadHandler
 import smol.timber.ktx.Timber
 import tests.detailed.handler.MessageRouterHandler
 import tests.detailed.handler.MessageRouterHandlerEx
@@ -125,7 +125,7 @@ class CefBrowserPanel
     private val startURL: String,
     private val useOSR: Boolean,
     private val isTransparent: Boolean,
-    private val downloadHandler: DownloadHander
+    private val downloadHandler: DownloadHandler
 ) : JPanel(), ChromiumBrowser {
 
     companion object {
@@ -134,6 +134,9 @@ class CefBrowserPanel
         var client: CefClient? = null
         var browser: CefBrowser? = null
         var browserUI: Component? = null
+
+        private val _currentUrl = MutableStateFlow("" to 0)
+        private val currentUrlStatic = _currentUrl.asStateFlow()
     }
 
     init {
@@ -259,8 +262,7 @@ class CefBrowserPanel
     override var canGoBack: Boolean? = browser?.canGoBack()
     override var canGoForward: Boolean? = browser?.canGoForward()
 
-    private val _currentUrl = MutableStateFlow("" to 0)
-    override val currentUrl = _currentUrl.asStateFlow()
+    override val currentUrl = currentUrlStatic
 
     override fun loadUrl(url: String) {
         browser?.loadURL(url)

@@ -43,6 +43,7 @@ import smol.app.themes.SmolTheme
 import smol.app.themes.SmolTheme.lighten
 import smol.app.util.onEnterKeyPressed
 import smol.app.util.openAsUriInBrowser
+import smol.app.util.parseHtml
 import smol.app.util.smolPreview
 import smol.mod_repo.Image
 import smol.mod_repo.ModSource
@@ -65,6 +66,27 @@ fun AppScope.scrapedModCard(
 ) {
     var isBeingHovered by remember { mutableStateOf(false) }
     val markdownWidth = 800
+    val urls = mod.urls()
+    val directDownloadDialog = {
+        alertDialogSetter.invoke {
+            SmolAlertDialog(
+                onDismissRequest = ::dismissAlertDialog,
+                title = { Text(style = SmolTheme.alertDialogTitle(), text = mod.name) },
+                text = {
+                    Text(
+                        style = SmolTheme.alertDialogBody(),
+                        text = "Do you want to download '${mod.name}'?"
+                    )
+                },
+                confirmButton = {
+                    Button(onClick = { urls[ModUrlType.Download]?.run { linkLoader.value?.invoke(this.toString()) } }) {
+                        Text("Download")
+                    }
+                },
+                dismissButton = { Button(onClick = ::dismissAlertDialog) { Text("Cancel") } }
+            )
+        }
+    }
 
     Card(
         modifier = modifier
@@ -76,7 +98,13 @@ fun AppScope.scrapedModCard(
                 shape = SmolTheme.smolFullyClippedButtonShape()
             )
             .clickable {
-                mod.link?.run { linkLoader.value?.invoke(this.toString()) }
+                when {
+                    urls.containsKey(ModUrlType.Forum) ->
+                        urls[ModUrlType.Forum]?.run { linkLoader.value?.invoke(this.toString()) }
+                    urls.containsKey(ModUrlType.NexusMods) ->
+                        urls[ModUrlType.NexusMods]?.run { linkLoader.value?.invoke(this.toString()) }
+                    urls.containsKey(ModUrlType.Download) -> directDownloadDialog.invoke()
+                }
             }
             .pointerMoveFilter(
                 onEnter = { isBeingHovered = true; false },
@@ -198,6 +226,8 @@ fun AppScope.scrapedModCard(
                 BrowserIcon(iconModifier = Modifier.alpha(alphaOfHoverDimmedElements.value), mod = mod)
                 DiscordIcon(iconModifier = Modifier.alpha(alphaOfHoverDimmedElements.value), mod = mod)
                 NexusModsIcon(iconModifier = Modifier.alpha(alphaOfHoverDimmedElements.value), mod = mod)
+                DirectDownloadIcon(iconModifier = Modifier.alpha(alphaOfHoverDimmedElements.value), mod = mod)
+                DebugIcon(iconModifier = Modifier.alpha(alphaOfHoverDimmedElements.value), mod = mod)
             }
         }
     }
@@ -332,7 +362,7 @@ fun scrapedModCardPreview() = smolPreview {
     )
 }
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun BrowserIcon(modifier: Modifier = Modifier, iconModifier: Modifier = Modifier, mod: ScrapedMod) {
     val forumUrl = mod.urls()[ModUrlType.Forum]?.toString()
@@ -363,7 +393,7 @@ fun BrowserIcon(modifier: Modifier = Modifier, iconModifier: Modifier = Modifier
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
 @Composable
 fun AppScope.DiscordIcon(modifier: Modifier = Modifier, iconModifier: Modifier = Modifier, mod: ScrapedMod) {
     val discordUrl = mod.urls()[ModUrlType.Discord]
@@ -426,7 +456,7 @@ fun AppScope.DiscordIcon(modifier: Modifier = Modifier, iconModifier: Modifier =
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun NexusModsIcon(modifier: Modifier = Modifier, iconModifier: Modifier = Modifier, mod: ScrapedMod) {
     val nexusModsUrl = mod.urls()[ModUrlType.NexusMods]
@@ -455,5 +485,89 @@ fun NexusModsIcon(modifier: Modifier = Modifier, iconModifier: Modifier = Modifi
                 tint = SmolTheme.dimmedIconColor()
             )
         }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun DirectDownloadIcon(modifier: Modifier = Modifier, iconModifier: Modifier = Modifier, mod: ScrapedMod) {
+    val downloadUrl = mod.urls()[ModUrlType.Download]
+
+    if (downloadUrl?.toString()?.isBlank() == false) {
+        val descText = "Download.\n$downloadUrl"
+        SmolTooltipArea(
+            modifier = modifier,
+            tooltip = { SmolTooltipText(text = descText) }) {
+            Icon(
+                painter = painterResource("icon-direct-install.svg"),
+                contentDescription = descText,
+                modifier = iconModifier
+                    .padding(top = 8.dp)
+                    .size(16.dp)
+                    .padding(1.dp)
+                    .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)))
+                    .mouseClickable {
+                        if (this.buttons.isPrimaryPressed) {
+                            runCatching {
+                                downloadUrl.toString().openAsUriInBrowser()
+                            }
+                                .onFailure { Logger.warn(it) }
+                        }
+                    },
+                tint = SmolTheme.dimmedIconColor()
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
+@Composable
+fun AppScope.DebugIcon(modifier: Modifier = Modifier, iconModifier: Modifier = Modifier, mod: ScrapedMod) {
+    val descText = "Display all info (debug)"
+    SmolTooltipArea(
+        modifier = modifier,
+        tooltip = { SmolTooltipText(text = descText) }) {
+        Icon(
+            painter = painterResource("icon-debug.svg"),
+            contentDescription = descText,
+            modifier = iconModifier
+                .padding(top = 8.dp)
+                .size(16.dp)
+                .padding(1.dp)
+                .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)))
+                .mouseClickable {
+                    if (this.buttons.isPrimaryPressed) {
+                        alertDialogSetter.invoke {
+                            SmolAlertDialog(
+                                modifier = modifier
+                                    .widthIn(min = 700.dp)
+                                    .onEnterKeyPressed { dismissAlertDialog(); true },
+                                onDismissRequest = ::dismissAlertDialog,
+                                title = { Text(text = mod.name, style = SmolTheme.alertDialogTitle()) },
+                                text = {
+                                    SelectionContainer {
+                                        Box(
+                                            Modifier
+                                                .padding(top = SmolTheme.topBarHeight)
+                                        ) {
+                                            Column {
+                                                Divider(
+                                                    Modifier.padding(top = 8.dp, bottom = 4.dp).height(2.dp)
+                                                        .fillMaxWidth()
+                                                )
+                                                Text(
+                                                    "<b>Mod Info</b>\n${mod}".parseHtml(),
+                                                    modifier = Modifier.padding(top = 4.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            )
+                        }
+                    }
+                },
+            tint = SmolTheme.dimmedIconColor()
+        )
     }
 }

@@ -22,7 +22,7 @@ import org.cef.callback.CefDownloadItem
 import org.cef.callback.CefDownloadItemCallback
 import org.cef.handler.CefAppHandlerAdapter
 import org.cef.handler.CefDownloadHandler
-import smol.app.browser.DownloadHander
+import smol.app.browser.DownloadHandler
 //import sun.tools.jconsole.inspector.XDataViewer
 import java.awt.BorderLayout
 import java.awt.Component
@@ -90,7 +90,7 @@ class CefBrowserWindow//                XDataViewer.dispose(null)// calling Syst
     startURL: String,
     useOSR: Boolean,
     isTransparent: Boolean,
-    private val downloadHandler: DownloadHander?
+    private val downloadHandler: DownloadHandler?
 ) : JFrame() {//, ChromiumBrowser {
     companion object {
         private const val serialVersionUID = -5570653778104813836L

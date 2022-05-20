@@ -397,9 +397,8 @@ fun AppScope.ModBrowserView(
                                             }
                                         }
                                         embeddedBrowser(
-                                            browser,
-                                            linkLoader,
-                                            defaultUrl ?: Constants.FORUM_MOD_INDEX_URL
+                                            onBrowserLoaded = { browser.value = it },
+                                            startUrl = defaultUrl ?: Constants.FORUM_MOD_INDEX_URL
                                         )
                                     } else {
                                         Text(
@@ -451,124 +450,128 @@ class ModBrowserLinkLoader(private val linkLoader: MutableState<((String) -> Uni
 
 @Composable
 private fun AppScope.embeddedBrowser(
-    browser: MutableState<ChromiumBrowser?>,
-    linkLoader: MutableState<((String) -> Unit)?>,
+    onBrowserLoaded: (ChromiumBrowser) -> Unit,
     startUrl: String
 ) {
-    val background = MaterialTheme.colors.background
     val useCEF = Constants.isJCEFEnabled()
 
     if (useCEF) {
-        SwingPanel(
-            background = MaterialTheme.colors.background,
-            modifier = Modifier
-                .padding(start = 16.dp)
-                .fillMaxHeight()
-                .fillMaxWidth()
-                .sizeIn(minWidth = 200.dp),
-            factory = {
-                CefBrowserPanel(
-                    startURL = startUrl,
-                    useOSR = Platform.Linux == currentPlatform,
-                    isTransparent = false,
-                    downloadHandler = object : DownloadHander {
-                        override fun onStart(
-                            itemId: String,
-                            suggestedFileName: String?,
-                            totalBytes: Long
-                        ) {
-                            val item = DownloadItem(
-                                id = itemId
-                            )
-                                .apply {
-                                    this.path.value = getDownloadPathFor(suggestedFileName)
-                                    this.totalBytes.value = totalBytes
-                                }
-                            SL.UI.downloadManager.addDownload(item)
-                        }
+        val downloadHandler = createDownloadHandler()
 
-                        override fun onProgressUpdate(
-                            itemId: String,
-                            progressBytes: Long?,
-                            totalBytes: Long?,
-                            speedBps: Long?,
-                            endTime: Date
-                        ) {
-                            SL.UI.downloadManager.downloads.value.firstOrNull { it.id == itemId }
-                                ?.let { download ->
-                                    runBlocking {
-                                        if (progressBytes != null)
-                                            download.progressBytes.emit(progressBytes)
-                                        if (speedBps != null)
-                                            download.bitsPerSecond.emit(speedBps)
-                                    }
-                                    if (download.status.value is DownloadItem.Status.NotStarted)
-                                        runBlocking {
-                                            download.status.emit(DownloadItem.Status.Downloading)
-                                        }
-                                }
+//        Box(
+//            modifier = Modifier.padding(8.dp)
+//                .recomposeHighlighter()
+//        ) {
+            SwingPanel(
+                background = MaterialTheme.colors.background,
+                modifier = Modifier
+                    .padding(start = 16.dp)
+                    .fillMaxHeight()
+                    .fillMaxWidth()
+                    .sizeIn(minWidth = 200.dp),
+                factory = {
+                    CefBrowserPanel(
+                        startURL = startUrl,
+                        useOSR = Platform.Linux == currentPlatform,
+                        isTransparent = false,
+                        downloadHandler = downloadHandler
+                    )
+                        .also { browserPanel ->
+                            onBrowserLoaded.invoke(browserPanel)
                         }
-
-                        override fun onCanceled(itemId: String) {
-                            SL.UI.downloadManager.downloads.value.firstOrNull { it.id == itemId }
-                                ?.let { download ->
-                                    runBlocking {
-                                        download.status.emit(
-                                            DownloadItem.Status.Failed(
-                                                RuntimeException(
-                                                    "Download canceled."
-                                                )
-                                            )
-                                        )
-                                    }
-                                }
-                        }
-
-                        override fun onCompleted(itemId: String) {
-                            SL.UI.downloadManager.downloads.value.firstOrNull { it.id == itemId }
-                                ?.let { download ->
-                                    runBlocking {
-                                        if (download.totalBytes.value != null)
-                                            download.progressBytes.emit(download.totalBytes.value ?: 0)
-                                        download.status.emit(DownloadItem.Status.Completed)
-                                    }
-
-                                    if (download.path.value != null) {
-                                        GlobalScope.launch(Dispatchers.IO) {
-                                            val destinationFolder = SL.gamePathManager.getModsPath()
-                                            if (destinationFolder != null) {
-                                                SL.access.installFromUnknownSource(
-                                                    inputFile = download.path.value!!,
-                                                    destinationFolder = destinationFolder,
-                                                    promptUserToReplaceExistingFolder = {
-                                                        this@embeddedBrowser.duplicateModAlertDialogState.showDialogBooleo(
-                                                            it
-                                                        )
-                                                    }
-                                                )
-                                                SL.access.reload()
-                                            }
-                                        }
-                                    }
-                                }
-                        }
-
-                        override fun getDownloadPathFor(filename: String?): Path =
-                            Constants.TEMP_DIR.resolve(
-                                filename?.ifEmpty { null } ?: UUID.randomUUID().toString())
-                    }
-                )
-                    .also { browserPanel ->
-                        browser.value = browserPanel
-                        linkLoader.value = { url ->
-                            browserPanel.loadUrl(url)
-                        }
-                    }
-            }
-        )
+                }
+            )
+//        }
     } else {
 //        javaFxBrowser(jfxpanel, background, linkLoader)
     }
+}
+
+private fun AppScope.createDownloadHandler() = object : DownloadHandler {
+    override fun onStart(
+        itemId: String,
+        suggestedFileName: String?,
+        totalBytes: Long
+    ) {
+        val item = DownloadItem(
+            id = itemId
+        )
+            .apply {
+                this.path.value = getDownloadPathFor(suggestedFileName)
+                this.totalBytes.value = totalBytes
+            }
+        SL.UI.downloadManager.addDownload(item)
+    }
+
+    override fun onProgressUpdate(
+        itemId: String,
+        progressBytes: Long?,
+        totalBytes: Long?,
+        speedBps: Long?,
+        endTime: Date
+    ) {
+        SL.UI.downloadManager.downloads.value.firstOrNull { it.id == itemId }
+            ?.let { download ->
+                runBlocking {
+                    if (progressBytes != null)
+                        download.progressBytes.emit(progressBytes)
+                    if (speedBps != null)
+                        download.bitsPerSecond.emit(speedBps)
+                }
+                if (download.status.value is DownloadItem.Status.NotStarted)
+                    runBlocking {
+                        download.status.emit(DownloadItem.Status.Downloading)
+                    }
+            }
+    }
+
+    override fun onCanceled(itemId: String) {
+        SL.UI.downloadManager.downloads.value.firstOrNull { it.id == itemId }
+            ?.let { download ->
+                runBlocking {
+                    download.status.emit(
+                        DownloadItem.Status.Failed(
+                            RuntimeException(
+                                "Download canceled."
+                            )
+                        )
+                    )
+                }
+            }
+    }
+
+    override fun onCompleted(itemId: String) {
+        SL.UI.downloadManager.downloads.value.firstOrNull { it.id == itemId }
+            ?.let { download ->
+                runBlocking {
+                    if (download.totalBytes.value != null)
+                        download.progressBytes.emit(download.totalBytes.value ?: 0)
+                    download.status.emit(DownloadItem.Status.Completed)
+                }
+
+                if (download.path.value != null) {
+                    GlobalScope.launch(Dispatchers.IO) {
+                        val destinationFolder = SL.gamePathManager.getModsPath()
+                        if (destinationFolder != null) {
+                            SL.access.installFromUnknownSource(
+                                inputFile = download.path.value!!,
+                                destinationFolder = destinationFolder,
+                                promptUserToReplaceExistingFolder = {
+                                    this@createDownloadHandler.duplicateModAlertDialogState.showDialogBooleo(
+                                        it
+                                    )
+                                }
+                            )
+                            SL.access.reload()
+                        }
+                    }
+                }
+            }
+    }
+
+    override fun getDownloadPathFor(filename: String?): Path =
+        Constants.TEMP_DIR.resolve(
+            filename?.ifEmpty { null } ?: UUID.randomUUID().toString())
 }
 
 //@OptIn(ExperimentalFoundationApi::class)

@@ -15,7 +15,7 @@ package smol.app.browser
 import java.nio.file.Path
 import java.util.*
 
-interface DownloadHander {
+interface DownloadHandler {
     fun onStart(itemId: String, suggestedFileName: String?, totalBytes: Long)
     fun onProgressUpdate(itemId: String, progressBytes: Long?, totalBytes: Long?, speedBps: Long?, endTime: Date)
     fun onCanceled(itemId: String)

@@ -96,7 +96,6 @@ internal object DiscordReader {
                     ?.prefer { it.contains("patreon") }
                     ?.prefer { it.contains("bitbucket") }
                     ?.prefer { it.contains("github") }
-                    ?.prefer { it.contains("fractalsoftworks") }
                     ?.firstOrNull()
                     ?.let { kotlin.runCatching { Url(it) }.onFailure { Timber.w(it) }.getOrNull() }
                 ScrapedMod(
@@ -108,10 +107,11 @@ internal object DiscordReader {
                     authors = message.author?.username ?: "",
                     authorsList = message.author?.username.asList(),
                     forumPostLink = forumUrl,
-                    link = downloadUrl,
+                    link = downloadUrl ?: forumUrl,
                     urls = listOfNotNull(
                         forumUrl?.let { ModUrlType.Forum to forumUrl },
                         ModUrlType.Discord to Url("https://discord.com/channels/$serverId/$modUpdatesChannelId/${message.id}"),
+                        downloadUrl?.let { ModUrlType.Download to downloadUrl }
                     ).toMap(),
                     source = ModSource.Discord,
                     sources = listOf(ModSource.Discord),

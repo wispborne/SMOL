@@ -13,7 +13,6 @@
 package smol.app.home
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.Divider
 import androidx.compose.material.ExperimentalMaterialApi
@@ -35,7 +34,6 @@ fun debugDialog(
     mod: Mod,
     onDismiss: () -> Unit
 ) {
-    val scrollState = rememberScrollState()
     SmolAlertDialog(
         modifier = modifier
             .widthIn(min = 700.dp)
