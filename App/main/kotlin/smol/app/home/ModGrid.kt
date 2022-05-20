@@ -9,13 +9,9 @@
  * - The software author or license can not be held liable for any damages inflicted by the software.
  * The full license is available from <https://www.gnu.org/licenses/gpl-3.0.txt>.
  */
-
-@file:OptIn(ExperimentalAnimationApi::class)
-
 package smol.app.home
 
 import AppScope
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.VerticalScrollbar
@@ -61,7 +57,7 @@ fun AppScope.ModGridView(
     modifier: Modifier = Modifier,
     mods: List<Mod?>
 ) {
-    Timber.i { "Rendering mod grid." }
+    Timber.d { "Rendering mod grid." }
     val contentPadding = 16.dp
     val favoritesWidth = 40.dp
     val checkboxesWidth = 40.dp

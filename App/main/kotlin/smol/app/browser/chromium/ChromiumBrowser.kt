@@ -30,4 +30,5 @@ interface ChromiumBrowser {
      * Once you quit, you can't create it again.
      */
     fun quit()
+    fun restart()
 }

@@ -86,26 +86,34 @@ fun WindowState.appView() {
             val updaterConfigAsync =
                 async { kotlin.runCatching { SL.UI.updaterUpdater.fetchRemoteConfig(updateChannel) }.getOrNull() }
 
-            val remoteConfig = remoteConfigAsync.await()
-            if (remoteConfig == null) {
-                Timber.w { "Unable to fetch remote config, aborting update check." }
-            } else {
-                UpdateSmolToast().updateUpdateToast(
-                    updateConfig = remoteConfig,
-                    toasterState = SL.UI.toaster,
-                    smolUpdater = SL.UI.smolUpdater
-                )
-            }
-
             val updaterConfig = updaterConfigAsync.await()
 
             if (updaterConfig != null && updaterConfig.requiresUpdate()) {
-                Timber.i { "Found update for the SMOL updater, updating it in the background." }
-                kotlin.runCatching {
-                    SL.UI.updaterUpdater.downloadUpdateZip(updaterConfig)
-                    SL.UI.updaterUpdater.installUpdate()
+                Timber.i { "Found update for the SMOL updater." }
+                UpdateSmolToast().updateUpdateToast(
+                    updateConfig = updaterConfig,
+                    toasterState = SL.UI.toaster,
+                    smolUpdater = SL.UI.updaterUpdater
+                )
+
+//                Timber.i { "Found update for the SMOL updater, updating it in the background." }
+//                kotlin.runCatching {
+//                    SL.UI.updaterUpdater.downloadUpdateZip(updaterConfig)
+//                    SL.UI.updaterUpdater.installUpdate()
+//                }
+            } else {
+                val remoteConfig = remoteConfigAsync.await()
+                if (remoteConfig == null) {
+                    Timber.w { "Unable to fetch remote config, aborting update check." }
+                } else {
+                    UpdateSmolToast().updateUpdateToast(
+                        updateConfig = remoteConfig,
+                        toasterState = SL.UI.toaster,
+                        smolUpdater = SL.UI.smolUpdater
+                    )
                 }
             }
+
         }
     }
 
@@ -303,8 +311,9 @@ private suspend fun reloadModsInner(forceRefreshVersionChecker: Boolean) {
                 val previousVariantIds = SL.access.mods.value?.mods.orEmpty().flatMap { it.variants }.map { it.smolId }
                 SL.access.reload()
                 val mods = SL.access.mods.value?.mods ?: emptyList()
-                val hasNewVariantBeenAdded = SL.access.mods.value?.mods.orEmpty().flatMap { it.variants }.map { it.smolId }
-                    .any { newVariantId -> newVariantId !in previousVariantIds }
+                val hasNewVariantBeenAdded =
+                    SL.access.mods.value?.mods.orEmpty().flatMap { it.variants }.map { it.smolId }
+                        .any { newVariantId -> newVariantId !in previousVariantIds }
 
                 listOf(
                     async {

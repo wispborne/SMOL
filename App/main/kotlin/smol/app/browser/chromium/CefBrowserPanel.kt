@@ -32,6 +32,7 @@ import org.cef.handler.CefLoadHandler.ErrorCode
 import org.cef.network.CefRequest.TransitionType
 import smol.access.Constants
 import smol.app.browser.DownloadHander
+import smol.timber.ktx.Timber
 import tests.detailed.handler.MessageRouterHandler
 import tests.detailed.handler.MessageRouterHandlerEx
 import java.awt.BorderLayout
@@ -39,7 +40,6 @@ import java.awt.Component
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import javax.swing.JPanel
-import javax.swing.JTextField
 import kotlin.io.path.absolutePathString
 import kotlin.random.Random
 
@@ -122,15 +122,14 @@ class CefBrowserPanel
 //     background task to handle CEF's message loop and takes care of
 //     shutting down CEF after disposing it.
     (
-    startURL: String,
-    useOSR: Boolean,
-    isTransparent: Boolean,
+    private val startURL: String,
+    private val useOSR: Boolean,
+    private val isTransparent: Boolean,
     private val downloadHandler: DownloadHander
 ) : JPanel(), ChromiumBrowser {
 
     companion object {
         private val serialVersionUID = -5570653778104813836L
-        private var address: JTextField? = null
         var cefApp: CefApp? = null
         var client: CefClient? = null
         var browser: CefBrowser? = null
@@ -138,17 +137,22 @@ class CefBrowserPanel
     }
 
     init {
+        init()
+    }
+
+    private fun init() {
         if (cefApp == null) {
+            Timber.i { "Initializing CEF App." }
             val settings = CefSettings()
                 .apply {
                     windowless_rendering_enabled = useOSR
                     cache_path = Constants.CEF_STORAGE_PATH.absolutePathString()
                 }
-            cefApp = CefApp.getInstance(
-//                arrayOf("--proxy-server=94.140.14.14"),
-                settings
-            )
+            //                arrayOf("--proxy-server=94.140.14.14"),
+            cefApp = CefApp.getInstance(settings)
+        }
 
+        if (client == null) {
             // (2) JCEF can handle one to many browser instances simultaneous. These
             //     browser instances are logically grouped together by an instance of
             //     the class CefClient. In your application you can create one to many
@@ -163,6 +167,7 @@ class CefBrowserPanel
             //     events. By assigning handlers to CefClient you can control the
             //     behavior of the browser. See example.detailed.SimpleFrameExample for an example
             //     of how to use these handlers.
+            Timber.i { "Initializing CEF Client." }
             client = cefApp?.createClient()
 
             // (3) One CefBrowser instance is responsible to control what you'll see on
@@ -180,16 +185,6 @@ class CefBrowserPanel
             browser = client?.createBrowser(startURL, useOSR, isTransparent)
             browserUI = browser?.uiComponent
 
-            // (4) For this minimal browser, we need only a text field to enter an URL
-            //     we want to navigate to and a CefBrowser window to display the content
-            //     of the URL. To respond to the input of the user, we're registering an
-            //     anonymous ActionListener. This listener is performed each time the
-            //     user presses the "ENTER" key within the address field.
-            //     If this happens, the entered value is passed to the CefBrowser
-            //     instance to be loaded as URL.
-            address = JTextField(startURL, 100)
-            address?.addActionListener { browser?.loadURL(address?.text) }
-
             //    Beside the normal handler instances, we're registering a MessageRouter
             //    as well. That gives us the opportunity to reply to JavaScript method
             //    calls (JavaScript binding). We're using the default configuration, so
@@ -199,7 +194,7 @@ class CefBrowserPanel
             msgRouter.addHandler(MessageRouterHandler(), true)
             msgRouter.addHandler(MessageRouterHandlerEx(client), false)
             client!!.addMessageRouter(msgRouter)
-//            client!!.addDownloadHandler(DownloadDialog(JFrame()))
+            //            client!!.addDownloadHandler(DownloadDialog(JFrame()))
             client!!.addDownloadHandler(cefDownloadHandler())
             client!!.addLifeSpanHandler(object : CefLifeSpanHandlerAdapter() {
                 override fun onBeforePopup(
@@ -210,34 +205,47 @@ class CefBrowserPanel
                 }
             })
         }
+
         layout = BorderLayout()
         add(browserUI)
         setSize(800, 600)
         isVisible = true
-        AWTEventMonitor.addWindowListener(object : WindowAdapter() {
-            override fun windowClosing(e: WindowEvent?) {
-                CefApp.getInstance().dispose()
-            }
-        })
+        AWTEventMonitor.addWindowListener(
+            object : WindowAdapter() {
+                override fun windowClosing(e: WindowEvent?) {
+                    CefApp.getInstance().dispose()
+                }
+            })
 
         client?.addLoadHandler(
             object : CefLoadHandler {
                 override fun onLoadingStateChange(
-                    browser: CefBrowser,
+                    browser: CefBrowser?,
                     isLoading: Boolean,
                     canGoBack: Boolean,
                     canGoForward: Boolean
                 ) {
                     this@CefBrowserPanel.canGoBack = canGoBack
                     this@CefBrowserPanel.canGoForward = canGoForward
-                    _currentUrl.value = (browser.url ?: "") to Random.nextInt()
+                    val url = browser?.url
+                    Timber.d { "Url is '${browser?.url}' with isLoading=$isLoading." }
+
+                    if (url != null) {
+                        _currentUrl.value = url to Random.nextInt()
+                    }
                 }
 
                 override fun onLoadStart(browser: CefBrowser?, frame: CefFrame?, transitionType: TransitionType?) {
+                    Timber.d { "Loading started of url '${browser?.url}'." }
                 }
 
                 override fun onLoadEnd(browser: CefBrowser?, frame: CefFrame?, httpStatusCode: Int) {
-                    _currentUrl.value = (browser?.url ?: "") to Random.nextInt()
+                    val url = browser?.url
+                    Timber.d { "Loaded url '${browser?.url}'" }
+
+                    if (url != null) {
+                        _currentUrl.value = url to Random.nextInt()
+                    }
                 }
 
                 override fun onLoadError(
@@ -269,6 +277,13 @@ class CefBrowserPanel
     override fun quit() {
         CefApp.getInstance().dispose()
         cefApp = null
+    }
+
+    override fun restart() {
+        Timber.i { "Restarting CEF." }
+        client?.dispose()
+        client = null
+        init()
     }
 
     fun cefDownloadHandler() = object : CefDownloadHandler {

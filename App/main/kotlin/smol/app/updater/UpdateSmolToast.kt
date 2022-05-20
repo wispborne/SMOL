@@ -30,6 +30,8 @@ import smol.app.toasts.Toast
 import smol.app.toasts.ToasterState
 import smol.timber.ktx.Timber
 import smol.update_installer.BaseAppUpdater
+import smol.update_installer.SmolUpdater
+import smol.updatestager.UpdaterUpdater
 import smol.utilities.bytesAsShortReadableMB
 import smol.utilities.bytesToMB
 import smol.utilities.ellipsizeAfter
@@ -57,8 +59,14 @@ class UpdateSmolToast {
         toasterState: ToasterState,
         smolUpdater: BaseAppUpdater
     ) {
+        val name = when (smolUpdater) {
+            is SmolUpdater -> "SMOL"
+            is UpdaterUpdater -> "Updater"
+            else -> throw RuntimeException(smolUpdater::class.qualifiedName)
+        }
+
         if (updateConfig?.requiresUpdate() == true) {
-            Timber.i { "Adding update toast." }
+            Timber.i { "Adding update toast for config '${smolUpdater.updateZipFile}'." }
             toasterState.addItem(
                 toast = Toast(
                     id = UPDATE_TOAST_ID,
@@ -88,10 +96,10 @@ class UpdateSmolToast {
                                             UpdateStage.Downloading ->
                                                 "Downloading ${version?.let { version -> "$version: " } ?: ""}" +
                                                         (fileProgress.value?.name?.ellipsizeAfter(30) ?: "...")
-                                            UpdateStage.DownloadFailed -> "SMOL update download failed."
-                                            UpdateStage.ReadyToInstall -> "SMOL update downloaded."
-                                            UpdateStage.Installing -> "Installing SMOL update."
-                                            else -> "${version?.ifBlank { null } ?: "A new version"} of SMOL is available."
+                                            UpdateStage.DownloadFailed -> "$name update download failed."
+                                            UpdateStage.ReadyToInstall -> "$name update downloaded."
+                                            UpdateStage.Installing -> "Installing $name update."
+                                            else -> "${version?.ifBlank { null } ?: "A new version"} of $name is available."
                                         }
                                     )
 
@@ -201,7 +209,9 @@ class UpdateSmolToast {
                 )
             )
         } else {
-            Timber.i { "Removing update toast." }
+            Timber.i {
+                "Removing update toast for config '${smolUpdater.updateZipFile}'."
+            }
             toasterState.remove(toastId = UPDATE_TOAST_ID)
         }
     }

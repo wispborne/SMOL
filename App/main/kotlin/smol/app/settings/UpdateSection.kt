@@ -129,36 +129,47 @@ fun updateSection(scope: CoroutineScope) {
 }
 
 private suspend fun checkForUpdate(): Configuration {
-    val remoteConfig =
-        runCatching { SL.UI.updateChannelManager.fetchRemoteConfig(SL.UI.smolUpdater, SL.appConfig) }
-            .onFailure {
-                UpdateSmolToast().updateUpdateToast(
-                    updateConfig = null,
-                    toasterState = SL.UI.toaster,
-                    smolUpdater = SL.UI.smolUpdater
-                )
-            }
-            .onSuccess { remoteConfig ->
-                UpdateSmolToast().updateUpdateToast(
-                    updateConfig = remoteConfig,
-                    toasterState = SL.UI.toaster,
-                    smolUpdater = SL.UI.smolUpdater
-                )
-            }
+    val updaterConfig = runCatching {
+        SL.UI.updateChannelManager.fetchRemoteConfig(SL.UI.smolUpdater, SL.appConfig)
 
-    runCatching {
-        val updaterConfig = SL.UI.updateChannelManager.fetchRemoteConfig(SL.UI.smolUpdater, SL.appConfig)
-
-        if (updaterConfig.requiresUpdate()) {
-            Timber.i { "Found update for the SMOL updater, updating it in the background." }
-            runCatching {
-                SL.UI.updaterUpdater.downloadUpdateZip(updaterConfig)
-                SL.UI.updaterUpdater.installUpdate()
-            }
-        }
     }
         .onFailure { Timber.w(it) }
+        .getOrNull()
 
-    return remoteConfig
-        .getOrThrow()
+    return if (updaterConfig?.requiresUpdate() == true) {
+        Timber.i { "Found update for the SMOL updater." }
+        UpdateSmolToast().updateUpdateToast(
+            updateConfig = updaterConfig,
+            toasterState = SL.UI.toaster,
+            smolUpdater = SL.UI.updaterUpdater
+        )
+
+        updaterConfig
+
+//            Timber.i { "Found update for the SMOL updater, updating it in the background." }
+//            runCatching {
+//                SL.UI.updaterUpdater.downloadUpdateZip(updaterConfig)
+//                SL.UI.updaterUpdater.installUpdate()
+//            }
+    } else {
+        val remoteConfig =
+            runCatching { SL.UI.updateChannelManager.fetchRemoteConfig(SL.UI.smolUpdater, SL.appConfig) }
+                .onFailure {
+                    UpdateSmolToast().updateUpdateToast(
+                        updateConfig = null,
+                        toasterState = SL.UI.toaster,
+                        smolUpdater = SL.UI.smolUpdater
+                    )
+                }
+                .onSuccess { remoteConfig ->
+                    UpdateSmolToast().updateUpdateToast(
+                        updateConfig = remoteConfig,
+                        toasterState = SL.UI.toaster,
+                        smolUpdater = SL.UI.smolUpdater
+                    )
+                }
+
+        remoteConfig
+            .getOrThrow()
+    }
 }

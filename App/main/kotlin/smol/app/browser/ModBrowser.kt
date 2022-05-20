@@ -37,6 +37,7 @@ import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.collectLatest
 import org.jetbrains.compose.splitpane.ExperimentalSplitPaneApi
 import org.jetbrains.compose.splitpane.HorizontalSplitPane
 import org.jetbrains.compose.splitpane.rememberSplitPaneState
@@ -117,30 +118,6 @@ fun AppScope.ModBrowserView(
 //                        )
 //                    }
 //                }
-                if (Constants.isJCEFEnabled()) {
-                    SmolTooltipArea(
-                        modifier = Modifier
-                            .padding(end = 8.dp),
-                        tooltip = { SmolTooltipText(text = "Open in an external browser") }) {
-                        IconButton(
-                            onClick = {
-                                runCatching {
-                                    browser.value?.currentUrl?.value?.first?.openAsUriInBrowser()
-                                }
-                                    .onFailure { Logger.warn(it) }
-                            }
-                        ) {
-                            Icon(
-                                painter = painterResource("icon-web.svg"),
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .width(24.dp)
-                                    .height(24.dp)
-                                    .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)))
-                            )
-                        }
-                    }
-                }
                 Spacer(modifier = Modifier.width(16.dp))
             }
         }, content = {
@@ -330,7 +307,8 @@ fun AppScope.ModBrowserView(
                                             }
                                             var enteredUrl by remember { mutableStateOf("") }
                                             LaunchedEffect(Unit) {
-                                                browser.value?.currentUrl?.collect {
+                                                browser.value?.currentUrl?.collectLatest {
+                                                    Timber.i { "New url '${it.first}'" }
                                                     enteredUrl = it.first
                                                     canGoBack = browser.value?.canGoBack ?: false
                                                     canGoForward = browser.value?.canGoForward ?: false
@@ -339,6 +317,7 @@ fun AppScope.ModBrowserView(
                                             SmolOutlinedTextField(
                                                 modifier = Modifier.weight(1f)
                                                     .align(Alignment.CenterVertically)
+                                                    .padding(end = 8.dp)
                                                     .onEnterKeyPressed {
                                                         browser.value?.loadUrl(enteredUrl)
                                                         true
@@ -349,6 +328,57 @@ fun AppScope.ModBrowserView(
                                                 maxLines = 1,
                                                 singleLine = true
                                             )
+                                            SmolTooltipArea(
+                                                modifier = Modifier
+                                                    .padding(end = 8.dp),
+                                                tooltip = { SmolTooltipText(text = "Open in an external browser") }) {
+                                                IconButton(
+                                                    onClick = {
+                                                        runCatching {
+                                                            browser.value?.currentUrl?.value?.first?.openAsUriInBrowser()
+                                                        }
+                                                            .onFailure { Logger.warn(it) }
+                                                    }
+                                                ) {
+                                                    Icon(
+                                                        painter = painterResource("icon-web.svg"),
+                                                        contentDescription = null,
+                                                        modifier = Modifier
+                                                            .width(24.dp)
+                                                            .height(24.dp)
+                                                            .pointerHoverIcon(
+                                                                PointerIcon(
+                                                                    Cursor.getPredefinedCursor(
+                                                                        Cursor.HAND_CURSOR
+                                                                    )
+                                                                )
+                                                            )
+                                                    )
+                                                }
+                                            }
+                                            SmolTooltipArea(
+                                                modifier = Modifier
+                                                    .padding(end = 8.dp),
+                                                tooltip = { SmolTooltipText(text = "Restart browser\nThe browser can be very finicky; giving it the ol' restart may fix it.") }) {
+                                                IconButton(
+                                                    onClick = {
+                                                        runCatching {
+                                                            browser.value?.restart()
+                                                            isModListFullscreen = true
+                                                            isModListFullscreen = false
+                                                        }
+                                                            .onFailure { Logger.warn(it) }
+                                                    }
+                                                ) {
+                                                    Icon(
+                                                        painter = painterResource("icon-repair.svg"),
+                                                        contentDescription = null,
+                                                        modifier = Modifier
+                                                            .width(24.dp)
+                                                            .height(24.dp)
+                                                    )
+                                                }
+                                            }
                                             SmolTooltipArea(
                                                 modifier = Modifier,
                                                 tooltip = { SmolTooltipText(text = "Toggle full-width browser") }) {
@@ -442,7 +472,6 @@ private fun AppScope.embeddedBrowser(
                     useOSR = Platform.Linux == currentPlatform,
                     isTransparent = false,
                     downloadHandler = object : DownloadHander {
-
                         override fun onStart(
                             itemId: String,
                             suggestedFileName: String?,
