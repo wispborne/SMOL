@@ -235,7 +235,7 @@ fun AppScope.scrapedModCard(
 
 @Composable
 private fun tags(modifier: Modifier = Modifier, mod: ScrapedMod) {
-    val tags = remember {
+    val tags =
         mod.categories().sorted() + mod.sources()
             .sortedWith(
                 compareBy<ModSource> { it == ModSource.Index }
@@ -251,7 +251,6 @@ private fun tags(modifier: Modifier = Modifier, mod: ScrapedMod) {
                 }
             }
 
-    }
     if (tags.isNotEmpty()) {
         Row(
             modifier = modifier
