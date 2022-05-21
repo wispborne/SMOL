@@ -12,7 +12,6 @@
 
 package smol.mod_repo
 
-import com.github.salomonbrys.kotson.registerTypeAdapter
 import com.google.gson.GsonBuilder
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
@@ -23,12 +22,9 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.coroutines.delay
 import smol.timber.ktx.Timber
-import smol.utilities.Jsanity
 import smol.utilities.asList
+import smol.utilities.parallelMap
 import smol.utilities.prefer
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import java.util.*
 
 /**
@@ -49,20 +45,14 @@ internal object DiscordReader {
     private val urlFinderRegex = Regex(
         """(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#-]*[\w@?^=%&\/~+#-])"""
     )
+    val noscrapeReaction = "\uD83D\uDD78️"
 
     internal suspend fun readAllMessages(config: Main.Companion.Config, gsonBuilder: GsonBuilder): List<ScrapedMod>? {
         val authToken = config.discordAuthToken ?: run {
             Timber.w { "No auth token found in ${Main.configFilePath}." }
             return@readAllMessages null
         }
-        val dateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
-            .withLocale(Locale.US)
-            .withZone(ZoneId.of("UTC"))
-        val jsanity = Jsanity(gsonBuilder
-            .registerTypeAdapter<Date> {
-                deserialize { Date.from(Instant.from(dateTimeFormatter.parse(it.json.asString))) }
-            }
-            .create())
+
         val httpClient =
             HttpClient(CIO) {
                 install(Logging)
@@ -77,41 +67,75 @@ internal object DiscordReader {
         return getMessages(
             httpClient = httpClient,
             authToken = authToken,
-            jsanity = jsanity,
             limit = if (config.lessScraping) 50 else Int.MAX_VALUE
         )
+            .filter { msg ->
+                val hasNoscrapeReaction = msg.reactions.orEmpty().any { it.emoji.name == noscrapeReaction }
+
+                if (hasNoscrapeReaction) {
+                    val isReactionFromPostAuthor = getReacters(
+                        httpClient = httpClient,
+                        authToken = authToken,
+                        emoji = noscrapeReaction,
+                        messageId = msg.id
+                    ).any { reacter -> reacter.id == msg.author?.id }
+
+                    if (isReactionFromPostAuthor) {
+                        Timber.d {
+                            "Skipping Discord mod '${msg.content?.lines()?.firstOrNull()}' " +
+                                    "because of reaction $noscrapeReaction."
+                        }
+
+                        return@filter false
+                    }
+                }
+
+                return@filter true
+            }
             .map { message ->
-                val messageLines = message.content?.lines()
+                // Drop any blank lines from the start of the post.
+                val messageLines = message.content?.lines().orEmpty().dropWhile { it.isBlank() }
                 val forumUrl = messageLines
-                    ?.mapNotNull { urlFinderRegex.find(it)?.value }
-                    ?.firstOrNull { it.contains("fractalsoftworks") }
+                    .mapNotNull { urlFinderRegex.find(it)?.value }
+                    .firstOrNull { it.contains("fractalsoftworks") }
                     ?.let { kotlin.runCatching { Url(it) }.onFailure { Timber.w(it) }.getOrNull() }
 
-                val downloadUrl = messageLines
-                    ?.mapNotNull { urlFinderRegex.find(it)?.value }
-                    ?.prefer { it.contains("/releases/download") }
-                    ?.prefer { it.contains("/releases") }
-                    ?.prefer { it.contains("dropbox") }
-                    ?.prefer { it.contains("drive.google") }
-                    ?.prefer { it.contains("patreon") }
-                    ?.prefer { it.contains("bitbucket") }
-                    ?.prefer { it.contains("github") }
-                    ?.firstOrNull()
+                class DownloadyUrl(val url: String, val isDownloadable: Boolean)
+
+                // Get all urls, remove ones that definitely aren't download urls, then check each to see
+                // if there's a file at the other end, as opposed to a website.
+                val downloadyUrls = messageLines
+                    .mapNotNull { urlFinderRegex.find(it)?.value }
+                    .filter { url -> thingsThatAreNotDownloady.none { url.contains(it) } }
+                    .parallelMap { DownloadyUrl(it, Common.isDownloadable(it)) }
+
+                val downloadArtifactUrl = downloadyUrls
+                    .mapNotNull { if (it.isDownloadable) it.url else null }
+                    .let { getBestPossibleDownloadHost(it) }
+                    .firstOrNull()
                     ?.let { kotlin.runCatching { Url(it) }.onFailure { Timber.w(it) }.getOrNull() }
+
+                val downloadPageUrl = downloadyUrls
+                    .mapNotNull { if (it.isDownloadable) null else it.url }
+                    .let { getBestPossibleDownloadHost(it) }
+                    .firstOrNull()
+                    ?.let { kotlin.runCatching { Url(it) }.onFailure { Timber.w(it) }.getOrNull() }
+
                 ScrapedMod(
-                    name = messageLines?.firstOrNull()?.removeMarkdownFromName() ?: "(Discord Mod)",
-                    summary = messageLines?.drop(1)?.take(2)?.joinToString(separator = "\n"),
-                    description = messageLines?.drop(1)?.joinToString(separator = "\n"),
+                    name = messageLines.firstOrNull()?.removeMarkdownFromName() ?: "(Discord Mod)",
+                    summary = messageLines.drop(1).take(2).joinToString(separator = "\n"),
+                    description = messageLines.drop(1).joinToString(separator = "\n"),
                     modVersion = null,
                     gameVersionReq = "",
                     authors = message.author?.username ?: "",
                     authorsList = message.author?.username.asList(),
                     forumPostLink = forumUrl,
-                    link = downloadUrl ?: forumUrl,
+                    link = downloadArtifactUrl ?: forumUrl,
                     urls = listOfNotNull(
                         forumUrl?.let { ModUrlType.Forum to forumUrl },
                         ModUrlType.Discord to Url("https://discord.com/channels/$serverId/$modUpdatesChannelId/${message.id}"),
-                        downloadUrl?.let { ModUrlType.Download to downloadUrl }
+                        downloadArtifactUrl?.let { ModUrlType.DirectDownload to downloadArtifactUrl },
+                        downloadPageUrl?.let { ModUrlType.DownloadPage to downloadPageUrl },
                     ).toMap(),
                     source = ModSource.Discord,
                     sources = listOf(ModSource.Discord),
@@ -137,6 +161,19 @@ internal object DiscordReader {
             .filter { it.name.isNotBlank() } // Remove any posts that don't contain text.
     }
 
+    val thingsThatAreNotDownloady = listOf("imgur.com", "cdn.discordapp.com")
+
+    private fun getBestPossibleDownloadHost(urls: List<String>) =
+        urls
+            .prefer { it.contains("/releases/download") }
+            .prefer { it.contains("/releases") }
+            .prefer { it.contains("dropbox") }
+            .prefer { it.contains("drive.google") }
+            .prefer { it.contains("patreon") }
+            .prefer { it.contains("bitbucket") }
+            .prefer { it.contains("github") }
+            .prefer { it.contains("mediafire") } // ugh
+
     private val markdownStyleSymbols = listOf("_", "*", "~", "`")
     private val surroundingMarkdownRegexes = markdownStyleSymbols.map { symbol ->
         Regex("""(.*)[$symbol](.*)[$symbol](.*)""")
@@ -158,7 +195,6 @@ internal object DiscordReader {
     private suspend fun getMessages(
         httpClient: HttpClient,
         authToken: String,
-        jsanity: Jsanity,
         limit: Int = Int.MAX_VALUE
     ): List<Message> {
         val messages = mutableListOf<Message>()
@@ -195,6 +231,18 @@ internal object DiscordReader {
         return messages
     }
 
+    private suspend fun getReacters(
+        httpClient: HttpClient,
+        authToken: String,
+        emoji: String,
+        messageId: String
+    ): List<User> {
+        return httpClient.request<List<User>>("$baseUrl/channels/$modUpdatesChannelId/messages/$messageId/reactions/$emoji") {
+            header("Authorization", "Bot $authToken")
+            accept(ContentType.Application.Json)
+        }
+    }
+
     private val discordUnrecognizedEmojiRegex = Regex("""(<:.+?:.+?>)""")
 
     private fun cleanUpMod(mod: ScrapedMod): ScrapedMod =
@@ -211,6 +259,7 @@ internal object DiscordReader {
         val edited_timestamp: Date?,
         val attachments: List<Attachment>?,
         val embeds: List<Embed>?,
+        val reactions: List<Reaction>?
     )
 
     private data class User(
@@ -233,5 +282,16 @@ internal object DiscordReader {
         val title: String?,
         val description: String?,
         val url: String?
+    )
+
+    private data class Reaction(
+        val count: Int,
+        val emoji: Emoji
+    )
+
+    private data class Emoji(
+        val id: String?,
+        val name: String?,
+        val user: User?
     )
 }

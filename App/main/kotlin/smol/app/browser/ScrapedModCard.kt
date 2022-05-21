@@ -79,7 +79,7 @@ fun AppScope.scrapedModCard(
                     )
                 },
                 confirmButton = {
-                    Button(onClick = { urls[ModUrlType.Download]?.run { linkLoader.value?.invoke(this.toString()) } }) {
+                    Button(onClick = { urls[ModUrlType.DirectDownload]?.run { linkLoader.value?.invoke(this.toString()) } }) {
                         Text("Download")
                     }
                 },
@@ -103,7 +103,7 @@ fun AppScope.scrapedModCard(
                         urls[ModUrlType.Forum]?.run { linkLoader.value?.invoke(this.toString()) }
                     urls.containsKey(ModUrlType.NexusMods) ->
                         urls[ModUrlType.NexusMods]?.run { linkLoader.value?.invoke(this.toString()) }
-                    urls.containsKey(ModUrlType.Download) -> directDownloadDialog.invoke()
+                    urls.containsKey(ModUrlType.DirectDownload) -> directDownloadDialog.invoke()
                 }
             }
             .pointerMoveFilter(
@@ -491,7 +491,7 @@ fun NexusModsIcon(modifier: Modifier = Modifier, iconModifier: Modifier = Modifi
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DirectDownloadIcon(modifier: Modifier = Modifier, iconModifier: Modifier = Modifier, mod: ScrapedMod) {
-    val downloadUrl = mod.urls()[ModUrlType.Download]
+    val downloadUrl = mod.urls()[ModUrlType.DirectDownload]
 
     if (downloadUrl?.toString()?.isBlank() == false) {
         val descText = "Download.\n$downloadUrl"

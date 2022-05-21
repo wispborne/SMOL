@@ -62,7 +62,8 @@ enum class ModUrlType {
     Forum,
     Discord,
     NexusMods,
-    Download
+    DirectDownload,
+    DownloadPage,
 }
 
 data class Image(
