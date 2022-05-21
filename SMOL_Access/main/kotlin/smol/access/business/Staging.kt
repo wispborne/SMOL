@@ -55,7 +55,8 @@ internal class Staging(
         Timber.i { "Disabling ${modVariant.smolId}: renamed to ${Constants.MOD_INFO_FILE_DISABLED_NAMES.first()}." }
 
         if (disableInVanillaLauncher) {
-            if (modVariant.mod(modsCache).isEnabledInGame) {
+            val mod = modVariant.mod(modsCache) ?: return Result.failure(NullPointerException())
+            if (mod.isEnabledInGame) {
                 Timber.i { "Disabling mod ${modVariant.modInfo.id} as part of disabling variant ${modVariant.smolId}." }
                 gameEnabledMods.disable(modVariant.modInfo.id)
             } else {
@@ -80,7 +81,7 @@ internal class Staging(
             return Result.failure(NullPointerException())
         }
 
-        if (modVariant.mod(modsCache).isEnabled(modVariant)) {
+        if (modVariant.mod(modsCache)?.isEnabled(modVariant) == true) {
             Timber.i { "Already enabled!: $modVariant" }
             return Result.success(Unit)
         }
@@ -108,7 +109,7 @@ internal class Staging(
         if (disableInVanillaLauncher) {
             modLoader.reload(listOf(modVariant.modInfo.id))
 
-            if (!modVariant.mod(modsCache).isEnabledInGame) {
+            if (modVariant.mod(modsCache)?.isEnabledInGame != true) {
                 gameEnabledMods.enable(modVariant.modInfo.id)
             } else {
                 Timber.i { "Mod was already enabled in enabled_mods.json." }

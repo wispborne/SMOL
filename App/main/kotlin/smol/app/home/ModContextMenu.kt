@@ -292,7 +292,7 @@ fun AppScope.modGridBulkActionMenuItems(checkedRows: SnapshotStateList<Mod>) =
 private fun enableAllDisabled(modVariants: List<ModVariant>?) {
     GlobalScope.launch(Dispatchers.IO) {
         modVariants
-            ?.filter { !it.mod(SL.access).isEnabled(it) }
+            ?.filter { it.mod(SL.access)?.isEnabled(it) == false }
             ?.parallelMap { SL.access.enableModVariant(it) }
     }
 }

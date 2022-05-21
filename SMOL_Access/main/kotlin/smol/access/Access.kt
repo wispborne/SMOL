@@ -101,13 +101,13 @@ class Access internal constructor(
         get() = modsCache.mods
     val areModsLoading = modLoader.isLoading
 
-    val modModificationState = MutableStateFlow<Map<ModId, smol.access.Access.ModModificationState>>(emptyMap())
+    val modModificationState = MutableStateFlow<Map<ModId, ModModificationState>>(emptyMap())
 
     sealed class ModModificationState {
-        object Ready : smol.access.Access.ModModificationState()
-        object DisablingVariants : smol.access.Access.ModModificationState()
-        object DeletingVariants : smol.access.Access.ModModificationState()
-        object EnablingVariant : smol.access.Access.ModModificationState()
+        object Ready : ModModificationState()
+        object DisablingVariants : ModModificationState()
+        object DeletingVariants : ModModificationState()
+        object EnablingVariant : ModModificationState()
     }
 
     /**
@@ -175,7 +175,7 @@ class Access internal constructor(
                     modModificationState.update {
                         it.toMutableMap().apply {
                             this[mod.id] =
-                                smol.access.Access.ModModificationState.DisablingVariants
+                                ModModificationState.DisablingVariants
                         }
                     }
                 }
@@ -197,7 +197,7 @@ class Access internal constructor(
                 modModificationState.update {
                     it.toMutableMap().apply {
                         this[mod.id] =
-                            smol.access.Access.ModModificationState.EnablingVariant
+                            ModModificationState.EnablingVariant
                     }
                 }
                 staging.enableModVariant(modVariant, modLoader)
@@ -209,7 +209,7 @@ class Access internal constructor(
             modModificationState.update {
                 it.toMutableMap().apply {
                     this[mod.id] =
-                        smol.access.Access.ModModificationState.Ready
+                        ModModificationState.Ready
                 }
             }
         }
@@ -219,8 +219,9 @@ class Access internal constructor(
         try {
             modModificationState.update {
                 it.toMutableMap().apply {
-                    this[modToEnable.mod(this@Access).id] =
-                        smol.access.Access.ModModificationState.EnablingVariant
+                    val mod = modToEnable.mod(this@Access) ?: return Result.failure(NullPointerException())
+                    this[mod.id] =
+                        ModModificationState.EnablingVariant
                 }
             }
             return staging.enableModVariant(modToEnable, modLoader)
@@ -228,8 +229,9 @@ class Access internal constructor(
             staging.manualReloadTrigger.trigger.emit("Enabled mod: $modToEnable")
             modModificationState.update {
                 it.toMutableMap().apply {
-                    this[modToEnable.mod(this@Access).id] =
-                        smol.access.Access.ModModificationState.Ready
+                    val mod = modToEnable.mod(this@Access) ?: return Result.failure(NullPointerException())
+                    this[mod.id] =
+                        ModModificationState.Ready
                 }
             }
         }
@@ -240,7 +242,7 @@ class Access internal constructor(
             modModificationState.update {
                 it.toMutableMap().apply {
                     this[mod.id] =
-                        smol.access.Access.ModModificationState.DisablingVariants
+                        ModModificationState.DisablingVariants
                 }
             }
             return staging.disableMod(mod)
@@ -249,19 +251,19 @@ class Access internal constructor(
             modModificationState.update {
                 it.toMutableMap().apply {
                     this[mod.id] =
-                        smol.access.Access.ModModificationState.Ready
+                        ModModificationState.Ready
                 }
             }
         }
     }
 
     suspend fun disableModVariant(modVariant: ModVariant): Result<Unit> {
-        val mod = modVariant.mod(this@Access)
+        val mod = modVariant.mod(this@Access) ?: return Result.failure(NullPointerException())
         try {
             modModificationState.update {
                 it.toMutableMap().apply {
                     this[mod.id] =
-                        smol.access.Access.ModModificationState.DisablingVariants
+                        ModModificationState.DisablingVariants
                 }
             }
             return staging.disableModVariant(modVariant)
@@ -270,7 +272,7 @@ class Access internal constructor(
             modModificationState.update {
                 it.toMutableMap().apply {
                     this[mod.id] =
-                        smol.access.Access.ModModificationState.Ready
+                        ModModificationState.Ready
                 }
             }
         }
@@ -281,7 +283,7 @@ class Access internal constructor(
         trace(onFinished = { _, millis ->
             Timber.i { "Deleted mod variant ${modVariant.smolId} folders in ${millis}ms. Remove staging/mods files? $removeUncompressedFolder." }
         }) {
-            val mod = modVariant.mod(this)
+            val mod = modVariant.mod(this) ?: return
             try {
                 modModificationState.update {
                     it.toMutableMap().apply {

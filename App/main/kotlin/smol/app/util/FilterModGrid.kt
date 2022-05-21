@@ -44,17 +44,16 @@ internal suspend fun filterModGrid(query: String, mods: List<Mod>, access: smol.
             mods
                 .parallelMap { mod ->
                     val variant = mod.findFirstEnabled ?: mod.findHighestVersion ?: return@parallelMap mod to mapOf()
-                    if (searchMethod == FilterType.FuzzyWuzzySearch)
-                        fuzzyWuzzyModSearch(
-                            query = query,
-                            variant = variant,
-                            access = access
-                        ) else
+//                    if (searchMethod == FilterType.FuzzyWuzzySearch)
+//                        fuzzyWuzzyModSearch(
+//                            query = query,
+//                            variant = variant,
+//                            access = access
+//                        ) else
                         sublimeFuzzyModSearch(
                             query = query,
                             variant = variant,
-                            mod = mod,
-                            access = access
+                            mod = mod
                         )
                 }
                 .filter { it.second.any { it.value > 70 } }
@@ -71,8 +70,7 @@ internal suspend fun filterModGrid(query: String, mods: List<Mod>, access: smol.
 private suspend fun sublimeFuzzyModSearch(
     query: String,
     variant: ModVariant,
-    mod: Mod,
-    access: smol.access.Access
+    mod: Mod
 ): Pair<Mod, Map<String, Int>> {
     val results = mutableMapOf<String, Int>() // match field name and value
     val modName = variant.modInfo.name
@@ -123,57 +121,57 @@ private suspend fun sublimeFuzzyModSearch(
     }
 
     Timber.d { "$modName's match of '$query' had a total score of ${results.values.sum()} and single highest of ${results.values.maxOrNull()}." }
-    return variant.mod(access) to results
+    return mod to results
 }
 
-@Deprecated("switch to sublime fuzzy")
-private fun fuzzyWuzzyModSearch(
-    query: String,
-    variant: ModVariant,
-    access: smol.access.Access
-): Pair<Mod, Map<String, Int>> {
-    val results = mutableMapOf<String, Int>() // match field name and value
-    val modName = variant.modInfo.name
-    val modAuthor = variant.modInfo.author
-
-    fun Int.filterAndAdd(name: String) {
-        results += name to this
-        Timber.d { "${Filter.searchMethod}: ${variant.modInfo.name} has a score of $this for '$query' in text \"${name}\"." }
-    }
-
-    val modAbbreviation = modName?.acronym() ?: ""
-
-    if (modAbbreviation.length > 1) {
-        FuzzySearch.partialRatio(query, modAbbreviation) { it.lowercase() }
-            .run { filterAndAdd(modAbbreviation) }
-    }
-
-    if (modName != null) {
-        FuzzySearch.partialRatio(query, modName) { it.lowercase() }
-            .run { filterAndAdd(modName) }
-    }
-
-    FuzzySearch.partialRatio(query, variant.modInfo.id) { it.lowercase() }
-        .run { filterAndAdd(variant.modInfo.id) }
-    FuzzySearch.partialRatio(query, variant.modInfo.version.toString()) { it.lowercase() }
-        .run { filterAndAdd(variant.modInfo.version.toString()) }
-
-    if (modAuthor != null) {
-        FuzzySearch.partialRatio(query, modAuthor) { it.lowercase() }
-            .run { filterAndAdd(modAuthor) }
-    }
-
-    // Cut the importance of this, so that it takes a strong match on description to make an impact.
-    // Only use it after a few chars, not right away.
-    val description = variant.modInfo.description
-    if (query.length >= 4 && description != null) {
-        (FuzzySearch.partialRatio(query, description) - 29).coerceAtLeast(0)
-            .run { filterAndAdd(description) }
-    }
-
-    Timber.d { "${variant.modInfo.name}'s match of '$query' had a total score of ${results.values.sum()} and single highest of ${results.values.maxOrNull()}." }
-    return variant.mod(access) to results
-}
+//@Deprecated("switch to sublime fuzzy")
+//private fun fuzzyWuzzyModSearch(
+//    query: String,
+//    variant: ModVariant,
+//    access: smol.access.Access
+//): Pair<Mod, Map<String, Int>> {
+//    val results = mutableMapOf<String, Int>() // match field name and value
+//    val modName = variant.modInfo.name
+//    val modAuthor = variant.modInfo.author
+//
+//    fun Int.filterAndAdd(name: String) {
+//        results += name to this
+//        Timber.d { "${Filter.searchMethod}: ${variant.modInfo.name} has a score of $this for '$query' in text \"${name}\"." }
+//    }
+//
+//    val modAbbreviation = modName?.acronym() ?: ""
+//
+//    if (modAbbreviation.length > 1) {
+//        FuzzySearch.partialRatio(query, modAbbreviation) { it.lowercase() }
+//            .run { filterAndAdd(modAbbreviation) }
+//    }
+//
+//    if (modName != null) {
+//        FuzzySearch.partialRatio(query, modName) { it.lowercase() }
+//            .run { filterAndAdd(modName) }
+//    }
+//
+//    FuzzySearch.partialRatio(query, variant.modInfo.id) { it.lowercase() }
+//        .run { filterAndAdd(variant.modInfo.id) }
+//    FuzzySearch.partialRatio(query, variant.modInfo.version.toString()) { it.lowercase() }
+//        .run { filterAndAdd(variant.modInfo.version.toString()) }
+//
+//    if (modAuthor != null) {
+//        FuzzySearch.partialRatio(query, modAuthor) { it.lowercase() }
+//            .run { filterAndAdd(modAuthor) }
+//    }
+//
+//    // Cut the importance of this, so that it takes a strong match on description to make an impact.
+//    // Only use it after a few chars, not right away.
+//    val description = variant.modInfo.description
+//    if (query.length >= 4 && description != null) {
+//        (FuzzySearch.partialRatio(query, description) - 29).coerceAtLeast(0)
+//            .run { filterAndAdd(description) }
+//    }
+//
+//    Timber.d { "${variant.modInfo.name}'s match of '$query' had a total score of ${results.values.sum()} and single highest of ${results.values.maxOrNull()}." }
+//    return variant.mod(access) to results
+//}
 
 fun splitSearchQuery(query: String) = query
     .split(Regex(""" *[,;|] *"""))

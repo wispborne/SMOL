@@ -50,13 +50,13 @@ fun toastInstalledCard(
                 fontSize = 12.sp
             )
 
-            if (!modVariant.mod(SL.access).isEnabled(modVariant)) {
+            if (modVariant.mod(SL.access)?.isEnabled(modVariant) == false) {
                 SmolButton(
                     modifier = Modifier
                         .padding(top = 8.dp),
                     onClick = {
                         GlobalScope.launch { SL.access.changeActiveVariant(
-                            mod = modVariant.mod(SL.access),
+                            mod = modVariant.mod(SL.access) ?: return@launch,
                             modVariant = modVariant
                         ) }
                         requestToastDismissal.invoke(ToasterState.defaultTimeoutMillis)

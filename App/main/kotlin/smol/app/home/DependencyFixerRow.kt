@@ -76,7 +76,7 @@ fun DependencyFixerRow(
                             when (depState) {
                                 is DependencyFinder.DependencyState.Disabled -> GlobalScope.launch {
                                     SL.access.changeActiveVariant(
-                                        mod = depState.variant.mod(SL.access),
+                                        mod = depState.variant.mod(SL.access) ?: return@launch,
                                         modVariant = depState.variant
                                     )
                                 }

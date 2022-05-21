@@ -81,7 +81,7 @@ fun AppScope.ModBrowserView(
     val shownMods = remember { mutableStateListOf<ScrapedMod?>(elements = scrapedMods.toTypedArray()) }
 
     val browser = remember { mutableStateOf<ChromiumBrowser?>(null) }
-    val linkLoader = remember { mutableStateOf<((String) -> Unit)?>(null) }
+    val linkLoader: (String) -> Unit = { url: String -> browser.value?.loadUrl(url) }
     var alertDialogMessage: String? by remember { mutableStateOf(null) }
     val showLogPanel = remember { mutableStateOf(false) }
     var isBrowserFullscreen by remember { mutableStateOf(false) }
@@ -276,12 +276,12 @@ fun AppScope.ModBrowserView(
                                             SmolSecondaryButton(
                                                 modifier = Modifier.padding(start = 8.dp)
                                                     .align(Alignment.CenterVertically),
-                                                onClick = { linkLoader.value?.invoke(Constants.FORUM_MOD_INDEX_URL) }
+                                                onClick = { linkLoader.invoke(Constants.FORUM_MOD_INDEX_URL) }
                                             ) { Text("Index") }
                                             SmolSecondaryButton(
                                                 modifier = Modifier.padding(start = 8.dp)
                                                     .align(Alignment.CenterVertically),
-                                                onClick = { linkLoader.value?.invoke(Constants.FORUM_MODDING_SUBFORUM_URL) }
+                                                onClick = { linkLoader.invoke(Constants.FORUM_MODDING_SUBFORUM_URL) }
                                             ) { Text("Modding") }
                                             IconButton(
                                                 modifier = Modifier.padding(start = 8.dp)
@@ -442,9 +442,9 @@ fun AppScope.ModBrowserView(
     }
 }
 
-class ModBrowserLinkLoader(private val linkLoader: MutableState<((String) -> Unit)?>) : UriHandler {
+class ModBrowserLinkLoader(private val linkLoader: (String) -> Unit) : UriHandler {
     override fun openUri(uri: String) {
-        linkLoader.value?.invoke(uri)
+        linkLoader.invoke(uri)
     }
 }
 
@@ -462,25 +462,25 @@ private fun AppScope.embeddedBrowser(
 //            modifier = Modifier.padding(8.dp)
 //                .recomposeHighlighter()
 //        ) {
-            SwingPanel(
-                background = MaterialTheme.colors.background,
-                modifier = Modifier
-                    .padding(start = 16.dp)
-                    .fillMaxHeight()
-                    .fillMaxWidth()
-                    .sizeIn(minWidth = 200.dp),
-                factory = {
-                    CefBrowserPanel(
-                        startURL = startUrl,
-                        useOSR = Platform.Linux == currentPlatform,
-                        isTransparent = false,
-                        downloadHandler = downloadHandler
-                    )
-                        .also { browserPanel ->
-                            onBrowserLoaded.invoke(browserPanel)
-                        }
-                }
-            )
+        SwingPanel(
+            background = MaterialTheme.colors.background,
+            modifier = Modifier
+                .padding(start = 16.dp)
+                .fillMaxHeight()
+                .fillMaxWidth()
+                .sizeIn(minWidth = 200.dp),
+            factory = {
+                CefBrowserPanel(
+                    startURL = startUrl,
+                    useOSR = Platform.Linux == currentPlatform,
+                    isTransparent = false,
+                    downloadHandler = downloadHandler
+                )
+                    .also { browserPanel ->
+                        onBrowserLoaded.invoke(browserPanel)
+                    }
+            }
+        )
 //        }
     } else {
 //        javaFxBrowser(jfxpanel, background, linkLoader)

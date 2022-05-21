@@ -125,8 +125,8 @@ data class ModVariant constructor(
     val smolId: SmolId
         get() = createSmolId(modInfo)
 
-    internal fun mod(modsCache: ModsCache) = modsCache.mods.value?.mods!!.first { it.id == modInfo.id }
-    fun mod(access: smol.access.Access) = access.mods.value?.mods!!.first { it.id == modInfo.id }
+    internal fun mod(modsCache: ModsCache) = modsCache.mods.value?.mods!!.firstOrNull() { it.id == modInfo.id }
+    fun mod(access: smol.access.Access) = access.mods.value?.mods!!.firstOrNull() { it.id == modInfo.id }
 
     val isModInfoEnabled: Boolean
         get() = modsFolderInfo.folder.resolve(Constants.MOD_INFO_FILE).exists()

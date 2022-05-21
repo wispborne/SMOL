@@ -25,8 +25,10 @@ class DependencyFinder internal constructor(private val modsCache: ModsCache) {
         modVariant.modInfo.dependencies
             .map { dep -> dep to (modsCache.mods.value?.mods ?: emptyList()).firstOrNull { it.id == dep.id } }
 
-    fun findDependencyStates(modVariant: ModVariant): List<DependencyState> =
-        (modVariant.mod(modsCache).findFirstEnabled?.run { findDependencies(modVariant = this) }
+    fun findDependencyStates(modVariant: ModVariant): List<DependencyState> {
+        val mod = modVariant.mod(modsCache)
+
+        return (mod?.findFirstEnabled?.run { findDependencies(modVariant = this) }
             ?: emptyList())
             .map { (dependency, foundDependencyMod) ->
                 // Mod not found or has no variants, it's missing.
@@ -62,7 +64,7 @@ class DependencyFinder internal constructor(private val modsCache: ModsCache) {
                             val validButDisabledDependency = variantsMeetingVersionReq
                                 .maxByOrNull { it.modInfo.version }
                             if (validButDisabledDependency == null) {
-                                Timber.w { "Unexpected scenario finding dependency for mod ${modVariant.mod(modsCache).id} with dependency: $dependency." }
+                                Timber.w { "Unexpected scenario finding dependency for mod ${mod?.id} with dependency: $dependency." }
                                 DependencyState.Missing(dependency, foundDependencyMod)
                             } else {
                                 DependencyState.Disabled(dependency, validButDisabledDependency)
@@ -78,6 +80,7 @@ class DependencyFinder internal constructor(private val modsCache: ModsCache) {
                     is DependencyState.Missing -> Timber.v { "Dependency missing: $it" }
                 }
             }
+    }
 
     sealed class DependencyState {
         abstract val dependency: Dependency

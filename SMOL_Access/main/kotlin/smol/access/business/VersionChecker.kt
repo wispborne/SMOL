@@ -107,6 +107,8 @@ internal class VersionChecker(
                                     .getOrNull()
                             }
                             .filterNotNull()
+                            .filter { it.first != null }
+                            .map { it.first!! to it.second }
                             .onEach {
                                 Timber.d {
                                     "Version checked ${it.first.findHighestVersion?.modInfo?.name}: " +

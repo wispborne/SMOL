@@ -62,7 +62,7 @@ private const val height = 160
 fun AppScope.scrapedModCard(
     modifier: Modifier = Modifier,
     mod: ScrapedMod,
-    linkLoader: MutableState<((String) -> Unit)?>
+    linkLoader: (String) -> Unit
 ) {
     var isBeingHovered by remember { mutableStateOf(false) }
     val markdownWidth = 800
@@ -79,7 +79,7 @@ fun AppScope.scrapedModCard(
                     )
                 },
                 confirmButton = {
-                    Button(onClick = { urls[ModUrlType.DirectDownload]?.run { linkLoader.value?.invoke(this.toString()) } }) {
+                    Button(onClick = { urls[ModUrlType.DirectDownload]?.run { linkLoader.invoke(this.toString()) } }) {
                         Text("Download")
                     }
                 },
@@ -100,9 +100,9 @@ fun AppScope.scrapedModCard(
             .clickable {
                 when {
                     urls.containsKey(ModUrlType.Forum) ->
-                        urls[ModUrlType.Forum]?.run { linkLoader.value?.invoke(this.toString()) }
+                        urls[ModUrlType.Forum]?.run { linkLoader.invoke(this.toString()) }
                     urls.containsKey(ModUrlType.NexusMods) ->
-                        urls[ModUrlType.NexusMods]?.run { linkLoader.value?.invoke(this.toString()) }
+                        urls[ModUrlType.NexusMods]?.run { linkLoader.invoke(this.toString()) }
                     urls.containsKey(ModUrlType.DirectDownload) -> directDownloadDialog.invoke()
                 }
             }
@@ -357,7 +357,7 @@ fun scrapedModCardPreview() = smolPreview {
             dateTimeCreated = Date(),
             dateTimeEdited = Date(),
         ),
-        linkLoader = mutableStateOf({})
+        linkLoader = {}
     )
 }
 

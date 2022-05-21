@@ -59,14 +59,32 @@ fun File.mkdirsIfNotExist() {
 /**
  * Deletes the folder and all files in it if it/they exist.
  * [source](https://stackoverflow.com/a/35989142/1622788)
+ * @param precheckFilesForDeletability If true, performs an initial walk to verify each file is deletable in an effort to prevent deletion from stopping halfway through.
  */
-fun Path.deleteRecursively(vararg options: FileVisitOption = arrayOf(FileVisitOption.FOLLOW_LINKS)) {
+fun Path.deleteRecursively(
+    precheckFilesForDeletability: Boolean = true,
+    vararg options: FileVisitOption = arrayOf(FileVisitOption.FOLLOW_LINKS)
+) {
     if (!this.exists()) return
+
+    if (precheckFilesForDeletability) {
+        val sm = System.getSecurityManager()
+
+        Files.walk(this, *options).use { walk ->
+            walk.sorted(Comparator.reverseOrder())
+                .forEach { obj ->
+                    if (sm == null) {
+                        if (!obj.isWritable())
+                            throw SecurityException("'${obj.absolutePathString()}' cannot be deleted. Abandoning deletion of '${this.absolutePathString()}'.")
+                    } else {
+                        sm.checkDelete(obj.absolutePathString())
+                    }
+                }
+        }
+    }
 
     Files.walk(this, *options).use { walk ->
         walk.sorted(Comparator.reverseOrder())
-//            .map { obj: Path -> obj.toFile() }
-//            .peek { x: File? -> println(x) }
             .forEach { obj -> obj.deleteIfExists() }
     }
 }

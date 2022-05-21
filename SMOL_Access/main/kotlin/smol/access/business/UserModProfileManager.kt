@@ -42,9 +42,10 @@ class UserModProfileManager internal constructor(
                                 if (profile.id == oldProfile.activeModProfileId) {
                                     profile.copy(enabledModVariants = newMods.mods
                                         .flatMap { it.enabledVariants }
-                                        .map {
+                                        .mapNotNull {
+                                            val mod = it.mod(modsCache) ?: return@mapNotNull null
                                             UserProfile.ModProfile.ShallowModVariant(
-                                                modId = it.mod(modsCache).id,
+                                                modId = mod.id,
                                                 modName = it.modInfo.name ?: "",
                                                 smolVariantId = it.smolId,
                                                 version = it.modInfo.version
