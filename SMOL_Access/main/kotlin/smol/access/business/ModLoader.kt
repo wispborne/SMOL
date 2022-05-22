@@ -21,6 +21,7 @@ import smol.access.config.GamePathManager
 import smol.access.model.Mod
 import smol.access.model.ModId
 import smol.access.model.ModVariant
+import smol.access.model.Version
 import smol.timber.ktx.Timber
 import smol.timber.ktx.i
 import smol.utilities.asList
@@ -124,7 +125,9 @@ internal class ModLoader internal constructor(
                             )
                         }
                         .values
-                        .map { mod -> mod.copy(variants = mod.variants.sortedBy { it.modInfo.version }) }
+                        .map { mod ->
+                            mod.copy(variants = mod.variants.sortedBy { variant -> variant.bestVersion})
+                        }
                         .toList()
                         .onEach {
                             val variantsInModsFolder =

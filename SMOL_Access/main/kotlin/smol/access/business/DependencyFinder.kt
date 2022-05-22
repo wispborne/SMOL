@@ -48,7 +48,7 @@ class DependencyFinder internal constructor(private val modsCache: ModsCache) {
                     }
                 } else {
                     val variantsMeetingVersionReq =
-                        foundDependencyMod.variants.filter { it.modInfo.version >= dependency.version!! }
+                        foundDependencyMod.variants.filter { it.modInfo.version >= dependency.version }
 
                     if (variantsMeetingVersionReq.isEmpty()) {
                         // No variants found will work.

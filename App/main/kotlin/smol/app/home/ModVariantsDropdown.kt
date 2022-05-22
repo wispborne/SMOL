@@ -69,7 +69,7 @@ fun AppScope.ModVariantsDropdown(
                     firstEnabledVariant == null
                             || mod.enabledVariants.any { enabledVariant -> enabledVariant.smolId != variant.smolId }
                 }
-                .sortedByDescending { it.modInfo.version }
+                .sortedByDescending { it.bestVersion }
 
             if (otherVariantsThanEnabled.any()) {
                 val otherVariants = otherVariantsThanEnabled
@@ -91,7 +91,8 @@ fun AppScope.ModVariantsDropdown(
 
 
     var expanded by remember { mutableStateOf(false) }
-    val modState = SL.access.modModificationState.collectAsState().value[mod.id] ?: smol.access.Access.ModModificationState.Ready
+    val modState =
+        SL.access.modModificationState.collectAsState().value[mod.id] ?: smol.access.Access.ModModificationState.Ready
 
     Box(modifier) {
         Box(Modifier.width(IntrinsicSize.Min)) {

@@ -50,7 +50,7 @@ data class Mod constructor(
         get() = variants.firstOrNull { !isEnabled(it) }
 
     val findHighestVersion: ModVariant?
-        get() = variants.maxByOrNull { it.modInfo.version }
+        get() = variants.maxByOrNull { it.bestVersion }
 
     val findFirstEnabledOrHighestVersion: ModVariant?
         get() = findFirstEnabled ?: findHighestVersion
@@ -132,6 +132,13 @@ data class ModVariant constructor(
         get() = modsFolderInfo.folder.resolve(Constants.MOD_INFO_FILE).exists()
 
     fun generateVariantFolderName() = Companion.generateVariantFolderName(this.modInfo)
+
+    /**
+     * Use the version in VersionChecker if possible (authors sometimes will do 0.35 in ModInfo but 0.3.5 in Version Checker).
+     */
+    val bestVersion: Version =
+        versionCheckerInfo?.modVersion?.toString()?.let { Version.parse(it) }
+            ?: modInfo.version
 
     fun isMissingAdmin() = modsFolderInfo.folder.isMissingAdmin()
             || modsFolderInfo.folder.resolve(Constants.MOD_INFO_FILE).isMissingAdmin()
