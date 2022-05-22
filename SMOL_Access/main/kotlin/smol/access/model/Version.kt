@@ -35,7 +35,7 @@ data class Version(
     }
 
     override fun equals(other: Any?): Boolean {
-        return other is Version && this.raw == other.raw
+        return other is Version && this.compareTo(other) == 0
     }
 
     override fun hashCode(): Int {
@@ -58,11 +58,11 @@ data class Version(
                 major = split.getOrElse(0) { "0" },
                 minor = split.getOrElse(1) { "0" },
                 patch = split.getOrElse(2) { "0" },
-                build = split.getOrElse(3) { "0" }
+                build = split.getOrElse(3) { null }
             )
         }
 
-        val letterDigitSplitterRegex = Regex("""(?<=\D)(?=\d)|(?<=\d)(?=\D)""")
+        private val letterDigitSplitterRegex = Regex("""(?<=\D)(?=\d)|(?<=\d)(?=\D)""")
 
         /**
          * Breaks a string into chunks of letters and numbers.

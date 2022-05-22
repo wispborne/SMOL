@@ -91,9 +91,9 @@ object GsonBuilder {
                 val major by versionObj.byString("major") { "0" }
                 val minor by versionObj.byString("minor") { "0" }
                 val patch by versionObj.byString("patch") { "0" }
-                val build by versionObj.byString("build") { "0" }
+                val build by versionObj.byNullableString("build")
                 Version(
-                    raw = listOf(major, minor, patch, build).joinToString(separator = "."),
+                    raw = listOfNotNull(major, minor, patch, build).joinToString(separator = "."),
                     major = major,
                     minor = minor,
                     patch = patch,

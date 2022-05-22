@@ -24,7 +24,7 @@ import smol.timber.ktx.Timber
 import java.lang.reflect.Type
 
 
-class Jsanity(
+class Jsanity constructor(
     val gson: Gson
 ) {
     @Throws(JsonSyntaxException::class)
