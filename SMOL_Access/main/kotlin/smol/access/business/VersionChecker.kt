@@ -21,6 +21,7 @@ import kotlinx.coroutines.withContext
 import smol.access.Constants
 import smol.access.HttpClientBuilder
 import smol.access.config.VersionCheckerCache
+import smol.access.config.VersionCheckerCachedInfo
 import smol.access.model.Mod
 import smol.access.model.ModId
 import smol.access.model.VersionCheckerInfo
@@ -56,18 +57,10 @@ internal class VersionChecker(
     }
 
     override fun getOnlineVersion(modId: ModId) =
-        versionCheckerCache.onlineVersions[modId]
+        versionCheckerCache.onlineVersions[modId]?.info
 
     @Suppress("ConvertCallChainIntoSequence")
     override suspend fun lookUpVersions(mods: List<Mod>, forceLookup: Boolean) {
-        val msSinceLastCheck = Instant.now().toEpochMilli() - versionCheckerCache.lastCheckTimestamp
-        val checkIntervalMillis =
-            userManager.activeProfile.value.versionCheckerIntervalMillis ?: DEFAULT_CHECK_INTERVAL_MILLIS
-
-        if (!forceLookup && msSinceLastCheck < checkIntervalMillis) {
-            Timber.i { "Skipping version check, it has only been ${msSinceLastCheck / 1000}s of ${checkIntervalMillis / 1000}s." }
-            return
-        }
 
         withContext(Dispatchers.IO) {
             httpClientBuilder.invoke().use { client ->
@@ -79,6 +72,21 @@ internal class VersionChecker(
                             .distinctBy { it.id }
                             .mapNotNull { it.findHighestVersion }
                             .filter { !it.versionCheckerInfo?.masterVersionFile.isNullOrBlank() }
+                            .filter {
+                                val msSinceLastCheck = Instant.now().toEpochMilli()
+                                    .minus(
+                                        (versionCheckerCache.onlineVersions[it.modInfo.id]?.lastLookupTimestamp ?: 0L)
+                                    )
+                                val checkIntervalMillis =
+                                    userManager.activeProfile.value.versionCheckerIntervalMillis
+                                        ?: DEFAULT_CHECK_INTERVAL_MILLIS
+
+                                return@filter if (!forceLookup && msSinceLastCheck < checkIntervalMillis) {
+                                    Timber.d { "Skipping version check for '${it.modInfo.id}', it has only been ${msSinceLastCheck / 1000}s of ${checkIntervalMillis / 1000}s." }
+                                    false
+                                } else
+                                    true
+                            }
                             .parallelMap { modVariant ->
                                 val fixedUrl = fixUrl(modVariant.versionCheckerInfo?.masterVersionFile ?: "")
                                 kotlin.runCatching {
@@ -119,8 +127,12 @@ internal class VersionChecker(
                             }
                     }
 
-                versionCheckerCache.onlineVersions = results.associate { it.first.id to it.second }
-                versionCheckerCache.lastCheckTimestamp = Instant.now().toEpochMilli()
+                versionCheckerCache.onlineVersions = results.associate {
+                    it.first.id to VersionCheckerCachedInfo(
+                        info = it.second,
+                        lastLookupTimestamp = Instant.now().toEpochMilli()
+                    )
+                }
             }
         }
     }

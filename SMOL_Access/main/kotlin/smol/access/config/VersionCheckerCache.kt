@@ -22,6 +22,10 @@ import smol.utilities.JsonFilePrefStorage
 
 class VersionCheckerCache(gson: Jsanity) :
     Config(InMemoryPrefStorage(JsonFilePrefStorage(gson, Constants.VERCHECK_CACHE_PATH))) {
-    var onlineVersions: Map<ModId, VersionCheckerInfo> by pref(defaultValue = emptyMap())
-    var lastCheckTimestamp: Long by pref(defaultValue = 0L)
+    var onlineVersions: Map<ModId, VersionCheckerCachedInfo> by pref(prefKey = "onlineVersions", defaultValue = emptyMap())
 }
+
+data class VersionCheckerCachedInfo(
+    val lastLookupTimestamp: Long,
+    val info: VersionCheckerInfo
+)
