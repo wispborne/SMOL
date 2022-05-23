@@ -228,7 +228,7 @@ internal class ModMerger {
                         right = modToFoldIn.authors.ifBlank { null },
                         doesRightHavePriority = doesNewModHavePriority
                     ) ?: "",
-                    authorsList = (mergedMod.authors() + modToFoldIn.authors()).distinct(),
+                    authorsList = (mergedMod.authors() + modToFoldIn.authors()).distinctBy { it.prepForMatching() },
                     forumPostLink = chooseBest(
                         left = mergedMod.forumPostLink,
                         right = modToFoldIn.forumPostLink,
@@ -246,7 +246,7 @@ internal class ModMerger {
                         doesRightHavePriority = doesNewModHavePriority
                     ),
                     sources = (modToFoldIn.sources() + mergedMod.sources()).distinct(),
-                    categories = (modToFoldIn.categories() + mergedMod.categories()).distinct(),
+                    categories = (modToFoldIn.categories() + mergedMod.categories()).distinctBy { it.lowercase() },
                     images = (modToFoldIn.images() + mergedMod.images()),
                     dateTimeCreated = chooseBest(
                         left = mergedMod.dateTimeCreated,

@@ -17,6 +17,11 @@ import smol.timber.ktx.Timber
 import java.net.URL
 
 object Common {
+    private val downloadableContentTypes = listOf(
+        ContentType.Application.OctetStream,
+        ContentType.Application.Zip
+    )
+
     /**
      * Whether a url has a downloadable file on the other side.
      * Requires Internet.
@@ -24,11 +29,29 @@ object Common {
     fun isDownloadable(url: String?): Boolean =
         kotlin.runCatching {
             val conn = URL(url ?: return false).openConnection()
-            val headers = conn.headerFields
-            Timber.v { "Url $url has headers ${headers.entries.joinToString(separator = "\n")}." }
 
-            val contentDisposition = ContentDisposition.parse(conn.getHeaderField("Content-Disposition")) as ContentDisposition?
-            return contentDisposition?.disposition?.startsWith("attachment", ignoreCase = true) ?: false
+            val hasAttachment = conn.getHeaderField("Content-Disposition")?.let { contentDispoHeader ->
+                kotlin.runCatching { ContentDisposition.parse(contentDispoHeader) }
+                    .onFailure { Timber.d(it) }
+                    .getOrNull()
+                    ?.disposition?.startsWith("attachment", ignoreCase = true) ?: false
+            } ?: false
+
+            val hasDownloadableContentType = kotlin.run {
+                conn.getHeaderField("Content-Type")?.let { contentType ->
+                    kotlin.runCatching { ContentType.parse(contentType) }
+                        .onFailure { Timber.d(it) }
+                        .getOrNull()
+                        ?.let { type -> downloadableContentTypes.any { downloadableContentType -> downloadableContentType.match(type) } }
+                }
+            } ?: false
+
+            val isDownloadable = hasAttachment || hasDownloadableContentType
+
+            val headers = conn.headerFields
+            Timber.d { "Url '$url': HasAttachment: $hasAttachment, HasDownloadableContentType: $hasDownloadableContentType, and has headers:\n${headers.entries.sortedBy { it.key }.joinToString(separator = "\n")}." }
+
+            return isDownloadable
         }
             .onFailure { Timber.d(it) }
             .getOrDefault(false)

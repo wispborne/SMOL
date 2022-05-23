@@ -120,6 +120,7 @@ internal object DiscordReader {
                     .let { getBestPossibleDownloadHost(it) }
                     .firstOrNull()
                     ?.let { kotlin.runCatching { Url(it) }.onFailure { Timber.w(it) }.getOrNull() }
+                    ?: forumUrl
 
                 ScrapedMod(
                     name = messageLines.firstOrNull()?.removeMarkdownFromName() ?: "(Discord Mod)",
