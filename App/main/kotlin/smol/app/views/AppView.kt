@@ -316,7 +316,7 @@ private suspend fun reloadModsInner(forceRefreshVersionChecker: Boolean) {
                         .any { newVariantId -> newVariantId !in previousVariantIds }
 
                 listOf(
-                    async {
+                    GlobalScope.async {
                         SL.versionChecker.lookUpVersions(
                             forceLookup = forceRefreshVersionChecker || hasNewVariantBeenAdded,
                             mods = mods
