@@ -15,9 +15,11 @@ package smol.app.themes
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.platform.Font
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import smol.access.SL
 import smol.access.themes.Theme
@@ -99,3 +101,7 @@ object SmolTheme {
     val Colors.hyperlink: Color
         get() = SL.themeManager.activeTheme.value.second.hyperlink?.hexToColor() ?: this.secondary
 }
+
+data class UsableBounds(val height: Dp = 0.dp, val width: Dp = 0.dp)
+
+var LocalUsableBounds = UsableBounds()

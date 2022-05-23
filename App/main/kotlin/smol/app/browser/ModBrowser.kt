@@ -50,7 +50,9 @@ import smol.app.browser.chromium.CefBrowserPanel
 import smol.app.browser.chromium.ChromiumBrowser
 import smol.app.composables.*
 import smol.app.navigation.Screen
+import smol.app.themes.LocalUsableBounds
 import smol.app.themes.SmolTheme
+import smol.app.themes.UsableBounds
 import smol.app.toolbar.toolbar
 import smol.app.util.*
 import smol.mod_repo.ScrapedMod
@@ -155,7 +157,10 @@ fun AppScope.ModBrowserView(
                                                 } else {
                                                     scope.launch {
                                                         val newModsToShow =
-                                                            filterModPosts(query, scrapedMods).ifEmpty { listOf(null) }
+                                                            filterModPosts(
+                                                                query,
+                                                                scrapedMods
+                                                            ).ifEmpty { listOf(null) }
 
                                                         withContext(Dispatchers.Main) {
                                                             shownMods.replaceAllUsingDifference(
@@ -234,6 +239,9 @@ fun AppScope.ModBrowserView(
                                             adapter = ScrollbarAdapter(scrollState),
                                             modifier = Modifier.padding(start = 4.dp, end = 4.dp)
                                         )
+                                        LocalUsableBounds =
+                                            UsableBounds(width = ((this@ModBrowserView.window.width * splitterState.positionPercentage) - 300).dp)
+
                                         LazyColumn(
                                             modifier = Modifier.weight(1f).padding(end = 8.dp),
                                             verticalArrangement = Arrangement.spacedBy(16.dp),

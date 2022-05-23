@@ -39,6 +39,7 @@ import io.ktor.http.*
 import org.tinylog.kotlin.Logger
 import smol.app.WindowState
 import smol.app.composables.*
+import smol.app.themes.LocalUsableBounds
 import smol.app.themes.SmolTheme
 import smol.app.themes.SmolTheme.lighten
 import smol.app.util.onEnterKeyPressed
@@ -416,6 +417,7 @@ fun AppScope.DiscordIcon(modifier: Modifier = Modifier, iconModifier: Modifier =
                                 this@DiscordIcon.alertDialogSetter.invoke {
                                     SmolAlertDialog(
                                         onDismissRequest = ::dismissAlertDialog,
+                                        dialogProvider = SmolAlertDialogProvider(boundsModifier = Modifier.fillMaxHeight().width(LocalUsableBounds.width)),
                                         confirmButton = {
                                             SmolButton(onClick = {
                                                 discordUrl.toString()
@@ -432,11 +434,11 @@ fun AppScope.DiscordIcon(modifier: Modifier = Modifier, iconModifier: Modifier =
                                         },
                                         text = {
                                             Column {
-                                                Text(text = "This will open this post in Discord. Do you want to continue?")
+                                                Text(text = "This will open this post in the Discord application. Do you want to continue?")
                                                 SelectionContainer {
                                                     Text(
                                                         modifier = Modifier.padding(top = 8.dp),
-                                                        text = discordUrl.toString()
+                                                        text = discordUrl.toString().parseHtml()
                                                     )
                                                 }
                                             }
@@ -541,6 +543,7 @@ fun AppScope.DebugIcon(modifier: Modifier = Modifier, iconModifier: Modifier = M
                                 modifier = modifier
                                     .widthIn(min = 700.dp)
                                     .onEnterKeyPressed { dismissAlertDialog(); true },
+                                dialogProvider = SmolAlertDialogProvider(boundsModifier = Modifier.fillMaxHeight().width(LocalUsableBounds.width)),
                                 onDismissRequest = ::dismissAlertDialog,
                                 title = { Text(text = mod.name, style = SmolTheme.alertDialogTitle()) },
                                 text = {
