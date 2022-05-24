@@ -58,6 +58,7 @@ import smol.utilities.IOLock
 import smol.utilities.exists
 import smol.utilities.isAny
 import kotlin.io.path.exists
+import kotlin.system.exitProcess
 
 @OptIn(ExperimentalStdlibApi::class, ExperimentalDecomposeApi::class)
 @Composable
@@ -75,46 +76,7 @@ fun WindowState.appView() {
     }
 
     LaunchedEffect("runonce") {
-        withContext(Dispatchers.IO) {
-//            UpdateApp.writeLocalUpdateConfig(
-//                onlineUrl = SL.UI.updater.getUpdateConfigUrl(),
-//                localPath = Path.of("dist\\main\\app\\SMOL")
-//            )
-            val updateChannel = UpdateChannelManager.getUpdateChannelSetting(SL.appConfig)
-            val remoteConfigAsync =
-                async { kotlin.runCatching { SL.UI.smolUpdater.fetchRemoteConfig(updateChannel) }.getOrNull() }
-            val updaterConfigAsync =
-                async { kotlin.runCatching { SL.UI.updaterUpdater.fetchRemoteConfig(updateChannel) }.getOrNull() }
-
-            val updaterConfig = updaterConfigAsync.await()
-
-            if (updaterConfig != null && updaterConfig.requiresUpdate()) {
-                Timber.i { "Found update for the SMOL updater." }
-                UpdateSmolToast().updateUpdateToast(
-                    updateConfig = updaterConfig,
-                    toasterState = SL.UI.toaster,
-                    smolUpdater = SL.UI.updaterUpdater
-                )
-
-//                Timber.i { "Found update for the SMOL updater, updating it in the background." }
-//                kotlin.runCatching {
-//                    SL.UI.updaterUpdater.downloadUpdateZip(updaterConfig)
-//                    SL.UI.updaterUpdater.installUpdate()
-//                }
-            } else {
-                val remoteConfig = remoteConfigAsync.await()
-                if (remoteConfig == null) {
-                    Timber.w { "Unable to fetch remote config, aborting update check." }
-                } else {
-                    UpdateSmolToast().updateUpdateToast(
-                        updateConfig = remoteConfig,
-                        toasterState = SL.UI.toaster,
-                        smolUpdater = SL.UI.smolUpdater
-                    )
-                }
-            }
-
-        }
+        checkForUpdates()
     }
 
     MaterialTheme(
@@ -181,6 +143,48 @@ fun WindowState.appView() {
                 DuplicateModAlertDialog(duplicateModAlertDialogData.modInfo, duplicateModAlertDialogData.continuation)
             }
         }
+    }
+}
+
+private suspend fun checkForUpdates() {
+    withContext(Dispatchers.IO) {
+        val updateChannel = UpdateChannelManager.getUpdateChannelSetting(SL.appConfig)
+        val remoteConfigAsync =
+            async { kotlin.runCatching { SL.UI.smolUpdater.fetchRemoteConfig(updateChannel) }.getOrNull() }
+        val updaterConfigAsync =
+            async { kotlin.runCatching { SL.UI.updaterUpdater.fetchRemoteConfig(updateChannel) }.getOrNull() }
+
+        val updaterConfig = updaterConfigAsync.await()
+
+        if (updaterConfig != null && updaterConfig.requiresUpdate()) {
+            Timber.i { "Found update for the SMOL updater." }
+            UpdateSmolToast().updateUpdateToast(
+                updateConfig = updaterConfig,
+                toasterState = SL.UI.toaster,
+                smolUpdater = SL.UI.updaterUpdater
+            ) {
+                GlobalScope.launch {
+                    checkForUpdates()
+                }
+            }
+        } else {
+            val remoteConfig = remoteConfigAsync.await()
+            if (remoteConfig == null) {
+                Timber.w { "Unable to fetch remote config, aborting update check." }
+            } else {
+                UpdateSmolToast().updateUpdateToast(
+                    updateConfig = remoteConfig,
+                    toasterState = SL.UI.toaster,
+                    smolUpdater = SL.UI.smolUpdater
+                ) {
+                    GlobalScope.launch {
+                        delay(400) // Time to log an error if there was one
+                        exitProcess(status = 0)
+                    }
+                }
+            }
+        }
+
     }
 }
 

@@ -23,6 +23,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.update4j.Configuration
 import smol.access.Constants
@@ -36,6 +38,7 @@ import smol.updatestager.UpdateChannelManager
 import smol.utilities.asList
 import java.io.FileNotFoundException
 import java.net.UnknownHostException
+import kotlin.system.exitProcess
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -130,7 +133,7 @@ fun updateSection(scope: CoroutineScope) {
 
 private suspend fun checkForUpdate(): Configuration {
     val updaterConfig = runCatching {
-        SL.UI.updateChannelManager.fetchRemoteConfig(SL.UI.smolUpdater, SL.appConfig)
+        SL.UI.updateChannelManager.fetchRemoteConfig(SL.UI.updaterUpdater, SL.appConfig)
 
     }
         .onFailure { Timber.w(it) }
@@ -142,7 +145,9 @@ private suspend fun checkForUpdate(): Configuration {
             updateConfig = updaterConfig,
             toasterState = SL.UI.toaster,
             smolUpdater = SL.UI.updaterUpdater
-        )
+        ) {
+            GlobalScope.launch { checkForUpdate() }
+        }
 
         updaterConfig
 
@@ -152,20 +157,28 @@ private suspend fun checkForUpdate(): Configuration {
 //                SL.UI.updaterUpdater.installUpdate()
 //            }
     } else {
+        val exitAfterDelay = {
+            GlobalScope.launch {
+                delay(400) // Time to log an error if there was one
+                exitProcess(status = 0)
+            }
+        }
         val remoteConfig =
             runCatching { SL.UI.updateChannelManager.fetchRemoteConfig(SL.UI.smolUpdater, SL.appConfig) }
                 .onFailure {
                     UpdateSmolToast().updateUpdateToast(
                         updateConfig = null,
                         toasterState = SL.UI.toaster,
-                        smolUpdater = SL.UI.smolUpdater
+                        smolUpdater = SL.UI.smolUpdater,
+                        onUpdateInstalled = { exitAfterDelay.invoke() }
                     )
                 }
                 .onSuccess { remoteConfig ->
                     UpdateSmolToast().updateUpdateToast(
                         updateConfig = remoteConfig,
                         toasterState = SL.UI.toaster,
-                        smolUpdater = SL.UI.smolUpdater
+                        smolUpdater = SL.UI.smolUpdater,
+                        onUpdateInstalled = { exitAfterDelay.invoke() }
                     )
                 }
 

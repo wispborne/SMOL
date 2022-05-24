@@ -65,15 +65,7 @@ class UpdaterUpdater : BaseAppUpdater() {
             .getOrThrow()
 
         kotlin.runCatching {
-            // For some reason, the installer fails if this parent folder exists.
-            Path.of(standaloneJreFolderName).also { path ->
-                if (path.exists()) {
-                    Timber.i { "Deleting '${path.absolutePathString()}'." }
-                    path.deleteRecursively()
-                }
-            }
             archive.install(true)
-
         }
             .onFailure { Timber.e(it) }
             .getOrThrow()

@@ -23,7 +23,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import org.update4j.Configuration
 import smol.app.composables.SmolButton
 import smol.app.toasts.Toast
@@ -35,7 +38,6 @@ import smol.updatestager.UpdaterUpdater
 import smol.utilities.bytesAsShortReadableMB
 import smol.utilities.bytesToMB
 import smol.utilities.ellipsizeAfter
-import kotlin.system.exitProcess
 
 class UpdateSmolToast {
     private var job = CoroutineScope(Job())
@@ -57,7 +59,8 @@ class UpdateSmolToast {
     fun updateUpdateToast(
         updateConfig: Configuration?,
         toasterState: ToasterState,
-        smolUpdater: BaseAppUpdater
+        smolUpdater: BaseAppUpdater,
+        onUpdateInstalled: () -> Unit
     ) {
         val name = when (smolUpdater) {
             is SmolUpdater -> "SMOL"
@@ -131,14 +134,10 @@ class UpdateSmolToast {
                                                         job.launch {
                                                             try {
                                                                 updateStage = UpdateStage.Installing
-                                                                // Start updater, then quit application so updater can replace files.
                                                                 smolUpdater.installUpdate()
                                                                 updateStage = UpdateStage.Done
-
-                                                                if (!smolUpdater.canBeInstalledWhileSMOLIsRunning) {
-                                                                    delay(400) // Time to log an error if there was one
-                                                                    exitProcess(status = 0)
-                                                                }
+                                                                toasterState.remove(UPDATE_TOAST_ID)
+                                                                onUpdateInstalled.invoke()
                                                             } catch (e: Exception) {
                                                                 Timber.w(e)
                                                                 updateStage = UpdateStage.InstallFailed
