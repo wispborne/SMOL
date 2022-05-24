@@ -177,6 +177,8 @@ abstract class BaseAppUpdater {
      */
     protected abstract fun installUpdateInternal()
 
+    abstract val canBeInstalledWhileSMOLIsRunning: Boolean
+
     fun installUpdate() {
         installUpdateInternal()
         Timber.i { "Update complete for ${this::class.simpleName}." }

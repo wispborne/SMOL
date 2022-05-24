@@ -71,6 +71,8 @@ class SmolUpdater : BaseAppUpdater() {
             .build()
     }
 
+    override val canBeInstalledWhileSMOLIsRunning: Boolean = false
+
     override fun installUpdateInternal() {
         val updateInstallerFilename = "UpdateInstaller-fat.jar"
         val standaloneJrePath = Path.of("jre-min-win")

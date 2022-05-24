@@ -133,9 +133,12 @@ class UpdateSmolToast {
                                                                 updateStage = UpdateStage.Installing
                                                                 // Start updater, then quit application so updater can replace files.
                                                                 smolUpdater.installUpdate()
-                                                                delay(400) // Time to log an error if there was one
                                                                 updateStage = UpdateStage.Done
-                                                                exitProcess(status = 0)
+
+                                                                if (!smolUpdater.canBeInstalledWhileSMOLIsRunning) {
+                                                                    delay(400) // Time to log an error if there was one
+                                                                    exitProcess(status = 0)
+                                                                }
                                                             } catch (e: Exception) {
                                                                 Timber.w(e)
                                                                 updateStage = UpdateStage.InstallFailed

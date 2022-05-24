@@ -49,6 +49,7 @@ class UpdaterUpdater : BaseAppUpdater() {
                     .toList())
             .build()
     }
+    override val canBeInstalledWhileSMOLIsRunning: Boolean = true
 
     override fun installUpdateInternal() {
         val archive = kotlin.runCatching {
