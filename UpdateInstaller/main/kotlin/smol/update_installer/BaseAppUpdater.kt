@@ -24,6 +24,7 @@ import smol.timber.ktx.Timber
 import java.net.URI
 import java.net.URL
 import java.nio.file.Path
+import kotlin.io.path.absolutePathString
 import kotlin.io.path.exists
 import kotlin.io.path.name
 
@@ -87,9 +88,14 @@ abstract class BaseAppUpdater {
                 .onFailure { Timber.w(it) }
                 .onSuccess {
                     Timber.i {
-                        "Fetched ${getConfigXmlFileName(channel)} from ${remoteConfigUrl}. Update needed? ${it.requiresUpdate()}, Total size: ${
-                            it.files.filter { it.requiresUpdate() }.sumOf { it.size }
-                        }b."
+                        "Fetched ${getConfigXmlFileName(channel)} from ${remoteConfigUrl}. " +
+                                "Update needed? ${it.requiresUpdate()}, " +
+                                "Total size: ${it.files.filter { it.requiresUpdate() }.sumOf { it.size }}b." +
+                                "\n  Files:" +
+                                "\n${
+                                    it.files.filter { file -> file.requiresUpdate() }
+                                        .joinToString(separator = "\n") { "  ${it.path.absolutePathString()}" }
+                                }"
                     }
                 }
                 .getOrThrow()
