@@ -60,7 +60,7 @@ fun ModGridSectionHeader(
         modifier = Modifier
             .fillMaxWidth()
             .padding(
-                top = 8.dp,
+                top = 0.dp,
                 bottom = 8.dp,
                 start = contentPadding,
                 end = contentPadding

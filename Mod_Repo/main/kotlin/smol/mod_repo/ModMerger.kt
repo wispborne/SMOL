@@ -17,6 +17,7 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.withContext
 import smol.timber.ktx.Timber
 import smol.utilities.asList
+import smol.utilities.nullIfBlank
 import smol.utilities.parallelMap
 import java.time.Instant
 import java.util.Collections.swap
@@ -83,14 +84,14 @@ internal class ModMerger {
                                                 )
                                                     .flatten()
                                                     .distinct()
-                                                    .map { it.prepForMatching() },
+                                                    .mapNotNull { it.prepForMatching() },
                                                 rightList = listOf(
                                                     innerLoopMod.authors.asList(),
                                                     ModRepoUtils.getOtherMatchingAliases(innerLoopMod.authors),
                                                 )
                                                     .flatten()
                                                     .distinct()
-                                                    .map { it.prepForMatching() }
+                                                    .mapNotNull { it.prepForMatching() }
                                             )
 
                                         val outerUrl = outerLoopMod.urls()[ModUrlType.Forum]
@@ -228,7 +229,9 @@ internal class ModMerger {
                         right = modToFoldIn.authors.ifBlank { null },
                         doesRightHavePriority = doesNewModHavePriority
                     ) ?: "",
-                    authorsList = (mergedMod.authors() + modToFoldIn.authors()).distinctBy { it.prepForMatching() },
+                    authorsList = (mergedMod.authors() + modToFoldIn.authors())
+                        .distinctBy { it.prepForMatching() }
+                        .filter { it.isNotBlank() },
                     forumPostLink = chooseBest(
                         left = mergedMod.forumPostLink,
                         right = modToFoldIn.forumPostLink,
@@ -279,7 +282,7 @@ internal class ModMerger {
                 hasLink
             }
 
-    private fun String.prepForMatching() = this.lowercase().filter { it.isLetter() }
+    private fun String.prepForMatching() = this.lowercase().filter { it.isLetter() }.nullIfBlank()
 
     /**
      * Usage: listOf(1, 2, 3).permutations()
