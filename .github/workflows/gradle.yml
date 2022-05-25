@@ -34,7 +34,7 @@ jobs:
       - name: Publish Release on GitHub
         uses: "ncipollo/release-action@v1"
         with:
-          name: "Mod Repo: ${{ env.GITHUB_REF_NAME }}"
+          name: "Mod Repo: ${{ github.ref_name }}"
           generateReleaseNotes: true
           allowUpdates: true
           draft: false
