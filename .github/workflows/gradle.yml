@@ -8,7 +8,7 @@ name: Build Mod Repo and Create Release from Tag
 on:
   push:
     tags:
-      - '*'
+      - 'modrepo*'
 
 jobs:
   build:
@@ -34,6 +34,7 @@ jobs:
       - name: Publish Release on GitHub
         uses: "ncipollo/release-action@v1"
         with:
+          name: "Mod Repo: " + ${{ GITHUB_REF_NAME }}
           generateReleaseNotes: true
           allowUpdates: true
           draft: false
