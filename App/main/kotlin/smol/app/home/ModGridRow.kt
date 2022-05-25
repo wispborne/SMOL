@@ -184,26 +184,38 @@ fun AppScope.ModGridRow(
                                     ) {
                                         val dimColor =
                                             MaterialTheme.colors.onBackground.copy(alpha = 0.4f)
+                                        val enabledVariant = mod.findFirstEnabled
+                                        val enabledOrHighest = mod.findFirstEnabledOrHighestVersion
 
-                                        SmolText(
-                                            text = buildAnnotatedString {
-                                                mod.variants
-                                                    .forEachIndexed { index, element ->
-                                                        val enabled = mod.isEnabled(element)
-                                                        this.withStyle(
-                                                            SpanStyle(color = if (enabled) Color.Unspecified else dimColor)
-                                                        ) {
-                                                            append(element.modInfo.version.toString())
-                                                            append(
-                                                                if (index != mod.variants.count() - 1)
-                                                                    ", " else ""
-                                                            )
+                                        SmolTooltipArea(
+                                            tooltip = {
+                                                SmolTooltipText(
+                                                    text = "Mod Info:        ${enabledOrHighest?.modInfo?.version?.raw ?: "(none)"}" +
+                                                            "\nVersion Checker: ${enabledOrHighest?.versionCheckerInfo?.modVersion ?: "(none)"}",
+                                                    fontFamily = SmolTheme.fireCodeFont,
+                                                    fontSize = 15.sp
+                                                )
+                                            }
+                                        ) {
+                                            SmolText(
+                                                text = buildAnnotatedString {
+                                                    mod.variants
+                                                        .forEachIndexed { index, element ->
+                                                            this.withStyle(
+                                                                SpanStyle(color = if (element === enabledVariant) Color.Unspecified else dimColor)
+                                                            ) {
+                                                                append(element.modInfo.version.toString())
+                                                                append(
+                                                                    if (index != mod.variants.count() - 1)
+                                                                        ", " else ""
+                                                                )
+                                                            }
                                                         }
-                                                    }
-                                            },
-                                            overflow = TextOverflow.Ellipsis,
-                                            maxLines = 1
-                                        )
+                                                },
+                                                overflow = TextOverflow.Ellipsis,
+                                                maxLines = 1
+                                            )
+                                        }
                                     }
                                 }
                             }
