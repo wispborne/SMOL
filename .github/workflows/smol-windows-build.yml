@@ -27,6 +27,7 @@ jobs:
           echo "Full version: ${{ steps.version.outputs.full }}"
           echo "Major version: ${{ steps.version.outputs.major }}"
           echo "Major with pre-release: ${{ steps.version.outputs.major_prerelease }}"
+          echo "Is stable: ${{ steps.version.outputs.is_stable }}"
         if: steps.version.outputs.is_valid == 'true'
 
       - name: Print version warning if invalid
@@ -62,14 +63,11 @@ jobs:
           arguments: buildSmolDistTest
 
       # Publish
-      - name: Publish Release on GitHub
-        if: steps.version.outputs.is_valid == 'true'
-        uses: "ncipollo/release-action@v1"
+      - name: Publish Test to SMOL_Dist
+        if: steps.version.outputs.is_valid == 'true' && contains(steps.version.outputs.full, 'test')
+        uses: ad-m/github-push-action@master
         with:
-          name: "SMOL: ${{ github.ref_name }}"
-          generateReleaseNotes: true
-          allowUpdates: true
-          draft: false
-          token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: "dist/main/app/SMOL/*"
-          prerelease: steps.version.outputs != 'is_stable'
+          repository: "davidwhitman/SMOL_Dist"
+          branch: "test"
+          directory: "dist/main/app/SMOL/"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
