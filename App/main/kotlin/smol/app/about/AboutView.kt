@@ -122,7 +122,7 @@ fun AppScope.AboutView(modifier: Modifier = Modifier) {
                                     "<b>Fractal Softworks</b> for making Starsector and for permission to scrape the forum periodically.".parseHtml(),
                                     "<b>MesoTroniK</b> for consulting and brainstorming the whole way through.".parseHtml(),
                                     "<b>AtlanticAccent</b> for open-sourcing his Mod Manager, MOSS, allowing me to peek under the hood (I copied almost nothing, I swear!) and being a great competitor :)".parseHtml(),
-                                    "<b>rubi/CeruleanPancake</b> for feedback, QA, and morale/moral support.".parseHtml(),
+                                    "<b>rubi/RustyCabbage</b> for feedback, QA, and morale/moral support.".parseHtml(),
                                     "<b>Soren/Harmful Mechanic</b> for feedback.".parseHtml(),
                                     "<b>ruddygreat</b> for feedback and QA.".parseHtml(),
                                     "<b>Tartiflette</b> for the idea to disable mods by renaming the mod_info.json file, the SMOL icon, and other feedback.".parseHtml(),
