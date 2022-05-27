@@ -45,8 +45,8 @@ class ToasterState {
         const val defaultTimeoutMillis = 10000L
     }
 
-    val items: MutableStateFlow<List<Toast>> = MutableStateFlow(emptyList())
-    val timersByToastId = mutableMapOf<String, Long>()
+    val items: MutableStateFlow<List<ToastContainer>> = MutableStateFlow(emptyList())
+    private val timersByToastId = mutableMapOf<String, Long>()
     private val scope = CoroutineScope(Job())
 
     init {
@@ -76,22 +76,29 @@ class ToasterState {
         }
     }
 
-    fun addItems(toasts: List<Toast>) {
-        toasts
+    fun addItems(toastContainers: List<ToastContainer>) {
+        toastContainers
             .filter { toast -> toast.id !in items.value.map { it.id } }
             .run {
                 items.update { it + this }
-                Timber.i { "Added new toasts ${toasts.joinToString(separator = "\n")}." }
+                Timber.i { "Added new toasts ${toastContainers.joinToString(separator = "\n")}." }
             }
     }
 
-    fun addItem(toast: Toast) = addItems(toast.asList())
+    fun addItem(toastContainer: ToastContainer) = addItems(toastContainer.asList())
 
     fun remove(toastId: String) {
         if (!timersByToastId.containsKey(toastId)) {
             timersByToastId[toastId] = 0
         }
     }
+
+    fun setTimeout(toastId: String, timeoutMillis: Long) {
+        Timber.d { "Set toast timer id $toastId to ${timeoutMillis}ms." }
+        timersByToastId[toastId] = timeoutMillis
+    }
+
+    fun getMillisRemaining(toastId: String): Long? = timersByToastId[toastId]
 }
 
 @Composable
@@ -109,15 +116,17 @@ fun toaster(
         while (true) {
             val loopDelay = 500L
             items.value.toList().forEach {
-                if (toasterState.timersByToastId.containsKey(it.id)) {
-                    toasterState.timersByToastId[it.id] = toasterState.timersByToastId[it.id]!! - loopDelay
+                val millisRemaining = toasterState.getMillisRemaining(it.id)
+
+                if (millisRemaining != null) {
+                    toasterState.setTimeout(it.id, millisRemaining - loopDelay)
                 }
             }
 
             val preFilterSize = items.value.size
             toasterState.items.value =
                 items.value.filter { toast ->
-                    val hasTimeLeftOrIndefinite = (toasterState.timersByToastId[toast.id] ?: 1) > 0
+                    val hasTimeLeftOrIndefinite = (toasterState.getMillisRemaining(toast.id) ?: 1) > 0
                     if (!hasTimeLeftOrIndefinite) Timber.i { "Removing expired toast $toast." }
                     hasTimeLeftOrIndefinite
                 }
@@ -146,11 +155,11 @@ fun toaster(
 }
 
 @Composable
-private fun renderToast(toast: Toast) {
-    if ((toast.timeoutMillis ?: 1) > 0) {
+private fun renderToast(toastContainer: ToastContainer) {
+    if ((toastContainer.timeoutMillis ?: 1) > 0) {
         Row {
             Box(Modifier.align(Alignment.Bottom)) {
-                if (toast.useStandardToastFrame) {
+                if (toastContainer.useStandardToastFrame) {
                     Card(
                         modifier = Modifier
                             .border(
@@ -162,18 +171,18 @@ private fun renderToast(toast: Toast) {
                         elevation = 4.dp
                     ) {
                         Box(Modifier.padding(16.dp)) {
-                            toast.content()
+                            toastContainer.content()
                         }
                     }
                 } else {
-                    toast.content()
+                    toastContainer.content()
                 }
             }
         }
     }
 }
 
-data class Toast(
+data class ToastContainer(
     val id: String,
     val timeoutMillis: Long? = ToasterState.defaultTimeoutMillis,
     val useStandardToastFrame: Boolean = true,

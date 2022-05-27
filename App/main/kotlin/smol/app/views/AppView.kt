@@ -44,8 +44,8 @@ import smol.app.navigation.Screen
 import smol.app.settings.settingsView
 import smol.app.themes.SmolTheme
 import smol.app.themes.SmolTheme.toColors
-import smol.app.toasts.Toast
-import smol.app.toasts.downloadToast
+import smol.app.toasts.DownloadToast
+import smol.app.toasts.ToastContainer
 import smol.app.toasts.toastInstalledCard
 import smol.app.toasts.toaster
 import smol.app.updater.UpdateSmolToast
@@ -122,7 +122,7 @@ fun WindowState.appView() {
             LaunchedEffect(refreshTrigger) {
                 scope.launch {
                     Timber.i { "Initial mod refresh." }
-                    reloadModsInner(forceRefreshVersionChecker = true)
+                    reloadModsInner(forceRefreshVersionChecker = true, forceRefreshSaves = true)
                 }
             }
 
@@ -206,7 +206,7 @@ private fun setUpToasts() {
                 .forEach { newModVariant ->
                     Timber.i { "Found new mod ${newModVariant.modInfo.id} ${newModVariant.modInfo.version}." }
                     val id = "new-mod-" + newModVariant.smolId
-                    SL.UI.toaster.addItem(Toast(
+                    SL.UI.toaster.addItem(ToastContainer(
                         id = id,
                         timeoutMillis = null,
                         useStandardToastFrame = true
@@ -214,10 +214,7 @@ private fun setUpToasts() {
                         toastInstalledCard(
                             modVariant = newModVariant,
                             requestToastDismissal = { delayMillis ->
-                                if (!SL.UI.toaster.timersByToastId.containsKey(id)) {
-                                    Timber.i { "Changed toast timer id $id to ${delayMillis}ms." }
-                                    SL.UI.toaster.timersByToastId[id] = delayMillis
-                                }
+                                SL.UI.toaster.setTimeout(id, delayMillis)
                             }
                         )
                     })
@@ -228,33 +225,29 @@ private fun setUpToasts() {
 
     LaunchedEffect(1) {
         val items = SL.UI.toaster.items
-        SL.UI.downloadManager.downloads.collect { downloads ->
-            downloads
-                .filter { it.id !in items.value.map { it.id } }
-                .filter {
-                    !it.status.value.isAny(
-                        DownloadItem.Status.Completed::class,
-                        DownloadItem.Status.Cancelled::class,
-                        DownloadItem.Status.Failed::class
+        SL.UI.downloadManager.downloads
+            .filter { it.id !in items.value.map { it.id } }
+            .filter {
+                !it.status.value.isAny(
+                    DownloadItem.Status.Completed::class,
+                    DownloadItem.Status.Cancelled::class,
+                    DownloadItem.Status.Failed::class
+                )
+            }
+            .map {
+                val toastId = "download-${it.id}"
+                ToastContainer(id = toastId, timeoutMillis = null, useStandardToastFrame = true) {
+                    DownloadToast(
+                        download = it,
+                        requestToastDismissal = { delayMillis ->
+                            SL.UI.toaster.setTimeout(toastId, delayMillis)
+                        }
                     )
                 }
-                .map {
-                    val toastId = "download-${it.id}"
-                    Toast(id = toastId, timeoutMillis = null, useStandardToastFrame = true) {
-                        downloadToast(
-                            download = it,
-                            requestToastDismissal = { delayMillis ->
-                                if (!SL.UI.toaster.timersByToastId.containsKey(toastId)) {
-                                    Timber.i { "Changed toast timer id $toastId to ${delayMillis}ms." }
-                                    SL.UI.toaster.timersByToastId[toastId] = delayMillis
-                                }
-                            })
-                    }
-                }
-                .also {
-                    SL.UI.toaster.addItems(it)
-                }
-        }
+            }
+            .also {
+                SL.UI.toaster.addItems(it)
+            }
     }
 }
 
@@ -267,7 +260,7 @@ class AppScope(windowState: WindowState, private val recomposer: RecomposeScope)
     fun dismissAlertDialog() = alertDialogSetter.invoke(null)
     val duplicateModAlertDialogState = DuplicateModAlertDialogState()
 
-    suspend fun reloadMods() = reloadModsInner(forceRefreshVersionChecker = true)
+    suspend fun forceReloadMods() = reloadModsInner(forceRefreshVersionChecker = true, forceRefreshSaves = true)
     fun recomposeAppUI() = recomposer.invalidate()
 }
 
@@ -295,7 +288,7 @@ private suspend fun watchDirsAndReloadOnChange(scope: CoroutineScope) {
                     // refreshing 500 times if 500 files are changed in a few millis.
                     delay(500)
                     Timber.i { "Reloading due to file change: $it" }
-                    reloadModsInner(forceRefreshVersionChecker = false)
+                    reloadModsInner(forceRefreshVersionChecker = false, forceRefreshSaves = false)
                 } else {
                     Timber.i { "Skipping mod reload while IO locked." }
                 }
@@ -303,7 +296,7 @@ private suspend fun watchDirsAndReloadOnChange(scope: CoroutineScope) {
     }
 }
 
-private suspend fun reloadModsInner(forceRefreshVersionChecker: Boolean) {
+private suspend fun reloadModsInner(forceRefreshVersionChecker: Boolean, forceRefreshSaves: Boolean) {
     if (SL.access.areModsLoading.value) {
         Timber.i { "Skipping reload of mods as they are currently refreshing already." }
         return
@@ -320,14 +313,14 @@ private suspend fun reloadModsInner(forceRefreshVersionChecker: Boolean) {
                         .any { newVariantId -> newVariantId !in previousVariantIds }
 
                 listOf(
-                    GlobalScope.async {
+                    async {
                         SL.versionChecker.lookUpVersions(
                             forceLookup = forceRefreshVersionChecker || hasNewVariantBeenAdded,
                             mods = mods
                         )
                     },
                     async {
-                        kotlin.runCatching { SL.saveReader.readAllSaves() }
+                        kotlin.runCatching { SL.saveReader.readAllSaves(forceRefresh = forceRefreshSaves) }
                             .onFailure { Timber.w(it) }
                     }
                 ).awaitAll()

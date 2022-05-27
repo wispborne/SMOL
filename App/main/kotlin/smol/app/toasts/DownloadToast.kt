@@ -48,7 +48,7 @@ import kotlin.io.path.name
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
-fun downloadToast(
+fun DownloadToast(
     modifier: Modifier = Modifier,
     download: DownloadItem,
     requestToastDismissal: (delayMs: Long) -> Unit
@@ -161,7 +161,7 @@ fun downloadToast(
 @Composable
 fun downloadCardPreview() =
     smolPreview {
-        downloadToast(
+        DownloadToast(
             download = DownloadItem.MOCK,
             requestToastDismissal = {}
         )

@@ -45,6 +45,9 @@ interface IVersionChecker {
     suspend fun lookUpVersions(mods: List<Mod>, forceLookup: Boolean)
 }
 
+/**
+ * I think I made an interface so that the internal stuff here wasn't exposed outside of the module.
+ */
 internal class VersionChecker(
     private val gson: Jsanity,
     private val versionCheckerCache: VersionCheckerCache,
@@ -61,7 +64,6 @@ internal class VersionChecker(
 
     @Suppress("ConvertCallChainIntoSequence")
     override suspend fun lookUpVersions(mods: List<Mod>, forceLookup: Boolean) {
-
         withContext(Dispatchers.IO) {
             httpClientBuilder.invoke().use { client ->
                 val results =

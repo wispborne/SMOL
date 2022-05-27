@@ -13,6 +13,8 @@
 package smol.app.browser
 
 import AppScope
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.toMutableStateList
 import io.ktor.http.*
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -33,9 +35,9 @@ class DownloadManager(
     private val access: smol.access.Access,
     private val gamePathManager: GamePathManager
 ) {
-    private val downloadsInner = MutableStateFlow<List<DownloadItem>>(emptyList())
+    private val downloadsInner = SnapshotStateList<DownloadItem>()
 
-    val downloads = downloadsInner.asStateFlow()
+    val downloads: List<DownloadItem> = downloadsInner
     val activeDownloads = mutableMapOf<String, Job>()
     private val scope = CoroutineScope(Job())
 
@@ -43,13 +45,13 @@ class DownloadManager(
      * Adds a [DownloadItem] to be tracked, with the progress and state modified outside of [DownloadManager].
      */
     internal fun addDownload(downloadItem: DownloadItem) {
-        val existing = downloads.value.firstOrNull { it.path == downloadItem.path }
+        val existing = downloads.firstOrNull { it.path == downloadItem.path }
 
         if (existing != null && existing.status.value !is DownloadItem.Status.Failed) {
             Timber.w { "Not adding download already added item $downloadItem." }
         } else {
             Timber.i { "Adding download $downloadItem" }
-            downloadsInner.tryEmit(downloadsInner.value + downloadItem)
+            downloadsInner.add(downloadItem)
         }
     }
 
@@ -106,7 +108,7 @@ class DownloadManager(
             )
 
             if (!allowRedownload) {
-                if (downloads.value.map { it.path.value?.name }.any { it == filename }) {
+                if (downloads.map { it.path.value?.name }.any { it == filename }) {
                     Timber.i { "Skipping file that is already in the downloads list: $filename." }
                     return downloadItem
                         .apply {
@@ -162,7 +164,7 @@ class DownloadManager(
                 }
             }
         } catch (e: CancellationException) {
-            downloads.value.firstOrNull { it.id == id }?.apply {
+            downloads.firstOrNull { it.id == id }?.apply {
                 this.status.value = DownloadItem.Status.Cancelled
             }
         }

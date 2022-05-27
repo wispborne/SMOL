@@ -36,9 +36,14 @@ class SaveReader(
     private val defaultSaveFolder = gamePathManager.path.value?.resolve("saves")
     private val datePatterns = listOf("yyyy-MM-dd HH:mm:ss.SSS zzz", "yyyy-MM-dd HH:mm:ss.S zzz")
 
-    fun readAllSaves(saveFolder: Path? = defaultSaveFolder) {
+    fun readAllSaves(saveFolder: Path? = defaultSaveFolder, forceRefresh: Boolean) {
         saveFolder ?: run {
             Timber.e { "Save folder was null" }
+            return
+        }
+
+        if (saves.value.isEmpty() && !forceRefresh) {
+            Timber.d { "Saves already loaded, not refreshing, not forced." }
             return
         }
 

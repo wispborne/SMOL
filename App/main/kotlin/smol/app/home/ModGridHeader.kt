@@ -83,7 +83,7 @@ fun AppScope.ModGridHeader(
                         ) {
                             refreshButton {
                                 GlobalScope.launch(Dispatchers.Default) {
-                                    reloadMods()
+                                    forceReloadMods()
                                 }
                             }
                         }

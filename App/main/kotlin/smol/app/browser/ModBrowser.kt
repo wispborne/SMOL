@@ -518,7 +518,7 @@ private fun AppScope.createDownloadHandler() = object : DownloadHandler {
         speedBps: Long?,
         endTime: Date
     ) {
-        SL.UI.downloadManager.downloads.value.firstOrNull { it.id == itemId }
+        SL.UI.downloadManager.downloads.firstOrNull { it.id == itemId }
             ?.let { download ->
                 runBlocking {
                     if (progressBytes != null)
@@ -534,7 +534,7 @@ private fun AppScope.createDownloadHandler() = object : DownloadHandler {
     }
 
     override fun onCanceled(itemId: String) {
-        SL.UI.downloadManager.downloads.value.firstOrNull { it.id == itemId }
+        SL.UI.downloadManager.downloads.firstOrNull { it.id == itemId }
             ?.let { download ->
                 runBlocking {
                     download.status.emit(
@@ -549,7 +549,7 @@ private fun AppScope.createDownloadHandler() = object : DownloadHandler {
     }
 
     override fun onCompleted(itemId: String) {
-        SL.UI.downloadManager.downloads.value.firstOrNull { it.id == itemId }
+        SL.UI.downloadManager.downloads.firstOrNull { it.id == itemId }
             ?.let { download ->
                 runBlocking {
                     if (download.totalBytes.value != null)

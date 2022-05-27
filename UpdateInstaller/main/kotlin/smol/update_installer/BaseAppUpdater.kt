@@ -21,6 +21,7 @@ import org.update4j.Configuration
 import org.update4j.FileMetadata
 import org.update4j.UpdateOptions
 import smol.timber.ktx.Timber
+import smol.utilities.bytesAsShortReadableMB
 import java.net.URI
 import java.net.URL
 import java.nio.file.Path
@@ -91,10 +92,10 @@ abstract class BaseAppUpdater {
                         "Fetched ${getConfigXmlFileName(channel)} from ${remoteConfigUrl}. " +
                                 "Update needed? ${it.requiresUpdate()}, " +
                                 "Total size: ${it.files.filter { it.requiresUpdate() }.sumOf { it.size }}b." +
-                                "\n  Files:" +
+                                "\n  Files to download:" +
                                 "\n${
                                     it.files.filter { file -> file.requiresUpdate() }
-                                        .joinToString(separator = "\n") { "  ${it.path.absolutePathString()}" }
+                                        .joinToString(separator = "\n") { "  ${it.path.absolutePathString()} (${it.size.bytesAsShortReadableMB}) [checksum ${it.checksum}]" }
                                 }"
                     }
                 }

@@ -47,7 +47,7 @@ fun updateSection(scope: CoroutineScope) {
         Text(text = "Updates", style = SettingsView.settingLabelStyle())
         var updateStatus by remember { mutableStateOf("") }
 
-        fun doUpdateCheck() {
+        fun doUpdateCheck(hasChannelChanged: Boolean) {
             scope.launch {
                 kotlin.runCatching {
                     updateStatus =
@@ -71,12 +71,14 @@ fun updateSection(scope: CoroutineScope) {
 
                     }
 
-                kotlin.runCatching { SL.modRepo.refreshFromInternet(SL.appConfig.updateChannel) }
-                    .onFailure { Timber.w(it) }
+                if (hasChannelChanged) {
+                    kotlin.runCatching { SL.modRepo.refreshFromInternet(SL.appConfig.updateChannel) }
+                        .onFailure { Timber.w(it) }
+                }
             }
         }
 
-        LaunchedEffect(Unit) { doUpdateCheck() }
+        LaunchedEffect(Unit) { doUpdateCheck(hasChannelChanged = false) }
 
         SmolDropdownWithButton(
             modifier = Modifier.padding(top = 4.dp),
@@ -91,7 +93,7 @@ fun updateSection(scope: CoroutineScope) {
                     iconPath = "icon-stable.svg",
                     onClick = {
                         SL.UI.updateChannelManager.setUpdateChannel(UpdateChannel.Stable, SL.appConfig)
-                        doUpdateCheck()
+                        doUpdateCheck(hasChannelChanged = true)
                     }
                 ),
                 SmolDropdownMenuItemTemplate(
@@ -99,7 +101,7 @@ fun updateSection(scope: CoroutineScope) {
                     iconPath = "icon-experimental.svg",
                     onClick = {
                         SL.UI.updateChannelManager.setUpdateChannel(UpdateChannel.Unstable, SL.appConfig)
-                        doUpdateCheck()
+                        doUpdateCheck(hasChannelChanged = true)
                     }
                 ),
                 SmolDropdownMenuItemTemplate(
@@ -107,14 +109,14 @@ fun updateSection(scope: CoroutineScope) {
                     iconPath = "icon-test-radioactive.svg",
                     onClick = {
                         SL.UI.updateChannelManager.setUpdateChannel(UpdateChannel.Test, SL.appConfig)
-                        doUpdateCheck()
+                        doUpdateCheck(hasChannelChanged = true)
                     }
                 )
             ),
             shouldShowSelectedItemInMenu = true)
 
         SmolButton(
-            onClick = { doUpdateCheck() }
+            onClick = { doUpdateCheck(hasChannelChanged = true) }
         ) {
             Text("Check for Update")
         }

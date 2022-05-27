@@ -29,7 +29,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import org.update4j.Configuration
 import smol.app.composables.SmolButton
-import smol.app.toasts.Toast
+import smol.app.toasts.ToastContainer
 import smol.app.toasts.ToasterState
 import smol.timber.ktx.Timber
 import smol.update_installer.BaseAppUpdater
@@ -71,7 +71,7 @@ class UpdateSmolToast {
         if (updateConfig?.requiresUpdate() == true) {
             Timber.i { "Adding update toast for config '${smolUpdater.updateZipFile}'." }
             toasterState.addItem(
-                toast = Toast(
+                toastContainer = ToastContainer(
                     id = UPDATE_TOAST_ID,
                     timeoutMillis = null,
                     useStandardToastFrame = true,
