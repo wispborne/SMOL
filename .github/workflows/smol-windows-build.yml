@@ -50,13 +50,13 @@ jobs:
 
       # Build
       - name: Build Unstable
-        if: steps.version.outputs.is_valid == 'true' && contains(steps.version.outputs.full, "unstable")
+        if: steps.version.outputs.is_valid == 'true' && contains(steps.version.outputs.full, 'unstable')
         uses: gradle/gradle-build-action@937999e9cc2425eddc7fd62d1053baf041147db7
         with:
           arguments: buildSmolDistUnstable
 
       - name: Build Test
-        if: steps.version.outputs.is_valid == 'true' && contains(steps.version.outputs.full, "test")
+        if: steps.version.outputs.is_valid == 'true' && contains(steps.version.outputs.full, 'test')
         uses: gradle/gradle-build-action@937999e9cc2425eddc7fd62d1053baf041147db7
         with:
           arguments: buildSmolDistTest
