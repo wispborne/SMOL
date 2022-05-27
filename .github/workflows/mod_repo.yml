@@ -11,7 +11,7 @@ on:
       - "modrepo-*"
 
 jobs:
-  build:
+  build_and_publish:
     runs-on: ubuntu-latest
 
     steps:
@@ -35,9 +35,9 @@ jobs:
         uses: "ncipollo/release-action@v1"
         with:
           name: "Mod Repo: ${{ github.ref_name }}"
-          repo: "StarsectorModRepo"
+          repo: "davidwhitman/StarsectorModRepo"
           generateReleaseNotes: true
           allowUpdates: true
           draft: false
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.WRITE_PAT }}
           artifacts: "Mod_Repo/dist/*"

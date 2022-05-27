@@ -11,7 +11,7 @@ on:
       - "smol-*"
 
 jobs:
-  build:
+  build_and_publish:
     runs-on: windows-latest
 
     steps:
@@ -70,4 +70,4 @@ jobs:
           repository: "davidwhitman/SMOL_Dist"
           branch: "test"
           directory: "dist/main/app/SMOL/"
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.WRITE_PAT }}
