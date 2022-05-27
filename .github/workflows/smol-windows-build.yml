@@ -71,4 +71,5 @@ jobs:
           allowUpdates: true
           draft: false
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: "SMOL/dist/main/app/SMOL/*"
+          artifacts: "dist/main/app/SMOL/*"
+          prerelease: steps.version.outputs != 'is_stable'
