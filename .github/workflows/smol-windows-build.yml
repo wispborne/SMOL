@@ -8,35 +8,67 @@ name: Build SMOL for Windows and Create Release from Tag
 on:
   push:
     tags:
-      - 'smol*'
+      - "smol-*"
 
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
+      # Check version in tag
+      - uses: nowsprinting/check-version-format-action@v3
+        id: version
+        with:
+          prefix: "smol-"
+
+      - name: Print version info if valid
+        run: |
+          echo "Found valid version format in tag!"
+          echo "Full version: ${{ steps.version.outputs.full }}"
+          echo "Major version: ${{ steps.version.outputs.major }}"
+          echo "Major with pre-release: ${{ steps.version.outputs.major_prerelease }}"
+        if: steps.version.outputs.is_valid == 'true'
+
+      - name: Print version warning if invalid
+        run: |
+          echo "Found invalid version format in tag!"
+        if: steps.version.outputs.is_valid == 'false'
+
+      # git checkout
       - uses: actions/checkout@v2
 
       - name: Set up JDK 16
+        if: steps.version.outputs.is_valid == 'true'
         uses: actions/setup-java@v2
         with:
-          java-version: '16'
-          distribution: 'adopt'
+          java-version: "16"
+          distribution: "adopt"
 
       - name: Validate Gradle wrapper
+        if: steps.version.outputs.is_valid == 'true'
         uses: gradle/wrapper-validation-action@e6e38bacfdf1a337459f332974bb2327a31aaf4b
 
-      - name: Build with Gradle
+      # Build
+      - name: Build Unstable
+        if: steps.version.outputs.is_valid == 'true' && contains(steps.version.outputs.full, "unstable")
         uses: gradle/gradle-build-action@937999e9cc2425eddc7fd62d1053baf041147db7
         with:
           arguments: buildSmolDistUnstable
 
-      # - name: Publish Release on GitHub
-      #   uses: "ncipollo/release-action@v1"
-      #   with:
-      #     name: "Mod Repo: ${{ github.ref_name }}"
-      #     generateReleaseNotes: true
-      #     allowUpdates: true
-      #     draft: false
-      #     token: ${{ secrets.GITHUB_TOKEN }}
-      #     artifacts: "Mod_Repo/dist/*"
+      - name: Build Test
+        if: steps.version.outputs.is_valid == 'true' && contains(steps.version.outputs.full, "test")
+        uses: gradle/gradle-build-action@937999e9cc2425eddc7fd62d1053baf041147db7
+        with:
+          arguments: buildSmolDistTest
+
+      # Publish
+      - name: Publish Release on GitHub
+        if: steps.version.outputs.is_valid == 'true'
+        uses: "ncipollo/release-action@v1"
+        with:
+          name: "SMOL: ${{ github.ref_name }}"
+          generateReleaseNotes: true
+          allowUpdates: true
+          draft: false
+          token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts: "SMOL/dist/main/app/SMOL/*"
