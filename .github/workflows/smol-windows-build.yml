@@ -37,7 +37,11 @@ jobs:
 
       # git checkout
       - uses: actions/checkout@v2
+        with:
+          persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal access token.
+          fetch-depth: 0 # otherwise, there would be errors pushing refs to the destination repository.
 
+      # Install dependency: JDK
       - name: Set up JDK 16
         if: steps.version.outputs.is_valid == 'true'
         uses: actions/setup-java@v2
@@ -45,11 +49,11 @@ jobs:
           java-version: "16"
           distribution: "adopt"
 
+      # Build
       - name: Validate Gradle wrapper
         if: steps.version.outputs.is_valid == 'true'
-        uses: gradle/wrapper-validation-action@e6e38bacfdf1a337459f332974bb2327a31aaf4b
+        uses: gradle/wrapper-validation-action@v1
 
-      # Build
       - name: Build Unstable
         if: steps.version.outputs.is_valid == 'true' && contains(steps.version.outputs.full, 'unstable')
         uses: gradle/gradle-build-action@937999e9cc2425eddc7fd62d1053baf041147db7
@@ -63,6 +67,13 @@ jobs:
           arguments: buildSmolDistTest
 
       # Publish
+      - name: Commit files
+        run: |
+          git config --local user.email "1343347+davidwhitman@users.noreply.github.com"
+          git config --local user.name "Beta Core [GitHub Actions]"
+          git add .
+          git commit -m "{{ steps.version.outputs.full }}"
+
       - name: Publish Test to SMOL_Dist
         if: steps.version.outputs.is_valid == 'true' && contains(steps.version.outputs.full, 'test')
         uses: ad-m/github-push-action@master
