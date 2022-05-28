@@ -95,13 +95,18 @@ jobs:
       - name: "Copy artifacts to staging folder"
         shell: bash
         run: | # copy handles hidden files/folders better than mv apparently?
-          echo $(pwd)
+          ls ~ -a
+          echo "---"
           ls . -a
-          cp -rv "./dist/main/app/SMOL/"* "./${{ env.artifacts_folder }}/SMOL_Dist"
+          echo "---"
+          ls / -a
+          echo "---"
+          echo $(pwd)
+          cp -rv "./dist/main/app/SMOL/"* "../SMOL_Dist/${{ env.artifacts_folder }}"
 
       - name: "Commit files"
         run: |
-          cd "${{ env.artifacts_folder }}/SMOL_Dist"
+          cd "../SMOL_Dist/${{ env.artifacts_folder }}"
           git config --local user.email "1343347+davidwhitman@users.noreply.github.com"
           git config --local user.name "Beta Core [GitHub Actions]"
           git add .
