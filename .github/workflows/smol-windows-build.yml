@@ -33,11 +33,12 @@ jobs:
           echo "Found invalid version format in tag!"
         if: steps.version.outputs.is_valid == 'false'
 
-      # Env vars: artifacts_folder, smol_branch
+      # Env vars: artifacts_folder, code_folder, smol_branch
       - name: "Env var: staging folder for artifacts"
         shell: bash
         run: |
           echo "artifacts_folder=github-artifacts" >> $GITHUB_ENV
+          echo "code_folder=SMOL" >> $GITHUB_ENV
 
       # NOTE TO SELF: when adding "stable", remember that "unstable" contains the word "stable"
       - name: "Env var: unstable"
@@ -62,6 +63,8 @@ jobs:
       # Code checkout
       - name: "git checkout of SMOL source"
         uses: actions/checkout@v3
+        with:
+          path: ${{ env.code_folder }}
 
       - name: "git checkout of SMOL dist"
         uses: actions/checkout@v3
@@ -95,7 +98,9 @@ jobs:
       - name: "Copy artifacts to staging folder"
         shell: bash
         run: | # copy handles hidden files/folders better than mv apparently?
-          cp -rv "dist/main/app/SMOL/*" "${{ env.artifacts_folder }}/SMOL_Dist"
+          echo $(pwd)
+          ls .
+          cp -rv "${{ env.code_folder }}/dist/main/app/SMOL/*" "${{ env.artifacts_folder }}/SMOL_Dist"
 
       - name: "Commit files"
         run: |
