@@ -35,15 +35,19 @@ jobs:
 
       # Env vars: artifacts-folder, smol-branch
       - name: "Env var: staging folder for artifacts"
-        run: echo "artifacts-folder=github-artifacts" >> $GITHUB_ENV
+        run: |
+          echo "artifacts-folder=github-artifacts" >> $GITHUB_ENV
 
+      # NOTE TO SELF: when adding "stable", remember that "unstable" contains the word "stable"
       - name: "Env var: unstable"
         if: steps.version.outputs.is_valid == 'true' && contains(steps.version.outputs.full, 'unstable')
-        run: echo "smol-branch=unstable" >> $GITHUB_ENV
+        run: |
+          echo "smol-branch=unstable" >> $GITHUB_ENV
 
       - name: "Env var: test"
         if: steps.version.outputs.is_valid == 'true' && contains(steps.version.outputs.full, 'test')
-        run: echo "smol-branch=test" >> $GITHUB_ENV
+        run: |
+          echo "smol-branch=test" >> $GITHUB_ENV
 
       - name: "Install dependency: JDK 16"
         if: steps.version.outputs.is_valid == 'true'
