@@ -97,7 +97,11 @@ jobs:
         run: | # copy handles hidden files/folders better than mv apparently?
           echo $(pwd)
           ls . -a
-          cp -rv "dist/main/app/SMOL/*" "${{ env.artifacts_folder }}/SMOL_Dist"
+          ls ./dist
+          ls ./dist/main
+          ls ./dist/main/app
+          ls ./dist/main/app/SMOL
+          cp -rv "./dist/main/app/SMOL/*" "./${{ env.artifacts_folder }}/SMOL_Dist"
 
       - name: "Commit files"
         run: |
