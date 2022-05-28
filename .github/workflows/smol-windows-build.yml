@@ -79,7 +79,7 @@ jobs:
           arguments: buildSmolDistUnstable
 
       - name: "Build Test"
-        if: steps.version.outputs.is_valid == 'true' && && env.smol-branch == 'test'
+        if: steps.version.outputs.is_valid == 'true' && env.smol-branch == 'test'
         uses: gradle/gradle-build-action@937999e9cc2425eddc7fd62d1053baf041147db7
         with:
           arguments: buildSmolDistTest
