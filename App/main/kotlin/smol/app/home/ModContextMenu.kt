@@ -85,8 +85,7 @@ private fun AppScope.modGridSingleModMenu(
     coroutineScope: CoroutineScope,
     modInDebugDialog: MutableState<Mod?>
 ) {
-    val modsFolder = (mod.findFirstEnabled
-        ?: mod.findFirstDisabled)?.modsFolderInfo?.folder
+    val modsFolder = (mod.findFirstEnabledOrHighestVersion)?.modsFolderInfo?.folder
     if (modsFolder?.exists() == true) {
         DropdownMenuItem(onClick = {
             runCatching {

@@ -250,7 +250,10 @@ internal class ModMerger {
                     ),
                     sources = (modToFoldIn.sources() + mergedMod.sources()).distinct(),
                     categories = (modToFoldIn.categories() + mergedMod.categories()).distinctBy { it.lowercase() },
-                    images = (modToFoldIn.images() + mergedMod.images()),
+                    images = (modToFoldIn.images() + mergedMod.images())
+                        .entries
+                        .distinctBy { it.value.url }
+                        .associate { it.toPair() },
                     dateTimeCreated = chooseBest(
                         left = mergedMod.dateTimeCreated,
                         right = modToFoldIn.dateTimeCreated,
@@ -277,8 +280,8 @@ internal class ModMerger {
     private fun cleanUpMods(mods: List<ScrapedMod>): List<ScrapedMod> =
         mods
             .filter {
-                val hasLink = it.link != null
-                if (!hasLink) Timber.i { "Removing mod without a forum link: '${it.name}' by '${it.authors}'." }
+                val hasLink = !it.urls.isNullOrEmpty()
+                if (!hasLink) Timber.i { "Removing mod without any links: '${it.name}' by '${it.authors()}'." }
                 hasLink
             }
 

@@ -17,6 +17,7 @@ import kotlinx.coroutines.launch
 import smol.access.model.UserProfile
 import smol.timber.ktx.Timber
 import smol.utilities.diff
+import smol.utilities.parallelMap
 import smol.utilities.trace
 
 class UserModProfileManager internal constructor(
@@ -98,7 +99,7 @@ class UserModProfileManager internal constructor(
                                 }
                             }
                     }
-                    .forEach { variant ->
+                    .parallelMap { variant ->
                         access.enableModVariant(variant)
                     }
 

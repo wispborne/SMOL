@@ -42,6 +42,7 @@ import smol.app.themes.SmolTheme.toColors
 import smol.timber.ktx.Timber
 import smol.utilities.equalsAny
 import smol.utilities.exists
+import smol.utilities.nullIfBlank
 import java.awt.Desktop
 import java.net.URI
 import java.nio.file.Path
@@ -50,12 +51,12 @@ import kotlin.io.path.name
 
 
 fun Mod.getModThreadId(): ModThreadId? =
-    findFirstEnabled?.versionCheckerInfo?.modThreadId
-        ?: findHighestVersion?.versionCheckerInfo?.modThreadId
+    findFirstEnabled?.versionCheckerInfo?.modThreadId?.nullIfBlank()
+        ?: findHighestVersion?.versionCheckerInfo?.modThreadId?.nullIfBlank()
 
 fun Mod.getNexusId(): ModThreadId? =
-    findFirstEnabled?.versionCheckerInfo?.modNexusId
-        ?: findHighestVersion?.versionCheckerInfo?.modNexusId
+    findFirstEnabled?.versionCheckerInfo?.modNexusId?.nullIfBlank()
+        ?: findHighestVersion?.versionCheckerInfo?.modNexusId?.nullIfBlank()
 
 fun ModThreadId.openModThread() {
     (Constants.FORUM_MOD_PAGE_URL + this).openAsUriInBrowser()

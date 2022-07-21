@@ -76,7 +76,7 @@ class VmParamsManager(
             path ?: return
 
             if (backupPath == null) {
-                Timber.e { "Backup path was null!" }
+                Timber.e { "Backup path was null! Try running as admin." }
                 return
             }
 

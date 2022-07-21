@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.ContentAlpha
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.unit.DpOffset
@@ -30,7 +31,8 @@ fun SmolTooltipArea(
     modifier: Modifier = Modifier,
     delayMillis: Int = 0,
     tooltipPlacement: TooltipPlacement = TooltipPlacement.CursorPoint(
-        offset = DpOffset(0.dp, 16.dp)
+        offset = DpOffset(0.dp, 16.dp),
+        alignment = Alignment.TopStart
     ),
     content: @Composable () -> Unit
 ) {

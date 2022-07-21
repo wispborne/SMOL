@@ -156,43 +156,11 @@ class CefBrowserPanel
         }
 
         if (client == null) {
-            // (2) JCEF can handle one to many browser instances simultaneous. These
-            //     browser instances are logically grouped together by an instance of
-            //     the class CefClient. In your application you can create one to many
-            //     instances of CefClient with one to many CefBrowser instances per
-            //     client. To get an instance of CefClient you have to use the method
-            //     "createClient()" of your CefApp instance. Calling an CTOR of
-            //     CefClient is not supported.
-            //
-            //     CefClient is a connector to all possible events which come from the
-            //     CefBrowser instances. Those events could be simple things like the
-            //     change of the browser title or more complex ones like context menu
-            //     events. By assigning handlers to CefClient you can control the
-            //     behavior of the browser. See example.detailed.SimpleFrameExample for an example
-            //     of how to use these handlers.
             Timber.i { "Initializing CEF Client." }
             client = cefApp?.createClient()
-
-            // (3) One CefBrowser instance is responsible to control what you'll see on
-            //     the UI component of the instance. It can be displayed off-screen
-            //     rendered or windowed rendered. To get an instance of CefBrowser you
-            //     have to call the method "createBrowser()" of your CefClient
-            //     instances.
-            //
-            //     CefBrowser has methods like "goBack()", "goForward()", "loadURL()",
-            //     and many more which are used to control the behavior of the displayed
-            //     content. The UI is held within a UI-Compontent which can be accessed
-            //     by calling the method "getUIComponent()" on the instance of CefBrowser.
-            //     The UI component is inherited from a java.awt.Component and therefore
-            //     it can be embedded into any AWT UI.
             browser = client?.createBrowser(startURL, useOSR, isTransparent)
             browserUI = browser?.uiComponent
 
-            //    Beside the normal handler instances, we're registering a MessageRouter
-            //    as well. That gives us the opportunity to reply to JavaScript method
-            //    calls (JavaScript binding). We're using the default configuration, so
-            //    that the JavaScript binding methods "cefQuery" and "cefQueryCancel"
-            //    are used.
             val msgRouter = CefMessageRouter.create()
             msgRouter.addHandler(MessageRouterHandler(), true)
             msgRouter.addHandler(MessageRouterHandlerEx(client), false)
@@ -298,30 +266,17 @@ class CefBrowserPanel
                 suggestedFileName = suggestedName,
                 totalBytes = item.totalBytes
             )
-            /**
             public void Continue(String downloadPath, boolean showDialog);
-             * Call to continue the download.
-             * @param downloadPath Set it to the full file path for the download
-             * including the file name or leave blank to use the suggested name and
-             * the default temp directory.
-             * @param showDialog Set it to true if you do wish to show the default
-             * "Save As" dialog.
-             */
-            /**
-            public void Continue(String downloadPath, boolean showDialog);
-             * Call to continue the download.
-             * @param downloadPath Set it to the full file path for the download
-             * including the file name or leave blank to use the suggested name and
-             * the default temp directory.
-             * @param showDialog Set it to true if you do wish to show the default
-             * "Save As" dialog.
-             */
+            * Call to continue the download.
+            * @param downloadPath Set it to the full file path for the download
+            * including the file name or leave blank to use the suggested name and
+            * the default temp directory .
+            * @param showDialog Set it to true if you do wish to show the default
+            * "Save As" dialog .
+            */
             callback.Continue(downloadHandler.getDownloadPathFor(suggestedName).absolutePathString(), false)
         }
 
-        /**
-         * @param callback Callback interface used to asynchronously modify download status.
-         */
         /**
          * @param callback Callback interface used to asynchronously modify download status.
          */

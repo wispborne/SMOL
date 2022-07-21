@@ -37,6 +37,7 @@ object ModRepoUtils {
         listOf("cptdash", "SpeedRacer"),
         listOf("Elseud", "Elseudo"),
         listOf("TobiaF", "Toby"),
+        listOf("Mephyr", "Liral"),
     )
 
     fun getOtherMatchingAliases(author: String, fuzzyMatchAliases: Boolean = false): List<String> {
