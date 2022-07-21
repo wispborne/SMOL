@@ -45,6 +45,7 @@ internal class ModMerger {
 
         return mods
             .sortedBy { it.name }
+            .let { preprocessMods(it) }
             .let { scrapedMods ->
                 Timber.i { "Grouping ${mods.count()} mods by similarity..." }
 
@@ -167,7 +168,7 @@ internal class ModMerger {
                 summary.appendLine(msg)
             }
             .let { mergedMods ->
-                cleanUpMods(mergedMods)
+                removeInvalidMods(mergedMods)
             }
             .onEach { Timber.v { it.toString() } }
             .also { Timber.i { summary.toString() } }
@@ -277,12 +278,29 @@ internal class ModMerger {
         else left ?: right
     }
 
-    private fun cleanUpMods(mods: List<ScrapedMod>): List<ScrapedMod> =
+    private fun preprocessMods(mods: List<ScrapedMod>): List<ScrapedMod> =
+        mods
+            .map {
+                it.copy(
+                    name = it.name.trim(),
+                    summary = it.summary?.trim(),
+                    description = it.description?.trim(),
+                    modVersion = it.modVersion?.trim(),
+                    gameVersionReq = it.gameVersionReq?.trim(),
+                    authorsList = it.authorsList?.map { it.trim() }
+                )
+            }
+
+    private fun removeInvalidMods(mods: List<ScrapedMod>): List<ScrapedMod> =
         mods
             .filter {
                 val hasLink = !it.urls.isNullOrEmpty()
                 if (!hasLink) Timber.i { "Removing mod without any links: '${it.name}' by '${it.authors()}'." }
-                hasLink
+
+                val hasName = it.name.isNotBlank()
+                if (!hasName) Timber.i { "Removing mod without a name: mod by '${it.authors()}' with links ${it.urls()}." }
+
+                hasLink && hasName
             }
 
     private fun String.prepForMatching() = this.lowercase().filter { it.isLetter() }.nullIfBlank()

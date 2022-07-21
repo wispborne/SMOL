@@ -123,7 +123,7 @@ internal object DiscordReader {
                     ?: forumUrl
 
                 ScrapedMod(
-                    name = messageLines.firstOrNull()?.removeMarkdownFromName() ?: "(Discord Mod)",
+                    name = messageLines.firstOrNull()?.removeMarkdownFromName() ?: "",
                     summary = messageLines.drop(1).take(2).joinToString(separator = "\n"),
                     description = messageLines.drop(1).joinToString(separator = "\n"),
                     modVersion = null,
