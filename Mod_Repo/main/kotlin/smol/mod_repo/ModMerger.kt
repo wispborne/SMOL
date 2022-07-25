@@ -232,7 +232,8 @@ internal class ModMerger {
                     ) ?: "",
                     authorsList = (mergedMod.authors() + modToFoldIn.authors())
                         .distinctBy { it.prepForMatching() }
-                        .filter { it.isNotBlank() },
+                        .filter { it.isNotBlank() }
+                        .sorted(),
                     forumPostLink = chooseBest(
                         left = mergedMod.forumPostLink,
                         right = modToFoldIn.forumPostLink,
@@ -243,18 +244,19 @@ internal class ModMerger {
                         right = modToFoldIn.link,
                         doesRightHavePriority = doesNewModHavePriority
                     ),
-                    urls = mergedMod.urls() + modToFoldIn.urls(),
+                    urls = (mergedMod.urls() + modToFoldIn.urls()).toSortedMap(),
                     source = chooseBest(
                         left = mergedMod.source,
                         right = modToFoldIn.source,
                         doesRightHavePriority = doesNewModHavePriority
                     ),
-                    sources = (modToFoldIn.sources() + mergedMod.sources()).distinct(),
-                    categories = (modToFoldIn.categories() + mergedMod.categories()).distinctBy { it.lowercase() },
+                    sources = (modToFoldIn.sources() + mergedMod.sources()).distinct().sorted(),
+                    categories = (modToFoldIn.categories() + mergedMod.categories()).distinctBy { it.lowercase() }.sorted(),
                     images = (modToFoldIn.images() + mergedMod.images())
                         .entries
                         .distinctBy { it.value.url }
-                        .associate { it.toPair() },
+                        .associate { it.toPair() }
+                        .toSortedMap(),
                     dateTimeCreated = chooseBest(
                         left = mergedMod.dateTimeCreated,
                         right = modToFoldIn.dateTimeCreated,
