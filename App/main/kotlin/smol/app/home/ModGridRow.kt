@@ -70,7 +70,7 @@ fun AppScope.ModGridRow(
     var showContextMenu by remember { mutableStateOf(false) }
     val highestLocalVCVersion =
         mod.findHighestVersion?.versionCheckerInfo?.modVersion
-    val onlineVersionInfo = SL.versionChecker.getOnlineVersion(modId = mod.id)
+    val onlineVersionInfo = SL.versionChecker.onlineVersions.collectAsState().value[mod.id]?.info
     val onlineVersion = onlineVersionInfo?.modVersion
     var isRowHighlighted by remember { mutableStateOf(false) }
 

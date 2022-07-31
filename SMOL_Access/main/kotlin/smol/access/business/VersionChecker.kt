@@ -17,6 +17,7 @@ import io.ktor.client.features.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
 import smol.access.Constants
 import smol.access.HttpClientBuilder
@@ -28,6 +29,7 @@ import smol.access.model.VersionCheckerInfo
 import smol.timber.ktx.Timber
 import smol.timber.ktx.i
 import smol.utilities.Jsanity
+import smol.utilities.asList
 import smol.utilities.parallelMap
 import smol.utilities.trace
 import java.time.Instant
@@ -37,6 +39,8 @@ interface IVersionChecker {
      * Gets the cached online version for the [mod].
      */
     fun getOnlineVersion(modId: ModId): VersionCheckerInfo?
+
+    val onlineVersions: StateFlow<Map<ModId, VersionCheckerCachedInfo>>
 
     @Suppress("ConvertCallChainIntoSequence")
     /**
@@ -60,7 +64,10 @@ internal class VersionChecker(
     }
 
     override fun getOnlineVersion(modId: ModId) =
-        versionCheckerCache.onlineVersions[modId]?.info
+        versionCheckerCache.onlineVersions.value[modId]?.info
+
+    override val onlineVersions: StateFlow<Map<ModId, VersionCheckerCachedInfo>>
+        get() = versionCheckerCache.onlineVersions
 
     @Suppress("ConvertCallChainIntoSequence")
     override suspend fun lookUpVersions(mods: List<Mod>, forceLookup: Boolean) {
@@ -77,7 +84,8 @@ internal class VersionChecker(
                             .filter {
                                 val msSinceLastCheck = Instant.now().toEpochMilli()
                                     .minus(
-                                        (versionCheckerCache.onlineVersions[it.modInfo.id]?.lastLookupTimestamp ?: 0L)
+                                        (versionCheckerCache.onlineVersions.value[it.modInfo.id]?.lastLookupTimestamp
+                                            ?: 0L)
                                     )
                                 val checkIntervalMillis =
                                     userManager.activeProfile.value.versionCheckerIntervalMillis
@@ -129,12 +137,15 @@ internal class VersionChecker(
                             }
                     }
 
-                versionCheckerCache.onlineVersions = results.associate {
-                    it.first.id to VersionCheckerCachedInfo(
-                        info = it.second,
-                        lastLookupTimestamp = Instant.now().toEpochMilli()
-                    )
-                }
+                versionCheckerCache.onlineVersions.value = results
+                    .associate {
+                        it.first.id to VersionCheckerCachedInfo(
+                            info = it.second,
+                            lastLookupTimestamp = Instant.now().toEpochMilli()
+                        )
+                    }
+
+
             }
         }
     }
@@ -158,10 +169,12 @@ internal class VersionChecker(
                     .replace("github.com", "raw.githubusercontent.com", ignoreCase = true)
                     .replace("blob/", "", ignoreCase = true)
             }
+
             urlString.matches(dropboxDlPageRegex) -> {
                 urlString
                     .replace("dl=0", "dl=1", ignoreCase = true)
             }
+
             else -> urlString
         }
             .also {

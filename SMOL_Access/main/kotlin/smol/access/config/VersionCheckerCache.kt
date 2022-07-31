@@ -12,17 +12,24 @@
 
 package smol.access.config
 
+import kotlinx.coroutines.flow.MutableStateFlow
 import smol.access.Constants
+import smol.access.StateFlowWrapper
 import smol.access.model.ModId
 import smol.access.model.VersionCheckerInfo
-import smol.utilities.Config
 import smol.utilities.InMemoryPrefStorage
 import smol.utilities.Jsanity
 import smol.utilities.JsonFilePrefStorage
+import kotlin.reflect.typeOf
 
 class VersionCheckerCache(gson: Jsanity) :
-    Config(InMemoryPrefStorage(JsonFilePrefStorage(gson, Constants.VERCHECK_CACHE_PATH))) {
-    var onlineVersions: Map<ModId, VersionCheckerCachedInfo> by pref(prefKey = "onlineVersions", defaultValue = emptyMap())
+    StateFlowWrapper(InMemoryPrefStorage(JsonFilePrefStorage(gson, Constants.VERCHECK_CACHE_PATH))) {
+
+    var onlineVersions: MutableStateFlow<Map<ModId, VersionCheckerCachedInfo>> = stateFlowPref(
+        prefKey = "onlineVersions",
+        defaultValue = emptyMap(),
+        type = typeOf<Map<ModId, VersionCheckerCachedInfo>>()
+    )
 }
 
 data class VersionCheckerCachedInfo(
