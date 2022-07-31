@@ -113,7 +113,7 @@ class Access internal constructor(
     /**
      * Reads all mods from /mods, staging, and archive folders.
      */
-    suspend fun reload() = modLoader.reload()
+    suspend fun reload(modIds: List<ModId>? = null) = modLoader.reload()
 
     /**
      * Given an arbitrary file, find and install the associated mod into the given folder.
@@ -167,9 +167,7 @@ class Access internal constructor(
             // or variants that in the mod folder while the mod itself is disabled
             // (except for the variant we want to actually enable, if that's already active).
             // There should only ever be one active but might as well be careful.
-
             mod.variants
-                .filter { mod.isEnabled(it) || it.modsFolderInfo != null }
                 .filter { it != modVariant }
                 .also {
                     modModificationState.update {
@@ -179,7 +177,8 @@ class Access internal constructor(
                         }
                     }
                 }
-                .forEach { staging.disableModVariant(it) }
+                // We've enabled one variant, so any other variants need to be ignored by the vanilla launcher (changeFileExtension = true).
+                .forEach { staging.disableModVariant(it, changeFileExtension = true) }
 
             return if (modVariant != null) {
                 // Enable the one we want.
@@ -215,7 +214,8 @@ class Access internal constructor(
         }
     }
 
-    suspend fun enableModVariant(modToEnable: ModVariant): Result<Unit> {
+    @Deprecated("Use changeActiveVariant instead, it disables other variants properly.")
+    private suspend fun enableModVariant(modToEnable: ModVariant): Result<Unit> {
         try {
             modModificationState.update {
                 it.toMutableMap().apply {
@@ -245,7 +245,7 @@ class Access internal constructor(
                         ModModificationState.DisablingVariants
                 }
             }
-            return staging.disableMod(mod)
+            return staging.disableMod(mod, modLoader)
         } finally {
             staging.manualReloadTrigger.trigger.emit("Disabled mod: $mod")
             modModificationState.update {
@@ -257,7 +257,14 @@ class Access internal constructor(
         }
     }
 
-    suspend fun disableModVariant(modVariant: ModVariant): Result<Unit> {
+    suspend fun ensureLatestDisabledVariantIsVisibleInVanillaLauncher(
+        mods: List<Mod>
+    ) = staging.ensureLatestDisabledVariantIsVisibleInVanillaLauncher(mods, modLoader)
+
+    suspend fun disableModVariant(
+        modVariant: ModVariant,
+        changeFileExtension: Boolean = false,
+    ): Result<Unit> {
         val mod = modVariant.mod(this@Access) ?: return Result.failure(NullPointerException())
         try {
             modModificationState.update {
@@ -266,7 +273,7 @@ class Access internal constructor(
                         ModModificationState.DisablingVariants
                 }
             }
-            return staging.disableModVariant(modVariant)
+            return staging.disableModVariant(modVariant = modVariant, changeFileExtension = changeFileExtension)
         } finally {
             staging.manualReloadTrigger.trigger.emit("Disabled mod variant: $modVariant")
             modModificationState.update {

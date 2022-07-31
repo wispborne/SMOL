@@ -308,15 +308,17 @@ private suspend fun reloadModsInner(forceRefreshVersionChecker: Boolean, forceRe
                 val previousVariantIds = SL.access.mods.value?.mods.orEmpty().flatMap { it.variants }.map { it.smolId }
                 SL.access.reload()
                 val mods = SL.access.mods.value?.mods ?: emptyList()
-                val hasNewVariantBeenAdded =
-                    SL.access.mods.value?.mods.orEmpty().flatMap { it.variants }.map { it.smolId }
-                        .any { newVariantId -> newVariantId !in previousVariantIds }
+                val newlyAddedModIds = SL.access.mods.value?.mods.orEmpty()
+                    .flatMap { it.variants }
+                    .filter { newVariant -> newVariant.smolId !in previousVariantIds }
+                    .map { it.modInfo.id }
+                    .distinct()
 
                 listOf(
                     async {
                         SL.versionChecker.lookUpVersions(
-                            forceLookup = forceRefreshVersionChecker || hasNewVariantBeenAdded,
-                            mods = mods
+                            forceLookup = forceRefreshVersionChecker || newlyAddedModIds.any(),
+                            mods = mods.filter { it.id in newlyAddedModIds }
                         )
                     },
                     async {

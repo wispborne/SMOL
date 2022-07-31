@@ -76,6 +76,14 @@ class UserModProfileManager internal constructor(
                 val variantsToEnable = diff.added
                 val allKnownVariants = modsCache.mods.value?.mods?.flatMap { it.variants } ?: emptyList()
 
+                val previouslyDisabledVariants = allKnownVariants
+                    .filter { it.mod(access)?.isEnabled(it) == false }
+                    .map { UserProfile.ModProfile.ShallowModVariant(it) }
+                val fullyDisabledModsAfterSwitch = (previouslyDisabledVariants - variantsToEnable.toSet())
+                    .associateBy { it.modId }
+                    .values
+                    .map { it.modId }
+
                 variantsToDisable
                     .mapNotNull { varToDisable ->
                         allKnownVariants.firstOrNull { knownVar -> knownVar.smolId == varToDisable.smolVariantId }
@@ -87,8 +95,21 @@ class UserModProfileManager internal constructor(
                             }
                     }
                     .forEach { variant ->
-                        access.disableModVariant(variant)
+                        // When disabling a mod entirely, we want to leave the highest version of the mod visible in the launcher.
+                        // Other variants should be bricked so they don't show up.
+                        // If the mod isn't disabled entirely, the enabled variant will show up in the launcher.
+                        val isThisHighestVersionOfFullyDisabledMod =
+                            variant.modInfo.id in fullyDisabledModsAfterSwitch && variant.mod(access)?.findHighestVersion == variant
+
+                        access.disableModVariant(
+                            modVariant = variant,
+                            changeFileExtension = true//!isThisHighestVersionOfFullyDisabledMod
+                        )
                     }
+
+                // Need to reload mods that we're about to enable in case they were just disabled.
+                // If they were disabled, the cached enabled_mods.json could be out of date and we wouldn't know to enable them again.
+                access.reload((variantsToEnable + variantsToDisable).map { it.modId })
 
                 variantsToEnable
                     .mapNotNull { varToEnable ->
@@ -100,8 +121,13 @@ class UserModProfileManager internal constructor(
                             }
                     }
                     .parallelMap { variant ->
-                        access.enableModVariant(variant)
+                        variant.mod(access)?.let { mod ->
+                            access.changeActiveVariant(mod, variant)
+                        }
                     }
+
+                access.reload()
+                access.ensureLatestDisabledVariantIsVisibleInVanillaLauncher(access.mods.value?.mods.orEmpty())
 
                 userManager.updateUserProfile { it.copy(activeModProfileId = newModProfileId) }
                 Timber.i { "Changed mod profile to $newModProfile" }

@@ -58,6 +58,9 @@ data class Mod constructor(
     val hasEnabledVariant: Boolean
         get() = findFirstEnabled != null
 
+    val hasDisabledVariant: Boolean
+        get() = findFirstDisabled != null
+
     companion object {
         val MOCK = Mod(
             id = "mock",
@@ -129,7 +132,7 @@ data class ModVariant constructor(
     fun mod(access: smol.access.Access) = access.mods.value?.mods!!.firstOrNull() { it.id == modInfo.id }
 
     val isModInfoEnabled: Boolean
-        get() = modsFolderInfo.folder.resolve(Constants.MOD_INFO_FILE).exists()
+        get() = modsFolderInfo.folder.resolve(Constants.UNBRICKED_MOD_INFO_FILE).exists()
 
     fun generateVariantFolderName() = Companion.generateVariantFolderName(this.modInfo)
 
@@ -141,7 +144,7 @@ data class ModVariant constructor(
             ?: modInfo.version
 
     fun isMissingAdmin() = modsFolderInfo.folder.isMissingAdmin()
-            || modsFolderInfo.folder.resolve(Constants.MOD_INFO_FILE).isMissingAdmin()
+            || modsFolderInfo.folder.resolve(Constants.UNBRICKED_MOD_INFO_FILE).isMissingAdmin()
             || Constants.MOD_INFO_FILE_DISABLED_NAMES.any { modsFolderInfo.folder.resolve(it).isMissingAdmin() }
 }
 

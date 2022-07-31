@@ -13,6 +13,7 @@
 package smol.access.business
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
@@ -21,7 +22,6 @@ import smol.access.config.GamePathManager
 import smol.access.model.Mod
 import smol.access.model.ModId
 import smol.access.model.ModVariant
-import smol.access.model.Version
 import smol.timber.ktx.Timber
 import smol.timber.ktx.i
 import smol.utilities.asList
@@ -46,7 +46,10 @@ internal class ModLoader internal constructor(
      */
     suspend fun reload(modIds: List<ModId>? = null): ModListUpdate? {
         if (isLoading.value) {
-            Timber.i { "Mod reload requested, but declined; already reloading." }
+            Timber.i { "Mod reload requested, but declined; already reloading. Waiting until reload is complete." }
+            while (isLoading.value) {
+                delay(20)
+            }
             return modsCache.mods.value
         }
 
@@ -86,7 +89,7 @@ internal class ModLoader internal constructor(
                                     modInfo = modInfo,
                                     versionCheckerInfo = dataFiles.versionCheckerInfo,
                                     modsFolderInfo = Mod.ModsFolderInfo(folder = modFolder),
-                                    doesModInfoFileExist = modFolder.resolve(Constants.MOD_INFO_FILE).exists(),
+                                    doesModInfoFileExist = modFolder.resolve(Constants.UNBRICKED_MOD_INFO_FILE).exists(),
                                 )
                                 Mod(
                                     id = modInfo.id,
@@ -126,7 +129,7 @@ internal class ModLoader internal constructor(
                         }
                         .values
                         .map { mod ->
-                            mod.copy(variants = mod.variants.sortedBy { variant -> variant.bestVersion})
+                            mod.copy(variants = mod.variants.sortedBy { variant -> variant.bestVersion })
                         }
                         .toList()
                         .onEach {
@@ -148,13 +151,14 @@ internal class ModLoader internal constructor(
                     val hasGamePathChanged = previousMods?.gamePath != currentGamePath
 
                     val update = if (modIds == null) {
-                        val newModVariants = result.flatMap { it.variants }
+                        // All mods were reloaded.
+                        val reloadedModVariants = result.flatMap { it.variants }
                         ModListUpdate(
                             gamePath = currentGamePath,
                             mods = result,
                             added = if (previousModVariants == null || hasGamePathChanged) emptyList()
-                            else newModVariants.filter { it.smolId !in previousModVariants.map { it.smolId } },
-                            removed = previousModVariants?.filter { it.smolId !in newModVariants.map { it.smolId } }
+                            else reloadedModVariants.filter { it.smolId !in previousModVariants.map { it.smolId } },
+                            removed = previousModVariants?.filter { it.smolId !in reloadedModVariants.map { it.smolId } }
                                 ?: emptyList()
                         )
                     } else {
@@ -176,15 +180,17 @@ internal class ModLoader internal constructor(
                                 ?: emptyList()
                         )
                     }
-                        .also {
-                            it.added.forEach {
-                                staging.disableModVariant(
-                                    modVariant = it,
-                                    disableInVanillaLauncher = false
-                                )
-                            }
-                        }
-                        .also {
+//                        .also {
+//                            it.added.forEach {
+//                                staging.disableModVariant(
+//                                    modVariant = it,
+//                                    disableInVanillaLauncher = false
+//                                )
+//                            }
+//                        }
+
+                    update
+                        .let {
                             it.added.onEach { Timber.i { "Added mod: $it" } }
                             it.removed.onEach { Timber.i { "Removed mod: $it" } }
                             it.mods.onEach { Timber.d { "Loaded mod: $it" } }

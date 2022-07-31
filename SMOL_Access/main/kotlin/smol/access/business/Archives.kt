@@ -52,7 +52,7 @@ class Archives internal constructor(
 
         trace(onFinished = { _, millis: Long -> Timber.d { "Time to install from unknown source: ${millis}ms." } }) {
             if (inputFile.isRegularFile()) {
-                if (inputFile.name.equals(Constants.MOD_INFO_FILE, ignoreCase = true)) {
+                if (inputFile.name.equals(Constants.UNBRICKED_MOD_INFO_FILE, ignoreCase = true)) {
                     // Input file is mod_info.json, parent folder is mod folder
                     val modFolder = inputFile.parent
 
@@ -67,7 +67,7 @@ class Archives internal constructor(
                             .onFailure { Timber.w(it); throw it }
                         return
                     } else {
-                        RuntimeException("Input was ${Constants.MOD_INFO_FILE} but there was no parent folder?!")
+                        RuntimeException("Input was ${Constants.UNBRICKED_MOD_INFO_FILE} but there was no parent folder?!")
                             .also { Timber.w(it) }
                             .also { throw it }
                     }
@@ -112,7 +112,7 @@ class Archives internal constructor(
                             return
                         }
                     } else {
-                        val ex = RuntimeException("Archive did not have a valid ${Constants.MOD_INFO_FILE} inside!")
+                        val ex = RuntimeException("Archive did not have a valid ${Constants.UNBRICKED_MOD_INFO_FILE} inside!")
                         Timber.w(ex)
                         throw ex
                     }
@@ -135,7 +135,7 @@ class Archives internal constructor(
 
     private suspend fun copyOrCompressDir(modFolder: Path, destinationFolder: Path, inputFile: Path) {
         val modInfoFile = (findModInfoFileInFolder(modFolder) ?: run {
-            val ex = RuntimeException("Archive did not have a valid ${Constants.MOD_INFO_FILE} inside!")
+            val ex = RuntimeException("Archive did not have a valid ${Constants.UNBRICKED_MOD_INFO_FILE} inside!")
             throw ex
         })
 
@@ -192,7 +192,7 @@ class Archives internal constructor(
                                 val items = inArchive.simpleInterface.archiveItems
                                     .filter { !it.isFolder }
                                 val modInfoFile = items
-                                    .firstOrNull { it.path.contains(Constants.MOD_INFO_FILE, ignoreCase = true) }
+                                    .firstOrNull { it.path.contains(Constants.UNBRICKED_MOD_INFO_FILE, ignoreCase = true) }
                                 val versionCheckerFile = items
                                     .firstOrNull {
                                         it.path.endsWith(
@@ -270,7 +270,7 @@ class Archives internal constructor(
 
             val modInfoFile =
                 findModInfoFileInFolder(folderContainingSingleMod)
-                    ?: throw RuntimeException("Expected a ${Constants.MOD_INFO_FILE} or ${Constants.MOD_INFO_FILE_DISABLED_NAMES} in ${folderContainingSingleMod.absolutePathString()}")
+                    ?: throw RuntimeException("Expected a ${Constants.UNBRICKED_MOD_INFO_FILE} or ${Constants.MOD_INFO_FILE_DISABLED_NAMES} in ${folderContainingSingleMod.absolutePathString()}")
 
 //            val modInfo = modInfoLoader.readModInfoFile(modInfoFile.readText())
 

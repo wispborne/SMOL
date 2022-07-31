@@ -292,6 +292,6 @@ private fun enableAllDisabled(modVariants: List<ModVariant>?) {
     GlobalScope.launch(Dispatchers.IO) {
         modVariants
             ?.filter { it.mod(SL.access)?.isEnabled(it) == false }
-            ?.parallelMap { SL.access.enableModVariant(it) }
+            ?.parallelMap { SL.access.changeActiveVariant(it.mod(SL.access)!!, it) }
     }
 }

@@ -21,6 +21,7 @@ import smol.timber.Timber
 import smol.timber.ktx.i
 import smol.timber.ktx.w
 import smol.utilities.IOLock
+import smol.utilities.asList
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.exists
 import kotlin.io.path.isReadable
@@ -34,25 +35,33 @@ internal class Staging(
 ) {
     /**
      * Disables the mod.
-     * - Removes it from /mods.
-     * - Removes it from `enabled_mods.json`.
+     * - Optionally adds `.disabled` to the `mod_info.json` filename.
+     * - Optionally removes it from `enabled_mods.json`.
      */
-    fun disableModVariant(modVariant: ModVariant, disableInVanillaLauncher: Boolean = true): Result<Unit> {
+    fun disableModVariant(
+        modVariant: ModVariant,
+        changeFileExtension: Boolean = false,
+        disableInVanillaLauncher: Boolean = true
+    ): Result<Unit> {
         Timber.i { "Disabling variant ${modVariant.smolId}" }
-        val modInfoFile = modVariant.modsFolderInfo.folder.resolve(Constants.MOD_INFO_FILE)
+        val modInfoFile = modVariant.modsFolderInfo.folder.resolve(Constants.UNBRICKED_MOD_INFO_FILE)
 
         if (!modInfoFile.exists()) {
             return Result.failure(RuntimeException("mod_info.json not found in ${modVariant.modsFolderInfo.folder.absolutePathString()}"))
-        } else {
+        }
+
+        if (changeFileExtension) {
             IOLock.write {
                 kotlin.runCatching { modInfoFile.moveTo(modInfoFile.parent.resolve(Constants.MOD_INFO_FILE_DISABLED_NAMES.first())) }
                     .onFailure {
                         Timber.w(it)
                     }
+                    .onSuccess {
+                        Timber.i { "Disabled ${modVariant.smolId}: renamed to ${Constants.MOD_INFO_FILE_DISABLED_NAMES.first()}." }
+                    }
             }
         }
 
-        Timber.i { "Disabling ${modVariant.smolId}: renamed to ${Constants.MOD_INFO_FILE_DISABLED_NAMES.first()}." }
 
         if (disableInVanillaLauncher) {
             val mod = modVariant.mod(modsCache) ?: return Result.failure(NullPointerException())
@@ -71,7 +80,7 @@ internal class Staging(
     suspend fun enableModVariant(
         modVariant: ModVariant,
         modLoader: ModLoader,
-        disableInVanillaLauncher: Boolean = true
+        enableInVanillaLauncher: Boolean = true
     ): Result<Unit> {
         Timber.i { "Enabling mod variant ${modVariant.smolId}." }
         val modsFolderPath = gamePathManager.getModsPath()
@@ -96,7 +105,7 @@ internal class Staging(
         IOLock.write {
             if (!modVariant.isModInfoEnabled) {
                 disabledModInfoFiles.forEach { modInfoFile ->
-                    kotlin.runCatching { modInfoFile.moveTo(modInfoFile.parent.resolve(Constants.MOD_INFO_FILE)) }
+                    kotlin.runCatching { modInfoFile.moveTo(modInfoFile.parent.resolve(Constants.UNBRICKED_MOD_INFO_FILE)) }
                         .onFailure {
                             Timber.w(it)
                         }
@@ -106,7 +115,7 @@ internal class Staging(
         }
         Timber.i { "Enabled mod for SMOL: $modVariant" }
 
-        if (disableInVanillaLauncher) {
+        if (enableInVanillaLauncher) {
             modLoader.reload(listOf(modVariant.modInfo.id))
 
             if (modVariant.mod(modsCache)?.isEnabledInGame != true) {
@@ -119,13 +128,41 @@ internal class Staging(
         return Result.success((Unit))
     }
 
-    fun disableMod(mod: Mod): Result<Unit> {
+    suspend fun disableMod(mod: Mod, modLoader: ModLoader): Result<Unit> {
         Timber.i { "Disabling mod ${mod.id}." }
+        val highestVersion = mod.findHighestVersion
+
         mod.variants.forEach { modVariant ->
-            disableModVariant(modVariant)
+            // Don't rename the variant with the highest version, we want that to appear in the vanilla launcher.
+            disableModVariant(modVariant = modVariant, changeFileExtension = modVariant != highestVersion)
+        }
+
+        // If all of the mod variants are bricked, rename a mod_info.json file to make the highest version visible in the vanilla launcher.
+        modLoader.reload(listOf(mod.id))
+        modsCache.mods.value?.mods?.firstOrNull { it.id == mod.id }?.let { modAfterReload ->
+            ensureLatestDisabledVariantIsVisibleInVanillaLauncher(modAfterReload.asList(), modLoader)
         }
 
         Timber.i { "Mod disabled: $mod" }
         return Result.success(Unit)
+    }
+
+    suspend fun ensureLatestDisabledVariantIsVisibleInVanillaLauncher(
+        mods: List<Mod>,
+        modLoader: ModLoader
+    ) {
+        mods.forEach { mod ->
+            val highestVersion = mod.findHighestVersion
+
+            if (highestVersion != null
+                && mod.enabledVariants.none()
+                && mod.variants.none {
+                    it.modsFolderInfo.folder.resolve(Constants.UNBRICKED_MOD_INFO_FILE).exists()
+                }
+            ) {
+                Timber.i { "Unbricked ${highestVersion.modsFolderInfo.folder} mod info file to be visible in vanilla launcher." }
+                enableModVariant(highestVersion, modLoader, enableInVanillaLauncher = false)
+            }
+        }
     }
 }

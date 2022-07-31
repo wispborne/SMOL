@@ -39,4 +39,4 @@ data class Dependency(
 )
 
 fun Path.isModInfoFile() =
-    this.name.equalsAny(Constants.MOD_INFO_FILE, *Constants.MOD_INFO_FILE_DISABLED_NAMES, ignoreCase = true)
+    this.name.equalsAny(Constants.UNBRICKED_MOD_INFO_FILE, *Constants.MOD_INFO_FILE_DISABLED_NAMES, ignoreCase = true)

@@ -29,7 +29,6 @@ import smol.access.model.VersionCheckerInfo
 import smol.timber.ktx.Timber
 import smol.timber.ktx.i
 import smol.utilities.Jsanity
-import smol.utilities.asList
 import smol.utilities.parallelMap
 import smol.utilities.trace
 import java.time.Instant
@@ -137,13 +136,15 @@ internal class VersionChecker(
                             }
                     }
 
-                versionCheckerCache.onlineVersions.value = results
-                    .associate {
-                        it.first.id to VersionCheckerCachedInfo(
-                            info = it.second,
-                            lastLookupTimestamp = Instant.now().toEpochMilli()
-                        )
-                    }
+                versionCheckerCache.onlineVersions.value =
+                    versionCheckerCache.onlineVersions.value
+                        .plus(results
+                            .associate {
+                                it.first.id to VersionCheckerCachedInfo(
+                                    info = it.second,
+                                    lastLookupTimestamp = Instant.now().toEpochMilli()
+                                )
+                            })
 
 
             }
