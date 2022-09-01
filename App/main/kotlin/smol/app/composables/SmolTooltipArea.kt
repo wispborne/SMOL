@@ -17,21 +17,23 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.ContentAlpha
 import androidx.compose.material.MaterialTheme
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.input.pointer.pointerMoveFilter
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun SmolTooltipArea(
     tooltip: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     delayMillis: Int = 0,
     tooltipPlacement: TooltipPlacement = TooltipPlacement.CursorPoint(
-        offset = DpOffset(0.dp, 16.dp),
+        offset = DpOffset(x = (-8).dp, y = (-8).dp),
         alignment = Alignment.TopStart
     ),
     content: @Composable () -> Unit
@@ -46,15 +48,28 @@ fun SmolTooltipArea(
 }
 
 @Composable
+@OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 fun SmolTooltipBackground(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    Box(
-        modifier = modifier
-            .border(width = 1.dp, color = MaterialTheme.colors.primary.copy(alpha = ContentAlpha.medium))
-            .shadow(elevation = 4.dp)
-            .background(color = MaterialTheme.colors.surface)
-            .padding(all = 16.dp)
-    ) {
-        content.invoke()
+    var show by remember { mutableStateOf(true) }
+    if (show) {
+        Box(
+            modifier = modifier
+                .border(width = 1.dp, color = MaterialTheme.colors.primary.copy(alpha = ContentAlpha.medium))
+                .shadow(elevation = 4.dp)
+                .background(color = MaterialTheme.colors.surface)
+                .padding(all = 16.dp)
+                .mouseClickable { show = false }
+                .pointerMoveFilter(
+                    onEnter = {
+                        show = false
+                        false
+                    },
+                    onExit = {
+                        false
+                    })
+        ) {
+            content.invoke()
+        }
     }
 }
 

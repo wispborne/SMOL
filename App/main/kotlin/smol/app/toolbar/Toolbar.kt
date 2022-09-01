@@ -17,6 +17,7 @@ package smol.app.toolbar
 import AppScope
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.TooltipPlacement
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -33,6 +34,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.replaceCurrent
 import kotlinx.coroutines.*
@@ -143,6 +145,10 @@ fun AppScope.launchButton(modifier: Modifier = Modifier) {
     val launchText = remember { launchQuotes.weightedRandom() }
 
     SmolTooltipArea(
+        tooltipPlacement = TooltipPlacement.CursorPoint(
+            offset = DpOffset(x = 8.dp, y = 8.dp),
+            alignment = Alignment.BottomEnd
+        ),
         tooltip = {
             SmolTooltipText(
                 when {
@@ -305,6 +311,10 @@ private fun getStarsectorLaunchPrefs(): StarsectorLaunchPrefs {
 @Composable
 fun AppScope.installModsButton(modifier: Modifier = Modifier) {
     SmolTooltipArea(
+        tooltipPlacement = TooltipPlacement.CursorPoint(
+            offset = DpOffset(x = 8.dp, y = 8.dp),
+            alignment = Alignment.BottomEnd
+        ),
         tooltip = {
             SmolTooltipText(
                 text = when {
@@ -365,6 +375,10 @@ fun AppScope.installModsButton(modifier: Modifier = Modifier) {
 @Composable
 fun AppScope.homeButton(modifier: Modifier = Modifier, isSelected: Boolean) {
     SmolTooltipArea(
+        tooltipPlacement = TooltipPlacement.CursorPoint(
+            offset = DpOffset(x = 8.dp, y = 8.dp),
+            alignment = Alignment.BottomEnd
+        ),
         tooltip = { SmolTooltipText("View and change mods.") },
         delayMillis = SmolTooltipArea.shortDelay
     ) {
@@ -382,6 +396,10 @@ fun AppScope.homeButton(modifier: Modifier = Modifier, isSelected: Boolean) {
 @Composable
 fun AppScope.modBrowserButton(modifier: Modifier = Modifier, isSelected: Boolean) {
     SmolTooltipArea(
+        tooltipPlacement = TooltipPlacement.CursorPoint(
+            offset = DpOffset(x = 8.dp, y = 8.dp),
+            alignment = Alignment.BottomEnd
+        ),
         tooltip = {
             SmolTooltipText(
                 when {
@@ -405,6 +423,10 @@ fun AppScope.modBrowserButton(modifier: Modifier = Modifier, isSelected: Boolean
 @Composable
 fun AppScope.profilesButton(modifier: Modifier = Modifier, isSelected: Boolean) {
     SmolTooltipArea(
+        tooltipPlacement = TooltipPlacement.CursorPoint(
+            offset = DpOffset(x = 8.dp, y = 8.dp),
+            alignment = Alignment.BottomEnd
+        ),
         tooltip = {
             SmolTooltipText(
                 text = when {

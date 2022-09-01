@@ -83,6 +83,7 @@ fun DownloadToast(
         is DownloadItem.Status.Downloading -> {
             "${if (bitsPerSecond != null) "${"%.1f MBps".format(bitsPerSecond.bitsToMB)}, " else ""}$progressMB${if (totalMB != null) " / $totalMB" else ""}"
         }
+
         is DownloadItem.Status.Completed -> "Completed, $progressMB"
         is DownloadItem.Status.Failed -> "Failed: ${status.error}"
         DownloadItem.Status.Cancelled -> "Cancelled"
@@ -139,6 +140,8 @@ fun DownloadToast(
                         )
                     }
                 }
+
+                else -> throw NotImplementedError()
             }
 
             IconButton(
