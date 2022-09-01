@@ -15,8 +15,8 @@ package smol.app.settings
 import AppScope
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.GridCells
-import androidx.compose.foundation.lazy.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.runtime.*
@@ -164,47 +164,51 @@ fun vmParamsContextMenu(
             modifier = Modifier.width(width).height(gridHeight).padding(top = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            cells = GridCells.Adaptive(cellMinWidth)
+            columns = GridCells.Adaptive(cellMinWidth)
         ) {
-            this.items(items = presetsInGb.toList()) { presetGb ->
-                Column {
-                    SmolButton(
-                        modifier = Modifier.wrapContentWidth().wrapContentHeight().align(Alignment.CenterHorizontally),
-                        shape = SmolTheme.smolFullyClippedButtonShape(),
-                        onClick = {
-                            SL.UI.vmParamsManager.update { it?.run { withGb(presetGb) } }
-                        }
-                    ) {
-                        Text(
-                            text = "${presetGb * 1000} MB",
-                            textAlign = TextAlign.Center,
-                            fontWeight = if (presetGb == recommendation) FontWeight.ExtraBold else FontWeight.Normal,
-                        )
-                    }
+            presetsInGb.toList()
+                .map { presetGb ->
+                    item {
+                        Column {
+                            SmolButton(
+                                modifier = Modifier.wrapContentWidth().wrapContentHeight()
+                                    .align(Alignment.CenterHorizontally),
+                                shape = SmolTheme.smolFullyClippedButtonShape(),
+                                onClick = {
+                                    SL.UI.vmParamsManager.update { it?.run { withGb(presetGb) } }
+                                }
+                            ) {
+                                Text(
+                                    text = "${presetGb * 1000} MB",
+                                    textAlign = TextAlign.Center,
+                                    fontWeight = if (presetGb == recommendation) FontWeight.ExtraBold else FontWeight.Normal,
+                                )
+                            }
 
-                    if (presetGb == recommendation) {
-                        Column(
-                            modifier = Modifier
+                            if (presetGb == recommendation) {
+                                Column(
+                                    modifier = Modifier
 //                                .offset(y = (-4).dp)
-                                .align(Alignment.CenterHorizontally)
-                        ) {
-                            Text(
-                                text = "Suggested",
-                                style = MaterialTheme.typography.caption,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier
-                                    .align(Alignment.CenterHorizontally)
-                            )
-                            Text(
-                                text = "for you",
-                                style = MaterialTheme.typography.caption,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier
-                                    .align(Alignment.CenterHorizontally)
-                            )
+                                        .align(Alignment.CenterHorizontally)
+                                ) {
+                                    Text(
+                                        text = "Suggested",
+                                        style = MaterialTheme.typography.caption,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier
+                                            .align(Alignment.CenterHorizontally)
+                                    )
+                                    Text(
+                                        text = "for you",
+                                        style = MaterialTheme.typography.caption,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier
+                                            .align(Alignment.CenterHorizontally)
+                                    )
+                                }
+                            }
                         }
                     }
-                }
             }
         }
 

@@ -17,7 +17,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm")
-    id("org.jetbrains.compose") version "1.1.1"
+    id("org.jetbrains.compose") version "1.2.0-alpha01-dev774"
 }
 
 buildscript {
@@ -38,13 +38,14 @@ repositories {
     google()
     mavenCentral()
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
+    maven(url = "https://androidx.dev/storage/compose-compiler/repository/")
 }
 
 val jcefFolder = "jcef-v1.0.18"
 dependencies {
     implementation(compose.desktop.currentOs)
     implementation("org.jetbrains.compose.components:components-splitpane-desktop:1.0.1")
-    implementation("org.jetbrains.kotlin:kotlin-reflect:1.5.21")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:1.7.0")
     implementation(project.property("coroutines")!!)
     implementation(project.property("coroutinesSwing")!!)
 

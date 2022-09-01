@@ -30,7 +30,7 @@ dependencies {
         exclude("TinyLog")
     })
 
-    implementation("org.jetbrains.kotlin:kotlin-reflect:1.5.21")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:1.7.0")
     implementation(project.property("coroutines")!!)
 
     implementation("de.siegmar:fastcsv:2.1.0")

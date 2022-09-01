@@ -208,7 +208,8 @@ inline fun <T> trace(onFinished: (result: T, millis: Long) -> Unit, func: () -> 
     return result
 }
 
-inline fun <T> trace(func: () -> T): T =
+inline fun <T>
+        trace(func: () -> T): T =
     trace(
         onFinished = { result, ms -> println("Took ${ms}ms to produce ${if (result != null) result!!::class.simpleName else "null"}.") },
         func = func

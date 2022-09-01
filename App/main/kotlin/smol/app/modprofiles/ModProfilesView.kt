@@ -18,10 +18,9 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.GridCells
-import androidx.compose.foundation.lazy.LazyVerticalGrid
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -92,13 +91,13 @@ fun AppScope.ModProfilesView(
                         LazyVerticalGrid(
                             horizontalArrangement = Arrangement.spacedBy(16.dp),
                             verticalArrangement = Arrangement.spacedBy(16.dp),
-                            cells = GridCells.Adaptive(370.dp)
+                            columns = GridCells.Adaptive(370.dp)
                         ) {
                             this.item {
                                 NewModProfileCard(onProfileCreated = { recomposer.invalidate() })
                             }
 
-                            this.items(items = userProfile.modProfiles
+                            userProfile.modProfiles
                                 .sortedWith(
                                     compareByDescending<UserProfile.ModProfile> { it.id == userProfile.activeModProfileId }
                                         .thenBy { it.sortOrder })
@@ -111,13 +110,15 @@ fun AppScope.ModProfilesView(
                                         enabledModVariants = it.enabledModVariants
                                     )
                                 }
-                            ) { modProfile ->
-                                ModProfileCard(
-                                    userProfile = userProfile,
-                                    modProfile = modProfile,
-                                    modVariants = shallowModVariants
-                                )
-                            }
+                                .map { modProfile ->
+                                    this.item {
+                                        ModProfileCard(
+                                            userProfile = userProfile,
+                                            modProfile = modProfile,
+                                            modVariants = shallowModVariants
+                                        )
+                                    }
+                                }
                         }
                     }
                 }
@@ -132,14 +133,14 @@ fun AppScope.ModProfilesView(
                             modifier = Modifier.padding(start = 8.dp, bottom = 16.dp)
                         )
                         Row {
-                            val lazyListState = rememberLazyListState()
+                            val lazyListState = rememberLazyGridState()
                             LazyVerticalGrid(
                                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                                 verticalArrangement = Arrangement.spacedBy(16.dp),
-                                cells = GridCells.Adaptive(370.dp),
+                                columns = GridCells.Adaptive(370.dp),
                                 state = lazyListState
                             ) {
-                                this.items(items = saveGames.value
+                                saveGames.value
                                     .sortedByDescending { it.saveDate }
                                     .mapIndexed { index, saveFile ->
                                         ModProfileCardInfo.SaveModProfileCardInfo(
@@ -161,18 +162,20 @@ fun AppScope.ModProfilesView(
                                             saveFile = saveFile
                                         )
                                     }
-                                ) { modProfile ->
-                                    ModProfileCard(
-                                        userProfile = userProfile,
-                                        modProfile = modProfile,
-                                        modVariants = shallowModVariants
-                                    )
-                                }
+                                    .map { modProfile ->
+                                        item {
+                                            ModProfileCard(
+                                                userProfile = userProfile,
+                                                modProfile = modProfile,
+                                                modVariants = shallowModVariants
+                                            )
+                                        }
+                                    }
                             }
-                            VerticalScrollbar(
-                                modifier = Modifier.fillMaxHeight(),
-                                adapter = rememberScrollbarAdapter(lazyListState)
-                            )
+//                            VerticalScrollbar(
+//                                modifier = Modifier.fillMaxHeight(),
+//                                adapter = rememberScrollbarAdapter(scrollState)
+//                            )
                         }
                     }
                 }

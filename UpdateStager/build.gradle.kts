@@ -29,7 +29,7 @@ dependencies {
     implementation(project(":SMOL_Access"))
     implementation(project(":UpdateInstaller"))
 
-    implementation("org.jetbrains.kotlin:kotlin-reflect:1.5.21")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:1.7.0")
     implementation(project.property("coroutines")!!)
 
     // Auto-update
