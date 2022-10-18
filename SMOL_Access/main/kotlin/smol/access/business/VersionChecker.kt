@@ -13,7 +13,7 @@
 package smol.access.business
 
 import io.ktor.client.call.*
-import io.ktor.client.features.*
+import io.ktor.client.plugins.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import kotlinx.coroutines.Dispatchers
@@ -99,8 +99,8 @@ internal class VersionChecker(
                             .parallelMap { modVariant ->
                                 val fixedUrl = fixUrl(modVariant.versionCheckerInfo?.masterVersionFile ?: "")
                                 kotlin.runCatching {
-                                    client.get<HttpResponse>(fixedUrl)
-                                        .receive<String>()
+                                    client.get(fixedUrl)
+                                        .body<String>()
                                         .let {
                                             modVariant.mod(modsCache) to gson.fromJson<VersionCheckerInfo>(
                                                 json = it,

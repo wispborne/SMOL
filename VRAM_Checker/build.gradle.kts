@@ -33,12 +33,12 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.5.21")
     implementation(project.property("coroutines")!!)
 
-    implementation("de.siegmar:fastcsv:2.1.0")
-    implementation("com.fasterxml.jackson.core:jackson-core:2.13.0")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.13.0")
+    implementation("de.siegmar:fastcsv:2.2.0")
+    implementation("com.fasterxml.jackson.core:jackson-core:2.13.4")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.13.4")
 
     // Hardware info
-    api("com.github.oshi:oshi-core:5.8.3")
+    api("com.github.oshi:oshi-core:6.2.2")
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {

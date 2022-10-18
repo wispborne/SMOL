@@ -14,12 +14,14 @@ package smol.mod_repo
 
 import com.google.gson.GsonBuilder
 import io.ktor.client.*
+import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
-import io.ktor.client.features.*
-import io.ktor.client.features.json.*
-import io.ktor.client.features.logging.*
+import io.ktor.client.plugins.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.*
 import io.ktor.http.*
+import io.ktor.serialization.gson.*
 import kotlinx.coroutines.delay
 import smol.timber.ktx.Timber
 import smol.utilities.asList
@@ -57,8 +59,8 @@ internal object DiscordReader {
             HttpClient(CIO) {
                 install(Logging)
                 install(HttpTimeout)
-                install(JsonFeature) {
-                    serializer = GsonSerializer()
+                install(ContentNegotiation) {
+                    gson()
                 }
                 this.followRedirects = true
             }
@@ -203,7 +205,7 @@ internal object DiscordReader {
         val perRequestLimit = 100
 
         while (messages.count() < limit && runs < 25) {
-            val newMessages = httpClient.request<List<Message>>("$baseUrl/channels/$modUpdatesChannelId/messages") {
+            val newMessages = httpClient.get("$baseUrl/channels/$modUpdatesChannelId/messages") {
                 parameter("limit", perRequestLimit.toString())
                 header("Authorization", "Bot $authToken")
                 accept(ContentType.Application.Json)
@@ -212,7 +214,7 @@ internal object DiscordReader {
                     // Grab results from before the oldest message we've gotten so far.
                     parameter("before", messages.last().id)
                 }
-            }
+            }.body<List<Message>>()
 //                .run { jsanity.fromJson<List<Message>>(this, shouldStripComments = false) }
                 .sortedByDescending { it.timestamp }
 
@@ -238,10 +240,10 @@ internal object DiscordReader {
         emoji: String,
         messageId: String
     ): List<User> {
-        return httpClient.request<List<User>>("$baseUrl/channels/$modUpdatesChannelId/messages/$messageId/reactions/$emoji") {
+        return httpClient.get("$baseUrl/channels/$modUpdatesChannelId/messages/$messageId/reactions/$emoji") {
             header("Authorization", "Bot $authToken")
             accept(ContentType.Application.Json)
-        }
+        }.body()
     }
 
     private val discordUnrecognizedEmojiRegex = Regex("""(<:.+?:.+?>)""")

@@ -14,6 +14,7 @@ package smol.app.browser
 
 import AppScope
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -32,6 +33,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.arkivanov.decompose.extensions.compose.jetbrains.animation.child.crossfade
 import com.mikepenz.markdown.Markdown
 import io.kamel.image.KamelImage
 import io.kamel.image.lazyPainterResource
@@ -307,7 +309,7 @@ fun ModImage(modifier: Modifier = Modifier, mod: ScrapedMod) {
                             onFailure = {
                                 defaultImage()
                             },
-                            crossfade = true,
+                            animationSpec = tween(),
                             contentDescription = mainImage.description
                         )
                     }
@@ -326,7 +328,7 @@ fun ModImage(modifier: Modifier = Modifier, mod: ScrapedMod) {
                         Timber.w(it)
                         defaultImage()
                     },
-                    crossfade = true,
+                    animationSpec = tween(),
                     contentDescription = mainImage.description
                 )
             }

@@ -17,7 +17,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm")
-    id("org.jetbrains.compose") version "1.1.1"
+    id("org.jetbrains.compose") version "1.2.0"
 }
 
 buildscript {
@@ -57,30 +57,30 @@ dependencies {
     implementation(project(":Utilities"))
 
     // Logging
-    implementation("org.tinylog:tinylog-api-kotlin:2.4.1")
-    implementation("org.tinylog:tinylog-impl:2.4.1")
+    implementation("org.tinylog:tinylog-api-kotlin:2.5.0")
+    implementation("org.tinylog:tinylog-impl:2.5.0")
 
     // Modifying mod pages
-    implementation("org.jsoup:jsoup:1.14.3")
+    implementation("org.jsoup:jsoup:1.15.3")
 
     // Gson
     implementation("com.github.salomonbrys.kotson:kotson:2.5.0")
 
     // CLI builder, Clikt
-    implementation("com.github.ajalt.clikt:clikt:3.4.0")
+    implementation("com.github.ajalt.clikt:clikt:3.5.0")
 
     // CLI builder, Kotlin
 //    implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.4")
 
     // Fuzzy Search - not used
-    implementation("com.github.android-password-store:sublime-fuzzy:2.0.0")
-    implementation("me.xdrop:fuzzywuzzy:1.3.1") // This one not used
+    implementation("com.github.android-password-store:sublime-fuzzy:2.2.1")
+    implementation("me.xdrop:fuzzywuzzy:1.4.0") // This one not used
 
     // List diffing
     implementation("dev.andrewbailey.difference:difference:1.0.0")
 
     // Markdown
-    implementation("com.mikepenz:multiplatform-markdown-renderer-jvm:0.4.0")
+    implementation("com.mikepenz:multiplatform-markdown-renderer-jvm:0.6.1")
 
     // Navigation
     val decomposeVer = "0.3.1"
@@ -88,7 +88,7 @@ dependencies {
     api("com.arkivanov.decompose:extensions-compose-jetbrains:$decomposeVer")
 
     // Image loading
-    implementation("com.alialbaali.kamel:kamel-image:0.3.0")
+    implementation("com.alialbaali.kamel:kamel-image:0.4.1")
 
     // Unit testing? ughhhhh
     testImplementation(kotlin("test"))
@@ -175,6 +175,11 @@ compose.desktop {
                 System.err.println("Unable to find ${resources.absolutePath}.")
             }
         }
+        // Run ProGuard configuration when OPTIMIZE is set to true in Environment Configs
+//        if (System.getenv("OPTIMIZE").toBoolean()) {
+        if (false) {
+//            configureProguard()
+        }
 
         // Disable obfuscation for now, as it removes all
 //        fromFiles(obfuscate.get().outputs.files.asFileTree)
@@ -195,45 +200,53 @@ tasks.named("processResources") {
 }
 
 /**
- * https://github.com/kirill-grouchnikov/artemis/blob/woodland/build.gradle.kts#L57
+ * [https://github.com/kirill-grouchnikov/artemis/blob/woodland/build.gradle.kts#L57]
  */
-configurations {
-    all {
-        resolutionStrategy.eachDependency {
-            if (requested.group == "org.jetbrains.skiko") {
-                useVersion("0.7.18")
-                because("Pin to version that has shader bindings")
-            }
-        }
-    }
-}
+//configurations {
+//    all {
+//        resolutionStrategy.eachDependency {
+//            if (requested.group == "org.jetbrains.skiko") {
+//                useVersion("0.7.18")
+//                because("Pin to version that has shader bindings")
+//            }
+//        }
+//    }
+//}
 
+//fun org.jetbrains.compose.desktop.application.dsl.Application.configureProguard() {
+//    val allJars =
+//        tasks.jar.get().outputs.files + sourceSets.main.get().runtimeClasspath.filter { it.path.endsWith(".jar") }
+//            // workaround https://github.com/JetBrains/compose-jb/issues/1971
+//            .filterNot { it.name.startsWith("skiko-awt-") && !it.name.startsWith("skiko-awt-runtime-") }
+//            .distinctBy { it.name } // Prevent duplicate jars
+//
+//    // Split the Jars to get the ones that need obfuscation and those that do not
+//    val (obfuscateJars, otherJars) = allJars.partition {
+//        !it.name.contains("slf4j", ignoreCase = true)
+//            .or(it.name.contains("logback", ignoreCase = true))
+//    }
+//
+//    // Proguard Task definition!
+//    val proguard by tasks.register<proguard.gradle.ProGuardTask>("proguard") {
+//        dependsOn(tasks.jar.get())
+//        println("Config ProGuard")
+//        for (file in obfuscateJars) {
+//            injars(file)
+//            outjars(mapObfuscatedJarFile(file))
+//        }
+//        val library = if (System.getProperty("java.version").startsWith("1.")) "lib/rt.jar" else "jmods"
+//        libraryjars("${compose.desktop.application.javaHome ?: System.getProperty("java.home")}/$library")
+//        libraryjars(otherJars)
+//        configuration("proguard-rules.pro")
+//    }
+//
+//    // Disable Compose Desktop default config and add your own Jars
+//    disableDefaultConfiguration()
+//    fromFiles(proguard.outputs.files.asFileTree)
+//    fromFiles(otherJars)
+//    mainJar.set(tasks.jar.map { RegularFile { mapObfuscatedJarFile(it.archiveFile.get().asFile) } })
+//}
+
+// Map Files to a known path
 fun mapObfuscatedJarFile(file: File) =
-    File("${buildDir}/tmp/obfuscated/${file.nameWithoutExtension}.min.jar")
-
-obfuscate.configure {
-    dependsOn(tasks.jar.get())
-    val allJars = tasks.jar.get().outputs.files.plus(
-        project.rootProject.sourceSets.main.get().runtimeClasspath.files
-            .filter { it.path.endsWith(".jar") }
-            .filterNot { // walkaround https://github.com/JetBrains/compose-jb/issues/1971
-                it.name.startsWith("skiko-awt-") && !it.name.startsWith("skiko-awt-runtime-")
-            }
-            .filterNot { it.name.contains("graal", ignoreCase = true) }
-    )
-    println("jars:" + allJars.joinToString { it.absolutePath })
-    for (file in allJars) {
-        injars(file)
-        outjars(mapObfuscatedJarFile(file))
-    }
-
-    val javahome = compose.desktop.application.javaHome ?: "${System.getProperty("java.home")}/jmods"
-    println("javahome: " + javahome)
-    libraryjars(javahome)
-
-//    dontshrink()
-//    dontobfuscate()
-//    dontoptimize()
-//    ignorewarnings() // hmmm.
-    configuration("proguard-rules.pro")
-}
+    File("${project.buildDir}/tmp/obfuscated/${file.nameWithoutExtension}.min.jar")

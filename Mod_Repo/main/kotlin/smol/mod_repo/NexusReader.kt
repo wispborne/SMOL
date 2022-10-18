@@ -14,12 +14,14 @@ package smol.mod_repo
 
 import com.google.gson.annotations.SerializedName
 import io.ktor.client.*
+import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
-import io.ktor.client.features.*
-import io.ktor.client.features.json.*
-import io.ktor.client.features.logging.*
+import io.ktor.client.plugins.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.*
 import io.ktor.http.*
+import io.ktor.serialization.gson.*
 import smol.timber.ktx.Timber
 import smol.utilities.asList
 import smol.utilities.nullIfBlank
@@ -52,8 +54,8 @@ internal object NexusReader {
             HttpClient(CIO) {
                 install(Logging)
                 install(HttpTimeout)
-                install(JsonFeature) {
-                    serializer = GsonSerializer()
+                install(ContentNegotiation) {
+                    gson()
                 }
                 this.followRedirects = true
             }
@@ -88,10 +90,10 @@ internal object NexusReader {
 
 
     private suspend fun getGameInfo(httpClient: HttpClient, authToken: String): GameInfo {
-        return httpClient.request<GameInfo>("$baseUrl/v1/games/$gameId.json") {
+        return httpClient.request("$baseUrl/v1/games/$gameId.json") {
             header("apikey", authToken)
             accept(ContentType.Application.Json)
-        }
+        }.body()
     }
 
     private suspend fun getModById(
@@ -100,10 +102,10 @@ internal object NexusReader {
         categories: List<Category>,
         authToken: String
     ): ScrapedMod? {
-        return httpClient.request<NexusMod>("$baseUrl/v1/games/$gameId/mods/$modId.json") {
+        return httpClient.request("$baseUrl/v1/games/$gameId/mods/$modId.json") {
             header("apikey", authToken)
             accept(ContentType.Application.Json)
-        }
+        }.body<NexusMod>()
             .let { mod ->
                 if (mod.available != true) {
                     return@let null

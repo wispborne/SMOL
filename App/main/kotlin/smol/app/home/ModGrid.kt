@@ -116,7 +116,7 @@ fun AppScope.ModGridView(
                                 )
                             }
                             if (!isCollapsed) {
-                                fun getSortValue(modRow: ModRow): Comparable<*>? {
+                                fun getSortValue(modRow: ModRow): Comparable<Any>? {
                                     return when (activeSortField) {
                                         ModGridSortField.EnabledState -> modRow.mod.uiEnabled
                                         ModGridSortField.Name -> modRow.mod.findFirstEnabledOrHighestVersion?.modInfo?.name?.lowercase()
@@ -128,7 +128,7 @@ fun AppScope.ModGridView(
                                         ModGridSortField.Category -> modRow.mod.metadata(SL.modMetadata)?.category?.lowercase()
                                             ?.nullIfBlank()
                                         null -> null
-                                    }
+                                    } as Comparable<Any>?
                                 }
 
                                 this.items(
@@ -140,11 +140,11 @@ fun AppScope.ModGridView(
                                                     when {
                                                         activeSortField == null -> comparator.thenBy { null }
                                                         profile.value.modGridPrefs.isSortDescending ->
-                                                            comparator.thenByDescending(nullsFirst<Comparable<*>>()) {
+                                                            comparator.thenByDescending(nullsFirst()) {
                                                                 getSortValue(it)
                                                             }
                                                         else -> {
-                                                            comparator.thenBy(nullsLast<Comparable<*>>()) {
+                                                            comparator.thenBy(nullsLast()) {
                                                                 getSortValue(it)
                                                             }
                                                         }

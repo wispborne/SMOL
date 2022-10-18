@@ -40,17 +40,17 @@ dependencies {
     // CSV
     implementation("org.apache.commons:commons-csv:1.9.0")
     // API
-    api("io.ktor:ktor-client-core:1.6.7")
-    api("io.ktor:ktor-client-cio:1.6.7")
-    api("io.ktor:ktor-client-logging:1.6.7")
+    api("io.ktor:ktor-client-core:2.1.2")
+    api("io.ktor:ktor-client-cio:2.1.2")
+    api("io.ktor:ktor-client-logging:2.1.2")
 
     // Version Checker Dependencies
-    implementation("de.siegmar:fastcsv:2.1.0")
-    implementation("com.fasterxml.jackson.core:jackson-core:2.13.2")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.13.2.2")
+    implementation("de.siegmar:fastcsv:2.2.0")
+    implementation("com.fasterxml.jackson.core:jackson-core:2.13.4")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.13.4")
 
     // Save file reading
-    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.13.2")
+    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.13.4")
 
     // To calculate checksum for archive files
     // https://mvnrepository.com/artifact/commons-codec/commons-codec

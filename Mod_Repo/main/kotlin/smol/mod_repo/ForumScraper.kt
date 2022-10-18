@@ -13,7 +13,6 @@
 package smol.mod_repo
 
 import io.ktor.http.*
-import io.ktor.util.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.jsoup.Jsoup
@@ -114,11 +113,12 @@ internal object ForumScraper {
         )
     }
 
-    private fun Url?.cleanForumUrl() =
-        this?.copy(
-            parameters = parameters
-                .filter { key, _ -> !key.equals("PHPSESSID", ignoreCase = true) }
-                .let { Parameters.build { appendAll(it) } })
+    private fun Url?.cleanForumUrl(): Url? {
+        return URLBuilder(this ?: return null).apply {
+            parameters.remove("PHPSESSID")
+        }
+            .build()
+    }
 
     private val versionRegex = Regex("""[\[{]([^]}]*?\d+?[^]}]*?)[]}]""")
     private suspend fun scrapeSubforumLinks(forumBaseUrl: String, subforumNumber: Int, take: Int): List<ScrapedMod>? {
@@ -134,7 +134,8 @@ internal object ForumScraper {
                             val titleLinkElement = postElement.select("td.subject span a")
                             val authorLinkElement = postElement.select("td.starter a")
 
-                            val forumPostLink = titleLinkElement.attr("href").ifBlank { null }?.let { Url(it) }.cleanForumUrl()
+                            val forumPostLink =
+                                titleLinkElement.attr("href").ifBlank { null }?.let { Url(it) }.cleanForumUrl()
                             ScrapedMod(
                                 name = titleLinkElement.text().replace(versionRegex, "").trim(),
                                 summary = null,

@@ -35,8 +35,8 @@ dependencies {
 
     // Gson
     api("com.github.salomonbrys.kotson:kotson:2.5.0")
-    api ("com.fasterxml.jackson.core:jackson-databind:2.13.2.2")
-    api ("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.2")
+    api ("com.fasterxml.jackson.core:jackson-databind:2.13.4")
+    api ("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.4")
 
     implementation("org.jetbrains.kotlin:kotlin-reflect:${project.property("kotlin")!!}")
     implementation(project.property("coroutines")!!)

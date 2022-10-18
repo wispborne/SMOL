@@ -13,7 +13,7 @@
 package smol.access.business
 
 import io.ktor.client.call.*
-import io.ktor.client.features.*
+import io.ktor.client.plugins.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
@@ -172,7 +172,7 @@ class JreManager(
                 withContext(Dispatchers.IO) {
                     var destForDownload = Path.of(gameJrePath.absolutePathString() + "-1.8.0")
 
-                    client.get<HttpStatement>(appConfig.jre8Url) {
+                    client.get(appConfig.jre8Url) {
                         timeout {
                             connectTimeoutMillis = 45000
                             requestTimeoutMillis = 45000
@@ -183,6 +183,7 @@ class JreManager(
                                 Jre8Progress.Downloading(bytesSentTotal.toFloat() / contentLength.toFloat())
                         }
                     }
+                        .body<HttpStatement>()
                         .execute { httpResponse ->
 
                             if (destForDownload.exists()) {
@@ -196,7 +197,7 @@ class JreManager(
                                 destForDownload.deleteIfExists()
                                 destForDownload.createFile()
                             }
-                            val channel: ByteReadChannel = httpResponse.receive()
+                            val channel: ByteReadChannel = httpResponse.body()
 
                             while (!channel.isClosedForRead) {
                                 val packet = channel.readRemaining(DEFAULT_BUFFER_SIZE.toLong())

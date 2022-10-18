@@ -64,7 +64,7 @@ class ModRepo internal constructor(private val jsanity: Jsanity, private val htt
                     }
                     .recoverCatching {
                         httpClientBuilder.invoke().use { client ->
-                            client.get<HttpResponse>(modRepoUrl).receive()
+                            client.get(modRepoUrl).body()
                         }
                     }
                     .onSuccess { Timber.i { "Fetched mod repo from $modRepoUrl." } }
