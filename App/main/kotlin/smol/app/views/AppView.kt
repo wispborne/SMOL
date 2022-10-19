@@ -76,6 +76,7 @@ fun WindowState.appView() {
     }
 
     LaunchedEffect("runonce") {
+        delay(5000) // Doesn't need to contribute to startup time.
         checkForUpdates()
     }
 

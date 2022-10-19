@@ -31,6 +31,7 @@ import java.nio.file.FileVisitOption
 import java.nio.file.Files
 import java.nio.file.LinkOption
 import java.nio.file.Path
+import kotlin.coroutines.CoroutineContext
 import kotlin.io.path.*
 import kotlin.random.Random
 import kotlin.reflect.KClass
@@ -179,9 +180,9 @@ fun Path.moveDirectory(destDir: Path) = this.toFile().moveDirectory(destDir.toFi
 /**
  * [https://jivimberg.io/blog/2018/05/04/parallel-map-in-kotlin/]
  */
-suspend fun <A, B> Iterable<A>.parallelMap(f: suspend (A) -> B): List<B> =
+suspend fun <A, B> Iterable<A>.parallelMap(context: CoroutineContext = Dispatchers.Default, f: suspend (A) -> B): List<B> =
     coroutineScope {
-        map { async { f(it) } }.awaitAll()
+        map { async(context) { f(it) } }.awaitAll()
     }
 
 fun <T, K> List<T>.diff(newList: List<T>, keyFinder: (item: T) -> K): DiffResult<T> {

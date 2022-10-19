@@ -234,7 +234,7 @@ class Timber private constructor() {
             if (priority < logLevel) return
 
             if (message.length < MAX_LOG_LENGTH) {
-                logToConsole(priority, tag, message)
+                logToConsole(priority, tag, message, Thread.currentThread().name)
                 return
             }
 
@@ -247,19 +247,19 @@ class Timber private constructor() {
                 do {
                     val end = newline.coerceAtMost(i + MAX_LOG_LENGTH)
                     val part = message.substring(i, end)
-                    logToConsole(priority, tag, part)
+                    logToConsole(priority, tag, part, Thread.currentThread().name)
                     i = end
                 } while (i < newline)
                 i++
             }
         }
 
-        private fun logToConsole(priority: LogLevel, tag: String?, message: String) {
+        private fun logToConsole(priority: LogLevel, tag: String?, message: String, thread: String) {
             kotlin.runCatching {
                 scope.launch {
                     val priorityChar = "${priority.name.firstOrNull()?.uppercase()}"
                     val formattedMsg =
-                        "${Instant.now().truncatedTo(ChronoUnit.SECONDS)} ${if (priorityChar.isNotBlank()) "$priorityChar/" else ""}${if (!tag.isNullOrBlank()) "$tag/" else ""} $message"
+                        "${Instant.now().truncatedTo(ChronoUnit.SECONDS)} [$thread] ${if (priorityChar.isNotBlank()) "$priorityChar/" else ""}${if (!tag.isNullOrBlank()) "$tag/" else ""} $message"
                     if (priority < LogLevel.WARN) {
                         System.out.println(formattedMsg)
                     } else {

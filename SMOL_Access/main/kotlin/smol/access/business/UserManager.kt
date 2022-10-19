@@ -112,7 +112,8 @@ class UserManager internal constructor(
     fun updateUserProfile(mutator: (oldProfile: UserProfile) -> UserProfile): UserProfile {
         val newProfile = mutator(activeProfile.value)
         appConfig.userProfile.value = newProfile
-        Timber.i { "Updated active profile ${newProfile.username} to $newProfile" }
+        Timber.i { "Updated active profile '${newProfile.username}'." }
+        Timber.d { newProfile.toString() }
         return newProfile
     }
 

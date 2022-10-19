@@ -12,16 +12,15 @@
 
 package smol.access.business
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import smol.access.Constants
 import smol.access.model.ModInfo
 import smol.access.model.VersionCheckerInfo
 import smol.timber.ktx.Timber
-import smol.utilities.IOLock
-import smol.utilities.Jsanity
-import smol.utilities.equalsAny
-import smol.utilities.walk
+import smol.utilities.*
 import java.nio.file.FileVisitOption
 import java.nio.file.Path
 import kotlin.io.path.*
@@ -36,68 +35,85 @@ class ModInfoLoader(
         desiredFiles: List<DataFile>
     ): Sequence<Pair<Path, DataFiles>> =
         IOLock.read {
-            folderWithMods.walk(maxDepth = 1, FileVisitOption.FOLLOW_LINKS)
-                .plus(listOf(folderWithMods))
-                .filter { it.isDirectory() }
-                .mapNotNull { modFolder ->
-                    var modInfo: ModInfo? = null
+            // Making the method suspending causes it to try unlocking lock from wrong thread.
+            runBlocking {
+                folderWithMods.walk(maxDepth = 1, FileVisitOption.FOLLOW_LINKS)
+                    .plus(listOf(folderWithMods))
+                    .filter { it.isDirectory() }
+                    .toList()
+                    .parallelMap(Dispatchers.IO) { modFolder ->
+                        var modInfo: ModInfo? = null
 
-                    Timber.v {
-                        "Looking for mod_info.json[.disabled] and ${
-                            if (desiredFiles.isEmpty())
-                                "nothing else"
-                            else desiredFiles.joinToString()
-                        } in folder: ${modFolder.absolutePathString()}"
-                    }
-                    modFolder.walk(maxDepth = 1, FileVisitOption.FOLLOW_LINKS)
-                        .filter { it != folderWithMods }
-                        .forEach { file ->
-                            Timber.v { "  File: ${file.name}" }
-
-                            if (modInfo == null
-                                && (file.name.equals(Constants.UNBRICKED_MOD_INFO_FILE, ignoreCase = true)
-                                        || file.name.equalsAny(*Constants.MOD_INFO_FILE_DISABLED_NAMES, ignoreCase = true))
-                            ) {
-                                modInfo = kotlin.runCatching { deserializeModInfoFile(file.readText()) }.getOrNull()
-                            }
+                        Timber.v {
+                            "Looking for mod_info.json[.disabled] and ${
+                                if (desiredFiles.isEmpty())
+                                    "nothing else"
+                                else desiredFiles.joinToString()
+                            } in folder: ${modFolder.absolutePathString()}"
                         }
+                        modFolder.walk(maxDepth = 1, FileVisitOption.FOLLOW_LINKS)
+                            .filter { it != folderWithMods }
+                            .forEach { file ->
+                                Timber.v { "  File: ${file.name}" }
 
-                    if (modInfo == null) {
-                        return@mapNotNull null
-                    } else {
-                        var versionCheckerInfo: VersionCheckerInfo? = null
+                                if (modInfo == null
+                                    && (file.name.equals(Constants.UNBRICKED_MOD_INFO_FILE, ignoreCase = true)
+                                            || file.name.equalsAny(
+                                        *Constants.MOD_INFO_FILE_DISABLED_NAMES,
+                                        ignoreCase = true
+                                    ))
+                                ) {
+                                    modInfo =
+                                        kotlin.runCatching { deserializeModInfoFile(file.readText()) }.getOrNull()
+                                }
+                            }
 
-                        if (desiredFiles.contains(DataFile.VERSION_CHECKER)) {
-                            val verCheckerCsv = modFolder.resolve(Constants.VERSION_CHECKER_CSV_PATH)
+                        if (modInfo == null) {
+                            return@parallelMap null
+                        } else {
+                            var versionCheckerInfo: VersionCheckerInfo? = null
 
-                            if (verCheckerCsv.exists()) {
-                                kotlin.runCatching {
-                                    val versionFilePath =
-                                        CSVParser(verCheckerCsv.bufferedReader(), CSVFormat.DEFAULT).records[1][0]
+                            if (desiredFiles.contains(DataFile.VERSION_CHECKER)) {
+                                val verCheckerCsv = modFolder.resolve(Constants.VERSION_CHECKER_CSV_PATH)
 
-                                    versionCheckerInfo =
-                                        deserializeVersionCheckerFile(modFolder.resolve(versionFilePath).readText())
+                                if (verCheckerCsv.exists()) {
+                                    kotlin.runCatching {
+                                        val versionFilePath =
+                                            CSVParser(
+                                                verCheckerCsv.bufferedReader(),
+                                                CSVFormat.DEFAULT
+                                            ).records[1][0]
 
-                                    if (versionCheckerInfo?.modThreadId != null) {
-                                        versionCheckerInfo = versionCheckerInfo!!.copy(
-                                            modThreadId = versionCheckerInfo!!.modThreadId!!.replace(
-                                                regex = Regex("[^0-9]"),
-                                                replacement = ""
+                                        versionCheckerInfo =
+                                            deserializeVersionCheckerFile(
+                                                modFolder.resolve(versionFilePath).readText()
                                             )
-                                        )
-                                        if (versionCheckerInfo?.modThreadId?.trimStart('0')?.isEmpty() == true) {
-                                            versionCheckerInfo = versionCheckerInfo!!.copy(modThreadId = null)
+
+                                        if (versionCheckerInfo?.modThreadId != null) {
+                                            versionCheckerInfo = versionCheckerInfo!!.copy(
+                                                modThreadId = versionCheckerInfo!!.modThreadId!!.replace(
+                                                    regex = Regex("[^0-9]"),
+                                                    replacement = ""
+                                                )
+                                            )
+                                            if (versionCheckerInfo?.modThreadId?.trimStart('0')
+                                                    ?.isEmpty() == true
+                                            ) {
+                                                versionCheckerInfo = versionCheckerInfo!!.copy(modThreadId = null)
+                                            }
                                         }
                                     }
+                                        .onFailure { Timber.w { "This mod has defined a `data/config/version/version_files.csv`, but there was an error reading version checker file:\n  ${it.message}" } }
+                                        .getOrNull()
                                 }
-                                    .onFailure { Timber.w { "This mod has defined a `data/config/version/version_files.csv`, but there was an error reading version checker file:\n  ${it.message}" } }
-                                    .getOrNull()
                             }
-                        }
 
-                        return@mapNotNull modFolder to DataFiles(modInfo!!, versionCheckerInfo)
+                            return@parallelMap modFolder to DataFiles(modInfo!!, versionCheckerInfo)
+                        }
                     }
-                }
+                    .filterNotNull()
+                    .asSequence()
+            }
         }
 
     @OptIn(ExperimentalStdlibApi::class)

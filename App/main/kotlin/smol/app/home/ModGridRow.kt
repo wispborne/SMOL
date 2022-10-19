@@ -130,12 +130,12 @@ fun AppScope.ModGridRow(
                             }
                             UserProfile.ModGridHeader.ChangeVariantButton -> {
                                 // Mod Version Dropdown
-                                ModVariantsDropdown(
-                                    modifier = Modifier
-                                        .width(modGridViewDropdownWidth.dp)
-                                        .align(Alignment.CenterVertically),
-                                    mod = mod
-                                )
+//                                ModVariantsDropdown(
+//                                    modifier = Modifier
+//                                        .width(modGridViewDropdownWidth.dp)
+//                                        .align(Alignment.CenterVertically),
+//                                    mod = mod
+//                                )
                             }
                             UserProfile.ModGridHeader.Name -> {
                                 // Mod name

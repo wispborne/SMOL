@@ -24,6 +24,7 @@ import androidx.compose.ui.window.*
 import appView
 import com.arkivanov.decompose.Router
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -54,6 +55,7 @@ import kotlin.io.path.inputStream
 var safeMode = false
 
 fun main() = application {
+    val logLevel = LogLevel.INFO
     val startTime = Instant.now().toEpochMilli()
     fun sinceStartStr() = "(since start: ${(Instant.now().minusMillis(startTime).toEpochMilli())}ms)"
     val coroutineScope = rememberCoroutineScope()
@@ -79,7 +81,7 @@ fun main() = application {
         kotlin.runCatching {
             Logging.logLevel =
                 if (safeMode) LogLevel.VERBOSE
-                else LogLevel.INFO
+                else logLevel
             Logging.setup()
         }
             .onFailure {
@@ -154,6 +156,7 @@ fun main() = application {
             }
 
         LaunchedEffect(Unit) {
+            delay(4000) // Doesn't need to contribute to startup time.
             kotlin.runCatching { SL.modRepo.refreshFromInternet(SL.appConfig.updateChannel) }
                 .onFailure { Timber.w(it) }
         }

@@ -52,7 +52,7 @@ class SaveReader(
                 .filter { it.isDirectory() }
                 .mapNotNull { folder ->
                     kotlin.runCatching { readSave(folder) }
-                        .onFailure { Timber.e(it) { "Failed to read save folder $folder." } }
+                        .onFailure { Timber.i { "Failed to read save folder $folder. ${it.message}" } }
                         .getOrNull()
                 }
                 .also {

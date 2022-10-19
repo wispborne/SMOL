@@ -175,15 +175,10 @@ compose.desktop {
                 System.err.println("Unable to find ${resources.absolutePath}.")
             }
         }
-        // Run ProGuard configuration when OPTIMIZE is set to true in Environment Configs
-//        if (System.getenv("OPTIMIZE").toBoolean()) {
-        if (false) {
-//            configureProguard()
-        }
 
-        // Disable obfuscation for now, as it removes all
-//        fromFiles(obfuscate.get().outputs.files.asFileTree)
-//        mainJar.set(tasks.jar.map { RegularFile { mapObfuscatedJarFile(it.archiveFile.get().asFile) } })
+        buildTypes.release.proguard {
+            configurationFiles.from(project.file("proguard-rules.pro"))
+        }
     }
 }
 
@@ -211,40 +206,6 @@ tasks.named("processResources") {
 //            }
 //        }
 //    }
-//}
-
-//fun org.jetbrains.compose.desktop.application.dsl.Application.configureProguard() {
-//    val allJars =
-//        tasks.jar.get().outputs.files + sourceSets.main.get().runtimeClasspath.filter { it.path.endsWith(".jar") }
-//            // workaround https://github.com/JetBrains/compose-jb/issues/1971
-//            .filterNot { it.name.startsWith("skiko-awt-") && !it.name.startsWith("skiko-awt-runtime-") }
-//            .distinctBy { it.name } // Prevent duplicate jars
-//
-//    // Split the Jars to get the ones that need obfuscation and those that do not
-//    val (obfuscateJars, otherJars) = allJars.partition {
-//        !it.name.contains("slf4j", ignoreCase = true)
-//            .or(it.name.contains("logback", ignoreCase = true))
-//    }
-//
-//    // Proguard Task definition!
-//    val proguard by tasks.register<proguard.gradle.ProGuardTask>("proguard") {
-//        dependsOn(tasks.jar.get())
-//        println("Config ProGuard")
-//        for (file in obfuscateJars) {
-//            injars(file)
-//            outjars(mapObfuscatedJarFile(file))
-//        }
-//        val library = if (System.getProperty("java.version").startsWith("1.")) "lib/rt.jar" else "jmods"
-//        libraryjars("${compose.desktop.application.javaHome ?: System.getProperty("java.home")}/$library")
-//        libraryjars(otherJars)
-//        configuration("proguard-rules.pro")
-//    }
-//
-//    // Disable Compose Desktop default config and add your own Jars
-//    disableDefaultConfiguration()
-//    fromFiles(proguard.outputs.files.asFileTree)
-//    fromFiles(otherJars)
-//    mainJar.set(tasks.jar.map { RegularFile { mapObfuscatedJarFile(it.archiveFile.get().asFile) } })
 //}
 
 // Map Files to a known path

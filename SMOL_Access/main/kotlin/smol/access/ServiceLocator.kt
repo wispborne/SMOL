@@ -34,7 +34,6 @@ lateinit var SL: ServiceLocator
 
 typealias HttpClientBuilder = () -> HttpClient
 
-@OptIn(ExperimentalStdlibApi::class)
 class ServiceLocator internal constructor(
 ) {
     companion object {
