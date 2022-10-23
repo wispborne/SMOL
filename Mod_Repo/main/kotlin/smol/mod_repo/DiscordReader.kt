@@ -90,7 +90,7 @@ internal object DiscordReader {
 
             .also { Timber.i { "Done checking reactions." } }
             .parallelMap { message ->
-                Timber.d { "Parsing message ${message.content?.lines()?.firstOrNull()}" }
+                Timber.i { "Parsing message ${message.content?.lines()?.firstOrNull()}" }
                 // Drop any blank lines from the start of the post.
                 val messageLines = message.content?.lines().orEmpty().dropWhile { it.isBlank() }
                 val forumUrl = messageLines
