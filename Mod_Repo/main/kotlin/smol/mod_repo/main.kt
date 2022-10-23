@@ -114,14 +114,15 @@ class Main {
 
             val discordJob = CoroutineScope(Job()).async {
                 kotlin.runCatching {
-                    withTimeout(90000) {
+                    // isDownloadable takes forever, don't use a timeout.
+//                    withTimeout(90000) {
                         if (config.enableDiscord) {
                             DiscordReader.readAllMessages(
                                 config = config,
                                 gsonBuilder = gsonBuilder
                             )
                         } else emptyList()
-                    }
+//                    }
                 }
                     .onFailure { Timber.e(it) }
                     .getOrNull()

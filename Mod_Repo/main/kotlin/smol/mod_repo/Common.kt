@@ -28,6 +28,7 @@ object Common {
      */
     fun isDownloadable(url: String?): Boolean =
         kotlin.runCatching {
+            Timber.d { "Checking to see if $url is downloadable by opening a connection." }
             val conn = URL(url ?: return false).openConnection()
 
             val hasAttachment = conn.getHeaderField("Content-Disposition")?.let { contentDispoHeader ->

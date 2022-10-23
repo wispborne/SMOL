@@ -105,6 +105,7 @@ internal object DiscordReader {
                 val downloadyUrls = messageLines
                     .mapNotNull { urlFinderRegex.find(it)?.value }
                     .filter { url -> thingsThatAreNotDownloady.none { url.contains(it) } }
+                    // Very slow, makes a request for each file to get headers.
                     .parallelMap { DownloadyUrl(it, Common.isDownloadable(it)) }
 
                 val downloadArtifactUrl = downloadyUrls
@@ -160,7 +161,19 @@ internal object DiscordReader {
             .filter { it.name.isNotBlank() } // Remove any posts that don't contain text.
     }
 
-    private val thingsThatAreNotDownloady = listOf("imgur.com", "cdn.discordapp.com")
+    /**
+     * Taken from actual samples.
+     */
+    private val thingsThatAreNotDownloady =
+        listOf(
+            "imgur.com",
+            "cdn.discordapp.com",
+            "https://fractalsoftworks.com/forum/index.php?topic=",
+            "http://fractalsoftworks.com/forum/index.php?topic=",
+            "https://www.nexusmods.com/starsector/mods",
+            "https://www.patreon.com/posts",
+            "https://www.youtube.com"
+        )
 
     private fun getBestPossibleDownloadHost(urls: List<String>) =
         urls

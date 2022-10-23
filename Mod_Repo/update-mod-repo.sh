@@ -7,10 +7,10 @@ echo "Dir: $(pwd)"
 rm -rfv ./StarsectorModRepo
 
 # Get Mod Repo.
-git clone git@github.com:davidwhitman/StarsectorModRepo.git --depth 1 StarsectorModRepo
+git clone git@github.com:wispborne/StarsectorModRepo.git --depth 1 StarsectorModRepo
 
 # Download scraper
-curl -L https://github.com/davidwhitman/SMOL/releases/latest/download/Mod_Repo-fat.jar > Mod_Repo-fat.jar
+curl -L https://github.com/wispborne/SMOL/releases/latest/download/Mod_Repo-fat.jar > Mod_Repo-fat.jar
 
 # Remove existing ModRepo.json (if it has broken json then the scraper will fail when trying to update it).
 rm -v ModRepo.json
