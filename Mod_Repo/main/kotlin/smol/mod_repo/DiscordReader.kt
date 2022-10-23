@@ -27,27 +27,19 @@ import smol.timber.ktx.Timber
 import smol.utilities.asList
 import smol.utilities.parallelMap
 import smol.utilities.prefer
+import java.time.Instant
 import java.util.*
 
-/**
- * This file is distributed under the GPLv3. An informal description follows:
- * - Anyone can copy, modify and distribute this software as long as the other points are followed.
- * - You must include the license and copyright notice with each and every distribution.
- * - You may this software for commercial purposes.
- * - If you modify it, you must indicate changes made to the code.
- * - Any modifications of this code base MUST be distributed with the same license, GPLv3.
- * - This software is provided without warranty.
- * - The software author or license can not be held liable for any damages inflicted by the software.
- * The full license is available from <https://www.gnu.org/licenses/gpl-3.0.txt>.
- */
 internal object DiscordReader {
-    private val baseUrl = "https://discord.com/api"
-    val serverId = "187635036525166592"
-    val modUpdatesChannelId = "825068217361760306"
+    private const val baseUrl = "https://discord.com/api"
+    private const val delayBetweenRequestsMillis = 1500L
+    private var timestampOfLastHttpCall: Long = 0L
+    private const val serverId = "187635036525166592"
+    private const val modUpdatesChannelId = "825068217361760306"
     private val urlFinderRegex = Regex(
         """(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#-]*[\w@?^=%&\/~+#-])"""
     )
-    val noscrapeReaction = "\uD83D\uDD78️"
+    private const val noscrapeReaction = "\uD83D\uDD78️"
 
     internal suspend fun readAllMessages(config: Main.Companion.Config, gsonBuilder: GsonBuilder): List<ScrapedMod>? {
         val authToken = config.discordAuthToken ?: run {
@@ -71,6 +63,7 @@ internal object DiscordReader {
             authToken = authToken,
             limit = if (config.lessScraping) 50 else Int.MAX_VALUE
         )
+            .also { Timber.i { "Checking for mods with $noscrapeReaction reactions." } }
             .filter { msg ->
                 val hasNoscrapeReaction = msg.reactions.orEmpty().any { it.emoji.name == noscrapeReaction }
 
@@ -83,7 +76,7 @@ internal object DiscordReader {
                     ).any { reacter -> reacter.id == msg.author?.id }
 
                     if (isReactionFromPostAuthor) {
-                        Timber.d {
+                        Timber.i {
                             "Skipping Discord mod '${msg.content?.lines()?.firstOrNull()}' " +
                                     "because of reaction $noscrapeReaction."
                         }
@@ -94,7 +87,10 @@ internal object DiscordReader {
 
                 return@filter true
             }
-            .map { message ->
+
+            .also { Timber.i { "Done checking reactions." } }
+            .parallelMap { message ->
+                Timber.d { "Parsing message ${message.content?.lines()?.firstOrNull()}" }
                 // Drop any blank lines from the start of the post.
                 val messageLines = message.content?.lines().orEmpty().dropWhile { it.isBlank() }
                 val forumUrl = messageLines
@@ -164,7 +160,7 @@ internal object DiscordReader {
             .filter { it.name.isNotBlank() } // Remove any posts that don't contain text.
     }
 
-    val thingsThatAreNotDownloady = listOf("imgur.com", "cdn.discordapp.com")
+    private val thingsThatAreNotDownloady = listOf("imgur.com", "cdn.discordapp.com")
 
     private fun getBestPossibleDownloadHost(urls: List<String>) =
         urls
@@ -205,14 +201,16 @@ internal object DiscordReader {
         val perRequestLimit = 100
 
         while (messages.count() < limit && runs < 25) {
-            val newMessages = httpClient.get("$baseUrl/channels/$modUpdatesChannelId/messages") {
-                parameter("limit", perRequestLimit.toString())
-                header("Authorization", "Bot $authToken")
-                accept(ContentType.Application.Json)
+            val newMessages = makeHttpRequestWithRateLimiting(httpClient) {
+                httpClient.get("$baseUrl/channels/$modUpdatesChannelId/messages") {
+                    parameter("limit", perRequestLimit.toString())
+                    header("Authorization", "Bot $authToken")
+                    accept(ContentType.Application.Json)
 
-                if (messages.isNotEmpty()) {
-                    // Grab results from before the oldest message we've gotten so far.
-                    parameter("before", messages.last().id)
+                    if (messages.isNotEmpty()) {
+                        // Grab results from before the oldest message we've gotten so far.
+                        parameter("before", messages.last().id)
+                    }
                 }
             }.body<List<Message>>()
 //                .run { jsanity.fromJson<List<Message>>(this, shouldStripComments = false) }
@@ -224,10 +222,10 @@ internal object DiscordReader {
             runs++
 
             if (newMessages.isEmpty() || newMessages.size < perRequestLimit) {
-                Timber.i { "Found all ${messages.count()} posts in Discord #mod_updates, finishing scrape." }
+                Timber.i { "Found all ${messages.count()} posts in Discord #mod_updates." }
                 break
             } else {
-                delay(200)
+//                delay(delayBetweenRequestsMillis)
             }
         }
 
@@ -240,10 +238,22 @@ internal object DiscordReader {
         emoji: String,
         messageId: String
     ): List<User> {
-        return httpClient.get("$baseUrl/channels/$modUpdatesChannelId/messages/$messageId/reactions/$emoji") {
-            header("Authorization", "Bot $authToken")
-            accept(ContentType.Application.Json)
-        }.body()
+        return makeHttpRequestWithRateLimiting(httpClient) {
+            Timber.i { "Checking to see who reacted to $messageId." }
+            httpClient.get("$baseUrl/channels/$modUpdatesChannelId/messages/$messageId/reactions/$emoji") {
+                header("Authorization", "Bot $authToken")
+                accept(ContentType.Application.Json)
+            }.body()
+        }
+    }
+
+    private suspend fun <T> makeHttpRequestWithRateLimiting(
+        client: HttpClient,
+        call: suspend (client: HttpClient) -> T
+    ): T {
+        delay(((timestampOfLastHttpCall + delayBetweenRequestsMillis) - Instant.now().toEpochMilli()).coerceAtLeast(0))
+        timestampOfLastHttpCall = Instant.now().toEpochMilli()
+        return call(client)
     }
 
     private val discordUnrecognizedEmojiRegex = Regex("""(<:.+?:.+?>)""")

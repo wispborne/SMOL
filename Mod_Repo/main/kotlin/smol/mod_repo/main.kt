@@ -17,12 +17,10 @@ import com.github.salomonbrys.kotson.string
 import com.github.salomonbrys.kotson.toJson
 import com.google.gson.GsonBuilder
 import io.ktor.http.*
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import smol.timber.LogLevel
 import smol.timber.Timber
+import smol.timber.ktx.i
 import smol.timber.ktx.w
 import smol.utilities.Jsanity
 import smol.utilities.exists
@@ -38,7 +36,7 @@ import kotlin.io.path.*
 class Main {
     companion object {
         internal val CONFIG_FOLDER_DEFAULT = Path.of("")
-        internal val FORUM_BASE_URL = "https://fractalsoftworks.com/forum/index.php"
+        internal const val FORUM_BASE_URL = "https://fractalsoftworks.com/forum/index.php"
         internal val configFilePath = Path.of("config.properties")
         internal const val verboseOutput = true
 
@@ -98,40 +96,46 @@ class Main {
             val jsanity = Jsanity(gsonBuilder.create())
             val modRepoCache = ModRepoCache(jsanity)
 
-            val scrapeJob = GlobalScope.async {
+            val scrapeJob = CoroutineScope(Job()).async {
                 kotlin.runCatching {
-                    if (config.enableForums) {
-                        ForumScraper.run(
-                            config = config,
-                            moddingForumPagesToScrape = if (config.lessScraping) 3 else 15,
-                            modForumPagesToScrape = if (config.lessScraping) 3 else 12
-                        )
-                    } else emptyList()
+                    withTimeout(90000) {
+                        if (config.enableForums) {
+                            ForumScraper.run(
+                                config = config,
+                                moddingForumPagesToScrape = if (config.lessScraping) 3 else 15,
+                                modForumPagesToScrape = if (config.lessScraping) 3 else 12
+                            )
+                        } else emptyList()
+                    }
                 }
                     .onFailure { Timber.e(it) }
                     .getOrNull()
             }
 
-            val discordJob = GlobalScope.async {
+            val discordJob = CoroutineScope(Job()).async {
                 kotlin.runCatching {
-                    if (config.enableDiscord) {
-                        DiscordReader.readAllMessages(
-                            config = config,
-                            gsonBuilder = gsonBuilder
-                        )
-                    } else emptyList()
+                    withTimeout(90000) {
+                        if (config.enableDiscord) {
+                            DiscordReader.readAllMessages(
+                                config = config,
+                                gsonBuilder = gsonBuilder
+                            )
+                        } else emptyList()
+                    }
                 }
                     .onFailure { Timber.e(it) }
                     .getOrNull()
             }
 
-            val nexusModsJob = GlobalScope.async {
+            val nexusModsJob = CoroutineScope(Job()).async {
                 kotlin.runCatching {
-                    if (config.enableNexus) {
-                        NexusReader.readAllMessages(
-                            config = config
-                        )
-                    } else emptyList()
+                    withTimeout(180000) {
+                        if (config.enableNexus) {
+                            NexusReader.readAllMessages(
+                                config = config
+                            )
+                        } else emptyList()
+                    }
                 }
                     .onFailure { Timber.e(it) }
                     .getOrNull()
@@ -141,6 +145,9 @@ class Main {
                 val forumMods = scrapeJob.await() ?: emptyList()
                 val discordMods = discordJob.await() ?: emptyList()
                 val nexusMods = nexusModsJob.await() ?: emptyList()
+
+                Timber.i { "Found ${forumMods.size} forum mods, ${discordMods.size} Discord mods, and ${nexusMods.size} Nexus mods." }
+                Timber.i { "Starting merge..." }
 
                 ModMerger()
                     .merge(forumMods + discordMods + nexusMods)

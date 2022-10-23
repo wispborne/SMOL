@@ -20,24 +20,12 @@ import org.jsoup.nodes.Document
 import org.jsoup.select.Elements
 import smol.timber.ktx.Timber
 import smol.utilities.asList
+import smol.utilities.parallelMap
 
-private const val i = 15
-
-/**
- * This file is distributed under the GPLv3. An informal description follows:
- * - Anyone can copy, modify and distribute this software as long as the other points are followed.
- * - You must include the license and copyright notice with each and every distribution.
- * - You may this software for commercial purposes.
- * - If you modify it, you must indicate changes made to the code.
- * - Any modifications of this code base MUST be distributed with the same license, GPLv3.
- * - This software is provided without warranty.
- * - The software author or license can not be held liable for any damages inflicted by the software.
- * The full license is available from <https://www.gnu.org/licenses/gpl-3.0.txt>.
- */
 internal object ForumScraper {
     private val postsPerPage = 20
 
-    fun run(
+    suspend fun run(
         config: Main.Companion.Config,
         moddingForumPagesToScrape: Int,
         modForumPagesToScrape: Int
@@ -48,7 +36,7 @@ internal object ForumScraper {
             .ifEmpty { null }
     }
 
-    private fun scrapeModIndexLinks(): List<ScrapedMod>? {
+    private suspend fun scrapeModIndexLinks(): List<ScrapedMod>? {
         Timber.i { "Scraping Mod Index..." }
         return kotlin.runCatching {
             val doc: Document = Jsoup.connect("https://fractalsoftworks.com/forum/index.php?topic=177.0").get()
@@ -64,7 +52,7 @@ internal object ForumScraper {
                             ?.text()
                             ?.trimEnd(':') ?: ""
 
-                    categoryElement.select("li").map { modElement ->
+                    categoryElement.select("li").parallelMap { modElement ->
                         val link = modElement.select("a.bbc_link")
 
                         val forumPostLink = link.attr("href").ifBlank { null }?.let { Url(it) }?.cleanForumUrl()
@@ -130,7 +118,7 @@ internal object ForumScraper {
                     val posts: Elements = doc.select("#messageindex tr")
 
                     posts
-                        .map { postElement ->
+                        .parallelMap { postElement ->
                             val titleLinkElement = postElement.select("td.subject span a")
                             val authorLinkElement = postElement.select("td.starter a")
 
