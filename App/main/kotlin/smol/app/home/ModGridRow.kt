@@ -130,12 +130,12 @@ fun AppScope.ModGridRow(
                             }
                             UserProfile.ModGridHeader.ChangeVariantButton -> {
                                 // Mod Version Dropdown
-//                                ModVariantsDropdown(
-//                                    modifier = Modifier
-//                                        .width(modGridViewDropdownWidth.dp)
-//                                        .align(Alignment.CenterVertically),
-//                                    mod = mod
-//                                )
+                                ModVariantsDropdown(
+                                    modifier = Modifier
+                                        .width(modGridViewDropdownWidth.dp)
+                                        .align(Alignment.CenterVertically),
+                                    mod = mod
+                                )
                             }
                             UserProfile.ModGridHeader.Name -> {
                                 // Mod name
@@ -291,23 +291,24 @@ fun AppScope.ModGridRow(
                 Row(
                     modifier = Modifier.width(checkboxesWidth)
                         .align(Alignment.CenterVertically)
-                        .alpha(if (isCheckboxVisible) 1f else 0f)
                 ) {
-                    modGridBulkActionMenu(
-                        modifier = Modifier.align(Alignment.CenterVertically),
-                        checkedRows = checkedRows
-                    )
-                    Checkbox(
-                        modifier = Modifier.width(checkboxesWidth),
-                        checked = isChecked,
-                        onCheckedChange = { checked ->
-                            if (checked) {
-                                checkedRows.add(mod)
-                            } else {
-                                checkedRows.remove(mod)
+                    if (isCheckboxVisible) {
+                        modGridBulkActionMenu(
+                            modifier = Modifier.align(Alignment.CenterVertically),
+                            checkedRows = checkedRows
+                        )
+                        Checkbox(
+                            modifier = Modifier.width(checkboxesWidth),
+                            checked = isChecked,
+                            onCheckedChange = { checked ->
+                                if (checked) {
+                                    checkedRows.add(mod)
+                                } else {
+                                    checkedRows.remove(mod)
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
 
                 // Context menu

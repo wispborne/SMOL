@@ -10,7 +10,6 @@
  * The full license is available from <https://www.gnu.org/licenses/gpl-3.0.txt>.
  */
 
-import org.jetbrains.compose.compose
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -20,15 +19,9 @@ plugins {
     id("org.jetbrains.compose") version "1.2.0"
 }
 
-buildscript {
-    dependencies {
-        classpath("com.guardsquare:proguard-gradle:7.2.1")
-    }
-}
-
 group = "com.wisp"
 val smolVersion =
-    "1.0.0-beta10" // TODO don't forget to change default channel to "stable" in AppConfig for release.
+    "1.0.0-dev01"
 
 // This gets appended to the app's jarfile, which means it has a unique name each time the app updates,
 // resulting in the file not getting removed. Keep a constant version here so user doesn't end up with a ton of outdated files.
@@ -90,8 +83,10 @@ dependencies {
     // Image loading
     implementation("com.alialbaali.kamel:kamel-image:0.4.1")
 
-    // Unit testing? ughhhhh
+    // Unit testing
     testImplementation(kotlin("test"))
+    testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.25")
+
 }
 
 kotlin.sourceSets.main {
@@ -119,8 +114,6 @@ tasks.test {
     useJUnitPlatform()
 }
 
-val obfuscate by tasks.registering(proguard.gradle.ProGuardTask::class)
-
 compose.desktop {
     application {
         mainClass = "smol.app.MainKt"
@@ -136,7 +129,7 @@ compose.desktop {
 
             windows {
                 println("OS: Windows")
-                console = true
+                console = false
                 upgradeUuid = "51169f8d-9aec-4abf-b30a-f5bc5a5f6509"
                 iconFile.set(project.file("smol.ico"))
                 jvmArgs += listOf("-Djava.library.path=./libs/$jcefFolder/bin/lib/win64") // For CEF (Chromium Embedded Framework)

@@ -27,6 +27,7 @@ import smol.timber.ktx.Timber
 import smol.timber.ktx.d
 import smol.utilities.*
 import java.io.RandomAccessFile
+import java.nio.file.FileVisitOption
 import java.nio.file.Path
 import kotlin.io.path.*
 
@@ -296,7 +297,7 @@ class Archives internal constructor(
             }
     }
 
-    fun findModInfoFileInFolder(folder: Path) = folder.walk(maxDepth = 6)
+    fun findModInfoFileInFolder(folder: Path) = folder.walk(maxDepth = 6, options = arrayOf(FileVisitOption.FOLLOW_LINKS))
         .firstOrNull { it.isModInfoFile() }
 
     fun extractArchive(

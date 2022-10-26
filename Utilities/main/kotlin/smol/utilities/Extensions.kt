@@ -95,7 +95,7 @@ suspend fun Path.calculateFileSize() =
         if (this@calculateFileSize.isRegularFile()) {
             this@calculateFileSize.fileSize()
         } else {
-            this@calculateFileSize.walk().sumOf { it.fileSize() }
+            this@calculateFileSize.walk(options = arrayOf(FileVisitOption.FOLLOW_LINKS)).sumOf { it.fileSize() }
         }
     }
 

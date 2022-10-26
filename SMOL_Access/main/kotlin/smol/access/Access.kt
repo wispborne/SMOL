@@ -25,6 +25,7 @@ import smol.access.model.ModInfo
 import smol.access.model.ModVariant
 import smol.timber.ktx.Timber
 import smol.utilities.*
+import java.nio.file.FileVisitOption
 import java.nio.file.Path
 import kotlin.io.path.exists
 import kotlin.io.path.nameWithoutExtension
@@ -75,7 +76,7 @@ class Access internal constructor(
                 var hasGameExe = false
                 var hasGameCoreExe = false
 
-                newGamePath.walk(maxDepth = 1)
+                newGamePath.walk(maxDepth = 1, options = arrayOf(FileVisitOption.FOLLOW_LINKS))
                     .map { it.nameWithoutExtension.lowercase() }
                     .forEach {
                         if (it == "starsector") hasGameExe = true

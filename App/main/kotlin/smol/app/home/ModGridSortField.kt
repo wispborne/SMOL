@@ -16,6 +16,7 @@ enum class ModGridSortField {
     EnabledState,
     Name,
     Author,
+    Version,
     VramImpact,
     Category
 }

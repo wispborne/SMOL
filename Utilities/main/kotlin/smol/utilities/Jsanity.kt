@@ -65,7 +65,16 @@ class Jsanity constructor(
         val hjson = kotlin.runCatching {
             JsonValue.readHjson(strippedJson).toString(Stringify.FORMATTED)
         }
-            .onFailure { Timber.w(it) { "HJson error parsing: \n${strippedJson.lines().take(10).joinToString(separator = "\n")}" } }
+            .onFailure {
+                Timber.w(it) {
+                    "HJson error parsing: \n${
+                        strippedJson
+                            .lines()
+                            .take(10)
+                            .joinToString(separator = "\n") { it.take(100) }
+                    }"
+                }
+            }
             .getOrThrow()
 
         // Jackson

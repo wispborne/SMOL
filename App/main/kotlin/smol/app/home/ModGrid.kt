@@ -120,6 +120,7 @@ fun AppScope.ModGridView(
                                     return when (activeSortField) {
                                         ModGridSortField.EnabledState -> modRow.mod.uiEnabled
                                         ModGridSortField.Name -> modRow.mod.findFirstEnabledOrHighestVersion?.modInfo?.name?.lowercase()
+                                        ModGridSortField.Version -> modRow.mod.findFirstEnabledOrHighestVersion?.versionCheckerInfo?.modVersion
                                         ModGridSortField.Author -> modRow.mod.findFirstEnabledOrHighestVersion?.modInfo?.author?.lowercase()
                                         ModGridSortField.VramImpact -> getVramImpactForMod(
                                             modRow.mod,

@@ -75,6 +75,7 @@ data class Version(
                 .map { it.range.first }
                 .toList() + listOf(str.length))
                 .zipWithNext { l, r -> str.subSequence(l, r).toString().filter { it.isLetterOrDigit() } }
+                .filter { it.isNotBlank() }
         }
 
         /**
@@ -87,7 +88,7 @@ data class Version(
             val otherChunked = other.splitIntoAlphaAndNumeric()
             var i = 0
 
-            // Iterate over each character in the version segment (using "0" to fill in if one is longer than the other).
+            // Iterate over each chunk in the version segment (using "0" for a chunk if there are more chunks on one side then the other).
             // As soon as there's inequality, return that result.
             while (i < thisChunked.size || i < otherChunked.size) {
                 val thisToCompare = thisChunked.getOrElse(i) { "0" }.let { it.toIntOrNull() ?: it }
@@ -95,9 +96,14 @@ data class Version(
 
                 if (thisToCompare is Int && otherToCompare is Int) {
                     thisToCompare.compareTo(otherToCompare).run { if (this != 0) return this }
-                } else {
-                    thisToCompare.toString().compareTo(otherToCompare.toString()).run { if (this != 0) return this }
                 }
+
+                if (thisToCompare.toString().length != otherToCompare.toString().length) {
+                    thisToCompare.toString().length.compareTo(otherToCompare.toString().length)
+                        .run { if (this != 0) return this }
+                }
+
+                thisToCompare.toString().compareTo(otherToCompare.toString()).run { if (this != 0) return this }
 
                 i++
             }

@@ -130,7 +130,8 @@ val launchQuotes = listOf(
     "Punch it, Chewie." to 5f,
     "Let's fly!" to 7f,
     "One smol step for humankind." to 5f,
-    "I am a leaf on the wind. Watch how I soar." to 4f
+    "I am a leaf on the wind. Watch how I soar." to 4f,
+    "Alfonzo put me in the screenshot" to 1f
 )
 
 data class StarsectorLaunchPrefs(
@@ -139,7 +140,7 @@ data class StarsectorLaunchPrefs(
     val hasSound: Boolean
 )
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AppScope.launchButton(modifier: Modifier = Modifier) {
     val launchText = remember { launchQuotes.weightedRandom() }
@@ -308,6 +309,7 @@ private fun getStarsectorLaunchPrefs(): StarsectorLaunchPrefs {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AppScope.installModsButton(modifier: Modifier = Modifier) {
     SmolTooltipArea(

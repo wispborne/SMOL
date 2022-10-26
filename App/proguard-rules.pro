@@ -14,7 +14,7 @@
 #-keep class kotlinx.coroutines.** { *; }
 #-keep class org.jetbrains.skia.** { *; }
 #-keep class org.jetbrains.skiko.** { *; }
-#-keep class smol.** { *; }
+-keep class smol.** { *; }
 #-keep class com.google.gson.** { *; }
 
 #-assumenosideeffects public class androidx.compose.runtime.ComposerKt {

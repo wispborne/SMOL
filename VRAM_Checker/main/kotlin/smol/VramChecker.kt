@@ -30,6 +30,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import smol.utilities.parallelMap
 import smol.utilities.walk
+import java.nio.file.FileVisitOption
 import java.nio.file.Path
 import java.util.*
 import javax.imageio.ImageIO
@@ -119,7 +120,7 @@ class VramChecker(
                 val startTimeForMod = Date().time
 
                 val filesInMod =
-                    modInfo.modFolder.walk()
+                    modInfo.modFolder.walk(options = arrayOf(FileVisitOption.FOLLOW_LINKS))
                         .filter { it.isRegularFile() }
                         .toList()
 
