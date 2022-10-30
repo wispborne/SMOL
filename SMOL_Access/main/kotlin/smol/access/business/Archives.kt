@@ -162,7 +162,7 @@ class Archives internal constructor(
                 // Or just copy the files
                 withContext(Dispatchers.IO) {
                     modInfoFile.parent.listDirectoryEntries()
-                        .parallelMap {
+                        .map {
                             it.toFile().copyRecursively(
                                 target = destinationModFolder.resolve(it.name).toFile(),
                                 overwrite = true,
