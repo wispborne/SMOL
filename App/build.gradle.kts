@@ -21,7 +21,7 @@ plugins {
 
 group = "com.wisp"
 val smolVersion =
-    "1.0.0-dev01"
+    "1.0.0-beta11" // TODO don't forget to change default channel to "stable" in AppConfig for release.
 
 // This gets appended to the app's jarfile, which means it has a unique name each time the app updates,
 // resulting in the file not getting removed. Keep a constant version here so user doesn't end up with a ton of outdated files.
