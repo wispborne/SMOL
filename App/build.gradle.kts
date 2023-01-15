@@ -16,7 +16,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm")
-    id("org.jetbrains.compose") version "1.2.0"
+    id("org.jetbrains.compose") version "1.2.2"
 }
 
 group = "com.wisp"
@@ -60,14 +60,14 @@ dependencies {
     implementation("com.github.salomonbrys.kotson:kotson:2.5.0")
 
     // CLI builder, Clikt
-    implementation("com.github.ajalt.clikt:clikt:3.5.0")
+//    implementation("com.github.ajalt.clikt:clikt:3.5.1")
 
     // CLI builder, Kotlin
 //    implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.4")
 
     // Fuzzy Search - not used
-    implementation("com.github.android-password-store:sublime-fuzzy:2.2.1")
-    implementation("me.xdrop:fuzzywuzzy:1.4.0") // This one not used
+    implementation("com.github.android-password-store:sublime-fuzzy:2.3.0")
+//    implementation("me.xdrop:fuzzywuzzy:1.4.0") // This one not used
 
     // List diffing
     implementation("dev.andrewbailey.difference:difference:1.0.0")

@@ -147,13 +147,13 @@ fun AppScope.AboutView(modifier: Modifier = Modifier) {
                                     modifier = Modifier.padding(bottom = 8.dp)
                                 )
                                 SmolLinkText(
-                                    text = "Source Code: https://github.com/davidwhitman/SMOL",
+                                    text = "Source Code: https://github.com/wispborne/SMOL",
                                 )
                                 SmolLinkText(
-                                    text = "Releases: https://github.com/davidwhitman/SMOL/releases"
+                                    text = "Releases: https://github.com/wispborne/SMOL/releases"
                                 )
                                 SmolLinkText(
-                                    text = "Mod Repo: https://github.com/davidwhitman/StarsectorModRepo"
+                                    text = "Mod Repo: https://github.com/wispborne/StarsectorModRepo"
                                 )
                             }
                         }

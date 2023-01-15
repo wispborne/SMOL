@@ -13,10 +13,8 @@
 package smol.app.home
 
 import AppScope
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.mouseClickable
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
@@ -26,11 +24,10 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.isPrimaryPressed
-import androidx.compose.ui.input.pointer.isSecondaryPressed
-import androidx.compose.ui.input.pointer.pointerMoveFilter
+import androidx.compose.ui.input.pointer.PointerButton
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -41,6 +38,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import org.tinylog.Logger
 import smol.access.SL
 import smol.access.business.UserManager
 import smol.access.model.Mod
@@ -77,38 +77,46 @@ fun AppScope.ModGridRow(
     ListItem(
         modifier = modifier
             .fillMaxWidth()
-            .mouseClickable {
-                if (this.buttons.isPrimaryPressed) {
-                    // If in "Checking rows" mode, clicking a row toggles checked.
-                    // Otherwise, it open/closes Details panel
-                    if (checkedRows.any()) {
-                        if (mod !in checkedRows) {
-                            checkedRows.add(mod)
+            .onClick(onDoubleClick = {
+                GlobalScope.launch {
+                    kotlin.runCatching {
+                        // Change mod state
+                        if (mod.hasEnabledVariant) {
+                            SL.access.disableMod(mod = mod)
                         } else {
-                            checkedRows.remove(mod)
+                            SL.access.changeActiveVariant(mod, mod.findHighestVersion)
                         }
-                    } else {
-                        selectedRow.value =
-                            (if (selectedRow.value == modRow) null else modRow)
                     }
-                } else if (this.buttons.isSecondaryPressed) {
-                    showContextMenu = !showContextMenu
+                        .onFailure { Logger.error(it) }
                 }
+            }, onClick = {
+                // If in "Checking rows" mode, clicking a row toggles checked.
+                // Otherwise, it open/closes Details panel
+                if (checkedRows.any()) {
+                    if (mod !in checkedRows) {
+                        checkedRows.add(mod)
+                    } else {
+                        checkedRows.remove(mod)
+                    }
+                } else {
+                    selectedRow.value =
+                        (if (selectedRow.value == modRow) null else modRow)
+                }
+            })
+            .onClick(matcher = PointerMatcher.mouse(PointerButton.Secondary)) {
+                showContextMenu = !showContextMenu
             }
             .background(
                 color = if (isRowHighlighted || selectedRow.value?.mod?.id == mod.id || mod in checkedRows)
                     Color.Black.copy(alpha = .1f)
                 else Color.Transparent
             )
-            .pointerMoveFilter(
-                onEnter = {
-                    isRowHighlighted = true
-                    false
-                },
-                onExit = {
-                    isRowHighlighted = false
-                    false
-                })
+            .onPointerEvent(PointerEventType.Enter) {
+                isRowHighlighted = true
+            }
+            .onPointerEvent(PointerEventType.Exit) {
+                isRowHighlighted = false
+            }
     ) {
         Column(
             modifier = Modifier.padding(
@@ -128,6 +136,7 @@ fun AppScope.ModGridRow(
                                 // Favorites
                                 FavoriteButton(favoritesWidth, mod, profile, isRowHighlighted)
                             }
+
                             UserProfile.ModGridHeader.ChangeVariantButton -> {
                                 // Mod Version Dropdown
                                 ModVariantsDropdown(
@@ -137,6 +146,7 @@ fun AppScope.ModGridRow(
                                     mod = mod
                                 )
                             }
+
                             UserProfile.ModGridHeader.Name -> {
                                 // Mod name
                                 SmolText(
@@ -152,6 +162,7 @@ fun AppScope.ModGridRow(
                                     fontSize = if (profile.value.useOrbitronNameFont!!) 15.sp else TextUnit.Unspecified
                                 )
                             }
+
                             UserProfile.ModGridHeader.Author -> {
                                 // Mod Author
                                 SmolText(
@@ -164,6 +175,7 @@ fun AppScope.ModGridRow(
                                     overflow = TextOverflow.Ellipsis
                                 )
                             }
+
                             UserProfile.ModGridHeader.Version -> {
                                 // Mod version (active or highest)
                                 Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {
@@ -219,12 +231,14 @@ fun AppScope.ModGridRow(
                                     }
                                 }
                             }
+
                             UserProfile.ModGridHeader.VramImpact -> {
                                 // VRAM
                                 Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {
                                     vramBar(mod, largestVramUsage.value)
                                 }
                             }
+
                             UserProfile.ModGridHeader.Icons -> {
                                 // Mod Icon
                                 Box(Modifier.padding(end = 16.dp).align(Alignment.CenterVertically)) {
@@ -242,6 +256,7 @@ fun AppScope.ModGridRow(
                                                 )
                                             }
                                         }
+
                                         modInfo?.isUtilityMod == true -> {
                                             SmolTooltipArea(tooltip = { SmolTooltipText(text = "Utility mods may be added or removed from a save at will.") }) {
                                                 Icon(
@@ -252,12 +267,14 @@ fun AppScope.ModGridRow(
                                                 )
                                             }
                                         }
+
                                         else -> {
                                             Spacer(Modifier.size(24.dp))
                                         }
                                     }
                                 }
                             }
+
                             UserProfile.ModGridHeader.GameVersion -> {
                                 // Game version (for active or highest)
                                 Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {
@@ -269,6 +286,7 @@ fun AppScope.ModGridRow(
                                     )
                                 }
                             }
+
                             UserProfile.ModGridHeader.Category ->
                                 // Category
                                 Row(Modifier.weight(1f).align(Alignment.CenterVertically)) {

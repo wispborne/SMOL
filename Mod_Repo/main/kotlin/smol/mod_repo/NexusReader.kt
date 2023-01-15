@@ -68,6 +68,7 @@ internal object NexusReader {
                 )
                     ?.also { mods += it }
                     ?.also { Timber.v { it.toString() } }
+                    ?.also { Timber.i { it.name } }
             } catch (e: Exception) {
                 Timber.w(e)
                 break
@@ -94,6 +95,11 @@ internal object NexusReader {
         return httpClient.request("$baseUrl/v1/games/$gameId/mods/$modId.json") {
             header("apikey", authToken)
             accept(ContentType.Application.Json)
+            timeout {
+                this.connectTimeoutMillis = 5000
+                this.requestTimeoutMillis = 5000
+                this.socketTimeoutMillis = 5000
+            }
         }.body<NexusMod>()
             .let { mod ->
                 if (mod.available != true) {

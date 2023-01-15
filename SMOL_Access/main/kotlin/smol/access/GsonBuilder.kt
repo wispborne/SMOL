@@ -30,7 +30,7 @@ object GsonBuilder {
         .setPrettyPrinting()
         .setLenient()
         .serializeNulls()
-        .registerTypeAdapter<ModInfo> {
+        .registerTypeAdapter {
             deserialize { arg: DeserializerArg ->
                 val json = if (arg.json.isJsonObject)
                     arg.json
@@ -39,11 +39,11 @@ object GsonBuilder {
 
                 ModInfo(
                     id = json["id"].string,
-                    name = json.getNullable("name")?.string,
-                    author = json.getNullable("author")?.string,
-                    description = json.getNullable("description")?.string,
-                    requiredMemoryMB = json.getNullable("requiredMemoryMB")?.string,
-                    gameVersion = json.getNullable("gameVersion")?.string,
+                    name = json.getNullable("name")?.nullString,
+                    author = json.getNullable("author")?.nullString,
+                    description = json.getNullable("description")?.nullString,
+                    requiredMemoryMB = json.getNullable("requiredMemoryMB")?.nullString,
+                    gameVersion = json.getNullable("gameVersion")?.nullString,
                     isUtilityMod = kotlin.runCatching { json["utility"].bool }
                         .onFailure { Timber.d(it) }
                         .getOrElse { false },
@@ -53,15 +53,15 @@ object GsonBuilder {
                     jars = kotlin.runCatching { json.getNullable("jars")!!.array.map { it.string } }
                         .onFailure { Timber.d(it) }
                         .getOrElse { emptyList() },
-                    modPlugin = json.getNullable("modPlugin")?.string ?: "",
+                    modPlugin = json.getNullable("modPlugin")?.nullString ?: "",
                     version = parseVersion(json) ?: Version.parse("0.0.0"),
                     dependencies = kotlin.runCatching {
                         val deps = json.getNullable("dependencies")?.asJsonArray!!
                         deps.mapNotNull { dep ->
                             kotlin.runCatching {
                                 Dependency(
-                                    id = dep["id"].string,
-                                    name = dep.getNullable("name")?.string,
+                                    id = dep["id"].nullString,
+                                    name = dep.getNullable("name")?.nullString,
                                     version = parseVersion(dep)
                                 )
                             }

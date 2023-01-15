@@ -233,4 +233,15 @@ internal class VersionCheckerInfoTest {
                 .compareTo(VersionCheckerInfo.Version(major = "0", minor = "6", patch = "99999gggggggggggg"))
         ).isLessThan(0)
     }
+
+    @Test
+    fun versionComparisonCy() {
+        val versions = listOf(
+            VersionCheckerInfo.Version(major = "0", minor = "7", patch = "2f3a"),
+            VersionCheckerInfo.Version(major = "0", minor = "7", patch = "2g1dc"),
+            VersionCheckerInfo.Version(major = "0", minor = "7", patch = "20"),
+        )
+
+        assertThat(versions.sorted()).isEqualTo(listOf(versions[0], versions[1], versions[2]))
+    }
 }

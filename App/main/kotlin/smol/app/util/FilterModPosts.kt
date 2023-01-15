@@ -13,10 +13,8 @@
 package smol.app.util
 
 import com.github.androidpasswordstore.sublimefuzzy.Fuzzy
-import me.xdrop.fuzzywuzzy.FuzzySearch
 import smol.mod_repo.ModRepoUtils
 import smol.mod_repo.ScrapedMod
-import org.tinylog.Logger
 import smol.timber.ktx.Timber
 import smol.utilities.asList
 import smol.utilities.parallelMap
@@ -28,12 +26,13 @@ internal suspend fun filterModPosts(query: String, mods: List<ScrapedMod>): List
         .flatMap { filterStr ->
             mods
                 .parallelMap { mod ->
-                    if (Filter.searchMethod == FilterType.FuzzyWuzzySearch)
-                        fuzzyWuzzyModPostSearch(
-                            query = query,
-                            mod = mod
-                        )
-                    else sublimeFuzzyModPostSearch(
+//                    if (Filter.searchMethod == FilterType.FuzzyWuzzySearch)
+//                        fuzzyWuzzyModPostSearch(
+//                            query = query,
+//                            mod = mod
+//                        )
+//                    else
+                        sublimeFuzzyModPostSearch(
                         query = query,
                         mod = mod
                     )
@@ -83,38 +82,38 @@ private suspend fun sublimeFuzzyModPostSearch(query: String, mod: ScrapedMod): P
     return mod to results
 }
 
-@Deprecated("Using `Fuzzy` now, from sublimetext.")
-private fun fuzzyWuzzyModPostSearch(query: String, mod: ScrapedMod): Pair<ScrapedMod, MutableMap<String, Int>> {
-    val results = mutableMapOf<String, Int>() // match field name and value
-
-    fun Int.filterAndAdd(name: String) {
-        results += name to this
-        Logger.info { "${Filter.searchMethod}: ${mod.name} has a score of $this for '$query' in text \"${name}\"." }
-    }
-
-    val modAbbreviation = mod.name.acronym()
-
-    if (modAbbreviation.length > 1) {
-        FuzzySearch.partialRatio(query, modAbbreviation) { it.lowercase() }
-            .run { filterAndAdd(modAbbreviation) }
-    }
-
-    FuzzySearch.partialRatio(query, mod.name) { it.lowercase() }
-        .run { filterAndAdd(mod.name) }
-
-    mod.authors().forEach { author ->
-        FuzzySearch.partialRatio(query, author) { it.lowercase() }
-            .run { filterAndAdd(author) }
-    }
-    mod.sources().forEach { source ->
-        FuzzySearch.partialRatio(query, source.name) { it.lowercase() }
-            .run { filterAndAdd(source.name) }
-    }
-    if (mod.categories().isNotEmpty()) {
-        FuzzySearch.partialRatio(query, mod.categories().joinToString()) { it.lowercase() }
-            .run { filterAndAdd(mod.categories().joinToString()) }
-    }
-
-    Logger.info { "${mod.name}'s match of '$query' had a total score of ${results.values.sum()} and single highest of ${results.values.maxOrNull()}." }
-    return mod to results
-}
+//@Deprecated("Using `Fuzzy` now, from sublimetext.")
+//private fun fuzzyWuzzyModPostSearch(query: String, mod: ScrapedMod): Pair<ScrapedMod, MutableMap<String, Int>> {
+//    val results = mutableMapOf<String, Int>() // match field name and value
+//
+//    fun Int.filterAndAdd(name: String) {
+//        results += name to this
+//        Logger.info { "${Filter.searchMethod}: ${mod.name} has a score of $this for '$query' in text \"${name}\"." }
+//    }
+//
+//    val modAbbreviation = mod.name.acronym()
+//
+//    if (modAbbreviation.length > 1) {
+//        FuzzySearch.partialRatio(query, modAbbreviation) { it.lowercase() }
+//            .run { filterAndAdd(modAbbreviation) }
+//    }
+//
+//    FuzzySearch.partialRatio(query, mod.name) { it.lowercase() }
+//        .run { filterAndAdd(mod.name) }
+//
+//    mod.authors().forEach { author ->
+//        FuzzySearch.partialRatio(query, author) { it.lowercase() }
+//            .run { filterAndAdd(author) }
+//    }
+//    mod.sources().forEach { source ->
+//        FuzzySearch.partialRatio(query, source.name) { it.lowercase() }
+//            .run { filterAndAdd(source.name) }
+//    }
+//    if (mod.categories().isNotEmpty()) {
+//        FuzzySearch.partialRatio(query, mod.categories().joinToString()) { it.lowercase() }
+//            .run { filterAndAdd(mod.categories().joinToString()) }
+//    }
+//
+//    Logger.info { "${mod.name}'s match of '$query' had a total score of ${results.values.sum()} and single highest of ${results.values.maxOrNull()}." }
+//    return mod to results
+//}

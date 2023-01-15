@@ -35,7 +35,7 @@ dependencies {
 
     implementation("de.siegmar:fastcsv:2.2.0")
     implementation("com.fasterxml.jackson.core:jackson-core:2.13.4")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.13.4")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.13.4.2")
 
     // Hardware info
     api("com.github.oshi:oshi-core:6.2.2")

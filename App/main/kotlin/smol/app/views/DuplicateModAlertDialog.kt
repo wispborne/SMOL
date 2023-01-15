@@ -46,7 +46,7 @@ fun DuplicateModAlertDialog(
         text = {
             Column {
                 Text(
-                    text = "'${modInfo.name}' version '$${modInfo.version}' is already installed. Do you want to replace it?" +
+                    text = "'${modInfo.name}' version '${modInfo.version}' is already installed. Do you want to replace it?" +
                             "\n\nWarning: If you have manually edited files in this mod, those changes will be lost.",
                     style = SmolTheme.alertDialogBody()
                 )

@@ -91,8 +91,10 @@ abstract class BaseAppUpdater {
                     Timber.i {
                         "Fetched ${getConfigXmlFileName(channel)} from ${remoteConfigUrl}. " +
                                 "Update needed? ${it.requiresUpdate()}, " +
-                                "Total size: ${it.files.filter { it.requiresUpdate() }.sumOf { it.size }}b." +
-                                "\n  Files to download:" +
+                                "Total size: ${it.files.filter { it.requiresUpdate() }.sumOf { it.size }}b."
+                    }
+                    Timber.d {
+                        "Files to download:" +
                                 "\n${
                                     it.files.filter { file -> file.requiresUpdate() }
                                         .joinToString(separator = "\n") { "  ${it.path.absolutePathString()} (${it.size.bytesAsShortReadableMB}) [checksum ${it.checksum}]" }

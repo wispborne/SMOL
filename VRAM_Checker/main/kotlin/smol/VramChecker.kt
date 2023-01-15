@@ -275,10 +275,10 @@ class VramChecker(
         kotlin.runCatching {
             getGPUInfo()?.also { info ->
                 summaryText.appendLine("  System")
-                summaryText.appendLine(info.getGPUString()?.joinToString(separator = "\n") { "    $it" })
+                summaryText.appendLine(info.gpuString?.joinToString(separator = "\n") { "    $it" })
 
                 // If expected VRAM after loading game and mods is less than 300 MB, show warning
-                if (info.getFreeVRAM() - (totalBytesOfEnabledMods + VANILLA_GAME_VRAM_USAGE_IN_BYTES) < 300000) {
+                if (info.freeVRAM - (totalBytesOfEnabledMods + VANILLA_GAME_VRAM_USAGE_IN_BYTES) < 300000) {
                     summaryText.appendLine()
                     summaryText.appendLine("WARNING: You may not have enough free VRAM to run your current modlist.")
                 }

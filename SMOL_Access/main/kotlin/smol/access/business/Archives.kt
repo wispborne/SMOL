@@ -85,7 +85,7 @@ class Archives internal constructor(
 
                         // Mod variant already exists, ask user if we should replace it.
                         if (existingMods.flatMap { it.variants }.any { it.smolId == newSmolId }) {
-                            Timber.i { "'${modInfo.name}' version '$${modInfo.version}' is already installed to '${modFolder.absolutePathString()}'. Asking user if they want to replace it." }
+                            Timber.i { "'${modInfo.name}' version '${modInfo.version}' is already installed to '${modFolder.absolutePathString()}'. Asking user if they want to replace it." }
                             val shouldReplaceFolder = promptUserToReplaceExistingFolder.invoke(modInfo)
 
                             if (shouldReplaceFolder) {

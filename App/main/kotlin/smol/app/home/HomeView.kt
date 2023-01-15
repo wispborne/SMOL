@@ -34,7 +34,7 @@ import org.tinylog.Logger
 import smol.access.SL
 import smol.access.model.Mod
 import smol.app.UI
-import smol.app.cli.SmolCLI
+//import smol.app.cli.SmolCLI
 import smol.app.composables.*
 import smol.app.navigation.Screen
 import smol.app.themes.SmolTheme
@@ -115,15 +115,15 @@ fun AppScope.homeView(
                     }
 
                     // Hide console for now, it's not useful
-                    if (false) {
-                        consoleTextField(
-                            modifier = Modifier
-                                .widthIn(max = 300.dp)
-                                .padding(end = 16.dp)
-                                .offset(y = (-3).dp)
-                                .align(Alignment.CenterVertically)
-                        )
-                    }
+//                    if (false) {
+//                        consoleTextField(
+//                            modifier = Modifier
+//                                .widthIn(max = 300.dp)
+//                                .padding(end = 16.dp)
+//                                .offset(y = (-3).dp)
+//                                .align(Alignment.CenterVertically)
+//                        )
+//                    }
 
                     SmolTooltipArea(tooltip = { SmolTooltipText("About") }) {
                         IconButton(
@@ -199,39 +199,39 @@ fun AppScope.homeView(
     }
 }
 
-@Composable
-private fun AppScope.consoleTextField(
-    modifier: Modifier = Modifier
-) {
-    Column(modifier) {
-        Row {
-            var consoleText by remember { mutableStateOf("") }
-            SmolOutlinedTextField(
-                value = consoleText,
-                label = { Text("Console") },
-                maxLines = 1,
-                singleLine = true,
-                onValueChange = { newStr ->
-                    consoleText = newStr
-                },
-                leadingIcon = { Icon(painter = painterResource("icon-console.svg"), contentDescription = null) },
-                modifier = Modifier
-                    .onEnterKeyPressed {
-                        kotlin.runCatching {
-                            SmolCLI(
-                                userManager = SL.userManager,
-                                userModProfileManager = SL.userModProfileManager,
-                                vmParamsManager = SL.UI.vmParamsManager,
-                                access = SL.access,
-                                gamePathManager = SL.gamePathManager
-                            )
-                                .parse(consoleText)
-                            consoleText = ""
-                        }
-                            .onFailure { Logger.warn(it) }
-                        true
-                    }
-            )
-        }
-    }
-}
+//@Composable
+//private fun AppScope.consoleTextField(
+//    modifier: Modifier = Modifier
+//) {
+//    Column(modifier) {
+//        Row {
+//            var consoleText by remember { mutableStateOf("") }
+//            SmolOutlinedTextField(
+//                value = consoleText,
+//                label = { Text("Console") },
+//                maxLines = 1,
+//                singleLine = true,
+//                onValueChange = { newStr ->
+//                    consoleText = newStr
+//                },
+//                leadingIcon = { Icon(painter = painterResource("icon-console.svg"), contentDescription = null) },
+//                modifier = Modifier
+//                    .onEnterKeyPressed {
+//                        kotlin.runCatching {
+//                            SmolCLI(
+//                                userManager = SL.userManager,
+//                                userModProfileManager = SL.userModProfileManager,
+//                                vmParamsManager = SL.UI.vmParamsManager,
+//                                access = SL.access,
+//                                gamePathManager = SL.gamePathManager
+//                            )
+//                                .parse(consoleText)
+//                            consoleText = ""
+//                        }
+//                            .onFailure { Logger.warn(it) }
+//                        true
+//                    }
+//            )
+//        }
+//    }
+//}

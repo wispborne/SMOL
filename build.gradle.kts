@@ -35,9 +35,9 @@ dependencies {
 //}
 
 tasks.register("buildSmol") {
-    dependsOn("App:createDistributable", "UpdateInstaller:uberJar")
+//    dependsOn("App:createDistributable", "UpdateInstaller:uberJar")
     // ProGuard
-//    dependsOn("App:createReleaseDistributable", "UpdateInstaller:uberJar")
+    dependsOn("App:createReleaseDistributable", "UpdateInstaller:uberJar")
 
     doLast {
         copy {
