@@ -21,10 +21,7 @@ import smol.timber.ktx.Timber
 import smol.utilities.IOLock
 import smol.utilities.Jsanity
 import java.nio.file.Path
-import kotlin.io.path.copyTo
-import kotlin.io.path.exists
-import kotlin.io.path.reader
-import kotlin.io.path.writer
+import kotlin.io.path.*
 
 class GameEnabledMods(
     private val gson: Jsanity,
@@ -35,18 +32,33 @@ class GameEnabledMods(
             IOLock.write {
                 val enabledModsFile = getEnabledModsFile() ?: return null
 
-                if (!enabledModsFile.exists()) {
-                    enabledModsFile.writer().use { outStream ->
-                        gson.toJson(EnabledMods(emptyList()), outStream)
+                fun createFileIfMissing() {
+                    if (!enabledModsFile.exists()) {
+                        enabledModsFile.writer().use { outStream ->
+                            gson.toJson(EnabledMods(emptyList()), outStream)
+                        }
                     }
                 }
 
-                enabledModsFile.reader().use { inStream ->
-                    gson.fromJson<EnabledMods>(
-                        json = JsonObject.readHjson(inStream).toString(),
-                        shouldStripComments = true
-                    )
-                }
+                fun readEnabledModsFile() =
+                    enabledModsFile.reader().use { inStream ->
+                        gson.fromJson<EnabledMods>(
+                            json = JsonObject.readHjson(inStream).toString(),
+                            shouldStripComments = true
+                        )
+                    }
+
+                createFileIfMissing()
+
+                kotlin.runCatching { readEnabledModsFile() }
+                    .recoverCatching {
+                        Timber.w(it)
+                        kotlin.runCatching { enabledModsFile.moveTo(enabledModsFile.parent.resolve(enabledModsFile.name + ".invalid")) }
+                            .onFailure { enabledModsFile.deleteIfExists() }
+                        createFileIfMissing()
+                        readEnabledModsFile()
+                    }
+                    .getOrNull()
             }
         }
             .onFailure { Timber.w(it) }
@@ -122,7 +134,7 @@ class GameEnabledMods(
         }
     }
 
-    private fun getEnabledModsFile() = gamePathManager.getModsPath()?.resolve(ENABLED_MODS_FILENAME)
+    private fun getEnabledModsFile(): Path? = gamePathManager.getModsPath()?.resolve(ENABLED_MODS_FILENAME)
 }
 
 data class EnabledMods(
