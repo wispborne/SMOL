@@ -17,6 +17,9 @@ plugins {
 group = "com.wisp"
 version = "1.10.1"
 
+val lwjglVersion = "3.3.1"
+val lwjglNatives = "natives-windows"
+
 repositories {
     google()
     mavenCentral()
@@ -25,10 +28,13 @@ repositories {
 dependencies {
     implementation(kotlin("stdlib"))
     implementation(project(":Utilities"))
-    implementation(fileTree("libs") {
-        include("**/*.jar")
-        exclude("TinyLog")
-    })
+
+//    implementation(platform("org.lwjgl:lwjgl-bom:$lwjglVersion"))
+//    implementation("org.lwjgl", "lwjgl")
+//    implementation("org.lwjgl", "lwjgl-opengl")
+//    runtimeOnly("org.lwjgl", "lwjgl", classifier = lwjglNatives)
+//    runtimeOnly("org.lwjgl", "lwjgl-glfw", classifier = lwjglNatives)
+//    runtimeOnly("org.lwjgl", "lwjgl-opengl", classifier = lwjglNatives)
 
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.5.21")
     implementation(project.property("coroutines")!!)
@@ -38,7 +44,7 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:2.13.4")
 
     // Hardware info
-    api("com.github.oshi:oshi-core:6.2.2")
+    api("com.github.oshi:oshi-core:6.3.0")
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {

@@ -11,7 +11,8 @@
  */
 
 plugins {
-    kotlin("jvm") version "1.7.20"
+    kotlin("jvm") version "1.7.20" // Also update down at the bottom of this file.
+    id("dev.hydraulic.conveyor") version "1.2"
 }
 
 group = "com.wisp"
@@ -35,31 +36,59 @@ dependencies {
 //}
 
 tasks.register("buildSmol") {
-    dependsOn("App:createDistributable", "UpdateInstaller:uberJar")
+    dependsOn("App:createDistributable")
+//    dependsOn("App:createDistributable", "UpdateInstaller:uberJar")
     // ProGuard
 //    dependsOn("App:createReleaseDistributable", "UpdateInstaller:uberJar")
 
     doLast {
         copy {
-            val sourceDist = rootProject.projectDir.resolve("UpdateInstaller/dist")
-            val sourceJre = rootProject.projectDir.resolve("UpdateInstaller/jre")
-            val readme = rootProject.projectDir.resolve("README.md")
-            val license = rootProject.projectDir.resolve("LICENSE.txt")
-            val updateScript = rootProject.projectDir.resolve("UpdateInstaller/install-SMOL-update.bat")
+            val sources = arrayOf(
+//                rootProject.projectDir.resolve("UpdateInstaller/dist"),
+//                    rootProject.projectDir.resolve("UpdateInstaller/jre"),
+                rootProject.projectDir.resolve("README.md"),
+                rootProject.projectDir.resolve("LICENSE.txt"),
+//                    rootProject.projectDir.resolve("UpdateInstaller/install-SMOL-update.bat"),
+            )
+
             val dest = rootProject.projectDir.resolve("dist/main/app/SMOL")
-            println("Copying from $sourceDist, $sourceJre, $updateScript to $dest.")
-            from(sourceDist, sourceJre, readme, license, updateScript)
+            println("Copying from ${sources.joinToString()} to $dest.")
+            from(*sources)
             into(dest)
         }
     }
 }
 
 tasks.register("buildSmolDistStable") {
-    dependsOn("buildSmol", "UpdateStager:runStable")
+    dependsOn("buildSmol")
+//    dependsOn("buildSmol", "UpdateStager:runStable")
 }
 tasks.register("buildSmolDistUnstable") {
-    dependsOn("buildSmol", "UpdateStager:runUnstable")
+    dependsOn("buildSmol")
+//    dependsOn("buildSmol", "UpdateStager:runUnstable")
 }
 tasks.register("buildSmolDistTest") {
-    dependsOn("buildSmol", "UpdateStager:runTest")
+    dependsOn("buildSmol")
+//    dependsOn("buildSmol", "UpdateStager:runTest")
 }
+
+
+// Conveyor Stuff
+// region Work around temporary Compose bugs.
+configurations.all {
+    attributes {
+        // https://github.com/JetBrains/compose-jb/issues/1404#issuecomment-1146894731
+        attribute(Attribute.of("ui", String::class.java), "awt")
+    }
+}
+
+// Force override the Kotlin stdlib version used by Compose to 1.7, as otherwise we can end up with a mix of 1.6 and 1.7 on our classpath.
+dependencies {
+    val v = "1.7.20"
+    for (m in setOf("linuxAmd64", "macAmd64", "macAarch64", "windowsAmd64")) {
+        m("org.jetbrains.kotlin:kotlin-stdlib:$v")
+        m("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$v")
+        m("org.jetbrains.kotlin:kotlin-stdlib-jdk7:$v")
+    }
+}
+// endregion
