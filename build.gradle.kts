@@ -35,20 +35,23 @@ dependencies {
 //}
 
 tasks.register("buildSmol") {
-//    dependsOn("App:createDistributable", "UpdateInstaller:uberJar")
+    dependsOn("App:createDistributable", "UpdateInstaller:uberJar")
     // ProGuard
-    dependsOn("App:createReleaseDistributable", "UpdateInstaller:uberJar")
+//    dependsOn("App:createReleaseDistributable", "UpdateInstaller:uberJar")
 
     doLast {
         copy {
-            val sourceDist = rootProject.projectDir.resolve("UpdateInstaller/dist")
-            val sourceJre = rootProject.projectDir.resolve("UpdateInstaller/jre")
-            val readme = rootProject.projectDir.resolve("README.md")
-            val license = rootProject.projectDir.resolve("LICENSE.txt")
-            val updateScript = rootProject.projectDir.resolve("UpdateInstaller/install-SMOL-update.bat")
+            val paths = listOf(
+//                rootProject.projectDir.resolve("dist/main-release/app/SMOL"), // ProGuard-created
+                rootProject.projectDir.resolve("UpdateInstaller/dist"),
+                rootProject.projectDir.resolve("UpdateInstaller/jre"),
+                rootProject.projectDir.resolve("README.md"),
+                rootProject.projectDir.resolve("LICENSE.txt"),
+                rootProject.projectDir.resolve("UpdateInstaller/install-SMOL-update.bat"),
+            ).toTypedArray()
             val dest = rootProject.projectDir.resolve("dist/main/app/SMOL")
-            println("Copying from $sourceDist, $sourceJre, $updateScript to $dest.")
-            from(sourceDist, sourceJre, readme, license, updateScript)
+            println("Copying from ${paths.joinToString()} to $dest.")
+            from(*paths)
             into(dest)
         }
     }
