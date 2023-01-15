@@ -13,7 +13,7 @@
 package smol.update_installer
 
 object UpdaterConstants {
-    private const val baseUpdateUrl = "https://raw.githubusercontent.com/davidwhitman/SMOL_Dist"
+    private const val baseUpdateUrl = "https://raw.githubusercontent.com/wispborne/SMOL_Dist"
     const val UPDATE_URL_STABLE = "$baseUpdateUrl/main"
     const val UPDATE_URL_UNSTABLE = "$baseUpdateUrl/unstable"
     const val UPDATE_URL_TEST = "$baseUpdateUrl/test"
