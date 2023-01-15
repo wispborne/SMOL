@@ -1,0 +1,14 @@
+Name: depot_tools
+Short Name: depot_tools
+URL: https://chromium.googlesource.com/chromium/tools/depot_tools.git
+Date: 11 Jan 2020
+Revision: 7a8bf9489
+License: BSD
+License File: LICENSE
+
+Description:
+Select tools extracted from depot_tools.
+
+Local Modifications:
+- Remove dependency on vpython.
+- Update gsutil version to 4.46.

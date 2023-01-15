@@ -33,7 +33,7 @@ repositories {
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
 }
 
-val jcefFolder = "jcef-c1f0745"
+val jcefFolder = "jcef-v1.0.18"
 dependencies {
     implementation(compose.desktop.currentOs)
     implementation("org.jetbrains.compose.components:components-splitpane-desktop:1.0.1")
