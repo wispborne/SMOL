@@ -171,119 +171,124 @@ fun AppScope.ModVariantsDropdown(
                         )
                     }
                 }
-                val background = MaterialTheme.colors.background
-                MaterialTheme(shapes = Shapes(medium = SmolTheme.smolFullyClippedButtonShape())) {
-                    DropdownMenu(
-                        expanded = expanded,
-                        modifier = Modifier
-                            .background(background)
-                            .border(
-                                width = 1.dp,
-                                color = MaterialTheme.colors.primary,
-                                shape = SmolTheme.smolFullyClippedButtonShape()
-                            ),
-                        onDismissRequest = { expanded = false }
-                    ) {
-                        dropdownMenuItems.forEach { action ->
-                            Box {
-                                var isHovered by remember { mutableStateOf(false) }
 
-                                DropdownMenuItem(
-                                    modifier = Modifier.sizeIn(maxWidth = 400.dp)
-                                        .pointerMoveFilter(
-                                            onEnter = { isHovered = true; false },
-                                            onExit = { isHovered = false; false }
-                                        )
-                                        .background(background),
-                                    onClick = {
-                                        expanded = false
-                                        Logger.debug { "Selected $action." }
+                if (expanded) {
+                    val background = MaterialTheme.colors.background
+                    MaterialTheme(shapes = Shapes(medium = SmolTheme.smolFullyClippedButtonShape())) {
+                        DropdownMenu(
+                            expanded = expanded,
+                            modifier = Modifier
+                                .background(background)
+                                .border(
+                                    width = 1.dp,
+                                    color = MaterialTheme.colors.primary,
+                                    shape = SmolTheme.smolFullyClippedButtonShape()
+                                ),
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            dropdownMenuItems.forEach { action ->
+                                Box {
+                                    var isHovered by remember { mutableStateOf(false) }
 
-                                        // Don't use composition scope, we don't want
-                                        // it to cancel an operation due to a UI recomposition.
-                                        // A two-step operation will trigger a mod refresh and therefore recomposition and cancel
-                                        // the second part of the operation!
-                                        GlobalScope.launch {
-                                            kotlin.runCatching {
-                                                // Change mod state
-                                                when (action) {
-                                                    is DropdownAction.ChangeToVariant -> {
-                                                        SL.access.changeActiveVariant(mod, action.variant)
+                                    DropdownMenuItem(
+                                        modifier = Modifier.sizeIn(maxWidth = 400.dp)
+                                            .pointerMoveFilter(
+                                                onEnter = { isHovered = true; false },
+                                                onExit = { isHovered = false; false }
+                                            )
+                                            .background(background),
+                                        onClick = {
+                                            expanded = false
+                                            Logger.debug { "Selected $action." }
+
+                                            // Don't use composition scope, we don't want
+                                            // it to cancel an operation due to a UI recomposition.
+                                            // A two-step operation will trigger a mod refresh and therefore recomposition and cancel
+                                            // the second part of the operation!
+                                            GlobalScope.launch {
+                                                kotlin.runCatching {
+                                                    // Change mod state
+                                                    when (action) {
+                                                        is DropdownAction.ChangeToVariant -> {
+                                                            SL.access.changeActiveVariant(mod, action.variant)
+                                                        }
+
+                                                        is DropdownAction.Disable -> {
+                                                            SL.access.disableMod(mod = mod)
+                                                        }
                                                     }
-                                                    is DropdownAction.Disable -> {
-                                                        SL.access.disableMod(mod = mod)
+                                                }
+                                                    .onFailure { Logger.error(it) }
+                                            }
+                                        }) {
+                                        Row {
+                                            @Composable
+                                            fun shield() {
+                                                SmolTooltipArea(
+                                                    tooltip = {
+                                                        SmolTooltipText(text = "Run SMOL as Admin.")
+                                                    },
+                                                    delayMillis = SmolTooltipArea.shortDelay
+                                                ) {
+                                                    Icon(
+                                                        painter = painterResource("icon-admin-shield.svg"),
+                                                        tint = MaterialTheme.colors.secondary,
+                                                        modifier = Modifier.padding(end = 8.dp),
+                                                        contentDescription = null
+                                                    )
+                                                }
+                                            }
+                                            when (action) {
+                                                is DropdownAction.ChangeToVariant -> {
+                                                    if (action.variant.isMissingAdmin()) {
+                                                        shield()
+                                                    }
+                                                }
+
+                                                is DropdownAction.Disable -> {
+                                                    if (firstEnabledVariant?.isMissingAdmin() == true) {
+                                                        shield()
                                                     }
                                                 }
                                             }
-                                                .onFailure { Logger.error(it) }
-                                        }
-                                    }) {
-                                    Row {
-                                        @Composable
-                                        fun shield() {
-                                            SmolTooltipArea(
-                                                tooltip = {
-                                                    SmolTooltipText(text = "Run SMOL as Admin.")
-                                                },
-                                                delayMillis = SmolTooltipArea.shortDelay
-                                            ) {
-                                                Icon(
-                                                    painter = painterResource("icon-admin-shield.svg"),
-                                                    tint = MaterialTheme.colors.secondary,
-                                                    modifier = Modifier.padding(end = 8.dp),
-                                                    contentDescription = null
-                                                )
-                                            }
-                                        }
-                                        when (action) {
-                                            is DropdownAction.ChangeToVariant -> {
-                                                if (action.variant.isMissingAdmin()) {
-                                                    shield()
-                                                }
-                                            }
-                                            is DropdownAction.Disable -> {
-                                                if (firstEnabledVariant?.isMissingAdmin() == true) {
-                                                    shield()
-                                                }
-                                            }
-                                        }
-                                        Text(
-                                            modifier = Modifier
-                                                .align(Alignment.CenterVertically)
-                                                .weight(1f),
-                                            text = when (action) {
-                                                is DropdownAction.ChangeToVariant -> action.variant.modInfo.version.toString()
-                                                is DropdownAction.Disable -> "Disable"
-                                            },
-                                            fontWeight = FontWeight.Bold,
-                                            fontFamily = font
-                                        )
-
-                                        val trashIconSize = 18.dp
-                                        if (isHovered && action is DropdownAction.ChangeToVariant) {
-                                            SmolIconButton(
-                                                onClick = {
-                                                    expanded = false
-                                                    this@ModVariantsDropdown.alertDialogSetter.invoke {
-                                                        DeleteModVariantDialog(
-                                                            variantsToConfirmDeletionOf = action.variant.asList(),
-                                                            onDismiss = this@ModVariantsDropdown::dismissAlertDialog
-                                                        )
-                                                    }
-                                                },
+                                            Text(
                                                 modifier = Modifier
-                                                    .align(Alignment.CenterVertically),
-                                                rippleRadius = 20.dp
-                                            ) {
-                                                Icon(
-                                                    painter = painterResource("icon-trash.svg"),
+                                                    .align(Alignment.CenterVertically)
+                                                    .weight(1f),
+                                                text = when (action) {
+                                                    is DropdownAction.ChangeToVariant -> action.variant.modInfo.version.toString()
+                                                    is DropdownAction.Disable -> "Disable"
+                                                },
+                                                fontWeight = FontWeight.Bold,
+                                                fontFamily = font
+                                            )
+
+                                            val trashIconSize = 18.dp
+                                            if (isHovered && action is DropdownAction.ChangeToVariant) {
+                                                SmolIconButton(
+                                                    onClick = {
+                                                        expanded = false
+                                                        this@ModVariantsDropdown.alertDialogSetter.invoke {
+                                                            DeleteModVariantDialog(
+                                                                variantsToConfirmDeletionOf = action.variant.asList(),
+                                                                onDismiss = this@ModVariantsDropdown::dismissAlertDialog
+                                                            )
+                                                        }
+                                                    },
                                                     modifier = Modifier
-                                                        .size(trashIconSize),
-                                                    contentDescription = null
-                                                )
+                                                        .align(Alignment.CenterVertically),
+                                                    rippleRadius = 20.dp
+                                                ) {
+                                                    Icon(
+                                                        painter = painterResource("icon-trash.svg"),
+                                                        modifier = Modifier
+                                                            .size(trashIconSize),
+                                                        contentDescription = null
+                                                    )
+                                                }
+                                            } else {
+                                                Spacer(Modifier.padding(start = 12.dp).size(trashIconSize))
                                             }
-                                        } else {
-                                            Spacer(Modifier.padding(start = 12.dp).size(trashIconSize))
                                         }
                                     }
                                 }
