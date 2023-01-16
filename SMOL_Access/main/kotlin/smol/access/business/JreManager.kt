@@ -15,7 +15,6 @@ package smol.access.business
 import io.ktor.client.call.*
 import io.ktor.client.plugins.*
 import io.ktor.client.request.*
-import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.core.*
@@ -183,9 +182,7 @@ class JreManager(
                                 Jre8Progress.Downloading(bytesSentTotal.toFloat() / contentLength.toFloat())
                         }
                     }
-                        .body<HttpStatement>()
-                        .execute { httpResponse ->
-
+                        .let { httpResponse ->
                             if (destForDownload.exists()) {
                                 destForDownload = Path.of(
                                     destForDownload.absolutePathString() + "-" + UUID.randomUUID().toString().take(6)
