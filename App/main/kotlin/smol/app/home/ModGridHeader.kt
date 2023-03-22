@@ -165,7 +165,7 @@ fun AppScope.ModGridHeader(
                                     profile = profile,
                                     modifier = Modifier.align(Alignment.CenterVertically)
                                 ) {
-                                    Text(text = "VRAM Impact", fontWeight = FontWeight.Bold)
+                                    Text(text = "Est VRAM Impact", fontWeight = FontWeight.Bold)
                                 }
                             }
 

@@ -113,7 +113,8 @@ class Archives internal constructor(
                             return
                         }
                     } else {
-                        val ex = RuntimeException("Archive did not have a valid ${Constants.UNBRICKED_MOD_INFO_FILE} inside!")
+                        val ex =
+                            RuntimeException("Archive did not have a valid ${Constants.UNBRICKED_MOD_INFO_FILE} inside!")
                         Timber.w(ex)
                         throw ex
                     }
@@ -193,7 +194,12 @@ class Archives internal constructor(
                                 val items = inArchive.simpleInterface.archiveItems
                                     .filter { !it.isFolder }
                                 val modInfoFile = items
-                                    .firstOrNull { it.path.contains(Constants.UNBRICKED_MOD_INFO_FILE, ignoreCase = true) }
+                                    .firstOrNull {
+                                        it.path.contains(
+                                            Constants.UNBRICKED_MOD_INFO_FILE,
+                                            ignoreCase = true
+                                        )
+                                    }
                                 val versionCheckerFile = items
                                     .firstOrNull {
                                         it.path.endsWith(
@@ -297,8 +303,13 @@ class Archives internal constructor(
             }
     }
 
-    fun findModInfoFileInFolder(folder: Path) = folder.walk(maxDepth = 6, options = arrayOf(FileVisitOption.FOLLOW_LINKS))
-        .firstOrNull { it.isModInfoFile() }
+    /**
+     * Returns the mod info file in the given folder with the shortest path, which is probably the one closest to the root.
+     */
+    fun findModInfoFileInFolder(folder: Path) =
+        folder.walk(maxDepth = 6, options = arrayOf(FileVisitOption.FOLLOW_LINKS))
+            .filter { it.isModInfoFile() }
+            .minByOrNull { it.absolutePathString().length } // It's not stupid if it works.
 
     fun extractArchive(
         archiveFile: Path,

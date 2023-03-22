@@ -120,7 +120,7 @@ fun ModGridSettings() {
                                     UserProfile.ModGridHeader.Name -> "Name"
                                     UserProfile.ModGridHeader.Author -> "Author"
                                     UserProfile.ModGridHeader.Version -> "Version"
-                                    UserProfile.ModGridHeader.VramImpact -> "VRAM Impact"
+                                    UserProfile.ModGridHeader.VramImpact -> "Est VRAM Impact"
                                     UserProfile.ModGridHeader.Icons -> "Mod Type"
                                     UserProfile.ModGridHeader.GameVersion -> "Game Version"
                                     UserProfile.ModGridHeader.Category -> "Category"
