@@ -42,6 +42,7 @@ fun SmolOutlinedTextField(
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     singleLine: Boolean = false,
     maxLines: Int = Int.MAX_VALUE,
+    minLines: Int = 0,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     shape: Shape = MaterialTheme.shapes.small,
     colors: TextFieldColors = TextFieldDefaults.outlinedTextFieldColors(
@@ -65,6 +66,7 @@ fun SmolOutlinedTextField(
         keyboardActions,
         singleLine,
         maxLines,
+        minLines,
         interactionSource,
         shape,
         colors,

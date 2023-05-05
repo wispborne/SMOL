@@ -72,11 +72,13 @@ internal class ModMerger {
                                         val outer = outerLoopMod.name.prepForMatching()
                                         val inner = innerLoopMod.name.prepForMatching()
 
+                                        // Check the mod names.
                                         val bestNameResult = ModRepoUtils.compareToFindBestMatch(
                                             leftList = outer.asList(),
                                             rightList = inner.asList()
                                         )
 
+                                        // If the names are similar, check the authors.
                                         val bestAuthorsResult =
                                             ModRepoUtils.compareToFindBestMatch(
                                                 leftList = listOf(
@@ -120,8 +122,8 @@ internal class ModMerger {
                                         }
                                     }
                                 }
-                                .filter { it.second }
-                                .map { it.first })
+                                .filter { it.second } // Filter out the mods that didn't match
+                                .map { it.first }) // Get the mods that did match
                     }
                     .filterNotNull()
             }

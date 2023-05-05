@@ -11,7 +11,7 @@
  */
 
 plugins {
-    kotlin("jvm") version "1.7.20"
+    kotlin("jvm") version "1.8.20"
 }
 
 group = "com.wisp"
@@ -66,3 +66,12 @@ tasks.register("buildSmolDistUnstable") {
 tasks.register("buildSmolDistTest") {
     dependsOn("buildSmol", "UpdateStager:runTest")
 }
+
+
+//kotlin {
+//    sourceSets.all {
+//        languageSettings {
+//            languageVersion = "2.0"
+//        }
+//    }
+//}

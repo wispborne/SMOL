@@ -41,6 +41,7 @@ class Archives internal constructor(
      * @param inputFile A file or folder to try to install.
      * @param destinationFolder The folder to place the result into. Not the mod folder, but the parent of that (eg /mods).
      */
+    @OptIn(ExperimentalPathApi::class)
     suspend fun installFromUnknownSource(
         inputFile: Path,
         destinationFolder: Path,
@@ -270,6 +271,7 @@ class Archives internal constructor(
      *
      * @param folderContainingSingleMod A folder with a single mod somewhere inside, eg Seeker in `Seeker/mod_info.json`.
      */
+    @OptIn(ExperimentalPathApi::class)
     fun removedNestedFolders(folderContainingSingleMod: Path) {
         kotlin.runCatching {
             if (!folderContainingSingleMod.isDirectory())

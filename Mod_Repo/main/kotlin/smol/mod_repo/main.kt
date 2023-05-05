@@ -54,6 +54,7 @@ class Main {
         fun main(args: Array<String>) {
             val config = readConfig() ?: return
             val logLevel = LogLevel.valueOf(config.logLevel)
+            val startTime = Instant.now()
 
             val logFile = Path.of("ModRepo.log")
             val logOut = logFile
@@ -157,6 +158,7 @@ class Main {
                         modRepoCache.items = this
                         modRepoCache.totalCount = this.count()
                         modRepoCache.lastUpdated = Instant.now().truncatedTo(ChronoUnit.MINUTES).toString()
+                        println("Total time: ${Instant.now().minusMillis(startTime.toEpochMilli()).toEpochMilli() / 1000}s.")
                         println("Saved ${this.count()} mods to ${ModRepoCache.location.toAbsolutePath()}.")
                     }
 

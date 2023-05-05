@@ -20,10 +20,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.mouseClickable
-import androidx.compose.material.ContentAlpha
-import androidx.compose.material.LocalContentColor
-import androidx.compose.material.MaterialTheme
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.onClick
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
@@ -32,12 +32,21 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.arkivanov.decompose.replaceCurrent
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import smol.access.Constants
+import smol.access.SL
 import smol.access.model.Mod
 import smol.access.model.VersionCheckerInfo
+import smol.app.composables.SmolButton
+import smol.app.composables.SmolScrollableDialog
 import smol.app.composables.SmolTooltipArea
 import smol.app.composables.SmolTooltipText
 import smol.app.navigation.Screen
@@ -59,17 +68,20 @@ fun AppScope.ModUpdateIcon(
     Row(modifier) {
         // If successfully version checked...
         if (highestLocalVersion != null && onlineVersion != null) {
+            val hasUpdate = onlineVersion > highestLocalVersion && onlineVersionInfo != null
+            ChangelogIcon(onlineVersionInfo, mod, hasUpdate, modifier = Modifier.align(Alignment.CenterVertically))
+
             // ...and if an update was found.
-            if (onlineVersion > highestLocalVersion && onlineVersionInfo != null) {
+            if (hasUpdate) {
                 val ddUrl =
-                    onlineVersionInfo.directDownloadURL?.nullIfBlank()
-                        ?: mod.findHighestVersion?.versionCheckerInfo?.directDownloadURL?.nullIfBlank()
+                    onlineVersionInfo?.directDownloadUrl?.nullIfBlank()
+                        ?: mod.findHighestVersion?.versionCheckerInfo?.directDownloadUrl?.nullIfBlank()
 
                 if (ddUrl != null) {
                     SmolTooltipArea(tooltip = {
                         SmolTooltipText(
                             text = buildAnnotatedString {
-                                append("Newer version available: ${onlineVersionInfo.modVersion}")
+                                append("Newer version available: ${onlineVersionInfo?.modVersion}")
                                 append("\nCurrent version: $highestLocalVersion.")
                                 append("\n\n<i>Update information is provided by the mod author, not SMOL, and cannot be guaranteed.</i>".parseHtml())
                                 append("\n\nClick to download and update.")
@@ -91,7 +103,8 @@ fun AppScope.ModUpdateIcon(
                             painter = painterResource("icon-direct-install.svg"),
                             contentDescription = null,
                             colorFilter = ColorFilter.tint(color = MaterialTheme.colors.secondary),
-                            modifier = Modifier.width(SmolTheme.modUpdateIconSize.dp).height(SmolTheme.modUpdateIconSize.dp)
+                            modifier = Modifier.width(SmolTheme.modUpdateIconSize.dp)
+                                .height(SmolTheme.modUpdateIconSize.dp)
                                 .padding(end = 8.dp)
                                 .align(Alignment.CenterVertically)
                                 .pointerHoverIcon(
@@ -110,7 +123,7 @@ fun AppScope.ModUpdateIcon(
                     SmolTooltipArea(tooltip = {
                         SmolTooltipText(
                             text = buildAnnotatedString {
-                                append("Newer version available: ${onlineVersionInfo.modVersion}.")
+                                append("Newer version available: ${onlineVersionInfo?.modVersion}.")
                                 append("\nCurrent version: $highestLocalVersion.")
                                 append("\n\n<i>Update information is provided by the mod author, not SMOL, and cannot be guaranteed.</i>".parseHtml())
                                 if (ddUrl == null) append("\n<i>This mod does not support direct download and should be downloaded manually.</i>".parseHtml())
@@ -151,7 +164,8 @@ fun AppScope.ModUpdateIcon(
                                 if (ddUrl == null) MaterialTheme.colors.secondary
                                 else MaterialTheme.colors.secondary.copy(alpha = ContentAlpha.disabled)
                             ),
-                            modifier = Modifier.width(SmolTheme.modUpdateIconSize.dp).height(SmolTheme.modUpdateIconSize.dp)
+                            modifier = Modifier.width(SmolTheme.modUpdateIconSize.dp)
+                                .height(SmolTheme.modUpdateIconSize.dp)
                                 .padding(end = 8.dp)
                                 .align(Alignment.CenterVertically)
                                 .pointerHoverIcon(
@@ -217,5 +231,90 @@ fun AppScope.ModUpdateIcon(
                 )
             }
         }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
+@Composable
+private fun AppScope.ChangelogIcon(
+    onlineVersionInfo: VersionCheckerInfo?,
+    mod: Mod,
+    hasUpdate: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val changelogUrl = onlineVersionInfo?.changelogUrl?.nullIfBlank()
+        ?: mod.findHighestVersion?.versionCheckerInfo?.changelogUrl?.nullIfBlank() ?: return
+
+    var changelog by remember { mutableStateOf("Loading...") }
+
+    // Download text from changelogUrl.
+    LaunchedEffect(changelogUrl) {
+        runCatching {
+            SL.httpClientBuilder.invoke().use {
+                changelog = it.get(changelogUrl).bodyAsText()
+            }
+        }.onFailure {
+            Timber.w(it)
+            changelog = "Failed to load changelog.\n${it.message}}"
+        }
+    }
+
+    SmolTooltipArea(tooltip = {
+        SmolTooltipText(
+            modifier = modifier.width(800.dp).height(500.dp),
+            text = buildAnnotatedString {
+                append(AnnotatedString("Click the icon to see more.\n\n", SpanStyle(fontWeight = FontWeight.Bold)))
+                append(AnnotatedString("Changelog", SpanStyle(fontStyle = SmolTheme.alertDialogTitle().fontStyle)))
+                append("\n\n$changelog")
+            }
+        )
+    }, modifier = modifier) {
+        Image(
+            painter = painterResource("icon-bullhorn-variant.svg"),
+            contentDescription = null,
+//            colorFilter = ColorFilter.tint(color = if (hasUpdate) MaterialTheme.colors.secondary else MaterialTheme.colors.primary),
+            colorFilter =
+            if (hasUpdate) ColorFilter.tint(color = MaterialTheme.colors.secondary)
+            else ColorFilter.tint(
+                color = LocalContentColor.current.copy(alpha = 0.2f),
+            ),
+            modifier = modifier
+                .width(SmolTheme.modUpdateIconSize.dp)
+                .height(SmolTheme.modUpdateIconSize.dp)
+                .padding(end = 8.dp)
+                .pointerHoverIcon(
+                    PointerIcon(
+                        Cursor.getPredefinedCursor(
+                            Cursor.HAND_CURSOR
+                        )
+                    )
+                )
+                .onClick {
+                    alertDialogSetter {
+                        SmolScrollableDialog(
+                            onDismissRequest = { dismissAlertDialog() },
+                            dismissButton = {
+                                SmolButton(
+                                    onClick = { dismissAlertDialog() },
+                                ) {
+                                    Text(text = "Close")
+                                }
+                            },
+                            title = {
+                                Text(
+                                    text = "${mod.findFirstEnabledOrHighestVersion?.modInfo?.name} Changelog",
+                                    style = SmolTheme.alertDialogTitle()
+                                )
+                            }) {
+                            SelectionContainer {
+                                Text(
+                                    text = changelog,//.parseHtml(),
+                                    fontSize = 16.sp
+                                )
+                            }
+                        }
+                    }
+                }
+        )
     }
 }

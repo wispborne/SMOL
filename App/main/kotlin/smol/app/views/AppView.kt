@@ -255,6 +255,7 @@ private fun setUpToasts() {
 class AppScope(windowState: WindowState, private val recomposer: RecomposeScope) : IWindowState by windowState {
 
     /**
+     * Non-scrolling AlertDialog.
      * Usage: alertDialogSetter.invoke { AlertDialog(...) }
      */
     lateinit var alertDialogSetter: (@Composable ((dismiss: () -> Unit) -> Unit)?) -> Unit

@@ -16,12 +16,12 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm")
-    id("org.jetbrains.compose") version "1.2.2"
+    id("org.jetbrains.compose") version "1.4.0"
 }
 
 group = "com.wisp"
 val smolVersion =
-    "1.0.0-beta11" // TODO don't forget to change default channel to "stable" in AppConfig for release.
+    "1.0.0-beta12" // TODO don't forget to change default channel to "stable" in AppConfig for release.
 
 // This gets appended to the app's jarfile, which means it has a unique name each time the app updates,
 // resulting in the file not getting removed. Keep a constant version here so user doesn't end up with a ton of outdated files.

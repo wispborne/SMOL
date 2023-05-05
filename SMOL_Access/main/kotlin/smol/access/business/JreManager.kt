@@ -158,6 +158,7 @@ class JreManager(
     /**
      * Observe progress using [jre8DownloadProgress].
      */
+    @OptIn(ExperimentalPathApi::class)
     suspend fun downloadJre8() {
         kotlin.runCatching {
             val gamePathNN = gamePathManager.path.value!!

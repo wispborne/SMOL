@@ -364,7 +364,6 @@ class VramChecker(
                         null
                     }
                     .getOrNull()
-                    ?.asSequence()
                     ?.map { it.fields }
             }
             // Look for a CSV with a header row containing certain column names

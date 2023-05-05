@@ -20,7 +20,8 @@ data class VersionCheckerInfo(
     @SerializedName("modNexusId") val modNexusId: String?,
     @SerializedName("modThreadId") val modThreadId: String?,
     @SerializedName("modVersion") val modVersion: Version?,
-    @SerializedName("directDownloadURL") val directDownloadURL: String?,
+    @SerializedName("directDownloadURL") val directDownloadUrl: String?,
+    @SerializedName("changelogURL") val changelogUrl: String?,
 ) {
     data class Version(
         @SerializedName("major") val major: String?,

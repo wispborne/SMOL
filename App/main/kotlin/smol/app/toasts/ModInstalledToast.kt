@@ -32,6 +32,7 @@ import kotlinx.coroutines.launch
 import smol.access.SL
 import smol.access.model.ModVariant
 import smol.app.composables.SmolButton
+import smol.app.util.openInDesktop
 import smol.app.util.smolPreview
 
 @Composable
@@ -50,19 +51,33 @@ fun toastInstalledCard(
                 fontSize = 12.sp
             )
 
-            if (modVariant.mod(SL.access)?.isEnabled(modVariant) == false) {
+            Row {
+                if (modVariant.mod(SL.access)?.isEnabled(modVariant) == false) {
+                    SmolButton(
+                        modifier = Modifier
+                            .padding(top = 8.dp, end = 8.dp),
+                        onClick = {
+                            GlobalScope.launch {
+                                SL.access.changeActiveVariant(
+                                    mod = modVariant.mod(SL.access) ?: return@launch,
+                                    modVariant = modVariant
+                                )
+                            }
+                            requestToastDismissal.invoke(ToasterState.defaultTimeoutMillis)
+                        }
+                    ) {
+                        Text("Enable")
+                    }
+                }
+
                 SmolButton(
                     modifier = Modifier
                         .padding(top = 8.dp),
                     onClick = {
-                        GlobalScope.launch { SL.access.changeActiveVariant(
-                            mod = modVariant.mod(SL.access) ?: return@launch,
-                            modVariant = modVariant
-                        ) }
-                        requestToastDismissal.invoke(ToasterState.defaultTimeoutMillis)
+                        modVariant.modsFolderInfo.folder.openInDesktop()
                     }
                 ) {
-                    Text("Enable")
+                    Text("Open folder")
                 }
             }
         }

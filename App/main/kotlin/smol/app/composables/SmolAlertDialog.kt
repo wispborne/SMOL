@@ -12,17 +12,22 @@
 
 package smol.app.composables
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.awtEventOrNull
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.window.Popup
@@ -135,6 +140,104 @@ class SmolAlertDialogProvider(val boundsModifier: Modifier = Modifier.fillMaxSiz
             ) {
                 Surface(elevation = 24.dp) {
                     content()
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+fun SmolScrollableDialog(
+    modifier: Modifier = Modifier,
+    underlayModifier: Modifier = Modifier
+        .fillMaxWidth()
+        .fillMaxHeight()
+        .background(Color.Black.copy(alpha = ContentAlpha.medium)),
+    onDismissRequest: () -> Unit,
+    dismissButton: @Composable (() -> Unit)? = null,
+    title: @Composable (() -> Unit)? = null,
+    shape: Shape = MaterialTheme.shapes.medium,
+    backgroundColor: Color = MaterialTheme.colors.surface,
+    content: @Composable () -> Unit
+) {
+    Box(
+        modifier = underlayModifier
+    ) {
+        Popup(
+            popupPositionProvider = object : PopupPositionProvider {
+                override fun calculatePosition(
+                    anchorBounds: IntRect,
+                    windowSize: IntSize,
+                    layoutDirection: LayoutDirection,
+                    popupContentSize: IntSize
+                ): IntOffset = IntOffset(
+                    windowSize.height / 2 - popupContentSize.height / 2,
+                    windowSize.width / 2 - popupContentSize.width / 2
+                )
+            },
+            focusable = true,
+            onDismissRequest = onDismissRequest,
+            onKeyEvent = {
+                if ((it.type == KeyEventType.KeyDown) && (it.key == Key.Escape)) {
+                    onDismissRequest()
+                    true
+                } else {
+                    false
+                }
+            },
+        ) {
+            val scrimColor = Color.Black.copy(alpha = 0.32f)
+            Box(
+                modifier = modifier
+                    .fillMaxSize(0.8f)
+                    .background(scrimColor)
+                    .pointerInput(onDismissRequest) {
+                        detectTapGestures(onPress = { onDismissRequest() })
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Surface(
+                    Modifier
+                        .clip(shape)
+                        .background(backgroundColor)
+                        .pointerInput(onDismissRequest) {
+                            detectTapGestures(onPress = {
+                                // Workaround to disable clicks on Surface background https://github.com/JetBrains/compose-jb/issues/2581
+                            })
+                        }, elevation = 24.dp
+                ) {
+                    val scrollState = rememberScrollState()
+                    Box(
+                        Modifier
+                            .padding(16.dp)
+                    ) {
+                        Column {
+                            if (title != null) {
+                                title()
+                                Spacer(Modifier.height(8.dp))
+                            }
+                            Box(Modifier.weight(1f)) {
+                                Column(Modifier.verticalScroll(scrollState)) {
+                                    content()
+                                }
+
+                                VerticalScrollbar(
+                                    adapter = rememberScrollbarAdapter(scrollState),
+                                    modifier = Modifier
+                                        .width(8.dp)
+                                        .align(Alignment.CenterEnd)
+                                        .fillMaxHeight()
+                                )
+                            }
+                            if (dismissButton != null) {
+                                Spacer(Modifier.height(8.dp))
+                                Box(Modifier.padding(end = 4.dp).align(Alignment.End)) {
+                                    dismissButton()
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
