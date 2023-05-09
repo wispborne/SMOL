@@ -236,11 +236,13 @@ fun AppScope.ModProfileCard(
                         else this.padding(start = 4.dp, bottom = 4.dp, end = 4.dp)
                     }) {
                     AnimatedVisibility(visible = isExpanded) {
-                        modList(
-                            modifier = Modifier.padding(top = 16.dp, start = 8.dp, end = 8.dp),
-                            allModVariants = modVariants,
-                            variantsInProfile = modProfile.enabledModVariants
-                        )
+                        SelectionContainer {
+                            modList(
+                                modifier = Modifier.padding(top = 16.dp, start = 8.dp, end = 8.dp),
+                                allModVariants = modVariants,
+                                variantsInProfile = modProfile.enabledModVariants
+                            )
+                        }
                     }
 
                     Row {
@@ -250,6 +252,9 @@ fun AppScope.ModProfileCard(
                             tooltip = {
                                 if (!isExpanded) {
                                     SmolTooltipBackground {
+                                        // Don't make this selectable due to a bug introduced in Compose 1.4
+                                        // where if the selectable text in the tooltip goes offscreen,
+                                        // the program crashes.
                                         modList(
                                             modifier = Modifier.widthIn(max = 400.dp),
                                             allModVariants = modVariants,
@@ -307,118 +312,116 @@ fun modList(
 ) {
     // Mod list
 //    val modNameLength = 28
-    SelectionContainer {
-        Box(modifier) {
-            CompositionLocalProvider(
-                LocalTextStyle provides TextStyle(
-                    fontFamily = SmolTheme.fireCodeFont,
-                    fontWeight = FontWeight.Light,
-                    fontSize = 14.sp,
-                )
-            ) {
-                if (variantsInProfile.any()) {
-                    Column {
-                        val missingVariants = mutableListOf<UserProfile.ModProfile.ShallowModVariant>()
+    Box(modifier) {
+        CompositionLocalProvider(
+            LocalTextStyle provides TextStyle(
+                fontFamily = SmolTheme.fireCodeFont,
+                fontWeight = FontWeight.Light,
+                fontSize = 14.sp,
+            )
+        ) {
+            if (variantsInProfile.any()) {
+                Column {
+                    val missingVariants = mutableListOf<UserProfile.ModProfile.ShallowModVariant>()
 
-                        data class FoundVariant(
-                            val inSave: UserProfile.ModProfile.ShallowModVariant,
-                            val onDisk: UserProfile.ModProfile.ShallowModVariant
-                        )
+                    data class FoundVariant(
+                        val inSave: UserProfile.ModProfile.ShallowModVariant,
+                        val onDisk: UserProfile.ModProfile.ShallowModVariant
+                    )
 
-                        val foundVariants = mutableListOf<FoundVariant>()
+                    val foundVariants = mutableListOf<FoundVariant>()
 
-                        variantsInProfile.forEach { variantInProfile ->
-                            val foundVariantOnDisk = allModVariants.firstOrNull {
-                                // Quick comparison
-                                it.smolVariantId == variantInProfile.smolVariantId
-                                        // More robust comparison that understands Version scheme.
-                                        || (it.modId == variantInProfile.modId && it.version == variantInProfile.version)
-                            }
-
-                            if (foundVariantOnDisk != null) {
-                                foundVariants += FoundVariant(inSave = variantInProfile, onDisk = foundVariantOnDisk)
-                            } else {
-                                missingVariants += variantInProfile
-                            }
+                    variantsInProfile.forEach { variantInProfile ->
+                        val foundVariantOnDisk = allModVariants.firstOrNull {
+                            // Quick comparison
+                            it.smolVariantId == variantInProfile.smolVariantId
+                                    // More robust comparison that understands Version scheme.
+                                    || (it.modId == variantInProfile.modId && it.version == variantInProfile.version)
                         }
 
-                        if (missingVariants.any()) {
+                        if (foundVariantOnDisk != null) {
+                            foundVariants += FoundVariant(inSave = variantInProfile, onDisk = foundVariantOnDisk)
+                        } else {
+                            missingVariants += variantInProfile
+                        }
+                    }
+
+                    if (missingVariants.any()) {
+                        Row {
+                            Text(
+                                modifier = Modifier.weight(1f),
+                                maxLines = 1,
+                                fontWeight = FontWeight.ExtraBold,
+                                overflow = TextOverflow.Ellipsis,
+                                text = "Missing On Disk"
+                            )
+                        }
+                        Row {
+                            Text(
+                                modifier = Modifier.weight(1f).padding(bottom = 8.dp),
+                                fontWeight = FontWeight.Light,
+                                overflow = TextOverflow.Ellipsis,
+                                text = "(note: mods are set when the save is first created; updates are not tracked)"
+                            )
+                        }
+
+                        missingVariants.forEach { variantInProfile ->
                             Row {
                                 Text(
                                     modifier = Modifier.weight(1f),
                                     maxLines = 1,
-                                    fontWeight = FontWeight.ExtraBold,
                                     overflow = TextOverflow.Ellipsis,
-                                    text = "Missing On Disk"
+                                    text = variantInProfile.modId
                                 )
-                            }
-                            Row {
                                 Text(
-                                    modifier = Modifier.weight(1f).padding(bottom = 8.dp),
-                                    fontWeight = FontWeight.Light,
-                                    overflow = TextOverflow.Ellipsis,
-                                    text = "(note: mods are set when the save is first created; updates are not tracked)"
-                                )
-                            }
-
-                            missingVariants.forEach { variantInProfile ->
-                                Row {
-                                    Text(
-                                        modifier = Modifier.weight(1f),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        text = variantInProfile.modId
-                                    )
-                                    Text(
-                                        softWrap = false,
-                                        maxLines = 1,
-                                        text = variantInProfile.version.toString()
-                                    )
-                                }
-                            }
-
-                            Divider(Modifier.padding(vertical = 8.dp).height(1.dp).fillMaxWidth())
-                            Row {
-                                Text(
-                                    modifier = Modifier.weight(1f).padding(bottom = 8.dp),
+                                    softWrap = false,
                                     maxLines = 1,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    overflow = TextOverflow.Ellipsis,
-                                    text = "Not Missing"
+                                    text = variantInProfile.version.toString()
                                 )
                             }
                         }
 
-                        if (foundVariants.any()) {
-                            foundVariants.forEach { (modVariant, variantInProfile) ->
-                                Row {
-                                    Text(
-                                        modifier = Modifier.weight(1f),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        text = modVariant.modName.plus(": ")
-                                    )
+                        Divider(Modifier.padding(vertical = 8.dp).height(1.dp).fillMaxWidth())
+                        Row {
+                            Text(
+                                modifier = Modifier.weight(1f).padding(bottom = 8.dp),
+                                maxLines = 1,
+                                fontWeight = FontWeight.ExtraBold,
+                                overflow = TextOverflow.Ellipsis,
+                                text = "Not Missing"
+                            )
+                        }
+                    }
 
-                                    Text(
-                                        softWrap = false,
-                                        maxLines = 1,
-                                        text = variantInProfile.version?.raw
-                                            ?: modVariant.version?.toString() ?: ""
-                                    )
-                                }
+                    if (foundVariants.any()) {
+                        foundVariants.forEach { (modVariant, variantInProfile) ->
+                            Row {
+                                Text(
+                                    modifier = Modifier.weight(1f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    text = modVariant.modName.plus(": ")
+                                )
+
+                                Text(
+                                    softWrap = false,
+                                    maxLines = 1,
+                                    text = variantInProfile.version?.raw
+                                        ?: modVariant.version?.toString() ?: ""
+                                )
                             }
                         }
                     }
-                } else {
-                    Text(
-                        text = "No mods.",
-                        fontFamily = SmolTheme.fireCodeFont,
-                        fontWeight = FontWeight.Light,
-                        fontSize = 14.sp,
-                    )
                 }
-
+            } else {
+                Text(
+                    text = "No mods.",
+                    fontFamily = SmolTheme.fireCodeFont,
+                    fontWeight = FontWeight.Light,
+                    fontSize = 14.sp,
+                )
             }
+
         }
     }
 }
@@ -482,6 +485,7 @@ fun AppScope.profileControls(
                         text = when {
                             !areAllModsSettled -> listOf("Swapping loadout.", "Refitting", "Processing")
                                 .random()
+
                             isActiveProfile -> "This is the active profile."
                             else -> "Activate profile."
                         },
@@ -614,11 +618,13 @@ private fun AppScope.MissingModVariantsAlertDialog(
                     text = "The following mods are missing:",
                     style = SmolTheme.alertDialogBody()
                 )
-                modList(
-                    modifier = Modifier.padding(top = 16.dp),
-                    allModVariants = missingVariants,
-                    variantsInProfile = missingVariants
-                )
+                SelectionContainer {
+                    modList(
+                        modifier = Modifier.padding(top = 16.dp),
+                        allModVariants = missingVariants,
+                        variantsInProfile = missingVariants
+                    )
+                }
                 SmolButton(
                     modifier = Modifier.padding(top = 32.dp),
                     onClick = {

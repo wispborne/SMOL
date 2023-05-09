@@ -15,10 +15,7 @@ package smol.app.home
 import AppScope
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.mouseClickable
 import androidx.compose.foundation.onClick
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -36,19 +33,18 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.arkivanov.decompose.replaceCurrent
+import com.mikepenz.markdown.Markdown
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import smol.access.Constants
 import smol.access.SL
 import smol.access.model.Mod
 import smol.access.model.VersionCheckerInfo
-import smol.app.composables.SmolButton
-import smol.app.composables.SmolScrollableDialog
-import smol.app.composables.SmolTooltipArea
-import smol.app.composables.SmolTooltipText
+import smol.app.composables.*
 import smol.app.navigation.Screen
 import smol.app.themes.SmolTheme
 import smol.app.util.*
@@ -250,8 +246,9 @@ private fun AppScope.ChangelogIcon(
     // Download text from changelogUrl.
     LaunchedEffect(changelogUrl) {
         runCatching {
-            SL.httpClientBuilder.invoke().use {
-                changelog = it.get(changelogUrl).bodyAsText()
+            SL.httpClientBuilder.invoke().use { httpClient ->
+                // Get the changelog and make each line starting with "version" a header.
+                changelog = httpClient.get(changelogUrl).bodyAsText()
             }
         }.onFailure {
             Timber.w(it)
@@ -259,15 +256,55 @@ private fun AppScope.ChangelogIcon(
         }
     }
 
+    val changelogView = @Composable {
+//        if (changelogUrl.endsWith(".md"))
+//            Markdown(content = changelog)
+//        else
+            Text(
+                text = buildAnnotatedString {
+                    changelog.lines().forEach { line ->
+                        if (line.trimStart().startsWith("version", ignoreCase = true)) {
+                            appendLine(
+                                AnnotatedString(
+                                    line,
+                                    SpanStyle(color = MaterialTheme.colors.secondary, fontWeight = FontWeight.Bold)
+                                )
+                            )
+                        } else {
+                            appendLine(AnnotatedString(line))
+                        }
+                    }
+                },
+                fontSize = 16.sp
+            )
+    }
+
     SmolTooltipArea(tooltip = {
-        SmolTooltipText(
-            modifier = modifier.width(800.dp).height(500.dp),
-            text = buildAnnotatedString {
-                append(AnnotatedString("Click the icon to see more.\n\n", SpanStyle(fontWeight = FontWeight.Bold)))
-                append(AnnotatedString("Changelog", SpanStyle(fontStyle = SmolTheme.alertDialogTitle().fontStyle)))
-                append("\n\n$changelog")
+        SmolTooltipBackground(
+            modifier = modifier.width(800.dp).height(500.dp),) {
+            Column {
+
+                Text(
+                    modifier = Modifier.padding(bottom = 16.dp),
+                    text = buildAnnotatedString {
+                        appendLine(
+                            AnnotatedString(
+                                "Click the icon to see more.\n",
+                                SpanStyle(fontWeight = FontWeight.Bold)
+                            )
+                        )
+                        appendLine(
+                            AnnotatedString(
+                                "Changelog",
+                                SpanStyle(fontStyle = SmolTheme.alertDialogTitle().fontStyle, fontWeight = FontWeight.Bold)
+                            )
+                        )
+                        appendLine("----------------")
+                    }
+                )
+                changelogView()
             }
-        )
+        }
     }, modifier = modifier) {
         Image(
             painter = painterResource("icon-bullhorn-variant.svg"),
@@ -307,10 +344,7 @@ private fun AppScope.ChangelogIcon(
                                 )
                             }) {
                             SelectionContainer {
-                                Text(
-                                    text = changelog,//.parseHtml(),
-                                    fontSize = 16.sp
-                                )
+                                changelogView()
                             }
                         }
                     }
