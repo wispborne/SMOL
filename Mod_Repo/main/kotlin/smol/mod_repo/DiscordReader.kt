@@ -35,7 +35,7 @@ internal object DiscordReader {
     private const val delayBetweenRequestsMillis = 1500L
     private var timestampOfLastHttpCall: Long = 0L
     private const val serverId = "187635036525166592"
-    private const val modUpdatesChannelId = "825068217361760306"
+    private const val modUpdatesChannelId = "1104110077075542066"
     private val urlFinderRegex = Regex(
         """(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#-]*[\w@?^=%&\/~+#-])"""
     )
