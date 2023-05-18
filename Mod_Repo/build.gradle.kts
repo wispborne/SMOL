@@ -44,7 +44,8 @@ dependencies {
 // https://mvnrepository.com/artifact/org.jsoup/jsoup
     implementation("org.jsoup:jsoup:1.16.1")
 
-    implementation("com.github.android-password-store:sublime-fuzzy:2.3.1")
+    // Copied into project
+    // implementation("com.github.android-password-store:sublime-fuzzy:2.3.1")
 
     implementation(project.property("coroutines")!!)
 }

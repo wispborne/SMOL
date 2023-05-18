@@ -164,6 +164,8 @@ class Timber private constructor() {
         protected open fun isLoggable(tag: String?, priority: LogLevel) = isLoggable(priority)
 
         private fun prepareLog(priority: LogLevel, t: Throwable?, message: String?, vararg args: Any?) {
+            if (!shouldLog(priority)) return
+
             // Consume tag even when message is not loggable so that next message is correctly tagged.
             val tag = tag
             if (!isLoggable(tag, priority)) {
@@ -210,6 +212,8 @@ class Timber private constructor() {
          * @param t Accompanying exceptions. May be `null`.
          */
         protected abstract fun log(priority: LogLevel, tag: String?, message: String, t: Throwable?)
+
+        protected abstract fun shouldLog(priority: LogLevel): Boolean
     }
 
     /** A [Tree] for debug builds. Automatically infers the tag from the calling class. */
@@ -223,6 +227,8 @@ class Timber private constructor() {
         override val tag: String?
             get() = super.tag ?: findClassName()
 
+        override fun shouldLog(priority: LogLevel): Boolean = priority >= logLevel
+
         /**
          * Break up `message` into maximum-length chunks (if needed) and send to either
          * [Log.println()][LogLevel.println] or
@@ -231,7 +237,7 @@ class Timber private constructor() {
          * {@inheritDoc}
          */
         override fun log(priority: LogLevel, tag: String?, message: String, t: Throwable?) {
-            if (priority < logLevel) return
+            if (!shouldLog(priority)) return
 
             if (message.length < MAX_LOG_LENGTH) {
                 logToConsole(priority, tag, message, Thread.currentThread().name)
@@ -435,6 +441,10 @@ class Timber private constructor() {
         @JvmStatic
         override fun log(priority: LogLevel, t: Throwable?) {
             treeArray.forEach { it.log(priority, t) }
+        }
+
+        override fun shouldLog(priority: LogLevel): Boolean {
+            throw AssertionError() // Missing override for log method.
         }
 
         override fun log(priority: LogLevel, tag: String?, message: String, t: Throwable?) {

@@ -57,7 +57,7 @@ class JsonFilePrefStorage(private val gson: Jsanity, private val file: Path) : I
             )
                 .toMutableMap().apply { this[key] = value as T }
                 .run { file.writeText(gson.toJson(this)) })
-                .also { Timber.v { "Set '$key' as '$it' in '${file.fileName}'." } }
+                .also { Timber.v { "Set '$key' to '$it' in '${file.fileName}'." } }
         }
 
     override fun clear() = Preferences.userRoot().clear()
