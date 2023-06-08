@@ -56,7 +56,7 @@ class ServiceLocator internal constructor(
     val jsanity: Jsanity by lazy { Jsanity(gson = GsonBuilder.buildGson()) }
     private val versionCheckerCache: VersionCheckerCache by lazy { VersionCheckerCache(gson = jsanity) }
     private val modMetadataStore: ModMetadataStore by lazy { ModMetadataStore(gson = jsanity) }
-    val modMetadata: ModMetadataManager = ModMetadataManager(modMetadataStore = modMetadataStore)
+    val modMetadata: ModMetadataManager = ModMetadataManager(modMetadataStore = modMetadataStore, modsCache = modsCache)
     val appConfig: AppConfig by lazy { AppConfig(gson = jsanity) }
     val userManager: UserManager =
         UserManager(

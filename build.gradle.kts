@@ -29,20 +29,14 @@ dependencies {
 }
 
 
-//tasks.withType<proguard.gradle.ProGuardTask>().configureEach {
-//    configuration("../proguard.pro")
-//    dontoptimize()
-//}
-
+// Builds SMOL using App:createDistributable and creates an uberJar for the update installer,
+// then copies them all to dist/main/app/SMOL.
 tasks.register("buildSmol") {
     dependsOn("App:createDistributable", "UpdateInstaller:uberJar")
-    // ProGuard
-//    dependsOn("App:createReleaseDistributable", "UpdateInstaller:uberJar")
 
     doLast {
         copy {
             val paths = listOf(
-//                rootProject.projectDir.resolve("dist/main-release/app/SMOL"), // ProGuard-created
                 rootProject.projectDir.resolve("UpdateInstaller/dist"),
                 rootProject.projectDir.resolve("UpdateInstaller/jre"),
                 rootProject.projectDir.resolve("README.md"),
@@ -66,12 +60,3 @@ tasks.register("buildSmolDistUnstable") {
 tasks.register("buildSmolDistTest") {
     dependsOn("buildSmol", "UpdateStager:runTest")
 }
-
-
-//kotlin {
-//    sourceSets.all {
-//        languageSettings {
-//            languageVersion = "2.0"
-//        }
-//    }
-//}

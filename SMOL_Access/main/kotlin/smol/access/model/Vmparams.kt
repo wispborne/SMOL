@@ -18,6 +18,8 @@ data class Vmparams(
     companion object {
         val xmsRegex = Regex("""(?<=xms).*?(?= )""", RegexOption.IGNORE_CASE)
         val xmxRegex = Regex("""(?<=xmx).*?(?= )""", RegexOption.IGNORE_CASE)
+        val verifyNoneRegex = Regex("""-Xverify.*?(?= )""", RegexOption.IGNORE_CASE)
+        val javaExeRegex = Regex("""(\.exe)(?= )""", RegexOption.IGNORE_CASE) // Windows only
     }
 
     val xmx = xmxRegex.find(fullString)?.value
@@ -27,6 +29,13 @@ data class Vmparams(
         fullString
             .replace(xmsRegex, newRamAmount)
             .replace(xmxRegex, newRamAmount)
+            .let {
+                if (it.contains(verifyNoneRegex)) {
+                    it.replace(verifyNoneRegex, "-Xverify:none")
+                } else {
+                    it.replaceFirst(javaExeRegex, ".exe -Xverify:none")
+                }
+            }
     )
 
     fun withGb(gb: Int) = withRam(newRamAmount = "${gb}g")

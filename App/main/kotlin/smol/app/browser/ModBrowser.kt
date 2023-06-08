@@ -410,7 +410,8 @@ fun AppScope.ModBrowserView(
                                         )
                                     } else {
                                         Text(
-                                            text = "CEF (Chromium browser) not found.",
+                                            text = "CEF (Chromium browser) not found." +
+                                                    "\nIf you would like to use it, please download JCEF from 'Assets' on https://github.com/wispborne/SMOL/releases and extract the folder into SMOL's 'libs' folder.",
                                             modifier = Modifier.align(Alignment.CenterHorizontally)
                                         )
                                     }

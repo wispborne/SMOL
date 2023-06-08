@@ -12,7 +12,7 @@
 
 package smol.app.util
 
-import com.github.androidpasswordstore.sublimefuzzy.Fuzzy
+import smol.mod_repo.fuzzy.Fuzzy
 import smol.mod_repo.ModRepoUtils
 import smol.mod_repo.ScrapedMod
 import smol.timber.ktx.Timber

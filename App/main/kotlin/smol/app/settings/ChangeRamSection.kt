@@ -17,6 +17,8 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -111,7 +113,7 @@ fun vmParamsContextMenu(
     val width = cellMinWidth * 2
     val gridHeight = 240.dp
     val assignedRam = SL.UI.vmParamsManager.vmparams.collectAsState().value?.xmx
-    val presetsInGb = 2..6
+    val presetsInGb = 2..8
 
     val availableSystemRam = runCatching { SystemInfo().hardware.memory.available }
         .onFailure { Logger.warn(it) }

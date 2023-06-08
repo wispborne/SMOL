@@ -19,12 +19,15 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import smol.access.config.ModMetadata
 import smol.access.config.ModMetadataStore
+import smol.access.config.VariantMetadata
 import smol.access.model.Mod
 import smol.access.model.ModId
 import smol.timber.ktx.Timber
+import java.time.Instant
 
-class ModMetadataManager(
-    private val modMetadataStore: ModMetadataStore
+class ModMetadataManager internal constructor(
+    private val modMetadataStore: ModMetadataStore,
+    private val modsCache: ModsCache,
 ) {
     fun update(modId: ModId, transformer: (ModMetadata) -> ModMetadata) {
         val oldData = mergedData.value[modId] ?: ModMetadata()
@@ -60,6 +63,37 @@ class ModMetadataManager(
                 .collectLatest { mergedMetadata ->
                     _mergedData.value = mergedMetadata.toMap()
                 }
+
+        }
+        scope.launch(Dispatchers.Default) {
+            modsCache.mods.collect() { update ->
+                if (update != null) {
+                    val added = update.added + update.mods.flatMap { it.variants }
+
+                    val updatedMetadata = modMetadataStore.baseMetadata.value.toMutableMap()
+
+                    added.forEach { modVariant ->
+                        val modMetadata = updatedMetadata[modVariant.modInfo.id] ?: ModMetadata()
+
+                        if (modMetadata.variantsMetadata?.get(modVariant.smolId)?.lastAdded == null) {
+                            updatedMetadata[modVariant.modInfo.id] =
+                                modMetadata.copy(
+                                    variantsMetadata = modMetadata.variantsMetadata.orEmpty().toMutableMap().apply {
+                                        this[modVariant.smolId] =
+                                            (modMetadata.variantsMetadata.orEmpty()[modVariant.smolId]
+                                                ?: VariantMetadata())
+                                                .copy(lastAdded = Instant.now().toEpochMilli())
+                                    }
+                                )
+                        }
+                    }
+
+                    if (modMetadataStore.baseMetadata.value != updatedMetadata.toMap()) {
+                        Timber.i { "${updatedMetadata.values.joinToString { it.variantsMetadata.orEmpty().keys.joinToString() }} added at ${Instant.now()} to metadata." }
+                        modMetadataStore.baseMetadata.value = updatedMetadata.toMap()
+                    }
+                }
+            }
         }
     }
 }

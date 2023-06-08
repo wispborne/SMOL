@@ -12,7 +12,7 @@
 
 package smol.app.util
 
-import com.github.androidpasswordstore.sublimefuzzy.Fuzzy
+import smol.mod_repo.fuzzy.Fuzzy
 import smol.access.SL
 import smol.access.business.dependencies
 import smol.access.business.metadata

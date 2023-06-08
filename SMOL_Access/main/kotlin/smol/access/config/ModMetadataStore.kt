@@ -16,9 +16,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import smol.access.Constants
 import smol.access.StateFlowWrapper
 import smol.access.model.ModId
+import smol.access.model.SmolId
 import smol.utilities.InMemoryPrefStorage
 import smol.utilities.Jsanity
 import smol.utilities.JsonFilePrefStorage
+import java.time.Instant
 import kotlin.reflect.typeOf
 
 class ModMetadataStore(gson: Jsanity) :
@@ -47,5 +49,10 @@ class ModMetadataStore(gson: Jsanity) :
 }
 
 data class ModMetadata(
-    val category: String? = null
+    val category: String? = null,
+    val variantsMetadata: Map<SmolId, VariantMetadata>? = null
+)
+
+data class VariantMetadata(
+    val lastAdded: Long? = null
 )
