@@ -112,7 +112,7 @@ fun AppScope.ModGridRow(
                 // Split into two paddings, one before color change and one after so that it's evenly divided.
                 if (isFinalFavoritedRow)
                     this.padding(bottom = paddingBetweenFavoritesAndRest / 2)
-                else this
+                else this.padding(0.dp)
             }
             .background(
                 color = if (isRowHighlighted || selectedRow.value?.mod?.id == mod.id || mod in checkedRows)
@@ -128,7 +128,7 @@ fun AppScope.ModGridRow(
             }.run {
                 if (isFinalFavoritedRow)
                     this.padding(bottom = paddingBetweenFavoritesAndRest / 2)
-                else this
+                else this.padding(0.dp)
             }
     ) {
         Column(
