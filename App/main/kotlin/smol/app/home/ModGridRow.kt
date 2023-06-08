@@ -64,6 +64,7 @@ fun AppScope.ModGridRow(
     largestVramUsage: MutableState<Long?>,
     checkboxesWidth: Dp,
     modInDebugDialog: MutableState<Mod?>,
+    isFinalFavoritedRow: Boolean,
     mods: List<Mod?>
 ) {
     val mod = modRow.mod
@@ -73,6 +74,8 @@ fun AppScope.ModGridRow(
     val onlineVersionInfo = SL.versionChecker.onlineVersions.collectAsState().value[mod.id]?.info
     val onlineVersion = onlineVersionInfo?.modVersion
     var isRowHighlighted by remember { mutableStateOf(false) }
+    val isFavorited = mod.id in profile.value.favoriteMods
+    val paddingBetweenFavoritesAndRest = 8.dp
 
     ListItem(
         modifier = modifier
@@ -91,7 +94,7 @@ fun AppScope.ModGridRow(
                 }
             }, onClick = {
                 // If in "Checking rows" mode, clicking a row toggles checked.
-                // Otherwise, it open/closes Details panel
+                // Otherwise, it open/closes Details panel.
                 if (checkedRows.any()) {
                     if (mod !in checkedRows) {
                         checkedRows.add(mod)
@@ -105,10 +108,16 @@ fun AppScope.ModGridRow(
             })
             .onClick(matcher = PointerMatcher.mouse(PointerButton.Secondary)) {
                 showContextMenu = !showContextMenu
+            }.run {
+                // Split into two paddings, one before color change and one after so that it's evenly divided.
+                if (isFinalFavoritedRow)
+                    this.padding(bottom = paddingBetweenFavoritesAndRest / 2)
+                else this
             }
             .background(
                 color = if (isRowHighlighted || selectedRow.value?.mod?.id == mod.id || mod in checkedRows)
                     Color.Black.copy(alpha = .1f)
+                else if (isFavorited) MaterialTheme.colors.secondary.copy(alpha = .04f)
                 else Color.Transparent
             )
             .onPointerEvent(PointerEventType.Enter) {
@@ -116,6 +125,10 @@ fun AppScope.ModGridRow(
             }
             .onPointerEvent(PointerEventType.Exit) {
                 isRowHighlighted = false
+            }.run {
+                if (isFinalFavoritedRow)
+                    this.padding(bottom = paddingBetweenFavoritesAndRest / 2)
+                else this
             }
     ) {
         Column(

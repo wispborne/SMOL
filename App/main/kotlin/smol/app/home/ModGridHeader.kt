@@ -123,12 +123,19 @@ fun AppScope.ModGridHeader(
                             tooltip = { SmolTooltipText(text = "The version(s) tracked by SMOL.") },
                             delayMillis = SmolTooltipArea.shortDelay
                         ) {
-                            Text(
-                                text = "Version(s)",
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
+                            SortableHeader(
+                                modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
+                                columnSortField = ModGridSortField.Version,
+                                activeSortField = activeSortField,
+                                profile = profile
+                            ) {
+                                Text(
+                                    text = "Version(s)",
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
                         }
                     }
 
