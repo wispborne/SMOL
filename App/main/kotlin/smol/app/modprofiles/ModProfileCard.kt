@@ -33,7 +33,8 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.*
-import androidx.compose.ui.input.pointer.pointerMoveFilter
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -105,10 +106,12 @@ fun AppScope.ModProfileCard(
                     )
             )
             .wrapContentHeight()
-            .pointerMoveFilter(
-                onEnter = { isBeingHovered = true; false },
-                onExit = { isBeingHovered = false; false }
-            ),
+            .onPointerEvent(PointerEventType.Enter) {
+                isBeingHovered = true
+            }
+            .onPointerEvent(PointerEventType.Exit) {
+                isBeingHovered = false
+            },
         shape = SmolTheme.smolFullyClippedButtonShape()
     ) {
         Box {
@@ -475,7 +478,7 @@ fun AppScope.profileControls(
                             MissingModVariantsAlertDialog(missingVariants, modProfile)
                         }
                     } else {
-                        swapModProfile(modProfile)
+                        swapModProfile(modProfile.id, emptyList())
                     }
                 }
             }) {
@@ -605,6 +608,14 @@ private fun AppScope.MissingModVariantsAlertDialog(
     missingVariants: List<UserProfile.ModProfile.ShallowModVariant>,
     modProfile: ModProfileCardInfo
 ) {
+    // See if any missing variants have newer versions that do exist.
+    val newerVersionsAvailable = SL.access.mods.value?.mods.orEmpty()
+        .mapNotNull { it.findHighestVersion }
+        .filter { newestVariant -> newestVariant.modInfo.id in missingVariants.map { it.modId } }
+        .map { UserProfile.ModProfile.ShallowModVariant(it) }
+
+    var useNewerModVariantsForMissing by remember { mutableStateOf(true) }
+
     SmolAlertDialog(
         title = {
             Text(
@@ -635,17 +646,49 @@ private fun AppScope.MissingModVariantsAlertDialog(
                 ) {
                     Text("Copy to clipboard")
                 }
+
+                if (newerVersionsAvailable.isNotEmpty()) {
+                    Text(
+                        text = "However, some mods have newer versions installed:",
+                        style = SmolTheme.alertDialogBody(),
+                        modifier = Modifier.padding(top = 32.dp)
+                    )
+                    SelectionContainer {
+                        modList(
+                            modifier = Modifier.padding(top = 16.dp),
+                            allModVariants = newerVersionsAvailable,
+                            variantsInProfile = newerVersionsAvailable
+                        )
+                    }
+
+                    Row {
+                        Text(
+                            text = "Use newer versions for missing mods",
+                            style = SmolTheme.alertDialogBody(),
+                            modifier = Modifier.padding(end = 8.dp).align(Alignment.CenterVertically)
+                        )
+                        Spacer(Modifier.weight(1f))
+                        Switch(
+                            checked = useNewerModVariantsForMissing,
+                            onCheckedChange = { useNewerModVariantsForMissing = it },
+                            modifier = Modifier.padding(start = 8.dp).align(Alignment.CenterVertically)
+                        )
+                    }
+                }
             }
         },
         onDismissRequest = { alertDialogSetter.invoke(null) },
         confirmButton = {
             SmolButton(
                 onClick = {
-                    swapModProfile(modProfile)
+                    swapModProfile(
+                        modProfileId = modProfile.id,
+                        modVariantOverrides = if (useNewerModVariantsForMissing) newerVersionsAvailable else emptyList()
+                    )
                     alertDialogSetter.invoke(null)
                 }
             ) {
-                Text("Swap without ${missingVariants.count()} mod${if (missingVariants.count() != 1) "s" else ""}")
+                Text("Swap ${if (useNewerModVariantsForMissing) "and update" else "without"} ${missingVariants.count()} mod${if (missingVariants.count() != 1) "s" else ""}")
             }
         },
         dismissButton = {
@@ -656,9 +699,12 @@ private fun AppScope.MissingModVariantsAlertDialog(
     )
 }
 
-private fun swapModProfile(modProfile: ModProfileCardInfo) {
+/**
+ * @param modVariantOverrides List of mod variants to use in the mod profile, irrespective of what the mod profile uses for those mods.
+ */
+private fun swapModProfile(modProfileId: String, modVariantOverrides: List<UserProfile.ModProfile.ShallowModVariant>) {
     GlobalScope.launch(Dispatchers.Default) {
-        SL.userModProfileManager.switchModProfile(modProfile.id)
+        SL.userModProfileManager.switchModProfile(modProfileId, modVariantOverrides)
     }
 }
 

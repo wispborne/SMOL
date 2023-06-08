@@ -61,15 +61,32 @@ class UserModProfileManager internal constructor(
         }
     }
 
-    suspend fun switchModProfile(newModProfileId: String) {
+    /**
+     * @param modVariantOverrides List of mod variants to use in the mod profile, irrespective of what the mod profile uses for those mods.
+     */
+    suspend fun switchModProfile(
+        newModProfileId: String,
+        modVariantOverrides: List<UserProfile.ModProfile.ShallowModVariant> = emptyList()
+    ) {
         try {
             isModProfileSwitching = true
             val newModProfile = userManager.activeProfile.value.modProfiles.firstOrNull { it.id == newModProfileId }
                 ?: throw NullPointerException("Unable to find mod profile $newModProfileId.")
             Timber.i { "Changing mod profile to ${newModProfile.name}" }
             trace(onFinished = { _, millis: Long -> Timber.i { "Changed mod profile to ${newModProfile.name} in ${millis}ms." } }) {
+                // Remove any mods that are overridden by the modVariantOverrides list, then add the overrides.
+                val newListOfMods = newModProfile.enabledModVariants
+                    .filter { profileMod -> profileMod.modId !in modVariantOverrides.map { override -> override.modId } }
+                    .let { it + modVariantOverrides }
+
+                val currentlyEnabledMods = access.mods.value?.mods.orEmpty()
+                    .mapNotNull {
+                        it.findFirstEnabled?.let { firstEnableVariant ->
+                            UserProfile.ModProfile.ShallowModVariant(firstEnableVariant)
+                        }
+                    }
                 val diff =
-                    userManager.activeProfile.value.activeModProfile.enabledModVariants.diff(newModProfile.enabledModVariants) { it.smolVariantId }
+                    currentlyEnabledMods.diff(newListOfMods) { it.smolVariantId }
 
                 Timber.i { "Mod profile diff for switching: $diff." }
                 val variantsToDisable = diff.removed
