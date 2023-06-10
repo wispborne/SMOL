@@ -32,10 +32,13 @@ import java.util.*
 
 internal object DiscordReader {
     private const val baseUrl = "https://discord.com/api"
-    private const val delayBetweenRequestsMillis = 1500L
+    private const val delayBetweenRequestsMillis = 40L // Allowed to do 50 requests per second
     private var timestampOfLastHttpCall: Long = 0L
     private const val serverId = "187635036525166592"
+
+    @Deprecated("Moved to forums")
     private const val modUpdatesChannelId = "1104110077075542066"
+    private const val modUpdatesForumChannelId = "1115946075262550016"
     private val urlFinderRegex = Regex(
         """(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#-]*[\w@?^=%&\/~+#-])"""
     )
@@ -58,11 +61,21 @@ internal object DiscordReader {
             }
 
         println("Scraping Discord's #mod_updates...")
-        return getMessages(
+//        return getMessages(
+//            httpClient = httpClient,
+//            authToken = authToken,
+//            limit = if (config.lessScraping) 50 else Int.MAX_VALUE
+//        )
+        return getThreads(
+            channelId = modUpdatesForumChannelId,
             httpClient = httpClient,
-            authToken = authToken,
-            limit = if (config.lessScraping) 50 else Int.MAX_VALUE
+            authToken = authToken
         )
+            .mapNotNull { thread ->
+                getMessages(channelId = thread.id, thread.name, httpClient, authToken)
+                    .firstOrNull()
+                    ?.copy(parentThread = thread)
+            }
             .also { Timber.i { "Checking for mods with $noscrapeReaction reactions." } }
             .filter { msg ->
                 val hasNoscrapeReaction = msg.reactions.orEmpty().any { it.emoji.name == noscrapeReaction }
@@ -92,7 +105,18 @@ internal object DiscordReader {
             .parallelMap { message ->
                 Timber.i { "Parsing message ${message.content?.lines()?.firstOrNull()}" }
                 // Drop any blank lines from the start of the post.
-                val messageLines = message.content?.lines().orEmpty().dropWhile { it.isBlank() }
+                // Use thread title for mod name if it's a thread.
+                val name = (if (message.isInThread()) {
+                    message.parentThread?.name
+                } else {
+                    message.content?.lines().orEmpty()
+                        .dropWhile { it.isBlank() }.firstOrNull()
+                })?.removeMarkdownFromName()
+
+                val messageLines = message.content?.lines().orEmpty()
+                    .let { if (message.isInThread()) it else it.dropWhile { it.isBlank() }.drop(1) }
+                    .dropWhile { it.isBlank() }
+
                 val forumUrl = messageLines
                     .mapNotNull { urlFinderRegex.find(it)?.value }
                     .firstOrNull { it.contains("fractalsoftworks") }
@@ -122,9 +146,9 @@ internal object DiscordReader {
                     ?: forumUrl
 
                 ScrapedMod(
-                    name = messageLines.firstOrNull()?.removeMarkdownFromName() ?: "",
-                    summary = messageLines.drop(1).take(2).joinToString(separator = "\n"),
-                    description = messageLines.drop(1).joinToString(separator = "\n"),
+                    name = name ?: "",
+                    summary = messageLines.take(2).joinToString(separator = "\n"),
+                    description = messageLines.joinToString(separator = "\n"),
                     modVersion = null,
                     gameVersionReq = "",
                     authors = message.author?.username ?: "",
@@ -133,7 +157,11 @@ internal object DiscordReader {
                     link = downloadArtifactUrl ?: forumUrl,
                     urls = listOfNotNull(
                         forumUrl?.let { ModUrlType.Forum to forumUrl },
-                        ModUrlType.Discord to Url("https://discord.com/channels/$serverId/$modUpdatesChannelId/${message.id}"),
+                        ModUrlType.Discord to
+                                if (message.isInThread())
+                                    Url("https://discord.com/channels/$serverId/${message.parentThread?.id}/${message.id}")
+                                else
+                                    Url("https://discord.com/channels/$serverId/$modUpdatesForumChannelId/${message.id}"),
                         downloadArtifactUrl?.let { ModUrlType.DirectDownload to downloadArtifactUrl },
                         downloadPageUrl?.let { ModUrlType.DownloadPage to downloadPageUrl },
                     ).toMap(),
@@ -204,7 +232,33 @@ internal object DiscordReader {
         }
     }
 
+    private suspend fun getThreads(
+        channelId: String,
+        httpClient: HttpClient,
+        authToken: String
+    ): List<Thread> {
+        val threads = mutableListOf<Thread>()
+
+        val activeThreads = makeHttpRequestWithRateLimiting(httpClient) {
+            httpClient.get("$baseUrl/guilds/$serverId/threads/active") {
+                header("Authorization", "Bot $authToken")
+                accept(ContentType.Application.Json)
+            }
+        }.body<Threads>()
+            .threads
+            .filter { it.parent_id == channelId }
+            .sortedByDescending { it.timestamp }
+
+        Timber.i { "Found ${activeThreads.count()} active threads in Discord #mod_updates." }
+        threads += activeThreads
+        Timber.v { activeThreads.joinToString(separator = "\n") }
+
+        return threads
+    }
+
     private suspend fun getMessages(
+        channelId: String,
+        channelName: String?,
         httpClient: HttpClient,
         authToken: String,
         limit: Int = Int.MAX_VALUE
@@ -215,7 +269,7 @@ internal object DiscordReader {
 
         while (messages.count() < limit && runs < 25) {
             val newMessages = makeHttpRequestWithRateLimiting(httpClient) {
-                httpClient.get("$baseUrl/channels/$modUpdatesChannelId/messages") {
+                httpClient.get("$baseUrl/channels/$channelId/messages") {
                     parameter("limit", perRequestLimit.toString())
                     header("Authorization", "Bot $authToken")
                     accept(ContentType.Application.Json)
@@ -229,13 +283,13 @@ internal object DiscordReader {
 //                .run { jsanity.fromJson<List<Message>>(this, shouldStripComments = false) }
                 .sortedByDescending { it.timestamp }
 
-            Timber.i { "Found ${newMessages.count()} posts in Discord #mod_updates." }
+            Timber.i { "Found ${newMessages.count()} posts in Discord channel $channelName." }
             messages += newMessages
             Timber.v { newMessages.joinToString(separator = "\n") }
             runs++
 
             if (newMessages.isEmpty() || newMessages.size < perRequestLimit) {
-                Timber.i { "Found all ${messages.count()} posts in Discord #mod_updates." }
+                Timber.i { "Found all ${messages.count()} posts in channel $channelName." }
                 break
             } else {
 //                delay(delayBetweenRequestsMillis)
@@ -253,7 +307,7 @@ internal object DiscordReader {
     ): List<User> {
         return makeHttpRequestWithRateLimiting(httpClient) {
             Timber.i { "Checking to see who reacted to $messageId." }
-            httpClient.get("$baseUrl/channels/$modUpdatesChannelId/messages/$messageId/reactions/$emoji") {
+            httpClient.get("$baseUrl/channels/$modUpdatesForumChannelId/messages/$messageId/reactions/$emoji") {
                 header("Authorization", "Bot $authToken")
                 accept(ContentType.Application.Json)
             }.body()
@@ -277,6 +331,27 @@ internal object DiscordReader {
             description = mod.description?.replace(discordUnrecognizedEmojiRegex, "")?.trim(),
         )
 
+    private data class Threads(
+        val threads: List<Thread>
+    )
+
+    private data class Thread(
+        val id: String,
+        val parent_id: String?,
+        val name: String?,
+        val timestamp: Date?,
+        val last_message_id: String?,
+        val owner_id: String?,
+        val message_count: Int?,
+        val available_tags: List<Tag>?,
+        val applied_tags: List<String>
+    )
+
+    private data class Tag(
+        val id: String,
+        val name: String?
+    )
+
     private data class Message(
         val id: String,
         val author: User?,
@@ -285,8 +360,11 @@ internal object DiscordReader {
         val edited_timestamp: Date?,
         val attachments: List<Attachment>?,
         val embeds: List<Embed>?,
-        val reactions: List<Reaction>?
-    )
+        val reactions: List<Reaction>?,
+        val parentThread: Thread? // Not part of the Discord API, added by me afterwards.
+    ) {
+        fun isInThread() = parentThread != null
+    }
 
     private data class User(
         val id: String,

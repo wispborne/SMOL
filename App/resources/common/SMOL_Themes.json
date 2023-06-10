@@ -20,17 +20,37 @@
       "secondaryVariant": "#FFE739",
       "surface": "#F0F0F0"
     },
-    "Trans (light)": {
-      "background": "#0AACEA",
-      "hyperlink": "#F5A9B8",
+    "Trans (pink)": {
       "isDark": false,
-      "onPrimary": "#FDFDFD",
-      "primary": "#F5A9B8",
-      "primaryVariant": "#EE8398",
-      "secondary": "#5BCEFA",
-      "secondaryVariant": "#FFFFFF",
-      "surface": "#EE8398",
-      "onSurface": "#282C34"
+      "primary": "#229AC9",
+      "primaryVariant": "#0078A7",
+      "secondary": "#1189B8",
+      "secondaryVariant": "#0078A7",
+      "background": "#D56474",
+      "surface": "#E67585",
+      "error": null,
+      "onPrimary": "#EEEEEE",
+      "onSecondary": "#EEEEEE",
+      "onBackground": "#EEEEEE",
+      "onSurface": "#FFFFFF",
+      "onError": null,
+      "hyperlink": "#0078A7"
+    },
+    "Trans (blue)": {
+      "isDark": false,
+      "primary": "#E67585",
+      "primaryVariant": "#C45363",
+      "secondary": "#F78696",
+      "secondaryVariant": "#C45363",
+      "background": "#0078A7",
+      "surface": "#1189B8",
+      "error": null,
+      "onPrimary": "#EEEEEE",
+      "onSecondary": "#EEEEEE",
+      "onBackground": "#EEEEEE",
+      "onSurface": "#FFFFFF",
+      "onError": null,
+      "hyperlink": "#F78696"
     },
     "Comes": {
       "background": "#383049",
