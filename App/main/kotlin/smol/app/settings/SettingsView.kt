@@ -210,6 +210,28 @@ fun AppScope.settingsView(
                                 }
                             }
 
+                            item {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(start = 16.dp)
+                                ) {
+                                    val isChecked = userProfile.warnAboutOneClickUpdates ?: true
+                                    CheckboxWithText(
+                                        checked = isChecked,
+                                        onCheckedChange = { checked ->
+                                            SL.userManager.updateUserProfile {
+                                                it.copy(warnAboutOneClickUpdates = checked)
+                                            }
+                                        }
+                                    ) { modifier ->
+                                        Text(
+                                            text = "Warn about one-click updates.",
+                                            modifier = modifier
+                                        )
+                                    }
+                                }
+                            }
+
                             item { Divider(modifier = Modifier.padding(top = 32.dp, bottom = 8.dp)) }
 
                             if (SL.gamePathManager.path.value.exists()) {

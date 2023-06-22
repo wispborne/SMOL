@@ -13,11 +13,8 @@
 package smol.app.home
 
 import AppScope
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.mouseClickable
-import androidx.compose.foundation.onClick
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.*
 import androidx.compose.runtime.*
@@ -25,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.input.pointer.pointerHoverIcon
@@ -33,17 +31,16 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.arkivanov.decompose.replaceCurrent
-import com.mikepenz.markdown.Markdown
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import smol.access.Constants
 import smol.access.SL
 import smol.access.model.Mod
 import smol.access.model.VersionCheckerInfo
+import smol.app.UI
 import smol.app.composables.*
 import smol.app.navigation.Screen
 import smol.app.themes.SmolTheme
@@ -83,17 +80,26 @@ fun AppScope.ModUpdateIcon(
                                 append("\n\nClick to download and update.")
                             }
                         )
-                    }, modifier = Modifier.mouseClickable {
-                        if (this.buttons.isPrimaryPressed) {
-                            alertDialogSetter {
-                                DirectDownloadAlertDialog(
-                                    ddUrl = ddUrl,
-                                    mod = mod,
-                                    onlineVersion = onlineVersion
+                    }, modifier = Modifier.onClick(
+                        matcher = PointerMatcher.mouse(PointerButton.Primary),
+                        onClick = {
+                            if (SL.userManager.activeProfile.value.warnAboutOneClickUpdates == false) {
+                                SL.UI.downloadManager.downloadFromUrl(
+                                    url = ddUrl,
+                                    appScope = this@ModUpdateIcon,
+                                    shouldInstallAfter = true
                                 )
+                            } else {
+                                alertDialogSetter {
+                                    DirectDownloadAlertDialog(
+                                        ddUrl = ddUrl,
+                                        mod = mod,
+                                        onlineVersion = onlineVersion
+                                    )
+                                }
                             }
                         }
-                    }
+                    )
                         .align(Alignment.CenterVertically)) {
                         Image(
                             painter = painterResource("icon-direct-install.svg"),
@@ -260,28 +266,29 @@ private fun AppScope.ChangelogIcon(
 //        if (changelogUrl.endsWith(".md"))
 //            Markdown(content = changelog)
 //        else
-            Text(
-                text = buildAnnotatedString {
-                    changelog.lines().forEach { line ->
-                        if (line.trimStart().startsWith("version", ignoreCase = true)) {
-                            appendLine(
-                                AnnotatedString(
-                                    line,
-                                    SpanStyle(color = MaterialTheme.colors.secondary, fontWeight = FontWeight.Bold)
-                                )
+        Text(
+            text = buildAnnotatedString {
+                changelog.lines().forEach { line ->
+                    if (line.trimStart().startsWith("version", ignoreCase = true)) {
+                        appendLine(
+                            AnnotatedString(
+                                line,
+                                SpanStyle(color = MaterialTheme.colors.secondary, fontWeight = FontWeight.Bold)
                             )
-                        } else {
-                            appendLine(AnnotatedString(line))
-                        }
+                        )
+                    } else {
+                        appendLine(AnnotatedString(line))
                     }
-                },
-                fontSize = 16.sp
-            )
+                }
+            },
+            fontSize = 16.sp
+        )
     }
 
     SmolTooltipArea(tooltip = {
         SmolTooltipBackground(
-            modifier = modifier.width(800.dp).height(500.dp),) {
+            modifier = modifier.width(800.dp).height(500.dp),
+        ) {
             Column {
 
                 Text(
@@ -296,7 +303,10 @@ private fun AppScope.ChangelogIcon(
                         appendLine(
                             AnnotatedString(
                                 "Changelog",
-                                SpanStyle(fontStyle = SmolTheme.alertDialogTitle().fontStyle, fontWeight = FontWeight.Bold)
+                                SpanStyle(
+                                    fontStyle = SmolTheme.alertDialogTitle().fontStyle,
+                                    fontWeight = FontWeight.Bold
+                                )
                             )
                         )
                         appendLine("----------------")

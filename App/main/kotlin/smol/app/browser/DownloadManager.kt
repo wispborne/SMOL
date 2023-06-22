@@ -14,13 +14,10 @@ package smol.app.browser
 
 import AppScope
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.runtime.toMutableStateList
 import io.ktor.http.*
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import smol.access.Constants
 import smol.access.config.GamePathManager
@@ -75,6 +72,7 @@ class DownloadManager(
         url: String,
         appScope: AppScope,
         shouldInstallAfter: Boolean = true,
+        shouldSwitchToAfter: Boolean = true,
         allowRedownload: Boolean = true
     ): DownloadItem {
         val id = UUID.randomUUID().toString()
@@ -157,9 +155,19 @@ class DownloadManager(
                         access.installFromUnknownSource(
                             inputFile = file,
                             destinationFolder = destinationFolder,
-                            promptUserToReplaceExistingFolder = { appScope.duplicateModAlertDialogState.showDialogBooleo(it) }
+                            promptUserToReplaceExistingFolder = {
+                                appScope.duplicateModAlertDialogState.showDialogBooleo(
+                                    it
+                                )
+                            }
                         )
-                        access.reload()
+                        val newMods = access.reload()?.added.orEmpty()
+
+                        if (shouldSwitchToAfter) {
+                            newMods.forEach { variant ->
+                                variant.mod(access)?.let { mod -> access.changeActiveVariant(mod = mod, variant) }
+                            }
+                        }
                     }
                 }
             }

@@ -66,7 +66,7 @@ jobs:
       - name: "git checkout of SMOL dist"
         uses: actions/checkout@v3
         with:
-          repository: "davidwhitman/SMOL_Dist"
+          repository: "wispborne/SMOL_Dist"
           ref: ${{ env.smol_branch }}
           path: ${{ env.artifacts_folder }}
           token: ${{ secrets.WRITE_PAT }}
@@ -107,7 +107,7 @@ jobs:
       - name: "Commit files"
         run: |
           cd "../SMOL_Dist/${{ env.artifacts_folder }}"
-          git config --local user.email "1343347+davidwhitman@users.noreply.github.com"
+          git config --local user.email "1343347+wispborne@users.noreply.github.com"
           git config --local user.name "Beta Core [GitHub Actions]"
           git add .
           git commit -m "{{ steps.version.outputs.full }}"
@@ -116,7 +116,7 @@ jobs:
         if: steps.version.outputs.is_valid == 'true'
         uses: ad-m/github-push-action@master
         with:
-          repository: "davidwhitman/SMOL_Dist"
+          repository: "wispborne/SMOL_Dist"
           branch: ${{ env.smol_branch }}
           directory: "${{ env.artifacts_folder }}/SMOL_Dist"
           github_token: ${{ secrets.WRITE_PAT }}
