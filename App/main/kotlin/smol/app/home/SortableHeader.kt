@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.mouseClickable
+import androidx.compose.foundation.onClick
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
@@ -41,7 +42,7 @@ fun RowScope.SortableHeader(
 ) {
     val isSortActive = activeSortField == columnSortField
     Row(modifier
-        .mouseClickable {
+        .onClick {
             SL.userManager.updateUserProfile {
                 it.copy(
                     modGridPrefs = it.modGridPrefs.copy(
@@ -59,6 +60,7 @@ fun RowScope.SortableHeader(
         Box(
             modifier = Modifier
                 .align(Alignment.CenterVertically)
+                .weight(1f, fill = false)
         ) {
             SmolDropdownArrow(
                 modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 8.dp, end = 12.dp)

@@ -27,6 +27,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -203,7 +207,11 @@ fun AppScope.settingsView(
                                         }
                                     ) { modifier ->
                                         Text(
-                                            text = "Use Starsector font for mod names.",
+                                            text = buildAnnotatedString {
+                                                append("Use ")
+                                                append(AnnotatedString("Starsector font", SpanStyle(fontFamily = SmolTheme.orbitronSpaceFont)))
+                                                append(" for mod names.")
+                                            },
                                             modifier = modifier
                                         )
                                     }

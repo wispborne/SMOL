@@ -13,7 +13,6 @@
 package smol.app.home
 
 import AppScope
-import smol.VramChecker
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Checkbox
@@ -37,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import smol.VramChecker
 import smol.access.SL
 import smol.access.model.Mod
 import smol.access.model.UserProfile
@@ -73,6 +73,7 @@ fun AppScope.ModGridHeader(
                                 .align(Alignment.CenterVertically)
                         )
                     }
+
                     UserProfile.ModGridHeader.ChangeVariantButton -> {
                         // Enabled/Disabled
                         SortableHeader(
@@ -150,6 +151,7 @@ fun AppScope.ModGridHeader(
                         Row(modifier = Modifier
                             .weight(1f)
                             .align(Alignment.CenterVertically)
+                            // Set the location of the VRAM column so that the VRAM sum on the Enabled/Disabled groups can use the same position.
                             .onGloballyPositioned { vramPosition.value = it.boundsInParent().left.dp }) {
                             SmolTooltipArea(
                                 tooltip = {
@@ -172,7 +174,13 @@ fun AppScope.ModGridHeader(
                                     profile = profile,
                                     modifier = Modifier.align(Alignment.CenterVertically)
                                 ) {
-                                    Text(text = "Est VRAM Impact", fontWeight = FontWeight.Bold)
+                                    Text(
+                                        text = "VRAM Est.",
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.weight(1f, fill = false),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
                                 }
                             }
 
@@ -187,9 +195,9 @@ fun AppScope.ModGridHeader(
                                 IconButton(
                                     onClick = { showVramRefreshWarning.value = true },
                                     modifier = Modifier
-                                        .padding(start = 6.dp)
-                                        .size(20.dp)
                                         .align(Alignment.CenterVertically)
+                                        .padding(start = 4.dp)
+                                        .size(20.dp)
                                 ) {
                                     Icon(
                                         painter = painterResource("icon-refresh.svg"),
@@ -215,6 +223,7 @@ fun AppScope.ModGridHeader(
                             overflow = TextOverflow.Ellipsis
                         )
                     }
+
                     UserProfile.ModGridHeader.Category ->
                         // Category
 
