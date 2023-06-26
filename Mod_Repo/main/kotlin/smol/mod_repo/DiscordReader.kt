@@ -20,6 +20,7 @@ import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.gson.*
 import kotlinx.coroutines.delay
@@ -43,8 +44,11 @@ internal object DiscordReader {
         """(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#-]*[\w@?^=%&\/~+#-])"""
     )
     private const val noscrapeReaction = "\uD83D\uDD78️"
+    var apiCallsLastRun = 0
 
     internal suspend fun readAllMessages(config: Main.Companion.Config, gsonBuilder: GsonBuilder): List<ScrapedMod>? {
+        apiCallsLastRun = 0
+
         val authToken = config.discordAuthToken ?: run {
             Timber.w { "No auth token found in ${Main.configFilePath}." }
             return@readAllMessages null
@@ -61,18 +65,24 @@ internal object DiscordReader {
             }
 
         println("Scraping Discord's #mod_updates...")
-//        return getMessages(
-//            httpClient = httpClient,
-//            authToken = authToken,
-//            limit = if (config.lessScraping) 50 else Int.MAX_VALUE
-//        )
-        return getThreads(
+
+        val modUpdatesChannel = getChannel(
             channelId = modUpdatesForumChannelId,
             httpClient = httpClient,
             authToken = authToken
         )
+
+        val categoriesLookup = modUpdatesChannel.available_tags.orEmpty().associate { it.id to it.name }
+
+        return getThreads(
+            channelId = modUpdatesForumChannelId,
+            httpClient = httpClient,
+            authToken = authToken,
+            getFullChannelInfo = true
+        )
             .mapNotNull { thread ->
-                getMessages(channelId = thread.id, thread.name, httpClient, authToken)
+                // For threads, take just the first message of the thread.
+                getMessages(channelId = thread.id, thread.name, httpClient, authToken, limit = 1)
                     .firstOrNull()
                     ?.copy(parentThread = thread)
             }
@@ -167,7 +177,7 @@ internal object DiscordReader {
                     ).toMap(),
                     source = ModSource.Discord,
                     sources = listOf(ModSource.Discord),
-                    categories = emptyList(),
+                    categories = message.parentThread?.applied_tags.orEmpty().mapNotNull { categoriesLookup[it] },
                     images = message.attachments
                         ?.filter { it.content_type?.startsWith("image/") ?: false }
                         ?.associate {
@@ -187,6 +197,7 @@ internal object DiscordReader {
             }
             .map { cleanUpMod(it) }
             .filter { it.name.isNotBlank() } // Remove any posts that don't contain text.
+            .also { Timber.i { "Discord API calls used: $apiCallsLastRun." } }
     }
 
     /**
@@ -232,18 +243,45 @@ internal object DiscordReader {
         }
     }
 
-    private suspend fun getThreads(
+    private suspend fun getChannel(
         channelId: String,
         httpClient: HttpClient,
         authToken: String
-    ): List<Thread> {
-        val threads = mutableListOf<Thread>()
+    ): Channel {
+        val channel = makeHttpRequestWithRateLimiting(httpClient) {
+            httpClient.get("$baseUrl/channels/$channelId") {
+                header("Authorization", "Bot $authToken")
+                accept(ContentType.Application.Json)
+            }
+                .also {
+                    Timber.v { it.bodyAsText() }
+                }
+        }.body<Channel>()
+
+        Timber.i { "Found ${channel.name} in Discord." }
+
+        return channel
+    }
+
+    /**
+     * @param getFullChannelInfo If true, will make a second request for each Thread to get the full channel info, including tags.
+     */
+    private suspend fun getThreads(
+        channelId: String,
+        httpClient: HttpClient,
+        authToken: String,
+        getFullChannelInfo: Boolean = false
+    ): List<Channel> {
+        val threads = mutableListOf<Channel>()
 
         val activeThreads = makeHttpRequestWithRateLimiting(httpClient) {
             httpClient.get("$baseUrl/guilds/$serverId/threads/active") {
                 header("Authorization", "Bot $authToken")
                 accept(ContentType.Application.Json)
             }
+                .also {
+                    Timber.v { it.bodyAsText() }
+                }
         }.body<Threads>()
             .threads
             .filter { it.parent_id == channelId }
@@ -253,7 +291,13 @@ internal object DiscordReader {
         threads += activeThreads
         Timber.v { activeThreads.joinToString(separator = "\n") }
 
-        return threads
+        val channels = if (getFullChannelInfo) {
+            Timber.i { "Getting full channel info for ${activeThreads.count()} threads." }
+            activeThreads.map { getChannel(it.id, httpClient, authToken) }
+                .also { Timber.v { it.joinToString(separator = "\n") } }
+        } else activeThreads
+
+        return channels
     }
 
     private suspend fun getMessages(
@@ -279,6 +323,9 @@ internal object DiscordReader {
                         parameter("before", messages.last().id)
                     }
                 }
+                    .also {
+                        Timber.v { it.bodyAsText() }
+                    }
             }.body<List<Message>>()
 //                .run { jsanity.fromJson<List<Message>>(this, shouldStripComments = false) }
                 .sortedByDescending { it.timestamp }
@@ -318,6 +365,7 @@ internal object DiscordReader {
         client: HttpClient,
         call: suspend (client: HttpClient) -> T
     ): T {
+        apiCallsLastRun++
         delay(((timestampOfLastHttpCall + delayBetweenRequestsMillis) - Instant.now().toEpochMilli()).coerceAtLeast(0))
         timestampOfLastHttpCall = Instant.now().toEpochMilli()
         return call(client)
@@ -331,11 +379,7 @@ internal object DiscordReader {
             description = mod.description?.replace(discordUnrecognizedEmojiRegex, "")?.trim(),
         )
 
-    private data class Threads(
-        val threads: List<Thread>
-    )
-
-    private data class Thread(
+    private data class Channel(
         val id: String,
         val parent_id: String?,
         val name: String?,
@@ -344,7 +388,11 @@ internal object DiscordReader {
         val owner_id: String?,
         val message_count: Int?,
         val available_tags: List<Tag>?,
-        val applied_tags: List<String>
+        val applied_tags: List<String>?
+    )
+
+    private data class Threads(
+        val threads: List<Channel>
     )
 
     private data class Tag(
@@ -361,7 +409,7 @@ internal object DiscordReader {
         val attachments: List<Attachment>?,
         val embeds: List<Embed>?,
         val reactions: List<Reaction>?,
-        val parentThread: Thread? // Not part of the Discord API, added by me afterwards.
+        val parentThread: Channel? // Not part of the Discord API, added by me afterwards.
     ) {
         fun isInThread() = parentThread != null
     }
