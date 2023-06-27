@@ -16,7 +16,10 @@ import AppScope
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material.*
+import androidx.compose.material.Icon
+import androidx.compose.material.LocalContentColor
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,11 +61,25 @@ fun AppScope.ModUpdateIcon(
     onlineVersionInfo: VersionCheckerInfo?,
     mod: Mod
 ) {
+    val alpha = 0.4f
+
     Row(modifier) {
         // If successfully version checked...
         if (highestLocalVersion != null && onlineVersion != null) {
             val hasUpdate = onlineVersion > highestLocalVersion && onlineVersionInfo != null
-            ChangelogIcon(onlineVersionInfo, mod, hasUpdate, modifier = Modifier.align(Alignment.CenterVertically))
+            val changelogUrl = onlineVersionInfo?.changelogUrl?.nullIfBlank()
+                ?: mod.findHighestVersion?.versionCheckerInfo?.changelogUrl?.nullIfBlank()
+
+            if (changelogUrl != null) {
+                ChangelogIcon(
+                    onlineVersionInfo,
+                    mod,
+                    hasUpdate,
+                    alpha,
+                    changelogUrl,
+                    modifier = Modifier.align(Alignment.CenterVertically)
+                )
+            }
 
             // ...and if an update was found.
             if (hasUpdate) {
@@ -101,10 +118,10 @@ fun AppScope.ModUpdateIcon(
                         }
                     )
                         .align(Alignment.CenterVertically)) {
-                        Image(
+                        Icon(
                             painter = painterResource("icon-direct-install.svg"),
                             contentDescription = null,
-                            colorFilter = ColorFilter.tint(color = MaterialTheme.colors.secondary),
+                            tint = MaterialTheme.colors.secondary,
                             modifier = Modifier.width(SmolTheme.modUpdateIconSize.dp)
                                 .height(SmolTheme.modUpdateIconSize.dp)
                                 .padding(end = 8.dp)
@@ -164,7 +181,7 @@ fun AppScope.ModUpdateIcon(
                             colorFilter = ColorFilter.tint(
                                 color =
                                 if (ddUrl == null) MaterialTheme.colors.secondary
-                                else MaterialTheme.colors.secondary.copy(alpha = ContentAlpha.disabled)
+                                else MaterialTheme.colors.secondary.copy(alpha = alpha)
                             ),
                             modifier = Modifier.width(SmolTheme.modUpdateIconSize.dp)
                                 .height(SmolTheme.modUpdateIconSize.dp)
@@ -180,18 +197,12 @@ fun AppScope.ModUpdateIcon(
                         )
                     }
                 }
-            } else {
-                // ...and no update was found.
+            } else if (changelogUrl == null) {
+                // If no update was found and there's no changelog, add a spacer to make version numbers align better.
                 SmolTooltipArea(
                     tooltip = { SmolTooltipText("Up to date!") }
                 ) {
-                    Image(
-                        painter = painterResource("icon-check.svg"),
-                        contentDescription = null,
-                        colorFilter = ColorFilter.tint(
-                            color = LocalContentColor.current.copy(alpha = 0.2f),
-                        ),
-                        alpha = 0f,
+                    Spacer(
                         modifier = Modifier.width(SmolTheme.modUpdateIconSize.dp).height(SmolTheme.modUpdateIconSize.dp)
                             .padding(end = 8.dp)
                             .align(Alignment.CenterVertically)
@@ -210,7 +221,7 @@ fun AppScope.ModUpdateIcon(
                         .colorMatrix(ColorMatrix().apply {
                             setToSaturation(0F)
                         }),
-                    alpha = 0.2f,
+                    alpha = alpha,
                     modifier = Modifier.width(SmolTheme.modUpdateIconSize.dp).height(SmolTheme.modUpdateIconSize.dp)
                         .padding(end = 8.dp)
                         .align(Alignment.CenterVertically)
@@ -221,12 +232,10 @@ fun AppScope.ModUpdateIcon(
             SmolTooltipArea(
                 tooltip = { SmolTooltipText("This mod supports Version Checker but there was a problem checking the online version.\nPlease visit the mod page to manually find updates.") }
             ) {
-                Image(
+                Icon(
                     painter = painterResource("icon-exclamation.svg"),
                     contentDescription = null,
-                    colorFilter = ColorFilter.tint(
-                        color = LocalContentColor.current.copy(alpha = 0.2f),
-                    ),
+                    tint = LocalContentColor.current.copy(alpha = alpha),
                     modifier = Modifier.width(SmolTheme.modUpdateIconSize.dp).height(SmolTheme.modUpdateIconSize.dp)
                         .padding(end = 8.dp)
                         .align(Alignment.CenterVertically)
@@ -236,17 +245,16 @@ fun AppScope.ModUpdateIcon(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun AppScope.ChangelogIcon(
     onlineVersionInfo: VersionCheckerInfo?,
     mod: Mod,
     hasUpdate: Boolean,
+    alpha: Float,
+    changelogUrl: String,
     modifier: Modifier = Modifier
 ) {
-    val changelogUrl = onlineVersionInfo?.changelogUrl?.nullIfBlank()
-        ?: mod.findHighestVersion?.versionCheckerInfo?.changelogUrl?.nullIfBlank() ?: return
-
     var changelog by remember { mutableStateOf("Loading...") }
 
     // Download text from changelogUrl.
@@ -316,15 +324,13 @@ private fun AppScope.ChangelogIcon(
             }
         }
     }, modifier = modifier) {
-        Image(
+        Icon(
             painter = painterResource("icon-bullhorn-variant.svg"),
             contentDescription = null,
 //            colorFilter = ColorFilter.tint(color = if (hasUpdate) MaterialTheme.colors.secondary else MaterialTheme.colors.primary),
-            colorFilter =
-            if (hasUpdate) ColorFilter.tint(color = MaterialTheme.colors.secondary)
-            else ColorFilter.tint(
-                color = LocalContentColor.current.copy(alpha = 0.2f),
-            ),
+            tint =
+            if (hasUpdate) MaterialTheme.colors.secondary
+            else LocalContentColor.current.copy(alpha = alpha),
             modifier = modifier
                 .width(SmolTheme.modUpdateIconSize.dp)
                 .height(SmolTheme.modUpdateIconSize.dp)

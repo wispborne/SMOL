@@ -54,7 +54,9 @@ fun AppScope.DirectDownloadAlertDialog(
                 SL.UI.downloadManager.downloadFromUrl(
                     url = ddUrl,
                     appScope = this,
-                    shouldInstallAfter = true
+                    shouldInstallAfter = true,
+                    // If the mod was enabled, switch to new version. Otherwise, keep disabled
+                    shouldSwitchToAfter = mod.hasEnabledVariant
                 )
             }) { Text("Take the risk") }
         },
