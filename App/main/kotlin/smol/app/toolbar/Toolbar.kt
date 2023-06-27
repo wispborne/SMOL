@@ -198,8 +198,8 @@ private fun AppScope.launchStarsector() {
     // No idea why.
     val directLaunch = true
     if (directLaunch) {
-        val workingDir = SL.gamePathManager.path.value?.resolve("starsector-core")
-        val starsectorCoreDir = SL.gamePathManager.path.value?.resolve("starsector-core")
+        val workingDir = SL.gamePathManager.getGameCoreFolderPath()
+        val starsectorCoreDir = SL.gamePathManager.getGameCoreFolderPath()
         val gameLauncher = SL.gamePathManager.path.value?.resolve("jre/bin/java.exe")?.normalize()
         val (vmparams, launchPrefs) = kotlin.runCatching {
             val vmp = getCurrentVmParams()
@@ -237,7 +237,7 @@ private fun AppScope.launchStarsector() {
             }
         }
     } else {
-        val workingDir = SL.gamePathManager.path.value?.resolve("starsector-core")!!
+        val workingDir = SL.gamePathManager.getGameCoreFolderPath()!!
         val gameJava = SL.gamePathManager.path.value?.resolve("jre/bin/java.exe")!!
         val gameLauncher = SL.gamePathManager.path.value?.resolve("starsector-core/starsector.bat")
         CoroutineScope(Job()).launch(Dispatchers.IO) {

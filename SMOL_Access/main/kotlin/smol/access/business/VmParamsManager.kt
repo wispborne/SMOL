@@ -39,7 +39,7 @@ class VmParamsManager(
     private val backupPath = gamePathManager.path.value?.let {
         when (platform) {
             Platform.Windows -> it.resolve("vmparams.bak")
-            Platform.MacOS -> TODO()
+            Platform.MacOS -> it.resolve("Contents/MacOS/starsector_mac.sh.bak")
             Platform.Linux -> it.resolve("starsector.sh.bak")
         }
     }
@@ -57,7 +57,7 @@ class VmParamsManager(
         return when (platform) {
             Platform.Windows -> gamePath.value?.resolve("vmparams")
             Platform.Linux -> gamePath.value?.resolve("starsector.sh")
-            Platform.MacOS -> TODO()
+            Platform.MacOS -> gamePath.value?.resolve("Contents/MacOS/starsector_mac.sh")
         }
     }
 

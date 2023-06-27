@@ -18,5 +18,8 @@ pluginManagement {
     }
 
 }
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention") version("0.4.0")
+}
 rootProject.name = "SMOL"
 include("App", "SMOL_Access", "VRAM_Checker", "UpdateStager", "Utilities", "Mod_Repo", "UpdateInstaller")

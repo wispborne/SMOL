@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -409,11 +410,14 @@ fun AppScope.ModBrowserView(
                                             startUrl = defaultUrl ?: Constants.FORUM_MOD_INDEX_URL
                                         )
                                     } else {
-                                        Text(
-                                            text = "CEF (Chromium browser) not found." +
-                                                    "\nIf you would like to use it, please download JCEF from 'Assets' on https://github.com/wispborne/SMOL/releases and extract the folder into SMOL's 'libs' folder.",
-                                            modifier = Modifier.align(Alignment.CenterHorizontally)
-                                        )
+                                        SelectionContainer {
+                                            Text(
+                                                text = "CEF (Chromium browser) not found." +
+                                                        "\nIf you would like to use it, please download JCEF from 'Assets' on https://github.com/wispborne/SMOL/releases and extract the folder into SMOL's 'libs' folder." +
+                                                        "\n\n Alternatively, try out https://starmodder2.pages.dev/#/.",
+                                                modifier = Modifier.align(Alignment.CenterHorizontally)
+                                            )
+                                        }
                                     }
                                 }
                             }

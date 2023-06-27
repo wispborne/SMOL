@@ -22,10 +22,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import smol.access.Constants
 import smol.timber.ktx.Timber
-import smol.utilities.IOLock
-import smol.utilities.Platform
-import smol.utilities.exists
-import smol.utilities.toPathOrNull
+import smol.utilities.*
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
@@ -60,7 +57,7 @@ class GamePathManager internal constructor(
                         "SOFTWARE\\Fractal Softworks\\Starsector",
                         ""
                     )
-                Platform.MacOS -> "" // TODO
+                Platform.MacOS -> "/Applications/Starsector.app"
                 Platform.Linux -> "" // TODO
                 else -> "" // TODO
             }
@@ -71,6 +68,22 @@ class GamePathManager internal constructor(
                 it.printStackTrace()
             }
             .getOrNull()
+
+    fun getGameExeFolderPath(gameFolderPath: Path = value_.value!!) =
+        when(currentPlatform) {
+            Platform.Windows -> gameFolderPath
+            Platform.MacOS -> gameFolderPath.parent
+            Platform.Linux -> TODO()
+            else -> null
+        }
+
+    fun getGameCoreFolderPath(gameFolderPath: Path = value_.value!!) =
+        when(currentPlatform) {
+            Platform.Windows -> gameFolderPath
+            Platform.MacOS -> gameFolderPath.resolve("Contents/Resources/Java")
+            Platform.Linux -> TODO()
+            else -> null
+        }
 
     fun getModsPath(): Path? {
         val starsectorPath = path.value?.run { if (!this.exists()) null else this }

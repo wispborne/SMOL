@@ -40,9 +40,7 @@ import smol.app.navigation.rememberRouter
 import smol.app.themes.SmolTheme
 import smol.app.themes.SmolTheme.toColors
 import smol.timber.ktx.Timber
-import smol.utilities.equalsAny
-import smol.utilities.exists
-import smol.utilities.nullIfBlank
+import smol.utilities.*
 import java.awt.Desktop
 import java.net.URI
 import java.nio.file.Path
@@ -173,6 +171,7 @@ fun smolPreview(modifier: Modifier = Modifier, content: @Composable AppScope.() 
 }
 
 fun Constants.isJCEFEnabled() =
+    currentPlatform == Platform.Windows &&
     kotlin.runCatching {
         Path.of("libs").listDirectoryEntries().any { it.name.startsWith("jcef") }
     }

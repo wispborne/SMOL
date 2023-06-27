@@ -25,10 +25,11 @@ import smol.access.model.ModInfo
 import smol.access.model.ModVariant
 import smol.timber.ktx.Timber
 import smol.utilities.*
+import smol.utilities.deleteRecursively
 import java.nio.file.FileVisitOption
+import java.nio.file.LinkOption
 import java.nio.file.Path
-import kotlin.io.path.exists
-import kotlin.io.path.nameWithoutExtension
+import kotlin.io.path.*
 
 class Access internal constructor(
     private val staging: Staging,
@@ -73,22 +74,22 @@ class Access internal constructor(
             } else if (!newGamePath.exists()) {
                 errors[SettingsPath.Game]?.add("Game path '$newGamePath' doesn't exist!")
             } else {
-                var hasGameExe = false
-                var hasGameCoreExe = false
+                var hasGameExe = gamePathManager.getGameExeFolderPath(newGamePath)?.exists() ?: false
+                var hasGameCoreExe = gamePathManager.getGameCoreFolderPath(newGamePath)?.exists() ?: false
 
-                newGamePath.walk(maxDepth = 1, options = arrayOf(FileVisitOption.FOLLOW_LINKS))
-                    .map { it.nameWithoutExtension.lowercase() }
-                    .forEach {
-                        if (it == "starsector") hasGameExe = true
-                        if (it == "starsector-core") hasGameCoreExe = true
-                    }
+//                newGamePath.walk(maxDepth = 1, options = arrayOf(FileVisitOption.FOLLOW_LINKS))
+//                    .map { it.absolutePathString().lowercase() }
+//                    .forEach {
+//                        if (it.endsWith(gamePathManager.getGameExeFolderPath()?.name?.lowercase() ?: "")) hasGameExe = true
+//                        if (it.endsWith(gamePathManager.getGameCoreFolderPath()?.name?.lowercase() ?: "")) hasGameCoreExe = true
+//                    }
 
-                if (!hasGameExe) {
+                if (currentPlatform == Platform.Windows && !hasGameExe) {
                     errors[SettingsPath.Game]?.add("Folder 'starsector' doesn't exist!")
                 }
 
                 if (!hasGameCoreExe) {
-                    errors[SettingsPath.Game]?.add("Folder 'starsector-core' doesn't exist!")
+                    errors[SettingsPath.Game]?.add("Folder '${gamePathManager.getGameCoreFolderPath()?.relativeTo(gamePathManager.path.value ?: Path("/"))}' not found!")
                 } else {
                 }
             }

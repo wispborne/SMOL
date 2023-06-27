@@ -109,23 +109,23 @@ object Logging {
 //        Timber.plant(tinyLoggerTree())
     }
 
-    private fun tinyLoggerTree() = object : Timber.Tree() {
-        override fun log(priority: LogLevel, tag: String?, message: String, t: Throwable?) {
-            if (priority < logLevel) {
-                return
-            }
-
-            val messageMaker = { "${if (tag != null) "{$tag} " else ""}$message" }
-            when (priority) {
-                LogLevel.VERBOSE -> Logger.trace(t, messageMaker)
-                LogLevel.DEBUG -> Logger.debug(t, messageMaker)
-                LogLevel.INFO -> Logger.info(t, messageMaker)
-                LogLevel.WARN -> Logger.warn(t, messageMaker)
-                LogLevel.ERROR -> Logger.error(t, messageMaker)
-                LogLevel.ASSERT -> Logger.error(t, messageMaker)
-            }
-        }
-    }
+//    private fun tinyLoggerTree() = object : Timber.Tree() {
+//        override fun log(priority: LogLevel, tag: String?, message: String, t: Throwable?) {
+//            if (priority < logLevel) {
+//                return
+//            }
+//
+//            val messageMaker = { "${if (tag != null) "{$tag} " else ""}$message" }
+//            when (priority) {
+//                LogLevel.VERBOSE -> Logger.trace(t, messageMaker)
+//                LogLevel.DEBUG -> Logger.debug(t, messageMaker)
+//                LogLevel.INFO -> Logger.info(t, messageMaker)
+//                LogLevel.WARN -> Logger.warn(t, messageMaker)
+//                LogLevel.ERROR -> Logger.error(t, messageMaker)
+//                LogLevel.ASSERT -> Logger.error(t, messageMaker)
+//            }
+//        }
+//    }
 //
 //    private fun setupLog4J() {
 //        val builder = ConfigurationBuilderFactory.newConfigurationBuilder()

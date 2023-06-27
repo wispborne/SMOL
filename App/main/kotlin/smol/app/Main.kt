@@ -187,7 +187,9 @@ fun main() = application {
             })
         }
 
-        saveWindowParamsOnChange(appWindowState, uiConfig!!)
+        if (uiConfig != null) {
+            saveWindowParamsOnChange(appWindowState, uiConfig)
+        }
 
         smol.utilities.trace(onFinished = { _, ms -> println("Took ${ms}ms to show AppView ${sinceStartStr()}.") }) {
             smolWindowState.appView()
