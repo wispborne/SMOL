@@ -53,6 +53,7 @@ fun AppScope.DirectDownloadAlertDialog(
                 alertDialogSetter(null)
                 SL.UI.downloadManager.downloadFromUrl(
                     url = ddUrl,
+                    name = mod.findFirstEnabledOrHighestVersion?.modInfo?.name ?: "Unknown",
                     appScope = this,
                     shouldInstallAfter = true,
                     // If the mod was enabled, switch to new version. Otherwise, keep disabled

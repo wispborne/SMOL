@@ -12,6 +12,8 @@
 
 package smol.access.model
 
+import java.time.ZonedDateTime
+
 data class UserProfile(
     val id: Int,
     val username: String,
@@ -36,7 +38,9 @@ data class UserProfile(
         val name: String,
         val description: String,
         val sortOrder: Int,
-        val enabledModVariants: List<ShallowModVariant>
+        val enabledModVariants: List<ShallowModVariant>,
+        val dateCreated: ZonedDateTime?,
+        val dateModified: ZonedDateTime?
     ) {
         data class ShallowModVariant(
             val modId: String,

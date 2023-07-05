@@ -14,7 +14,6 @@ package smol.access
 
 import io.ktor.client.call.*
 import io.ktor.client.request.*
-import io.ktor.client.statement.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,6 +26,7 @@ import smol.utilities.Jsanity
 import java.nio.file.Path
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import kotlin.io.path.name
 import kotlin.io.path.readText
 
 class ModRepo internal constructor(private val jsanity: Jsanity, private val httpClientBuilder: HttpClientBuilder) {
@@ -70,7 +70,13 @@ class ModRepo internal constructor(private val jsanity: Jsanity, private val htt
                     .onSuccess { Timber.i { "Fetched mod repo from $modRepoUrl." } }
                     .onFailure { Timber.w(it) { "Unable to fetch mods from $modRepoUrl." } }
                     .getOrNull()
-                    ?.let { jsanity.fromJson<ScrapedModsRepo>(json = it, shouldStripComments = false) }
+                    ?.let {
+                        jsanity.fromJson<ScrapedModsRepo>(
+                            json = it,
+                            file = localModRepo.name,
+                            shouldStripComments = false
+                        )
+                    }
 
             if (freshIndexMods != null) {
                 Timber.i { "Updated scraped mods. Previous: ${modRepoCache.items.count()}, now: ${freshIndexMods.items.count()}" }

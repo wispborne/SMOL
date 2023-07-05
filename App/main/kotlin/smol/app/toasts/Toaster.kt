@@ -87,7 +87,10 @@ class ToasterState {
 
     fun addItem(toastContainer: ToastContainer) = addItems(toastContainer.asList())
 
-    fun remove(toastId: String) {
+    /**
+     * Removes the toast.
+     */
+    fun burn(toastId: String) {
         if (!timersByToastId.containsKey(toastId)) {
             timersByToastId[toastId] = 0
         }
@@ -182,6 +185,9 @@ private fun renderToast(toastContainer: ToastContainer) {
     }
 }
 
+/**
+ * Toast container.
+ */
 data class ToastContainer(
     val id: String,
     val timeoutMillis: Long? = ToasterState.defaultTimeoutMillis,

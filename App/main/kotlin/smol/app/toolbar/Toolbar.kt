@@ -518,6 +518,14 @@ fun AppScope.quickLinksDropdown(modifier: Modifier = Modifier) {
                 onClick = {
                     logPath?.openInDesktop()
                 }
+            ),
+            SmolDropdownMenuItemTemplate(
+                text = "SMOL",
+                iconPath = "icon-file-debug.svg",
+                isEnabled = logPath?.isReadable() == true,
+                onClick = {
+                    logPath?.openInDesktop()
+                }
             )
         )
     )

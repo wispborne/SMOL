@@ -155,6 +155,7 @@ fun SmolScrollableDialog(
         .fillMaxHeight()
         .background(Color.Black.copy(alpha = ContentAlpha.medium)),
     onDismissRequest: () -> Unit,
+    confirmButton: @Composable (() -> Unit)? = { SmolButton(onClick = { onDismissRequest() }) { Text("Ok") } },
     dismissButton: @Composable (() -> Unit)? = null,
     title: @Composable (() -> Unit)? = null,
     shape: Shape = MaterialTheme.shapes.medium,
@@ -190,6 +191,7 @@ fun SmolScrollableDialog(
             val scrimColor = Color.Black.copy(alpha = 0.32f)
             Box(
                 modifier = modifier
+                    // TODO shrink to fit, make this only the max size, not min.
                     .fillMaxSize(0.8f)
                     .background(scrimColor)
                     .pointerInput(onDismissRequest) {
@@ -230,10 +232,17 @@ fun SmolScrollableDialog(
                                         .fillMaxHeight()
                                 )
                             }
-                            if (dismissButton != null) {
+                            if (confirmButton != null || dismissButton != null) {
                                 Spacer(Modifier.height(8.dp))
-                                Box(Modifier.padding(end = 4.dp).align(Alignment.End)) {
-                                    dismissButton()
+                                Row(Modifier.padding(end = 4.dp).align(Alignment.End)) {
+                                    if (dismissButton != null) {
+                                        dismissButton()
+                                    }
+                                    if (confirmButton != null) {
+                                        Box(Modifier.padding(start = 8.dp)) {
+                                            confirmButton()
+                                        }
+                                    }
                                 }
                             }
                         }

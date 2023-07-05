@@ -136,7 +136,7 @@ class UpdateSmolToast {
                                                                 updateStage = UpdateStage.Installing
                                                                 smolUpdater.installUpdate()
                                                                 updateStage = UpdateStage.Done
-                                                                toasterState.remove(UPDATE_TOAST_ID)
+                                                                toasterState.burn(UPDATE_TOAST_ID)
                                                                 onUpdateInstalled.invoke()
                                                             } catch (e: Exception) {
                                                                 Timber.w(e)
@@ -199,7 +199,7 @@ class UpdateSmolToast {
                                         .align(Alignment.CenterVertically)
                                         .size(16.dp),
                                     onClick = {
-                                        toasterState.remove(UPDATE_TOAST_ID)
+                                        toasterState.burn(UPDATE_TOAST_ID)
                                     }
                                 ) {
                                     Icon(imageVector = Icons.Default.Close, contentDescription = null)
@@ -214,7 +214,7 @@ class UpdateSmolToast {
             Timber.i {
                 "Removing update toast for config '${smolUpdater.updateZipFile}'."
             }
-            toasterState.remove(toastId = UPDATE_TOAST_ID)
+            toasterState.burn(toastId = UPDATE_TOAST_ID)
         }
     }
 }

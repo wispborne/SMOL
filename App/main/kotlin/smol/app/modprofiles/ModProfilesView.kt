@@ -43,6 +43,7 @@ import smol.app.navigation.Screen
 import smol.app.themes.SmolTheme
 import smol.app.themes.SmolTheme.lighten
 import smol.app.toolbar.toolbar
+import java.time.ZonedDateTime
 import java.util.*
 
 @OptIn(
@@ -103,14 +104,17 @@ fun AppScope.ModProfilesView(
                             userProfile.modProfiles
                                 .sortedWith(
                                     compareByDescending<UserProfile.ModProfile> { it.id == userProfile.activeModProfileId }
-                                        .thenBy { it.sortOrder })
+                                        .thenByDescending { it.dateModified }
+                                        .thenByDescending { it.sortOrder })
                                 .map {
                                     ModProfileCardInfo.EditableModProfileCardInfo(
                                         id = it.id,
                                         name = it.name,
                                         description = it.description,
                                         sortOrder = it.sortOrder,
-                                        enabledModVariants = it.enabledModVariants
+                                        enabledModVariants = it.enabledModVariants,
+                                        dateCreated = it.dateCreated,
+                                        dateModified = it.dateModified,
                                     )
                                 }
                                 .map { modProfile ->
@@ -162,6 +166,8 @@ fun AppScope.ModProfilesView(
                                                     version = it.version
                                                 )
                                             },
+                                            dateCreated = saveFile.saveDate,
+                                            dateModified = saveFile.saveDate,
                                             saveFile = saveFile
                                         )
                                     }
@@ -257,20 +263,26 @@ sealed class ModProfileCardInfo(
     val name: String,
     val description: String,
     val sortOrder: Int,
-    val enabledModVariants: List<UserProfile.ModProfile.ShallowModVariant>
+    val enabledModVariants: List<UserProfile.ModProfile.ShallowModVariant>,
+    val dateCreated: ZonedDateTime?,
+    val dateModified: ZonedDateTime?
 ) {
     class EditableModProfileCardInfo(
         id: String,
         name: String,
         description: String,
         sortOrder: Int,
-        enabledModVariants: List<UserProfile.ModProfile.ShallowModVariant>
+        enabledModVariants: List<UserProfile.ModProfile.ShallowModVariant>,
+        dateCreated: ZonedDateTime?,
+        dateModified: ZonedDateTime?
     ) : ModProfileCardInfo(
         id = id,
         name = name,
         description = description,
         sortOrder = sortOrder,
         enabledModVariants = enabledModVariants,
+        dateCreated = dateCreated,
+        dateModified = dateModified
     )
 
     class SaveModProfileCardInfo(
@@ -279,6 +291,8 @@ sealed class ModProfileCardInfo(
         description: String,
         sortOrder: Int,
         enabledModVariants: List<UserProfile.ModProfile.ShallowModVariant>,
+        dateCreated: ZonedDateTime,
+        dateModified: ZonedDateTime,
         val saveFile: SaveFile
     ) : ModProfileCardInfo(
         id = id,
@@ -286,5 +300,7 @@ sealed class ModProfileCardInfo(
         description = description,
         sortOrder = sortOrder,
         enabledModVariants = enabledModVariants,
+        dateCreated = dateCreated,
+        dateModified = dateModified
     )
 }

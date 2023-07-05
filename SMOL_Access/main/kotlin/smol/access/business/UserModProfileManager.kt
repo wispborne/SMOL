@@ -19,6 +19,7 @@ import smol.timber.ktx.Timber
 import smol.utilities.diff
 import smol.utilities.parallelMap
 import smol.utilities.trace
+import java.time.ZonedDateTime
 
 class UserModProfileManager internal constructor(
     private val userManager: UserManager,
@@ -41,7 +42,7 @@ class UserModProfileManager internal constructor(
                         modProfiles = oldProfile.modProfiles
                             .map { profile ->
                                 if (profile.id == oldProfile.activeModProfileId) {
-                                    profile.copy(enabledModVariants = newMods.mods
+                                    val newEnabledModVariants = newMods.mods
                                         .flatMap { it.enabledVariants }
                                         .mapNotNull {
                                             val mod = it.mod(modsCache) ?: return@mapNotNull null
@@ -51,9 +52,16 @@ class UserModProfileManager internal constructor(
                                                 smolVariantId = it.smolId,
                                                 version = it.modInfo.version
                                             )
-                                        })
-                                } else
-                                    profile
+                                        }
+
+                                    // If mods haven't changed, don't update the profile.
+                                    if (newEnabledModVariants != oldProfile.activeModProfile.enabledModVariants) {
+                                        profile.copy(
+                                            enabledModVariants = newEnabledModVariants,
+                                            dateModified = ZonedDateTime.now()
+                                        )
+                                    } else profile
+                                } else profile
                             }
                     )
                 }

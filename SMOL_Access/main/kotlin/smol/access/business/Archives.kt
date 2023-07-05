@@ -144,7 +144,7 @@ class Archives internal constructor(
 
         val modInfo = modInfoFile.let {
             IOLock.read(lock = IOLocks.modFolderLock) {
-                kotlin.runCatching { jsanity.fromJson<ModInfo>(it.readText(), shouldStripComments = true) }
+                kotlin.runCatching { jsanity.fromJson<ModInfo>(it.readText(), it.name, shouldStripComments = true) }
                     .getOrNull()
             }
         }
@@ -226,7 +226,8 @@ class Archives internal constructor(
                                                 results[modInfoFile.itemIndex]?.let {
                                                     kotlin.runCatching {
                                                         modInfoLoader.deserializeModInfoFile(
-                                                            modInfoJson = it
+                                                            modInfoJson = it,
+                                                            file = modInfoFile.path
                                                         )
                                                     }
                                                         .getOrNull()
@@ -236,9 +237,9 @@ class Archives internal constructor(
                                             // If getting version checker file fails, swallow the exception because it was already logged.
                                             kotlin.runCatching {
                                                 versionCheckerFile?.let {
-                                                    results[versionCheckerFile.itemIndex]?.let {
+                                                    results[versionCheckerFile.itemIndex]?.let { json ->
                                                         versionCheckerInfo =
-                                                            modInfoLoader.deserializeVersionCheckerFile(it)
+                                                            modInfoLoader.deserializeVersionCheckerFile(versionCheckerFile.path, json)
                                                     }
                                                 }
                                             }

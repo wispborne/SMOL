@@ -104,6 +104,7 @@ internal class VersionChecker(
                                         .let {
                                             modVariant.mod(modsCache) to gson.fromJson<VersionCheckerInfo>(
                                                 json = it,
+                                                file = modVariant.modInfo.name.orEmpty(),
                                                 shouldStripComments = true
                                             )
                                         }

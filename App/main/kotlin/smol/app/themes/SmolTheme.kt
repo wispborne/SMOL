@@ -13,6 +13,7 @@
 package smol.app.themes
 
 import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
@@ -36,7 +37,7 @@ object SmolTheme {
     val bottomBarHeight = 64.dp
     val topBarHeight = 72.dp
     const val modUpdateIconSize = 28
-    fun smolNormalButtonShape() = CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp)
+    fun smolNormalButtonShape() = RoundedCornerShape(size = cornerClipping)
     fun smolFullyClippedButtonShape() = CutCornerShape(size = cornerClipping)
 
     @Composable

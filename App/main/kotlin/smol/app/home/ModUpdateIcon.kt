@@ -103,8 +103,10 @@ fun AppScope.ModUpdateIcon(
                             if (SL.userManager.activeProfile.value.warnAboutOneClickUpdates == false) {
                                 SL.UI.downloadManager.downloadFromUrl(
                                     url = ddUrl,
+                                    name = mod.findFirstEnabledOrHighestVersion?.modInfo?.name ?: "Unknown",
                                     appScope = this@ModUpdateIcon,
-                                    shouldInstallAfter = true
+                                    // If the mod was enabled, switch to new version. Otherwise, keep disabled
+                                    shouldSwitchToAfter = mod.hasEnabledVariant
                                 )
                             } else {
                                 alertDialogSetter {

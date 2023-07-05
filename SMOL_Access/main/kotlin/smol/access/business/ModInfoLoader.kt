@@ -64,7 +64,7 @@ class ModInfoLoader(
                                     ))
                                 ) {
                                     modInfo =
-                                        kotlin.runCatching { deserializeModInfoFile(file.readText()) }.getOrNull()
+                                        kotlin.runCatching { deserializeModInfoFile(file.readText(), file.name) }.getOrNull()
                                 }
                             }
 
@@ -86,6 +86,7 @@ class ModInfoLoader(
 
                                         versionCheckerInfo =
                                             deserializeVersionCheckerFile(
+                                                versionFilePath,
                                                 modFolder.resolve(versionFilePath).readText()
                                             )
 
@@ -116,10 +117,14 @@ class ModInfoLoader(
             }
         }
 
-    @OptIn(ExperimentalStdlibApi::class)
-    fun deserializeModInfoFile(modInfoJson: String): ModInfo {
+    fun deserializeModInfoFile(modInfoJson: String, file: String): ModInfo {
         try {
-            return gson.fromJson(json = modInfoJson, classOfT = ModInfo::class.java, shouldStripComments = true)
+            return gson.fromJson(
+                json = modInfoJson,
+                file = file,
+                classOfT = ModInfo::class.java,
+                shouldStripComments = true
+            )
 //            val json = JsonValue.readHjson(modInfoJson)
 //            val jsonStr = json.toString()
 //                .also { Timber.v { it } }
@@ -132,17 +137,22 @@ class ModInfoLoader(
         }
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
-    fun deserializeVersionCheckerFile(vcJson: String): VersionCheckerInfo {
+    fun deserializeVersionCheckerFile(file: String, vcJson: String): VersionCheckerInfo {
         try {
-            return gson.fromJson(json = vcJson, classOfT = VersionCheckerInfo::class.java, shouldStripComments = true)
+            return gson.fromJson(
+                json = vcJson,
+                file = file,
+                classOfT = VersionCheckerInfo::class.java,
+                shouldStripComments = true
+            )
 //            val json = JsonValue.readHjson(vcJson)
 //            val jsonStr = json.toString()
 //                .also { Timber.v { it } }
 //
 //            return gson.fromJson(jsonStr, VersionCheckerInfo::class.java)
         } catch (ex: Exception) {
-            Timber.w(ex) { "Error reading version checker file: $vcJson" }
+            Timber.w { "Error reading version checker file: $file" }
+            Timber.d(ex) { "$file error: $vcJson" }
             throw ex
         }
     }

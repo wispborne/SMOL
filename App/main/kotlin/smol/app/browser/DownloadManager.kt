@@ -32,7 +32,7 @@ class DownloadManager(
     private val access: smol.access.Access,
     private val gamePathManager: GamePathManager
 ) {
-    private val downloadsInner = SnapshotStateList<DownloadItem>()
+    val downloadsInner = SnapshotStateList<DownloadItem>()
 
     val downloads: List<DownloadItem> = downloadsInner
     val activeDownloads = mutableMapOf<String, Job>()
@@ -42,7 +42,7 @@ class DownloadManager(
      * Adds a [DownloadItem] to be tracked, with the progress and state modified outside of [DownloadManager].
      */
     internal fun addDownload(downloadItem: DownloadItem) {
-        val existing = downloads.firstOrNull { it.path == downloadItem.path }
+        val existing = downloads.firstOrNull { it.url == downloadItem.url }
 
         if (existing != null && existing.status.value !is DownloadItem.Status.Failed) {
             Timber.w { "Not adding download already added item $downloadItem." }
@@ -70,6 +70,7 @@ class DownloadManager(
      */
     internal fun downloadFromUrl(
         url: String,
+        name: String,
         appScope: AppScope,
         shouldInstallAfter: Boolean = true,
         shouldSwitchToAfter: Boolean = true,
@@ -77,7 +78,9 @@ class DownloadManager(
     ): DownloadItem {
         val id = UUID.randomUUID().toString()
         val downloadItem = DownloadItem(
-            id = id
+            id = id,
+            name = name,
+            url = url
         )
         // Add download to the downloads list
         addDownload(downloadItem)

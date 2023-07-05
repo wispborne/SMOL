@@ -507,7 +507,9 @@ private fun AppScope.createDownloadHandler() = object : DownloadHandler {
         totalBytes: Long
     ) {
         val item = DownloadItem(
-            id = itemId
+            id = itemId,
+            name = suggestedFileName ?: "Unknown",
+            url = suggestedFileName
         )
             .apply {
                 this.path.value = getDownloadPathFor(suggestedFileName)

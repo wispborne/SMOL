@@ -15,8 +15,13 @@ package smol.app.browser
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.nio.file.Path
 
+/**
+ * @param url Url to display in the UI. Actual download can be anything. Used to check if the url is already downloading.
+ */
 data class DownloadItem(
     val id: String,
+    val name: String,
+    val url: String?,
     val path: MutableStateFlow<Path?> = MutableStateFlow(null),
     val totalBytes: MutableStateFlow<Long?> = MutableStateFlow(null),
 ) {
@@ -35,11 +40,11 @@ data class DownloadItem(
     }
 
     override fun toString(): String {
-        return "DownloadItem(id='$id', path=${path.value}, totalBytes=${totalBytes.value}, progress=${progressBytes.value}, bitsPerSecond=${bitsPerSecond.value}, status=${status.value})"
+        return "DownloadItem(id='$id', name='$name', url='$url', path=${path.value}, totalBytes=${totalBytes.value}, progress=${progressBytes.value}, bitsPerSecond=${bitsPerSecond.value}, status=${status.value})"
     }
 
     companion object {
-        val MOCK = DownloadItem(id = "")
+        val MOCK = DownloadItem(id = "", "mock", url = "https://google.com")
             .apply {
                 this.path.value = Path.of("C:/temp/perseanchronicles.7z")
                 this.totalBytes.value = 1000

@@ -22,6 +22,7 @@ import smol.access.model.ModInfo
 import smol.access.model.Version
 import smol.timber.ktx.Timber
 import smol.utilities.getNullable
+import java.time.ZonedDateTime
 
 private val basicGson = GsonBuilder().create()
 
@@ -77,6 +78,14 @@ object GsonBuilder {
         .registerTypeAdapter<Url> {
             deserialize { arg ->
                 kotlin.runCatching { Url(arg.json.string) }
+                    .onFailure { Timber.w(it) { arg.json.toString() } }
+                    .getOrNull()
+            }
+            serialize { it.src.toString().toJson() }
+        }
+        .registerTypeAdapter<ZonedDateTime> {
+            deserialize { arg ->
+                kotlin.runCatching { ZonedDateTime.parse(arg.json.string) }
                     .onFailure { Timber.w(it) { arg.json.toString() } }
                     .getOrNull()
             }

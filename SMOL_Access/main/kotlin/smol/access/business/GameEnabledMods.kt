@@ -44,6 +44,7 @@ class GameEnabledMods(
                     enabledModsFile.reader().use { inStream ->
                         gson.fromJson<EnabledMods>(
                             json = JsonObject.readHjson(inStream).toString(),
+                            file = enabledModsFile.fileName.toString(),
                             shouldStripComments = true
                         )
                     }

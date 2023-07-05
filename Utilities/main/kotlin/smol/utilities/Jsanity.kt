@@ -28,13 +28,13 @@ class Jsanity constructor(
     val gson: Gson
 ) {
     @Throws(JsonSyntaxException::class)
-    fun <T> fromJson(json: String, typeOfT: Type, shouldStripComments: Boolean): T {
-        return fromJsonString(json, typeOfT, shouldStripComments)
+    fun <T> fromJson(json: String, file: String, typeOfT: Type, shouldStripComments: Boolean): T {
+        return fromJsonString(json, file, typeOfT, shouldStripComments)
     }
 
     @Throws(JsonSyntaxException::class)
-    fun <T> fromJson(json: String, classOfT: Class<T>, shouldStripComments: Boolean): T {
-        return fromJson(json, classOfT as Type, shouldStripComments)
+    fun <T> fromJson(json: String, file: String, classOfT: Class<T>, shouldStripComments: Boolean): T {
+        return fromJson(json, file, classOfT as Type, shouldStripComments)
     }
 
     @Throws(JsonSyntaxException::class)
@@ -50,8 +50,8 @@ class Jsanity constructor(
 
 //    fun <T> fromJson(json: JsonReader, typeToken: Type): T = gson.fromJson(json, typeToken)
 
-    inline fun <reified T : Any> fromJson(json: String, shouldStripComments: Boolean): T =
-        fromJson(json, typeToken<T>(), shouldStripComments)
+    inline fun <reified T : Any> fromJson(json: String, file: String, shouldStripComments: Boolean): T =
+        fromJson(json, file, typeToken<T>(), shouldStripComments)
 
 //    inline fun <reified T : Any> fromJson(json: Reader): T = fromJson(json, typeToken<T>())
 
@@ -59,21 +59,22 @@ class Jsanity constructor(
 
 //    inline fun <reified T : Any> fromJson(json: JsonElement): T = fromJson(json, typeToken<T>())
 
-    private fun <T> fromJsonString(json: String, typeOfT: Type, shouldStripComments: Boolean): T {
+    private fun <T> fromJsonString(json: String, file: String, typeOfT: Type, shouldStripComments: Boolean): T {
         val strippedJson = if (shouldStripComments) stripJsonComments(json) else json
         // HJson
         val hjson = kotlin.runCatching {
             JsonValue.readHjson(strippedJson).toString(Stringify.FORMATTED)
         }
             .onFailure {
-                Timber.w(it) {
-                    "HJson error parsing: \n${
+                Timber.w {
+                    "HJson error parsing of $file: \n${
                         strippedJson
                             .lines()
                             .take(10)
                             .joinToString(separator = "\n") { it.take(100) }
                     }"
                 }
+                Timber.d(it) { "Full stacktrace:" }
             }
             .getOrThrow()
 

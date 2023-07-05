@@ -18,7 +18,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.mouseClickable
+import androidx.compose.foundation.onClick
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -29,6 +29,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import smol.access.SL
@@ -85,7 +86,7 @@ fun DownloadToast(
         }
 
         is DownloadItem.Status.Completed -> "Completed, $progressMB"
-        is DownloadItem.Status.Failed -> "Failed: ${status.error}"
+        is DownloadItem.Status.Failed -> "Failed: ${download.name}\n${status.error.message}"
         DownloadItem.Status.Cancelled -> "Cancelled"
     }
 
@@ -96,8 +97,10 @@ fun DownloadToast(
             SmolTooltipText(
                 text = listOfNotNull(
                     download.path.value?.name.toString(),
+                    "Url: ${download.url}",
                     "Path: ${download.path.value?.absolutePathString()}",
-                    if (status is DownloadItem.Status.Failed) status.error.message.toString() else null,
+                    if (status is DownloadItem.Status.Failed)
+                        status.error.message.toString() else null,
                     statusText
                 ).joinToString(separator = "\n")
             )
@@ -107,17 +110,19 @@ fun DownloadToast(
             Column(
                 modifier = Modifier
                     .padding(start = 4.dp, top = 4.dp, bottom = 4.dp, end = 8.dp)
-                    .mouseClickable {
+                    .onClick {
                         kotlin.runCatching { download.path.value?.parent?.openInDesktop() }
                             .onFailure { Timber.e(it) }
                     }
                     .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)))
             ) {
-                Text(
-                    modifier = Modifier,
-                    text = download.path.value?.name ?: "",
-                    fontSize = 12.sp
-                )
+                if (download.path.value != null) {
+                    Text(
+                        modifier = Modifier,
+                        text = download.path.value?.name ?: "",
+                        fontSize = 12.sp
+                    )
+                }
                 Text(
                     modifier = Modifier.padding(top = 4.dp),
                     text = statusText,
@@ -141,7 +146,23 @@ fun DownloadToast(
                     }
                 }
 
-                else -> throw NotImplementedError()
+                DownloadItem.Status.NotStarted -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp).align(Alignment.CenterVertically),
+                        color = MaterialTheme.colors.onSurface.copy(alpha = 0.5f)
+                    )
+                }
+
+                DownloadItem.Status.Cancelled,
+                DownloadItem.Status.Completed -> {
+                }
+
+                is DownloadItem.Status.Failed -> {
+                    Icon(
+                        painter = painterResource("icon-dead.svg"), contentDescription = null,
+                        modifier = Modifier.size(16.dp).align(Alignment.CenterVertically),
+                    )
+                }
             }
 
             IconButton(

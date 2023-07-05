@@ -199,7 +199,7 @@ private fun setUpToasts() {
 //                            toasterState.timersByToastId[item.id] = Toaster.defaultTimeoutMillis
 //                        }
 //                    }
-    LaunchedEffect(1) {
+    LaunchedEffect(12342345) {
         SL.access.mods.collect { modListUpdate ->
             val addedModVariants = modListUpdate?.added ?: return@collect
 
@@ -221,12 +221,11 @@ private fun setUpToasts() {
                     })
                 }
         }
-
     }
 
-    LaunchedEffect(1) {
+//    LaunchedEffect(1) {
         val items = SL.UI.toaster.items
-        SL.UI.downloadManager.downloads
+        SL.UI.downloadManager.downloadsInner
             .filter { it.id !in items.value.map { it.id } }
             .filter {
                 !it.status.value.isAny(
@@ -242,6 +241,7 @@ private fun setUpToasts() {
                         download = it,
                         requestToastDismissal = { delayMillis ->
                             SL.UI.toaster.setTimeout(toastId, delayMillis)
+                            SL.UI.downloadManager.downloadsInner.remove(it)
                         }
                     )
                 }
@@ -249,7 +249,14 @@ private fun setUpToasts() {
             .also {
                 SL.UI.toaster.addItems(it)
             }
-    }
+//    }
+
+//    LaunchedEffect(345456) {
+//        while (true) {
+//            delay(5000)
+//            SL.UI.downloadManager.addDownload(DownloadItem("test", "test url"))
+//        }
+//    }
 }
 
 class AppScope(windowState: WindowState, private val recomposer: RecomposeScope) : IWindowState by windowState {

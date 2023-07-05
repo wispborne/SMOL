@@ -29,6 +29,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -58,6 +59,7 @@ import smol.utilities.copyToClipboard
 import smol.utilities.equalsAny
 import java.time.Instant
 import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
@@ -127,6 +129,17 @@ fun AppScope.ModProfileCard(
                     SelectionContainer {
                         Row {
                             if (!isEditMode.value) {
+                                if (modProfile is ModProfileCardInfo.SaveModProfileCardInfo) {
+                                    Icon(
+                                        painter = painterResource("icon-save.svg"),
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .padding(end = 8.dp)
+                                            .size(20.dp)
+                                            .align(Alignment.CenterVertically)
+                                            .alpha(0.7f)
+                                    )
+                                }
                                 Text(
                                     modifier = Modifier
                                         .weight(1f)
@@ -221,13 +234,29 @@ fun AppScope.ModProfileCard(
                         }
                     }
 
-                    if (modProfile is ModProfileCardInfo.SaveModProfileCardInfo) {
-                        Text(
-                            modifier = Modifier.padding(top = 8.dp),
-                            text = dateFormat.format(modProfile.saveFile.saveDate),
-                            fontFamily = SmolTheme.fireCodeFont,
-                            fontSize = 12.sp,
-                        )
+                    val date = if (modProfile is ModProfileCardInfo.SaveModProfileCardInfo)
+                        modProfile.saveFile.saveDate
+                    else
+                        modProfile.dateModified ?: modProfile.dateCreated
+                    if (date != null) {
+                        SmolTooltipArea(
+                            tooltip = {
+                                SmolTooltipText(
+                                    text = "Created: ${
+                                        if (modProfile.dateCreated != null) dateFormat.format(
+                                            modProfile.dateCreated
+                                        ) else "(none)"
+                                    }"
+                                )
+                            }
+                        ) {
+                            Text(
+                                modifier = Modifier.padding(top = 8.dp),
+                                text = dateFormat.format(date),
+                                fontFamily = SmolTheme.fireCodeFont,
+                                fontSize = 12.sp,
+                            )
+                        }
                     }
                 }
 
@@ -616,14 +645,14 @@ private fun AppScope.MissingModVariantsAlertDialog(
 
     var useNewerModVariantsForMissing by remember { mutableStateOf(true) }
 
-    SmolAlertDialog(
+    SmolScrollableDialog(
         title = {
             Text(
                 text = "Warning",
                 style = SmolTheme.alertDialogTitle()
             )
         },
-        text = {
+        content = {
             Column {
                 Text(
                     text = "The following mods are missing:",
@@ -756,7 +785,9 @@ private val mockModProfile = ModProfileCardInfo.EditableModProfileCardInfo(
             smolVariantId = "23444",
             version = null
         )
-    )
+    ),
+    dateCreated = ZonedDateTime.now(),
+    dateModified = ZonedDateTime.now(),
 )
 private val mockSaveModProfile = ModProfileCardInfo.SaveModProfileCardInfo(
     id = "0",
@@ -779,7 +810,9 @@ private val mockSaveModProfile = ModProfileCardInfo.SaveModProfileCardInfo(
         saveFileVersion = "0.5",
         saveDate = Instant.now().atZone(ZoneId.systemDefault()),
         mods = emptyList()
-    )
+    ),
+    dateCreated = ZonedDateTime.now(),
+    dateModified = ZonedDateTime.now(),
 )
 private val mockUserProfile = UserManager.defaultProfile
 

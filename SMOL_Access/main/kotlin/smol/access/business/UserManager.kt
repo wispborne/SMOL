@@ -24,6 +24,7 @@ import smol.access.themes.ThemeManager
 import smol.timber.ktx.Timber
 import smol.utilities.mapState
 import smol.utilities.merge
+import java.time.ZonedDateTime
 import java.util.*
 
 class UserManager internal constructor(
@@ -35,7 +36,9 @@ class UserManager internal constructor(
             name = "default",
             description = "Default profile",
             sortOrder = 0,
-            enabledModVariants = emptyList()
+            enabledModVariants = emptyList(),
+            dateCreated = ZonedDateTime.now(),
+            dateModified = ZonedDateTime.now(),
         )
 
         val defaultProfile = UserProfile(
@@ -130,7 +133,9 @@ class UserManager internal constructor(
                 name = name,
                 description = description,
                 sortOrder = sortOrder ?: ((userProfile.modProfiles.maxOfOrNull { it.sortOrder } ?: 0) + 1),
-                enabledModVariants = enabledModVariants
+                enabledModVariants = enabledModVariants,
+                dateCreated = ZonedDateTime.now(),
+                dateModified = ZonedDateTime.now(),
             )
             userProfile.copy(modProfiles = userProfile.modProfiles + newModProfile)
                 .also { Timber.i { "Created mod profile $newModProfile" } }
