@@ -44,6 +44,7 @@ import smol.app.navigation.Screen
 import smol.app.settings.settingsView
 import smol.app.themes.SmolTheme
 import smol.app.themes.SmolTheme.toColors
+import smol.app.tips.TipsView
 import smol.app.toasts.DownloadToast
 import smol.app.toasts.ToastContainer
 import smol.app.toasts.toastInstalledCard
@@ -103,6 +104,7 @@ fun WindowState.appView() {
                         is Screen.Settings -> appScope.settingsView()
                         is Screen.Profiles -> appScope.ModProfilesView()
                         is Screen.ModBrowser -> appScope.ModBrowserView(defaultUrl = configuration.defaultUri)
+                        is Screen.Tips -> appScope.TipsView()
                         is Screen.About -> appScope.AboutView()
                     }.run { }
                 }
@@ -224,31 +226,31 @@ private fun setUpToasts() {
     }
 
 //    LaunchedEffect(1) {
-        val items = SL.UI.toaster.items
-        SL.UI.downloadManager.downloadsInner
-            .filter { it.id !in items.value.map { it.id } }
-            .filter {
-                !it.status.value.isAny(
-                    DownloadItem.Status.Completed::class,
-                    DownloadItem.Status.Cancelled::class,
-                    DownloadItem.Status.Failed::class
+    val items = SL.UI.toaster.items
+    SL.UI.downloadManager.downloadsInner
+        .filter { it.id !in items.value.map { it.id } }
+        .filter {
+            !it.status.value.isAny(
+                DownloadItem.Status.Completed::class,
+                DownloadItem.Status.Cancelled::class,
+                DownloadItem.Status.Failed::class
+            )
+        }
+        .map {
+            val toastId = "download-${it.id}"
+            ToastContainer(id = toastId, timeoutMillis = null, useStandardToastFrame = true) {
+                DownloadToast(
+                    download = it,
+                    requestToastDismissal = { delayMillis ->
+                        SL.UI.toaster.setTimeout(toastId, delayMillis)
+                        SL.UI.downloadManager.downloadsInner.remove(it)
+                    }
                 )
             }
-            .map {
-                val toastId = "download-${it.id}"
-                ToastContainer(id = toastId, timeoutMillis = null, useStandardToastFrame = true) {
-                    DownloadToast(
-                        download = it,
-                        requestToastDismissal = { delayMillis ->
-                            SL.UI.toaster.setTimeout(toastId, delayMillis)
-                            SL.UI.downloadManager.downloadsInner.remove(it)
-                        }
-                    )
-                }
-            }
-            .also {
-                SL.UI.toaster.addItems(it)
-            }
+        }
+        .also {
+            SL.UI.toaster.addItems(it)
+        }
 //    }
 
 //    LaunchedEffect(345456) {

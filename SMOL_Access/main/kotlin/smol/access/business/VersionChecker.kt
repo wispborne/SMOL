@@ -15,7 +15,6 @@ package smol.access.business
 import io.ktor.client.call.*
 import io.ktor.client.plugins.*
 import io.ktor.client.request.*
-import io.ktor.client.statement.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
@@ -104,7 +103,7 @@ internal class VersionChecker(
                                         .let {
                                             modVariant.mod(modsCache) to gson.fromJson<VersionCheckerInfo>(
                                                 json = it,
-                                                file = modVariant.modInfo.name.orEmpty(),
+                                                filename = modVariant.modInfo.name.orEmpty(),
                                                 shouldStripComments = true
                                             )
                                         }

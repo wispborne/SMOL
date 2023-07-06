@@ -115,6 +115,7 @@ fun AppScope.toolbar(currentScreen: Screen) {
         modBrowserButton(isSelected = currentScreen is Screen.ModBrowser)
         profilesButton(isSelected = currentScreen is Screen.Profiles)
         settingsButton(isSelected = currentScreen is Screen.Settings)
+        toolsDropdown()
         quickLinksDropdown()
     }
 }
@@ -461,6 +462,43 @@ fun AppScope.settingsButton(modifier: Modifier = Modifier, isSelected: Boolean) 
 }
 
 @Composable
+fun AppScope.toolsDropdown(modifier: Modifier = Modifier) {
+    val gamePath = SL.gamePathManager.path.collectAsState().value
+
+    SmolDropdownWithButton(
+        shouldShowSelectedItemInMenu = false,
+        canSelectItems = false,
+        modifier = modifier
+            .padding(start = 16.dp),
+        customButtonContent = { _: SmolDropdownMenuItem, isExpanded: Boolean, _: (Boolean) -> Unit ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(vertical = 4.dp, horizontal = 8.dp)
+            ) {
+                Icon(
+                    painter = painterResource("icon-toolbox.svg"),
+                    contentDescription = null,
+                    modifier = Modifier.size(28.dp)
+                )
+//                Text(text = "Tools", modifier = Modifier.padding(start = 4.dp))
+                SmolDropdownArrow(
+                    modifier = Modifier
+                        .align(Alignment.CenterVertically),
+                    expanded = isExpanded
+                )
+            }
+        },
+        items = listOf(
+            SmolDropdownMenuItemTemplate(
+                text = "In-game Tips",
+                iconPath = "icon-tips.svg",
+                isEnabled = gamePath?.isReadable() == true,
+                onClick = { router.replaceCurrent(Screen.Tips) }
+            ),
+        ))
+}
+
+@Composable
 fun AppScope.quickLinksDropdown(modifier: Modifier = Modifier) {
     val gamePath = SL.gamePathManager.path.collectAsState().value
     val savesPath = gamePath?.resolve(Constants.SAVES_FOLDER_NAME)
@@ -471,7 +509,7 @@ fun AppScope.quickLinksDropdown(modifier: Modifier = Modifier) {
     SmolDropdownWithButton(
         shouldShowSelectedItemInMenu = false,
         canSelectItems = false,
-        modifier = Modifier
+        modifier = modifier
             .padding(start = 16.dp),
         customButtonContent = { _: SmolDropdownMenuItem, isExpanded: Boolean, _: (Boolean) -> Unit ->
             Row(

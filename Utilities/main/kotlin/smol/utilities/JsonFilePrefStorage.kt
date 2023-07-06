@@ -20,7 +20,6 @@ import kotlin.io.path.createDirectories
 import kotlin.io.path.createFile
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
-import kotlin.reflect.KProperty
 import kotlin.reflect.KType
 import kotlin.reflect.javaType
 import kotlin.reflect.typeOf
@@ -38,7 +37,7 @@ class JsonFilePrefStorage(private val gson: Jsanity, private val file: Path) : I
         IOLock.read {
             ((gson.fromJson<Map<*, JsonElement>>(
                 json = file.readText(),
-                file = file.fileName.toString(),
+                filename = file.fileName.toString(),
                 typeOfT = typeOf<Map<*, JsonElement>?>().javaType,
                 shouldStripComments = false
             )
@@ -53,7 +52,7 @@ class JsonFilePrefStorage(private val gson: Jsanity, private val file: Path) : I
         IOLock.write {
             (gson.fromJson<Map<*, *>>(
                 json = file.readText(),
-                file = file.fileName.toString(),
+                filename = file.fileName.toString(),
                 typeOfT = typeOf<Map<*, *>?>().javaType,
                 shouldStripComments = false
             )

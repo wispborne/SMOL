@@ -19,5 +19,6 @@ sealed class Screen : Parcelable {
     object Settings : Screen()
     object Profiles : Screen()
     data class ModBrowser(val defaultUri: String? = null) : Screen()
+    object Tips : Screen()
     object About : Screen()
 }

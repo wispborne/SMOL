@@ -40,6 +40,7 @@ object Constants {
     const val FORUM_MOD_INDEX_URL = FORUM_MOD_PAGE_URL + "177"
     const val FORUM_MODDING_SUBFORUM_URL = "$FORUM_URL?board=3.0"
     const val FORUM_HOSTNAME = "fractalsoftworks.com"
+    const val TIPS_FILE_RELATIVE_PATH = "data/strings/tips.json"
 
     const val APP_FOLDER_NAME = "SMOL-data"
     val APP_FOLDER_PATH: Path = Path.of("").toAbsolutePath().resolve(APP_FOLDER_NAME)

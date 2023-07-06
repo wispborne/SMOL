@@ -27,14 +27,20 @@ import java.lang.reflect.Type
 class Jsanity constructor(
     val gson: Gson
 ) {
+    /**
+     * @param filename Just used for logging.
+     */
     @Throws(JsonSyntaxException::class)
-    fun <T> fromJson(json: String, file: String, typeOfT: Type, shouldStripComments: Boolean): T {
-        return fromJsonString(json, file, typeOfT, shouldStripComments)
+    fun <T> fromJson(json: String, filename: String, typeOfT: Type, shouldStripComments: Boolean): T {
+        return fromJsonString(json, filename, typeOfT, shouldStripComments)
     }
 
+    /**
+     * @param filename Just used for logging.
+     */
     @Throws(JsonSyntaxException::class)
-    fun <T> fromJson(json: String, file: String, classOfT: Class<T>, shouldStripComments: Boolean): T {
-        return fromJson(json, file, classOfT as Type, shouldStripComments)
+    fun <T> fromJson(json: String, filename: String, classOfT: Class<T>, shouldStripComments: Boolean): T {
+        return fromJson(json, filename, classOfT as Type, shouldStripComments)
     }
 
     @Throws(JsonSyntaxException::class)
@@ -50,8 +56,11 @@ class Jsanity constructor(
 
 //    fun <T> fromJson(json: JsonReader, typeToken: Type): T = gson.fromJson(json, typeToken)
 
-    inline fun <reified T : Any> fromJson(json: String, file: String, shouldStripComments: Boolean): T =
-        fromJson(json, file, typeToken<T>(), shouldStripComments)
+    /**
+     * @param filename Just used for logging.
+     */
+    inline fun <reified T : Any> fromJson(json: String, filename: String, shouldStripComments: Boolean): T =
+        fromJson(json, filename, typeToken<T>(), shouldStripComments)
 
 //    inline fun <reified T : Any> fromJson(json: Reader): T = fromJson(json, typeToken<T>())
 
@@ -59,7 +68,10 @@ class Jsanity constructor(
 
 //    inline fun <reified T : Any> fromJson(json: JsonElement): T = fromJson(json, typeToken<T>())
 
-    private fun <T> fromJsonString(json: String, file: String, typeOfT: Type, shouldStripComments: Boolean): T {
+    /**
+     * @param filename Just used for logging.
+     */
+    private fun <T> fromJsonString(json: String, filename: String, typeOfT: Type, shouldStripComments: Boolean): T {
         val strippedJson = if (shouldStripComments) stripJsonComments(json) else json
         // HJson
         val hjson = kotlin.runCatching {
@@ -67,7 +79,7 @@ class Jsanity constructor(
         }
             .onFailure {
                 Timber.w {
-                    "HJson error parsing of $file: \n${
+                    "HJson error parsing of $filename: \n${
                         strippedJson
                             .lines()
                             .take(10)

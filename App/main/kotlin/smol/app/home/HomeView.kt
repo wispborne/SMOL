@@ -14,6 +14,7 @@
 
 package smol.app.home
 
+//import smol.app.cli.SmolCLI
 import AppScope
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -30,17 +31,13 @@ import com.arkivanov.decompose.replaceCurrent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.withContext
-import org.tinylog.Logger
 import smol.access.SL
 import smol.access.model.Mod
-import smol.app.UI
-//import smol.app.cli.SmolCLI
 import smol.app.composables.*
 import smol.app.navigation.Screen
 import smol.app.themes.SmolTheme
 import smol.app.toolbar.toolbar
 import smol.app.util.filterModGrid
-import smol.app.util.onEnterKeyPressed
 import smol.app.util.replaceAllUsingDifference
 import smol.timber.ktx.Timber
 import smol.utilities.IOLock
@@ -75,16 +72,6 @@ fun AppScope.homeView(
             SmolTopAppBar(modifier = Modifier.height(SmolTheme.topBarHeight)) {
                 toolbar(router.state.value.activeChild.instance as Screen)
 
-                if (isWriteLocked.value) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.padding(start = 16.dp)
-                    )
-                    SmolText(
-                        text = SL.access.modModificationState.collectAsState().value
-                            .firstNotNullOfOrNull { it.value != smol.access.Access.ModModificationState.Ready }
-                            ?.toString() ?: "",
-                    )
-                }
                 Row(
                     modifier = Modifier
                         .weight(1f)
@@ -98,6 +85,7 @@ fun AppScope.homeView(
                             .widthIn(min = 100.dp, max = 300.dp)
                             .padding(end = 16.dp)
                             .offset(y = (-3).dp)
+                            .weight(1f, fill = false)
                             .align(Alignment.CenterVertically),
                         tooltipText = "Hotkey: Ctrl-F",
                         label = "Filter"
@@ -127,14 +115,27 @@ fun AppScope.homeView(
 
                     SmolTooltipArea(tooltip = { SmolTooltipText("About") }) {
                         IconButton(
-                            onClick = { router.replaceCurrent(Screen.About) },
-                            modifier = Modifier.align(Alignment.CenterVertically)
+                            onClick = { router.replaceCurrent(Screen.About) }
                         ) {
-                            Icon(
-                                painter = painterResource("icon-info.svg"),
-                                contentDescription = null,
-                                modifier = Modifier.size(24.dp).align(Alignment.CenterVertically),
-                            )
+                            Box(
+                                modifier = Modifier.align(Alignment.CenterVertically)
+                            ) {
+                                Icon(
+                                    painter = painterResource("icon-info.svg"),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(24.dp),
+                                )
+                                if (isWriteLocked.value) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(24.dp)
+                                    )
+//                                SmolText(
+//                                    text = SL.access.modModificationState.collectAsState().value
+//                                        .firstNotNullOfOrNull { it.value != smol.access.Access.ModModificationState.Ready }
+//                                        ?.toString() ?: "",
+//                                )
+                                }
+                            }
                         }
                     }
                 }

@@ -121,7 +121,7 @@ class ModInfoLoader(
         try {
             return gson.fromJson(
                 json = modInfoJson,
-                file = file,
+                filename = file,
                 classOfT = ModInfo::class.java,
                 shouldStripComments = true
             )
@@ -141,7 +141,7 @@ class ModInfoLoader(
         try {
             return gson.fromJson(
                 json = vcJson,
-                file = file,
+                filename = file,
                 classOfT = VersionCheckerInfo::class.java,
                 shouldStripComments = true
             )

@@ -73,7 +73,7 @@ class ModRepo internal constructor(private val jsanity: Jsanity, private val htt
                     ?.let {
                         jsanity.fromJson<ScrapedModsRepo>(
                             json = it,
-                            file = localModRepo.name,
+                            filename = localModRepo.name,
                             shouldStripComments = false
                         )
                     }
