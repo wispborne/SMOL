@@ -77,4 +77,5 @@ kotlin.sourceSets.main {
     kotlin.setSrcDirs(listOf("main/kotlin"))
 }
 
-kotlin.jvmToolchain(17)
+// set through project properties. Todo: Delete?
+// kotlin.jvmToolchain(18)

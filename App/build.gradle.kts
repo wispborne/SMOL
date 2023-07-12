@@ -119,7 +119,7 @@ compose.desktop {
         mainClass = "smol.app.MainKt"
 
         nativeDistributions {
-            targetFormats(TargetFormat.Exe, TargetFormat.Dmg)
+            targetFormats(TargetFormat.Exe, TargetFormat.Dmg, TargetFormat.Deb)
             outputBaseDir.set(rootProject.projectDir.resolve("dist"))
             packageName = "SMOL"
             packageVersion = "1.0.0"
@@ -144,10 +144,11 @@ compose.desktop {
                 iconFile.set(project.file("smol.ico"))
 //                jvmArgs += listOf("-Djava.library.path=native/macosx") // To use lwjgl in VRAM Checker
             }
-//            linux {
-//                println("OS: Linux")
-////                jvmArgs += listOf("-Djava.library.path=native/linux") // To use lwjgl in VRAM Checker
-//            }
+            linux {
+                println("OS: Linux")
+                iconFile.set(project.file("smol.ico"))
+                jvmArgs += listOf("-Djava.library.path=./libs/$jcefFolder/bin/lib/linux64")
+            }
 
             // task suggestRuntimeModules to generate this
             modules(
