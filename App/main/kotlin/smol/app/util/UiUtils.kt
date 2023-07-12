@@ -170,13 +170,25 @@ fun smolPreview(modifier: Modifier = Modifier, content: @Composable AppScope.() 
     }
 }
 
-fun Constants.isJCEFEnabled() =
-    currentPlatform == Platform.Windows &&
-    kotlin.runCatching {
-        Path.of("libs").listDirectoryEntries().any { it.name.startsWith("jcef") }
+fun Constants.isJCEFEnabled(): Boolean {
+    if (currentPlatform == Platform.Linux) {
+        // on linux, from my testing, something doesn't work with JCEF-linking
+        // the naive idea, of using the linux version of jcef and adding the java-library-path
+        // doesn't seem to work.
+        // When everything is set up properly, java.lang.UnsatisfiedLinkError: 'boolean org.cef.CefApp.N_PreInitialize()'
+        // gets thrown.
+        Timber.d{"JCEF-browser currently not supported on linux"};
+        return false
+
     }
-        .onFailure { Timber.d { it.message ?: "Couldn't find jcef" } }
-        .getOrElse { false }
+
+    return currentPlatform == Platform.Windows &&
+            kotlin.runCatching {
+                Path.of("libs").listDirectoryEntries().any { it.name.startsWith("jcef") }
+            }
+                .onFailure { Timber.d { it.message ?: "Couldn't find jcef" } }
+                .getOrElse { false }
+}
 
 fun Constants.isModBrowserEnabled() = doesGamePathExist()
 fun Constants.isModProfilesEnabled() = doesGamePathExist()

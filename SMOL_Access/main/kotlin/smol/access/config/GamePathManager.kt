@@ -48,32 +48,54 @@ class GamePathManager internal constructor(
     fun set(path: String) = path.toPathOrNull()?.run { set(this) }
     fun set(path: Path) = value_.update { path }
 
-    fun getDefaultStarsectorPath(platform: Platform): File? =
-        kotlin.runCatching {
+    fun getDefaultStarsectorPath(platform: Platform): File? {
+        fun getFileOrNull(path: String): File?{
+            val f = File(path)
+            return if(f.exists()) f else null
+        }
+        return kotlin.runCatching {
             when (platform) {
                 Platform.Windows ->
-                    Advapi32Util.registryGetStringValue(
-                        WinReg.HKEY_CURRENT_USER,
-                        "SOFTWARE\\Fractal Softworks\\Starsector",
-                        ""
+                    listOf(
+                        Advapi32Util.registryGetStringValue(
+                            WinReg.HKEY_CURRENT_USER,
+                            "SOFTWARE\\Fractal Softworks\\Starsector",
+                            ""
+                        )
                     )
-                Platform.MacOS -> "/Applications/Starsector.app"
-                Platform.Linux -> "" // TODO
-                else -> "" // TODO
-            }
-        }
-            .mapCatching { File(it) }
-            .onFailure {
+
+                Platform.MacOS -> listOf("/Applications/Starsector.app")
+                Platform.Linux -> System.getenv("STARSECTOR_DIRECTORY")?.let { listOf(it) } ?: run {
+                    Timber.d { "Environment variable STARSECTOR_DIRECTORY not set. Using best guess starsector directories." }
+                    listOf(
+                        "/opt/starsector",
+                        (System.getenv("HOME") ?: "~") + "/games/starsector",
+                        (System.getenv("HOME") ?: "~") + "/starsector"
+                    )
+                }
+
+                else -> listOf("") // TODO
+            }.firstNotNullOfOrNull { getFileOrNull(it) }
+        }.onFailure {
                 Timber.d { it.message ?: "" }
                 it.printStackTrace()
-            }
-            .getOrNull()
+            }.getOrNull()
+
+
+//            .mapCatching { File(it) }
+//            .onFailure {
+//                Timber.d { it.message ?: "" }
+//                it.printStackTrace()
+//            }
+//            .getOrNull()
+    }
+
 
     fun getGameExeFolderPath(gameFolderPath: Path = value_.value!!) =
         when(currentPlatform) {
             Platform.Windows -> gameFolderPath
             Platform.MacOS -> gameFolderPath.parent
-            Platform.Linux -> TODO()
+            Platform.Linux -> gameFolderPath
             else -> null
         }
 
@@ -81,7 +103,7 @@ class GamePathManager internal constructor(
         when(currentPlatform) {
             Platform.Windows -> gameFolderPath
             Platform.MacOS -> gameFolderPath.resolve("Contents/Resources/Java")
-            Platform.Linux -> TODO()
+            Platform.Linux -> gameFolderPath
             else -> null
         }
 
