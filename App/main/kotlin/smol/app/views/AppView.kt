@@ -82,7 +82,6 @@ fun WindowState.appView() {
         }
     }
 
-
     MaterialTheme(
         colors = theme.value.second.toColors(),
         typography = Typography(
@@ -160,8 +159,6 @@ private suspend fun checkForUpdates() {
             async { kotlin.runCatching { SL.UI.updaterUpdater.fetchRemoteConfig(updateChannel) }.getOrNull() }
 
         val updaterConfig = updaterConfigAsync.await()
-
-
 
         if (updaterConfig != null && updaterConfig.requiresUpdate()) {
             Timber.i { "Found update for the SMOL updater." }
