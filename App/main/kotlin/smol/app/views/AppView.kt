@@ -55,9 +55,7 @@ import smol.app.views.DuplicateModAlertDialogState
 import smol.app.views.FileDropper
 import smol.timber.ktx.Timber
 import smol.updatestager.UpdateChannelManager
-import smol.utilities.IOLock
-import smol.utilities.exists
-import smol.utilities.isAny
+import smol.utilities.*
 import kotlin.io.path.exists
 import kotlin.system.exitProcess
 
@@ -76,10 +74,14 @@ fun WindowState.appView() {
             })
     }
 
-    LaunchedEffect("runonce") {
-        delay(5000) // Doesn't need to contribute to startup time.
-        checkForUpdates()
+    // is this the best place for this platform-check?
+    if(currentPlatform == Platform.Windows){
+        LaunchedEffect("runonce") {
+            delay(5000) // Doesn't need to contribute to startup time.
+            checkForUpdates()
+        }
     }
+
 
     MaterialTheme(
         colors = theme.value.second.toColors(),
@@ -158,6 +160,8 @@ private suspend fun checkForUpdates() {
             async { kotlin.runCatching { SL.UI.updaterUpdater.fetchRemoteConfig(updateChannel) }.getOrNull() }
 
         val updaterConfig = updaterConfigAsync.await()
+
+
 
         if (updaterConfig != null && updaterConfig.requiresUpdate()) {
             Timber.i { "Found update for the SMOL updater." }
