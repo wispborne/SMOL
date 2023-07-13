@@ -50,6 +50,7 @@ import smol.app.toasts.ToastContainer
 import smol.app.toasts.toastInstalledCard
 import smol.app.toasts.toaster
 import smol.app.updater.UpdateSmolToast
+import smol.app.util.isUpdatingEnabled
 import smol.app.views.DuplicateModAlertDialog
 import smol.app.views.DuplicateModAlertDialogState
 import smol.app.views.FileDropper
@@ -74,8 +75,7 @@ fun WindowState.appView() {
             })
     }
 
-    // is this the best place for this platform-check?
-    if(currentPlatform == Platform.Windows){
+    if(Constants.isUpdatingEnabled()){
         LaunchedEffect("runonce") {
             delay(5000) // Doesn't need to contribute to startup time.
             checkForUpdates()

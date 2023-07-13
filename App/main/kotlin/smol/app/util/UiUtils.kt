@@ -190,6 +190,8 @@ fun Constants.isJCEFEnabled(): Boolean {
                 .getOrElse { false }
 }
 
+fun Constants.isUpdatingEnabled() = currentPlatform == Platform.Windows
+
 fun Constants.isModBrowserEnabled() = doesGamePathExist()
 fun Constants.isModProfilesEnabled() = doesGamePathExist()
 fun Constants.doesGamePathExist() = SL.gamePathManager.path.value.exists()
