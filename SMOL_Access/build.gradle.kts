@@ -74,3 +74,5 @@ kotlin.sourceSets.main {
     // List of where resources (the "data" folder) are.
     resources.setSrcDirs(listOf("main/resources"))
 }
+
+kotlin.jvmToolchain(project.property("smolJvmTarget").toString().toInt())

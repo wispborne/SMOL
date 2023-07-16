@@ -206,3 +206,5 @@ tasks.named("processResources") {
 // Map Files to a known path
 fun mapObfuscatedJarFile(file: File) =
     File("${project.buildDir}/tmp/obfuscated/${file.nameWithoutExtension}.min.jar")
+
+kotlin.jvmToolchain(project.property("smolJvmTarget").toString().toInt())

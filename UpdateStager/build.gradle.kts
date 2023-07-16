@@ -86,3 +86,4 @@ kotlin.sourceSets.main {
     // List of where your Kotlin source code is, if any.
     kotlin.setSrcDirs(listOf("main/kotlin"))
 }
+kotlin.jvmToolchain(project.property("smolJvmTarget").toString().toInt())

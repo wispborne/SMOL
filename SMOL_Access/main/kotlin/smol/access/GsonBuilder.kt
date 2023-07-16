@@ -19,6 +19,7 @@ import com.google.gson.JsonParser
 import io.ktor.http.*
 import smol.access.model.Dependency
 import smol.access.model.ModInfo
+import smol.access.model.Tip
 import smol.access.model.Version
 import smol.timber.ktx.Timber
 import smol.utilities.getNullable
@@ -90,6 +91,17 @@ object GsonBuilder {
                     .getOrNull()
             }
             serialize { it.src.toString().toJson() }
+        }
+        .registerTypeAdapter<Tip> {
+            deserialize { arg ->
+                val json = arg.json
+                // Tips can either be "{ freq: "1", tip: "something" }" or just "something"
+                val isShortFormat = runCatching { json["tip"] }.isFailure
+                if (isShortFormat) Tip(
+                    "1",
+                    json.asString
+                ) else Tip(json["freq"].asString, json["tip"].asString)
+            }
         }
         .create()
 

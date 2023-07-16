@@ -14,35 +14,33 @@ package smol.app.tips
 
 import AppScope
 import androidx.compose.desktop.ui.tooling.preview.Preview
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.border
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.onClick
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.github.salomonbrys.kotson.get
-import com.google.gson.JsonObject
 import smol.access.Constants
 import smol.access.SL
-import smol.access.model.ModVariant
+import smol.access.model.ModTip
+import smol.access.model.Tips
 import smol.app.composables.*
 import smol.app.navigation.Screen
 import smol.app.themes.SmolTheme
 import smol.app.themes.SmolTheme.lighten
 import smol.app.toolbar.toolbar
-import smol.utilities.bytesAsShortReadableMB
-import smol.utilities.bytesToMB
+import smol.app.util.openInDesktop
+import smol.timber.ktx.Timber
 import smol.utilities.copyToClipboard
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.exists
@@ -59,6 +57,7 @@ enum class TipsGrouping {
 fun AppScope.TipsView(
     modifier: Modifier = Modifier
 ) {
+    var tipsChangedNotifier by remember { mutableStateOf(0) }
     val showLogPanel = remember { mutableStateOf(false) }
     val mods = SL.access.mods.collectAsState().value?.mods.orEmpty()
     var grouping by remember { mutableStateOf(TipsGrouping.NONE) }
@@ -70,7 +69,11 @@ fun AppScope.TipsView(
                 it.variants.firstOrNull()?.mod(SL.access)?.hasEnabledVariant ?: true
             else true
         }
-    LaunchedEffect(Unit) {
+        .associateBy { it.hashCode() }
+    val tipSelectionStates =
+        remember { mutableStateMapOf(*tips.map { it.hashCode() to false }.toTypedArray()) }
+
+    LaunchedEffect(tipsChangedNotifier) {
         unfilteredTips.clear()
         unfilteredTips.addAll(mods
             .map { mod ->
@@ -79,19 +82,11 @@ fun AppScope.TipsView(
                     val tipFilePath = variant.modsFolderInfo.folder.resolve(Constants.TIPS_FILE_RELATIVE_PATH)
                     if (tipFilePath.exists()) {
                         variant to runCatching {
-                            SL.jsanity.fromJson<JsonObject>(
+                            SL.jsanity.fromJson<Tips>(
                                 json = tipFilePath.readText(),
                                 filename = tipFilePath.absolutePathString(),
                                 shouldStripComments = true
-                            )["tips"].asJsonArray
-                                .map {
-                                    // Tips can either be "{ freq: "1", tip: "something" }" or just "something"
-                                    val isShortFormat = runCatching { it["tip"] }.isFailure
-                                    if (isShortFormat) Tip(
-                                        "1",
-                                        it.toString()
-                                    ) else Tip(it["freq"].asString, it["tip"].asString)
-                                }
+                            ).tips
                         }
                             .getOrElse { emptyList() }
                     } else {
@@ -111,7 +106,14 @@ fun AppScope.TipsView(
                 toolbar(router.state.value.activeChild.instance as Screen)
             }
         }, content = {
-            Column(modifier = Modifier.padding(start = 8.dp, top = 8.dp, end = 8.dp, bottom = SmolTheme.bottomBarHeight - 8.dp)) {
+            Column(
+                modifier = Modifier.padding(
+                    start = 8.dp,
+                    top = 8.dp,
+                    end = 8.dp,
+                    bottom = SmolTheme.bottomBarHeight - 8.dp
+                )
+            ) {
                 Row(
                     modifier = Modifier.padding(start = 8.dp, bottom = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -121,6 +123,15 @@ fun AppScope.TipsView(
                         style = MaterialTheme.typography.h5
                     )
                     Spacer(Modifier.weight(1f))
+                    SmolButton(
+                        onClick = {
+                            SL.tipsManager.deleteTips(tipSelectionStates.filter { it.value }
+                                .mapNotNull { tips[it.key] })
+                            tipsChangedNotifier++
+                        }
+                    ) {
+                        Text(text = "Delete Selected")
+                    }
                     Text(text = "Only enabled", modifier = Modifier.onClick { onlyEnabled = !onlyEnabled })
                     Checkbox(
                         checked = onlyEnabled,
@@ -146,15 +157,20 @@ fun AppScope.TipsView(
                     when (grouping) {
                         TipsGrouping.NONE -> {
                             tips
-                                .sortedWith(compareByDescending<ModTip> { it.tipObj.tip.orEmpty().length })
+                                .values
+                                .sortedWith(compareByDescending { it.tipObj.tip.orEmpty().length })
                                 .map { tip ->
                                     this.item {
-                                        TipCard(tip = tip, showTitle = true)
+                                        TipCard(tip = tip, showTitle = true,
+                                            isSelected = tipSelectionStates[tip.hashCode()] ?: false,
+                                            onTipChanged = { tipsChangedNotifier++ },
+                                            onSelectedChanged = { tipSelectionStates[tip.hashCode()] = it }
+                                        )
                                     }
                                 }
                         }
 
-                        TipsGrouping.MOD -> tips.groupBy { it.variants.firstOrNull()?.mod(SL.access) }
+                        TipsGrouping.MOD -> tips.values.groupBy { it.variants.firstOrNull()?.mod(SL.access) }
                             .entries
                             // Sort by longest length of each mod's longest tip.
                             .sortedWith(compareByDescending { it.value.maxBy { it.tipObj.tip.orEmpty().length }.tipObj.tip.orEmpty().length })
@@ -173,7 +189,10 @@ fun AppScope.TipsView(
                                 tipList
                                     .map { tip ->
                                         this.item {
-                                            TipCard(tip = tip, showTitle = false)
+                                            TipCard(tip = tip, showTitle = false,
+                                                isSelected = tipSelectionStates[tip.hashCode()] ?: false,
+                                                onTipChanged = { tipsChangedNotifier++ },
+                                                onSelectedChanged = { tipSelectionStates[tip.hashCode()] = it })
                                         }
                                     }
                             }
@@ -195,30 +214,32 @@ fun AppScope.TipsView(
     )
 }
 
-data class Tip(
-    val freq: String?,
-    val tip: String?
-)
-
-data class ModTip(
-    val tipObj: Tip,
-    val variants: List<ModVariant>
-)
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun TipCard(modifier: Modifier = Modifier, tip: ModTip, showTitle: Boolean) {
-    var isSelected by remember { mutableStateOf(false) }
+private fun TipCard(
+    modifier: Modifier = Modifier,
+    tip: ModTip,
+    showTitle: Boolean,
+    isSelected: Boolean,
+    onTipChanged: () -> Unit,
+    onSelectedChanged: ((Boolean) -> Unit),
+) {
+    var showContextMenu by remember { mutableStateOf(false) }
     Card(
         modifier = Modifier
             .border(
                 shape = SmolTheme.smolFullyClippedButtonShape(),
                 border = BorderStroke(
                     width = 1.dp,
-                    color = MaterialTheme.colors.surface.lighten()
+                    color = MaterialTheme.colors.surface.lighten(if (isSelected) 100 else 20)
                 )
             )
-            .onClick { isSelected = !isSelected },
+            .onClick {
+                onSelectedChanged(!isSelected)
+            }
+            .onClick(matcher = PointerMatcher.mouse(PointerButton.Secondary)) {
+                showContextMenu = !showContextMenu
+            },
         shape = SmolTheme.smolFullyClippedButtonShape(),
         backgroundColor = if (isSelected) MaterialTheme.colors.surface.lighten() else MaterialTheme.colors.surface,
     ) {
@@ -230,24 +251,18 @@ private fun TipCard(modifier: Modifier = Modifier, tip: ModTip, showTitle: Boole
                             ?: "(unknown mod name)"), // + " (${tip.variants.joinToString { it.modInfo.version.toString() }})",
                         style = MaterialTheme.typography.subtitle1,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.alpha(0.65f).padding(end = 8.dp)
+                        modifier = Modifier.alpha(0.65f).padding(end = 8.dp),
+                        color = if (tip.tipObj.freq?.toFloatOrNull() == 0f)
+                            LocalContentColor.current.copy(alpha = 0.65f)
+                        else LocalContentColor.current
                     )
                 }
                 Spacer(Modifier.weight(1f))
-                SmolTooltipArea(tooltip = { SmolTooltipText(text = "Copy tooltip") }) {
-                    IconButton(
-                        onClick = { copyToClipboard(tip.tipObj.tip.orEmpty()) },
-                        modifier = Modifier.alpha(0.7f).size(16.dp)
-                    ) {
-                        Icon(
-                            painter = painterResource("icon-copy.svg"),
-                            contentDescription = null
-                        )
-                    }
-                }
                 Checkbox(checked = isSelected,
                     modifier = Modifier.scale(0.75f).requiredSize(16.dp),
-                    onCheckedChange = { isSelected = it })
+                    onCheckedChange = {
+                        onSelectedChanged(it)
+                    })
             }
             Text(
                 text = tip.tipObj.tip?.trim()?.trim('"')
@@ -260,6 +275,52 @@ private fun TipCard(modifier: Modifier = Modifier, tip: ModTip, showTitle: Boole
                     modifier = Modifier.alpha(0.6f).padding(top = 4.dp),
                     style = MaterialTheme.typography.caption
                 )
+            }
+        }
+    }
+
+    CursorDropdownMenu(
+        expanded = showContextMenu,
+        onDismissRequest = { showContextMenu = false }) {
+        DropdownMenuItem(onClick = {
+            copyToClipboard(tip.tipObj.tip.orEmpty())
+            showContextMenu = false
+        }) {
+            Image(
+                painter = painterResource("icon-copy.svg"),
+                colorFilter = ColorFilter.tint(MaterialTheme.colors.onSurface),
+                modifier = Modifier.padding(end = 12.dp).size(24.dp),
+                contentDescription = null
+            )
+            Text("Copy")
+        }
+        DropdownMenuItem(onClick = {
+            SL.tipsManager.deleteTips(listOf(tip))
+            onTipChanged()
+            showContextMenu = false
+        }) {
+            Image(
+                painter = painterResource("icon-trash.svg"),
+                colorFilter = ColorFilter.tint(MaterialTheme.colors.onSurface),
+                modifier = Modifier.padding(end = 12.dp).size(24.dp),
+                contentDescription = null
+            )
+            Text("Delete")
+        }
+        tip.variants.forEach { variant ->
+            DropdownMenuItem(onClick = {
+                runCatching {
+                    variant.modsFolderInfo.folder.resolve(Constants.TIPS_FILE_RELATIVE_PATH).parent.openInDesktop()
+                }.onFailure { Timber.w(it) }
+                showContextMenu = false
+            }) {
+                Image(
+                    painter = painterResource("icon-folder.svg"),
+                    colorFilter = ColorFilter.tint(MaterialTheme.colors.onSurface),
+                    modifier = Modifier.padding(end = 12.dp).size(24.dp),
+                    contentDescription = null
+                )
+                Text("Open ${variant.modInfo.version}")
             }
         }
     }
