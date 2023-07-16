@@ -27,6 +27,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -40,6 +41,8 @@ import smol.app.navigation.Screen
 import smol.app.themes.SmolTheme
 import smol.app.themes.SmolTheme.lighten
 import smol.app.toolbar.toolbar
+import smol.utilities.bytesAsShortReadableMB
+import smol.utilities.bytesToMB
 import smol.utilities.copyToClipboard
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.exists
@@ -50,6 +53,7 @@ enum class TipsGrouping {
     MOD,
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 @Preview
 fun AppScope.TipsView(
@@ -107,7 +111,7 @@ fun AppScope.TipsView(
                 toolbar(router.state.value.activeChild.instance as Screen)
             }
         }, content = {
-            Column(modifier = Modifier.padding(8.dp)) {
+            Column(modifier = Modifier.padding(start = 8.dp, top = 8.dp, end = 8.dp, bottom = SmolTheme.bottomBarHeight - 8.dp)) {
                 Row(
                     modifier = Modifier.padding(start = 8.dp, bottom = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -117,8 +121,8 @@ fun AppScope.TipsView(
                         style = MaterialTheme.typography.h5
                     )
                     Spacer(Modifier.weight(1f))
-                    CheckboxWithText(
-                        text = { Text("Only enabled") },
+                    Text(text = "Only enabled", modifier = Modifier.onClick { onlyEnabled = !onlyEnabled })
+                    Checkbox(
                         checked = onlyEnabled,
                         onCheckedChange = { onlyEnabled = it },
                         modifier = Modifier.padding(end = 8.dp)
@@ -218,31 +222,45 @@ private fun TipCard(modifier: Modifier = Modifier, tip: ModTip, showTitle: Boole
         shape = SmolTheme.smolFullyClippedButtonShape(),
         backgroundColor = if (isSelected) MaterialTheme.colors.surface.lighten() else MaterialTheme.colors.surface,
     ) {
-        Column(Modifier.padding(16.dp)) {
-            Row {
+        Column(Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 8.dp)) {
+            Row(modifier = Modifier.padding(bottom = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (showTitle) {
                     Text(
                         text = (tip.variants.lastOrNull()?.modInfo?.name?.trim()
                             ?: "(unknown mod name)"), // + " (${tip.variants.joinToString { it.modInfo.version.toString() }})",
                         style = MaterialTheme.typography.subtitle1,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 4.dp).alpha(0.65f)
+                        modifier = Modifier.alpha(0.65f).padding(end = 8.dp)
                     )
                 }
                 Spacer(Modifier.weight(1f))
-                IconButton(onClick = { copyToClipboard(tip.tipObj.tip.orEmpty()) }, modifier = Modifier.alpha(0.7f)) {
-                    Icon(
-                        painter = painterResource("icon-copy.svg"),
-                        contentDescription = null
-                    )
+                SmolTooltipArea(tooltip = { SmolTooltipText(text = "Copy tooltip") }) {
+                    IconButton(
+                        onClick = { copyToClipboard(tip.tipObj.tip.orEmpty()) },
+                        modifier = Modifier.alpha(0.7f).size(16.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource("icon-copy.svg"),
+                            contentDescription = null
+                        )
+                    }
                 }
-                Checkbox(checked = isSelected, onCheckedChange = { isSelected = it })
+                Checkbox(checked = isSelected,
+                    modifier = Modifier.scale(0.75f).requiredSize(16.dp),
+                    onCheckedChange = { isSelected = it })
             }
             Text(
                 text = tip.tipObj.tip?.trim()?.trim('"')
                     ?: "(author '${tip.variants.lastOrNull()?.modInfo?.author}' didn't add any text for this tip)",
                 style = MaterialTheme.typography.body2
             )
+            SmolTooltipArea(tooltip = { SmolTooltipText("Tip frequency (1 is normal frequency).") }) {
+                Text(
+                    text = "%.1f".format(tip.tipObj.freq?.toFloatOrNull() ?: 1f),
+                    modifier = Modifier.alpha(0.6f).padding(top = 4.dp),
+                    style = MaterialTheme.typography.caption
+                )
+            }
         }
     }
 }

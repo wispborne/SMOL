@@ -78,4 +78,4 @@ kotlin.sourceSets.main {
 }
 
 // set through project properties. Todo: Delete?
-// kotlin.jvmToolchain(18)
+ kotlin.jvmToolchain(18)
