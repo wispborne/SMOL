@@ -50,14 +50,13 @@ import smol.app.toasts.ToastContainer
 import smol.app.toasts.toastInstalledCard
 import smol.app.toasts.toaster
 import smol.app.updater.UpdateSmolToast
+import smol.app.util.isUpdatingEnabled
 import smol.app.views.DuplicateModAlertDialog
 import smol.app.views.DuplicateModAlertDialogState
 import smol.app.views.FileDropper
 import smol.timber.ktx.Timber
 import smol.updatestager.UpdateChannelManager
-import smol.utilities.IOLock
-import smol.utilities.exists
-import smol.utilities.isAny
+import smol.utilities.*
 import kotlin.io.path.exists
 import kotlin.system.exitProcess
 
@@ -76,9 +75,11 @@ fun WindowState.appView() {
             })
     }
 
-    LaunchedEffect("runonce") {
-        delay(5000) // Doesn't need to contribute to startup time.
-        checkForUpdates()
+    if(Constants.isUpdatingEnabled()){
+        LaunchedEffect("runonce") {
+            delay(5000) // Doesn't need to contribute to startup time.
+            checkForUpdates()
+        }
     }
 
     MaterialTheme(
