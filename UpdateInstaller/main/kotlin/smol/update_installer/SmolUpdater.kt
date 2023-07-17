@@ -64,7 +64,7 @@ class SmolUpdater : BaseAppUpdater() {
                 FileMetadata.streamDirectory(dir.resolve("app")).asSequence()
                     .plus(FileMetadata.streamDirectory(dir.resolve("runtime")).asSequence())
                     .plus(FileMetadata.readFrom(dir.resolve("SMOL.exe")))
-                    .plus(FileMetadata.readFrom(dir.resolve("SMOL.ico")))
+//                    .plus(FileMetadata.readFrom(dir.resolve("SMOL.ico")))
                     .onEach { it.path(it.source.relativeTo(dir)) }
                     .onEach { r -> r.classpath(r.source.toString().endsWith(".jar")) }
                     .toList())

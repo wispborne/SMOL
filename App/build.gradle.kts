@@ -154,7 +154,7 @@ compose.desktop {
                     println("OS: Windows")
                     console = false
                     upgradeUuid = "51169f8d-9aec-4abf-b30a-f5bc5a5f6509"
-                    iconFile.set(project.file("smol.ico"))
+                    iconFile.set(project.file("SMOL.ico"))
                     jvmArgs += listOf("-Djava.library.path=./libs/$jcefFolder/bin/lib/win64") // For CEF (Chromium Embedded Framework)
 //                jvmArgs += listOf(
 //                    "-XX:StartFlightRecording:settings=default,filename=./compose-rec.jfr",
@@ -166,14 +166,14 @@ compose.desktop {
             macOS {
                 if (currentPlatform == Platform.MacOS) {
                     println("OS: MacOS")
-                    iconFile.set(project.file("smol.ico"))
+//                    iconFile.set(project.file("SMOL.ico"))
                     jvmArgs += listOf("-Djava.library.path=native/macosx") // To use lwjgl in VRAM Checker}
                 }
             }
             linux {
                 if (currentPlatform == Platform.Linux) {
                     println("OS: Linux")
-                    iconFile.set(project.file("smol.ico"))
+                    iconFile.set(project.file("SMOL.ico"))
                     jvmArgs += listOf("-Djava.library.path=./libs/$jcefFolder/bin/lib/linux64")
                 }
             }
