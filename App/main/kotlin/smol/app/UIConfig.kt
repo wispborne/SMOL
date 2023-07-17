@@ -22,9 +22,9 @@ import smol.utilities.JsonFilePrefStorage
 class UIConfig(gson: Jsanity) : Config(
     InMemoryPrefStorage(
         JsonFilePrefStorage(
-        gson = gson,
-        file = Constants.UI_CONFIG_PATH
-    )
+            gson = gson,
+            file = Constants.UI_CONFIG_PATH
+        )
     )
 ) {
     var windowState: SmolWindowState? by pref(prefKey = "windowState", defaultValue = null)

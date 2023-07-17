@@ -53,12 +53,12 @@ object Constants {
     val VERCHECK_CACHE_PATH: Path = APP_FOLDER_PATH.resolve("SMOL_VerCheckCache.json")
     val VRAM_CHECKER_RESULTS_PATH: Path = APP_FOLDER_PATH.resolve("SMOL_VRAMCheckResults.json")
 
-    const val SMOL_RELEASES_URL = "https://github.com/davidwhitman/SMOL_Dist/releases"
+    const val SMOL_RELEASES_URL = "https://github.com/wispborne/SMOL_Dist/releases"
 
     // Mod Repo
-    const val modRepoUrlStable = "https://raw.githubusercontent.com/davidwhitman/StarsectorModRepo/main/ModRepo.json"
-    const val modRepoUrlUnstable = "https://raw.githubusercontent.com/davidwhitman/StarsectorModRepo/main/ModRepo.json"
-    const val modRepoUrlTest = "https://raw.githubusercontent.com/davidwhitman/StarsectorModRepo/test/ModRepo.json"
+    const val modRepoUrlStable = "https://raw.githubusercontent.com/wispborne/StarsectorModRepo/main/ModRepo.json"
+    const val modRepoUrlUnstable = "https://raw.githubusercontent.com/wispborne/StarsectorModRepo/main/ModRepo.json"
+    const val modRepoUrlTest = "https://raw.githubusercontent.com/wispborne/StarsectorModRepo/test/ModRepo.json"
 
     // Updater
     val VERSION_PROPERTIES_FILE: Path? = resourcesDir?.resolve("version.properties")

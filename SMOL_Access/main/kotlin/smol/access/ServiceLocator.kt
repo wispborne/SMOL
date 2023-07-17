@@ -54,15 +54,13 @@ class ServiceLocator internal constructor(
     }
     private val modsCache: ModsCache by lazy { ModsCache() }
     val jsanity: Jsanity by lazy { Jsanity(gson = GsonBuilder.buildGson()) }
-    val tipsManager: TipsManager = TipsManager(jsanity = jsanity)
     private val versionCheckerCache: VersionCheckerCache by lazy { VersionCheckerCache(gson = jsanity) }
     private val modMetadataStore: ModMetadataStore by lazy { ModMetadataStore(gson = jsanity) }
     val modMetadata: ModMetadataManager = ModMetadataManager(modMetadataStore = modMetadataStore, modsCache = modsCache)
     val appConfig: AppConfig by lazy { AppConfig(gson = jsanity) }
     val userManager: UserManager =
-        UserManager(
-            appConfig = appConfig
-        )
+        UserManager(appConfig = appConfig)
+    val tipsManager: TipsManager = TipsManager(jsanity = jsanity, userManager = userManager, modsCache = modsCache)
     private val modInfoLoader: ModInfoLoader by lazy { ModInfoLoader(gson = jsanity) }
     val gamePathManager: GamePathManager by lazy { GamePathManager(appConfig = appConfig) }
     val saveReader: SaveReader by lazy { SaveReader(gamePathManager = gamePathManager) }

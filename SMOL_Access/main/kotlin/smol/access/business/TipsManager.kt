@@ -12,22 +12,51 @@
 
 package smol.access.business
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import smol.access.Constants
-import smol.access.model.ModTip
-import smol.access.model.Tips
+import smol.access.model.*
 import smol.timber.ktx.Timber
 import smol.utilities.IOLock
 import smol.utilities.Jsanity
+import smol.utilities.asList
 import smol.utilities.exists
 import smol.utilities.toPathOrNull
-import kotlin.io.path.absolutePathString
-import kotlin.io.path.copyTo
-import kotlin.io.path.readText
-import kotlin.io.path.writeText
+import java.nio.file.Path
+import kotlin.io.path.*
 
-class TipsManager(val jsanity: Jsanity) {
+class TipsManager internal constructor(val jsanity: Jsanity, val userManager: UserManager, modsCache: ModsCache) {
+    val scope = CoroutineScope(Job())
+    val dryRun = false
+
+    init {
+        scope.launch {
+            modsCache.mods.collectLatest { modUpdate ->
+                if (modUpdate?.mods != null) {
+                    checkForModsWithPreviouslyDeletedTips(modUpdate.mods)
+                        .also { deletedTips ->
+                            if (deletedTips.isEmpty()) return@also
+
+                            Timber.i {
+                                "Mods with tips that user has previous removed:\n${
+                                    deletedTips.joinToString(separator = "\n") {
+                                        it.second.variants.joinToString { it.smolId } + it.second.tipObj.tip?.take(40)
+                                    }
+                                }"
+                            }
+                            Timber.i { "Deleting them!" }
+
+                            deleteTips(deletedTips.map { it.second })
+                        }
+                }
+            }
+        }
+    }
+
     fun deleteTips(tips: Collection<ModTip>) {
-        val dryRun = false
         val tipsByVariant = tips
             .flatMap { tip -> tip.variants.map { it to tip.tipObj } }
             .groupBy({ it.first }, { it.second })
@@ -40,39 +69,91 @@ class TipsManager(val jsanity: Jsanity) {
                     }"
                 }
                 IOLock.write {
-                    val path = variant.modsFolderInfo.folder.resolve(Constants.TIPS_FILE_RELATIVE_PATH)
-                    val backup = (path.absolutePathString() + ".bak").toPathOrNull()
+                    runCatching {
+                        val (path, allTips) = loadTipsFromFile(variant) ?: return@runCatching
 
-                    if (backup != null) {
-                        if (!backup.exists()) {
-                            path.copyTo(backup)
-                            Timber.i { "Created backup of '${path.absolutePathString()}' at '${backup.absolutePathString()}'" }
-                        }
-                    }
-
-                    path
-                        .readText()
-                        .let { json ->
-                            jsanity.fromJson<Tips>(
-                                json,
-                                path.absolutePathString(),
-                                shouldStripComments = true
-                            )
-                        }
-                        .let { tipsObj ->
-                            tipsObj.tips
-                                .filter { it !in variantTips }
-                                .let { tipsObj.copy(tips = it) }
-                        }
-                        .let { filteredTips -> jsanity.toJson(filteredTips) }
-                        .also { filteredTips ->
-                            if (!dryRun) {
-                                path.writeText(filteredTips)
+                        val backup = (path.absolutePathString() + ".bak").toPathOrNull()
+                        if (backup != null) {
+                            if (!backup.exists()) {
+                                path.copyTo(backup)
+                                Timber.i { "Created backup of '${path.absolutePathString()}' at '${backup.absolutePathString()}'" }
                             }
-
-                            Timber.i { "Wrote to '${path.absolutePathString()}':\n$filteredTips" }
                         }
+                        allTips
+                            .let { tipsObj ->
+                                tipsObj.tips
+                                    .filter { it !in variantTips }
+                                    .let { tipsObj.copy(tips = it) }
+                            }
+                            .let { filteredTips -> jsanity.toJson(filteredTips) }
+                            .also { filteredTips ->
+                                if (!dryRun) {
+                                    path.writeText(filteredTips)
+                                }
+
+                                Timber.i { "Wrote updated tips to '${path.absolutePathString()}'." }
+                            }
+                    }.onFailure { Timber.e(it) }
                 }
             }
+
+        // Add the tip hashcodes to the user profile, so we can remove them if a mod update adds them again.
+        userManager.updateUserProfile { profile ->
+            // Create a hashcode from the tipObj and the mod id, so the tip will be scoped to the mod.
+            profile.copy(
+                removedTipHashcodes = profile.removedTipHashcodes + tips.map { modTip ->
+                    createTipHashcode(
+                        modTip.variants.firstOrNull()?.modInfo?.id,
+                        modTip.tipObj
+                    )
+                }
+            )
+        }
+    }
+
+    fun createTipHashcode(
+        modId: String?,
+        tip: Tip
+    ): String = "$modId-${tip.hashCode()}"
+
+    private fun loadTipsFromFile(variant: ModVariant): Pair<Path, Tips>? {
+        val path = variant.modsFolderInfo.folder.resolve(Constants.TIPS_FILE_RELATIVE_PATH)
+
+        if (path.notExists())
+            return null
+
+        val allTips = path
+            .readText()
+            .let { json ->
+                jsanity.fromJson<Tips>(
+                    json,
+                    path.absolutePathString(),
+                    shouldStripComments = true
+                )
+            }
+        return Pair(path, allTips)
+    }
+
+    /**
+     * The user may have removed a tip from a mod, then installed a new version of the mod that restored the tip.
+     * Find any such tips.
+     */
+    fun checkForModsWithPreviouslyDeletedTips(modsToCheck: List<Mod>): List<Pair<String, ModTip>> {
+        val removedTipHashes = userManager.activeProfile.value.removedTipHashcodes
+
+        if (removedTipHashes.isEmpty()) {
+            return emptyList()
+        }
+
+        val allModTipHashes = modsToCheck
+            .flatMap { it.variants }
+            .flatMap { variant ->
+                runBlocking {
+                    loadTipsFromFile(variant)?.second?.tips.orEmpty()
+                        .map { createTipHashcode(variant.modInfo.id, it) to ModTip(it, variant.asList()) }
+                }
+            }
+
+        return allModTipHashes.filter { it.first in removedTipHashes }
     }
 }

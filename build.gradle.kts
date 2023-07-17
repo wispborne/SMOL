@@ -60,3 +60,5 @@ tasks.register("buildSmolDistUnstable") {
 tasks.register("buildSmolDistTest") {
     dependsOn("buildSmol", "UpdateStager:runTest")
 }
+
+kotlin.jvmToolchain(project.property("smolJvmTarget").toString().toInt())

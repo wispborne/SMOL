@@ -114,9 +114,31 @@ tasks.test {
     useJUnitPlatform()
 }
 
+enum class Platform {
+    Windows,
+    MacOS,
+    Linux
+}
+
 compose.desktop {
     application {
         mainClass = "smol.app.MainKt"
+
+        val currentPlatform: Platform = run {
+            val os = System.getProperty("os.name").lowercase()
+
+            if (os.contains("mac") || os.contains("darwin")) {
+                if ("aarch64" == System.getProperty("os.arch"))
+                    Platform.MacOS
+                else Platform.MacOS
+            } else if (os.contains("windows"))
+                Platform.Windows
+            else if (os.contains("nux") || os.contains("nix"))
+                Platform.Linux
+            else throw RuntimeException(
+                "Unsupported platform: $os"
+            )
+        }
 
         nativeDistributions {
             targetFormats(TargetFormat.Exe, TargetFormat.Dmg, TargetFormat.Deb)
@@ -128,26 +150,32 @@ compose.desktop {
             licenseFile.set(project.file("../LICENSE.txt"))
 
             windows {
-                println("OS: Windows")
-                console = false
-                upgradeUuid = "51169f8d-9aec-4abf-b30a-f5bc5a5f6509"
-                iconFile.set(project.file("smol.ico"))
-                jvmArgs += listOf("-Djava.library.path=./libs/$jcefFolder/bin/lib/win64") // For CEF (Chromium Embedded Framework)
+                if (currentPlatform == Platform.Windows) {
+                    println("OS: Windows")
+                    console = false
+                    upgradeUuid = "51169f8d-9aec-4abf-b30a-f5bc5a5f6509"
+                    iconFile.set(project.file("smol.ico"))
+                    jvmArgs += listOf("-Djava.library.path=./libs/$jcefFolder/bin/lib/win64") // For CEF (Chromium Embedded Framework)
 //                jvmArgs += listOf(
 //                    "-XX:StartFlightRecording:settings=default,filename=./compose-rec.jfr",
 //                    "-XX:FlightRecorderOptions:stackdepth=256"
 //                )
 //                jvmArgs += listOf("-Djava.library.path=native/windows") // To use lwjgl in VRAM Checker
+                }
             }
             macOS {
-                println("OS: MacOS")
-                iconFile.set(project.file("smol.ico"))
-//                jvmArgs += listOf("-Djava.library.path=native/macosx") // To use lwjgl in VRAM Checker
+                if (currentPlatform == Platform.MacOS) {
+                    println("OS: MacOS")
+                    iconFile.set(project.file("smol.ico"))
+                    jvmArgs += listOf("-Djava.library.path=native/macosx") // To use lwjgl in VRAM Checker}
+                }
             }
             linux {
-                println("OS: Linux")
-                iconFile.set(project.file("smol.ico"))
-                jvmArgs += listOf("-Djava.library.path=./libs/$jcefFolder/bin/lib/linux64")
+                if (currentPlatform == Platform.Linux) {
+                    println("OS: Linux")
+                    iconFile.set(project.file("smol.ico"))
+                    jvmArgs += listOf("-Djava.library.path=./libs/$jcefFolder/bin/lib/linux64")
+                }
             }
 
             // task suggestRuntimeModules to generate this

@@ -123,21 +123,23 @@ fun AppScope.TipsView(
                         style = MaterialTheme.typography.h5
                     )
                     Spacer(Modifier.weight(1f))
-                    SmolButton(
-                        onClick = {
-                            SL.tipsManager.deleteTips(tipSelectionStates.filter { it.value }
-                                .mapNotNull { tips[it.key] })
-                            tipsChangedNotifier++
-                        }
-                    ) {
-                        Text(text = "Delete Selected")
-                    }
                     Text(text = "Only enabled", modifier = Modifier.onClick { onlyEnabled = !onlyEnabled })
                     Checkbox(
                         checked = onlyEnabled,
                         onCheckedChange = { onlyEnabled = it },
                         modifier = Modifier.padding(end = 8.dp)
                     )
+                    SmolButton(
+                        modifier = Modifier.padding(end = 8.dp),
+                        onClick = {
+                            if (tipSelectionStates.count() == unfilteredTips.count() && tipSelectionStates.all { it.value })
+                                tipSelectionStates.putAll(unfilteredTips.associate { it.hashCode() to false })
+                            else
+                                tipSelectionStates.putAll(unfilteredTips.associate { it.hashCode() to true })
+                        }
+                    ) {
+                        Text(text = "Select All")
+                    }
                     SmolDropdownWithButton(
                         items = listOf(
                             SmolDropdownMenuItemTemplate(text = "No grouping") {
@@ -148,6 +150,17 @@ fun AppScope.TipsView(
                             },
                         ),
                     )
+                    SmolButton(
+                        modifier = Modifier.padding(start = 32.dp),
+                        onClick = {
+                            SL.tipsManager.deleteTips(tipSelectionStates.filter { it.value }
+                                .mapNotNull { tips[it.key] })
+                            tipsChangedNotifier++
+                        }
+                    ) {
+                        Icon(painter = painterResource("icon-trash.svg"), contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                        Text(text = "Delete Selected")
+                    }
                 }
                 LazyVerticalGrid(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -172,8 +185,7 @@ fun AppScope.TipsView(
 
                         TipsGrouping.MOD -> tips.values.groupBy { it.variants.firstOrNull()?.mod(SL.access) }
                             .entries
-                            // Sort by longest length of each mod's longest tip.
-                            .sortedWith(compareByDescending { it.value.maxBy { it.tipObj.tip.orEmpty().length }.tipObj.tip.orEmpty().length })
+                            .sortedWith(compareBy { it.key?.findFirstEnabledOrHighestVersion?.modInfo?.name })
                             .forEach { (mod, tipList) ->
                                 this.item(span = { GridItemSpan(maxCurrentLineSpan) }) { Spacer(Modifier.height(0.dp)) }
                                 this.item(span = { GridItemSpan(maxCurrentLineSpan) }) {

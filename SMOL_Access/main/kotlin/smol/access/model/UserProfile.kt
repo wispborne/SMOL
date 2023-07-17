@@ -14,6 +14,9 @@ package smol.access.model
 
 import java.time.ZonedDateTime
 
+/**
+ * @param removedTipHashcodes Hashcodes of [Tip]s with mod ids that the user has chosen to remove.
+ */
 data class UserProfile(
     val id: Int,
     val username: String,
@@ -28,6 +31,7 @@ data class UserProfile(
     val launchButtonAction: LaunchButtonAction?,
     val useOrbitronNameFont: Boolean?,
     val warnAboutOneClickUpdates: Boolean?,
+    val removedTipHashcodes: Set<String>,
 ) {
     val activeModProfile: ModProfile
         get() = modProfiles.firstOrNull { it.id == activeModProfileId } ?: modProfiles.first()
