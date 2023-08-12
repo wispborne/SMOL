@@ -46,6 +46,8 @@ internal object DiscordReader {
     private const val noscrapeReaction = "\uD83D\uDD78️"
     var apiCallsLastRun = 0
 
+    class DownloadyUrl(val url: String, val isDownloadable: Boolean)
+
     internal suspend fun readAllMessages(config: Main.Companion.Config, gsonBuilder: GsonBuilder): List<ScrapedMod>? {
         apiCallsLastRun = 0
 
@@ -80,125 +82,180 @@ internal object DiscordReader {
             authToken = authToken,
             getFullChannelInfo = true
         )
-            .mapNotNull { thread ->
-                // For threads, take just the first message of the thread.
-                getMessages(channelId = thread.id, thread.name, httpClient, authToken, limit = 1)
-                    .firstOrNull()
-                    ?.copy(parentThread = thread)
+            .map { thread ->
+                // For threads, take the first 100 messages of the thread.
+                getMessages(channelId = thread.id, thread.name, httpClient, authToken, limit = 100)
+                    .map { it.copy(parentThread = thread) }
             }
             .also { Timber.i { "Checking for mods with $noscrapeReaction reactions." } }
-            .filter { msg ->
-                val hasNoscrapeReaction = msg.reactions.orEmpty().any { it.emoji.name == noscrapeReaction }
+            .filter { msgs ->
+                msgs.forEach { msg ->
+                    val hasNoscrapeReaction = msg.reactions.orEmpty().any { it.emoji.name == noscrapeReaction }
 
-                if (hasNoscrapeReaction) {
-                    val isReactionFromPostAuthor = getReacters(
-                        httpClient = httpClient,
-                        authToken = authToken,
-                        emoji = noscrapeReaction,
-                        messageId = msg.id
-                    ).any { reacter -> reacter.id == msg.author?.id }
+                    if (hasNoscrapeReaction) {
+                        val isReactionFromPostAuthor = getReacters(
+                            httpClient = httpClient,
+                            authToken = authToken,
+                            emoji = noscrapeReaction,
+                            messageId = msg.id
+                        ).any { reacter -> reacter.id == msg.author?.id }
 
-                    if (isReactionFromPostAuthor) {
-                        Timber.i {
-                            "Skipping Discord mod '${msg.content?.lines()?.firstOrNull()}' " +
-                                    "because of reaction $noscrapeReaction."
+                        if (isReactionFromPostAuthor) {
+                            Timber.i {
+                                "Skipping Discord mod '${msg.content?.lines()?.firstOrNull()}' " +
+                                        "because of reaction $noscrapeReaction."
+                            }
+
+                            return@filter false
                         }
-
-                        return@filter false
                     }
                 }
 
                 return@filter true
             }
-
             .also { Timber.i { "Done checking reactions." } }
             .parallelMap { message ->
-                Timber.i { "Parsing message ${message.content?.lines()?.firstOrNull()}" }
-                // Drop any blank lines from the start of the post.
-                // Use thread title for mod name if it's a thread.
-                val name = (if (message.isInThread()) {
-                    message.parentThread?.name
+                return@parallelMap if (message.count() == 1 && !message.first().isInThread()) {
+                    parseAsSingleMessage(message.first())
                 } else {
-                    message.content?.lines().orEmpty()
-                        .dropWhile { it.isBlank() }.firstOrNull()
-                })?.removeMarkdownFromName()
-
-                val messageLines = message.content?.lines().orEmpty()
-                    .let { if (message.isInThread()) it else it.dropWhile { it.isBlank() }.drop(1) }
-                    .dropWhile { it.isBlank() }
-
-                val forumUrl = messageLines
-                    .mapNotNull { urlFinderRegex.find(it)?.value }
-                    .firstOrNull { it.contains("fractalsoftworks") }
-                    ?.let { kotlin.runCatching { Url(it) }.onFailure { Timber.w(it) }.getOrNull() }
-
-                class DownloadyUrl(val url: String, val isDownloadable: Boolean)
-
-                // Get all urls, remove ones that definitely aren't download urls, then check each to see
-                // if there's a file at the other end, as opposed to a website.
-                val downloadyUrls = messageLines
-                    .mapNotNull { urlFinderRegex.find(it)?.value }
-                    .filter { url -> thingsThatAreNotDownloady.none { url.contains(it) } }
-                    // Very slow, makes a request for each file to get headers.
-                    .parallelMap { DownloadyUrl(it, Common.isDownloadable(it)) }
-
-                val downloadArtifactUrl = downloadyUrls
-                    .mapNotNull { if (it.isDownloadable) it.url else null }
-                    .let { getBestPossibleDownloadHost(it) }
-                    .firstOrNull()
-                    ?.let { kotlin.runCatching { Url(it) }.onFailure { Timber.w(it) }.getOrNull() }
-
-                val downloadPageUrl = downloadyUrls
-                    .mapNotNull { if (it.isDownloadable) null else it.url }
-                    .let { getBestPossibleDownloadHost(it) }
-                    .firstOrNull()
-                    ?.let { kotlin.runCatching { Url(it) }.onFailure { Timber.w(it) }.getOrNull() }
-                    ?: forumUrl
-
-                ScrapedMod(
-                    name = name ?: "",
-                    summary = messageLines.take(2).joinToString(separator = "\n"),
-                    description = messageLines.joinToString(separator = "\n"),
-                    modVersion = null,
-                    gameVersionReq = "",
-                    authors = message.author?.username ?: "",
-                    authorsList = message.author?.username.asList(),
-                    forumPostLink = forumUrl,
-                    link = downloadArtifactUrl ?: forumUrl,
-                    urls = listOfNotNull(
-                        forumUrl?.let { ModUrlType.Forum to forumUrl },
-                        ModUrlType.Discord to
-                                if (message.isInThread())
-                                    Url("https://discord.com/channels/$serverId/${message.parentThread?.id}/${message.id}")
-                                else
-                                    Url("https://discord.com/channels/$serverId/$modUpdatesForumChannelId/${message.id}"),
-                        downloadArtifactUrl?.let { ModUrlType.DirectDownload to downloadArtifactUrl },
-                        downloadPageUrl?.let { ModUrlType.DownloadPage to downloadPageUrl },
-                    ).toMap(),
-                    source = ModSource.Discord,
-                    sources = listOf(ModSource.Discord),
-                    categories = message.parentThread?.applied_tags.orEmpty().mapNotNull { categoriesLookup[it] },
-                    images = message.attachments
-                        ?.filter { it.content_type?.startsWith("image/") ?: false }
-                        ?.associate {
-                            it.id to Image(
-                                id = it.id,
-                                filename = it.filename,
-                                description = it.description,
-                                content_type = it.content_type,
-                                size = it.size,
-                                url = it.url,
-                                proxy_url = it.proxy_url
-                            )
-                        },
-                    dateTimeCreated = message.timestamp,
-                    dateTimeEdited = message.edited_timestamp
-                )
+                    parseAsThread(message, categoriesLookup)
+                }
             }
-            .map { cleanUpMod(it) }
+            .mapNotNull { it?.let { cleanUpMod(it) } }
             .filter { it.name.isNotBlank() } // Remove any posts that don't contain text.
             .also { Timber.i { "Discord API calls used: $apiCallsLastRun." } }
     }
+
+    private suspend fun parseAsSingleMessage(
+        message: Message
+    ): ScrapedMod {
+        Timber.i { "Parsing message ${message.content?.lines()?.firstOrNull()}" }
+        // Drop any blank lines from the start of the post.
+        val name = message.content?.lines().orEmpty()
+            .dropWhile { it.isBlank() }
+            .firstOrNull()
+            ?.removeMarkdownFromName()
+
+        val messageLines = message.content?.lines().orEmpty()
+            .let { it.dropWhile { it.isBlank() }.drop(1) }
+            .dropWhile { it.isBlank() }
+
+        val (forumUrl, downloadArtifactUrl, downloadPageUrl) = getUrlsFromMessage(messageLines)
+
+        return ScrapedMod(
+            name = name ?: "",
+            summary = messageLines.take(2).joinToString(separator = "\n"),
+            description = messageLines.joinToString(separator = "\n"),
+            modVersion = null,
+            gameVersionReq = "",
+            authors = message.author?.username ?: "",
+            authorsList = message.author?.username.asList(),
+            forumPostLink = forumUrl,
+            link = downloadArtifactUrl ?: forumUrl,
+            urls = listOfNotNull(
+                forumUrl?.let { ModUrlType.Forum to forumUrl },
+                ModUrlType.Discord to
+                            Url("https://discord.com/channels/$serverId/$modUpdatesForumChannelId/${message.id}"),
+                downloadArtifactUrl?.let { ModUrlType.DirectDownload to downloadArtifactUrl },
+                downloadPageUrl?.let { ModUrlType.DownloadPage to downloadPageUrl },
+            ).toMap(),
+            source = ModSource.Discord,
+            sources = listOf(ModSource.Discord),
+            categories = emptyList(), // message.parentThread?.applied_tags.orEmpty().mapNotNull { categoriesLookup[it] },
+            images = getImagesFromMessage(message),
+            dateTimeCreated = message.timestamp,
+            dateTimeEdited = message.edited_timestamp
+        )
+    }
+
+    private suspend fun parseAsThread(
+        messages: List<Message>,
+        categoriesLookup: Map<String, String?>
+    ): ScrapedMod? {
+        if (messages.isEmpty()) return null
+
+        val messagesOrdered = messages.sortedBy { it.timestamp }
+        val message = messagesOrdered.first { !it.content.isNullOrBlank() }
+        Timber.i { "Parsing message ${message.content?.lines()?.firstOrNull()}" }
+        // Drop any blank lines from the start of the post.
+        // Use thread title for mod name if it's a thread.
+        val name = message.parentThread?.name?.removeMarkdownFromName()
+
+        val messageLines = message.content?.lines().orEmpty()
+            .dropWhile { it.isBlank() }
+        val allMessageLines = messagesOrdered.flatMap { it.content?.lines().orEmpty() }
+            .dropWhile { it.isBlank() }
+
+        val (forumUrl, downloadArtifactUrl, downloadPageUrl) = getUrlsFromMessage(allMessageLines)
+
+        return ScrapedMod(
+            name = name ?: "",
+            summary = messageLines.take(2).joinToString(separator = "\n"),
+            description = messageLines.joinToString(separator = "\n"),
+            modVersion = null,
+            gameVersionReq = "",
+            authors = message.author?.username ?: "",
+            authorsList = message.author?.username.asList(),
+            forumPostLink = forumUrl,
+            link = downloadArtifactUrl ?: forumUrl,
+            urls = listOfNotNull(
+                forumUrl?.let { ModUrlType.Forum to forumUrl },
+                ModUrlType.Discord to
+                        Url("https://discord.com/channels/$serverId/${message.parentThread?.id}/${message.id}"),
+                downloadArtifactUrl?.let { ModUrlType.DirectDownload to downloadArtifactUrl },
+                downloadPageUrl?.let { ModUrlType.DownloadPage to downloadPageUrl },
+            ).toMap(),
+            source = ModSource.Discord,
+            sources = listOf(ModSource.Discord),
+            categories = message.parentThread?.applied_tags.orEmpty().mapNotNull { categoriesLookup[it] },
+            images = messagesOrdered.map { getImagesFromMessage(it) }.reduceOrNull { acc, map -> acc.orEmpty().plus(map.orEmpty()) },
+            dateTimeCreated = message.timestamp,
+            dateTimeEdited = message.edited_timestamp
+        )
+    }
+
+    private suspend fun getUrlsFromMessage(messageLines: List<String>): Triple<Url?, Url?, Url?> {
+        val forumUrl = messageLines
+            .mapNotNull { urlFinderRegex.find(it)?.value }
+            .firstOrNull { it.contains("fractalsoftworks") }
+            ?.let { kotlin.runCatching { Url(it) }.onFailure { Timber.w(it) }.getOrNull() }
+
+        // Get all urls, remove ones that definitely aren't download urls, then check each to see
+        // if there's a file at the other end, as opposed to a website.
+        val downloadyUrls = messageLines
+            .mapNotNull { urlFinderRegex.find(it)?.value }
+            .filter { url -> thingsThatAreNotDownloady.none { url.contains(it) } }
+            // Very slow, makes a request for each file to get headers.
+            .parallelMap { DownloadyUrl(it, Common.isDownloadable(it)) }
+
+        val downloadArtifactUrl = downloadyUrls
+            .mapNotNull { if (it.isDownloadable) it.url else null }
+            .let { getBestPossibleDownloadHost(it) }
+            .firstOrNull()
+            ?.let { kotlin.runCatching { Url(it) }.onFailure { Timber.w(it) }.getOrNull() }
+
+        val downloadPageUrl = downloadyUrls
+            .mapNotNull { if (it.isDownloadable) null else it.url }
+            .let { getBestPossibleDownloadHost(it) }
+            .firstOrNull()
+            ?.let { kotlin.runCatching { Url(it) }.onFailure { Timber.w(it) }.getOrNull() }
+            ?: forumUrl
+        return Triple(forumUrl, downloadArtifactUrl, downloadPageUrl)
+    }
+
+    private fun getImagesFromMessage(message: Message) = message.attachments
+        ?.filter { it.content_type?.startsWith("image/") ?: false }
+        ?.associate {
+            it.id to Image(
+                id = it.id,
+                filename = it.filename,
+                description = it.description,
+                content_type = it.content_type,
+                size = it.size,
+                url = it.url,
+                proxy_url = it.proxy_url
+            )
+        }
 
     /**
      * Taken from actual samples.
@@ -328,6 +385,7 @@ internal object DiscordReader {
                     }
             }.body<List<Message>>()
 //                .run { jsanity.fromJson<List<Message>>(this, shouldStripComments = false) }
+                // Reverse chronological order, last message first.
                 .sortedByDescending { it.timestamp }
 
             Timber.i { "Found ${newMessages.count()} posts in Discord channel $channelName." }
