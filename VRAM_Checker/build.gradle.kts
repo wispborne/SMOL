@@ -30,7 +30,7 @@ dependencies {
         exclude("TinyLog")
     })
 
-    implementation("org.jetbrains.kotlin:kotlin-reflect:1.5.21")
+    implementation(project.property("kotlinReflect").toString())
     implementation(project.property("coroutines")!!)
 
     implementation("de.siegmar:fastcsv:2.2.0")
@@ -39,12 +39,12 @@ dependencies {
 
     // Hardware info
     api("com.github.oshi:oshi-core:6.2.2")
+    implementation("com.mayakapps.compose:window-styler:0.3.2")
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     kotlinOptions {
         jvmTarget = "${project.property("smolJvmTarget")}"
-        @Suppress("SuspiciousCollectionReassignment")
         freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
     }
 }

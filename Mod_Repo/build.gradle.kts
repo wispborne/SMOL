@@ -29,6 +29,7 @@ dependencies {
         include("**/*.jar")
         exclude("TinyLog")
     })
+    implementation("com.mayakapps.compose:window-styler:0.3.2")
 
     // API
     val ktorVersion = "2.1.2"

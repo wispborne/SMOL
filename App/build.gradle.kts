@@ -37,7 +37,7 @@ val jcefFolder = "jcef-v1.0.18"
 dependencies {
     implementation(compose.desktop.currentOs)
     implementation("org.jetbrains.compose.components:components-splitpane-desktop:1.0.1")
-    implementation("org.jetbrains.kotlin:kotlin-reflect:1.5.21")
+    implementation(project.property("kotlinReflect").toString())
     implementation(project.property("coroutines")!!)
     implementation(project.property("coroutinesSwing")!!)
 
@@ -74,6 +74,7 @@ dependencies {
 
     // Markdown
     implementation("com.mikepenz:multiplatform-markdown-renderer-jvm:0.6.1")
+    implementation("com.mayakapps.compose:window-styler:0.3.2")
 
     // Navigation
     val decomposeVer = "0.3.1"
@@ -105,7 +106,6 @@ java.sourceSets.main {
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions {
         jvmTarget = "${project.property("smolJvmTarget")}"
-        @Suppress("SuspiciousCollectionReassignment")
         freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
     }
 }
@@ -148,13 +148,14 @@ compose.desktop {
             description = "Starsector Mod Organizer and Launcher"
             vendor = "Wisp"
             licenseFile.set(project.file("../LICENSE.txt"))
+            println("Project path: ${project.projectDir.absolutePath}")
 
             windows {
                 if (currentPlatform == Platform.Windows) {
                     println("OS: Windows")
                     console = false
                     upgradeUuid = "51169f8d-9aec-4abf-b30a-f5bc5a5f6509"
-                    iconFile.set(project.file("SMOL.ico"))
+                    iconFile.set(project.file("smol.ico"))
                     jvmArgs += listOf("-Djava.library.path=./libs/$jcefFolder/bin/lib/win64") // For CEF (Chromium Embedded Framework)
 //                jvmArgs += listOf(
 //                    "-XX:StartFlightRecording:settings=default,filename=./compose-rec.jfr",
@@ -166,14 +167,18 @@ compose.desktop {
             macOS {
                 if (currentPlatform == Platform.MacOS) {
                     println("OS: MacOS")
-//                    iconFile.set(project.file("SMOL.ico"))
+                    iconFile.set(project.file("icon_png.png"))
+                    bundleID = "org.wisp.smol"
                     jvmArgs += listOf("-Djava.library.path=native/macosx") // To use lwjgl in VRAM Checker}
+                    println("Entitlements file exists? ${project.file("entitlements.plist").exists()}")
+                    entitlementsFile.set(project.file("entitlements.plist"))
+                    runtimeEntitlementsFile.set(project.file("runtime-entitlements.plist"))
                 }
             }
             linux {
                 if (currentPlatform == Platform.Linux) {
                     println("OS: Linux")
-                    iconFile.set(project.file("SMOL.ico"))
+                    iconFile.set(project.file("icon_png.png"))
                     jvmArgs += listOf("-Djava.library.path=./libs/$jcefFolder/bin/lib/linux64")
                 }
             }

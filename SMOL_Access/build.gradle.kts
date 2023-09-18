@@ -55,6 +55,7 @@ dependencies {
     // To calculate checksum for archive files
     // https://mvnrepository.com/artifact/commons-codec/commons-codec
     implementation("commons-codec:commons-codec:1.15")
+    implementation("com.mayakapps.compose:window-styler:0.3.2")
     testImplementation("org.junit.jupiter:junit-jupiter:5.8.1")
 
 }

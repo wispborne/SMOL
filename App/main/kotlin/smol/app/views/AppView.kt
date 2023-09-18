@@ -217,7 +217,7 @@ private fun setUpToasts() {
                     ) {
                         toastInstalledCard(
                             modVariant = newModVariant,
-                            requestToastDismissal = { delayMillis ->
+                            requestToastDismissalAfter = { delayMillis ->
                                 SL.UI.toaster.setTimeout(id, delayMillis)
                             }
                         )
