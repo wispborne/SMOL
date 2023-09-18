@@ -21,12 +21,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.input.pointer.pointerMoveFilter
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import smol.app.themes.SmolTheme
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SmolTooltipArea(
     tooltip: @Composable () -> Unit,
@@ -54,19 +55,16 @@ fun SmolTooltipBackground(modifier: Modifier = Modifier, content: @Composable ()
     if (show) {
         Box(
             modifier = modifier
-                .border(width = 1.dp, color = MaterialTheme.colors.primary.copy(alpha = ContentAlpha.medium))
-                .shadow(elevation = 4.dp)
-                .background(color = MaterialTheme.colors.surface)
+                .border(
+                    width = 1.dp,
+                    color = MaterialTheme.colors.primary.copy(alpha = ContentAlpha.medium),
+                    shape = SmolTheme.smolNormalButtonShape()
+                )
+                .shadow(elevation = 4.dp, shape = SmolTheme.smolNormalButtonShape())
+                .background(color = MaterialTheme.colors.surface, shape = SmolTheme.smolNormalButtonShape())
                 .padding(all = 16.dp)
-                .mouseClickable { show = false }
-                .pointerMoveFilter(
-                    onEnter = {
-                        show = false
-                        false
-                    },
-                    onExit = {
-                        false
-                    })
+                // Hide on click so if tooltip is blocking a button, you can get rid of it.
+                .onClick { show = false }
         ) {
             content.invoke()
         }

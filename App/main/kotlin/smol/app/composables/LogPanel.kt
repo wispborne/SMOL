@@ -90,6 +90,7 @@ fun AppScope.logPanel(
                                         text = it.name.lowercase().replaceFirstChar { it.uppercaseChar() },
                                         onClick = {
                                             Logging.logLevel = it
+                                            true
                                         })
                                 },
                                 initiallySelectedIndex = selectedLogLevel.ordinal

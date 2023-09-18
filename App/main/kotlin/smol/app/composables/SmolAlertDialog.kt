@@ -30,6 +30,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.*
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import smol.app.util.onEnterKeyPressed
@@ -80,7 +81,7 @@ fun SmolAlertDialog(
     shape: Shape = MaterialTheme.shapes.medium,
     backgroundColor: Color = MaterialTheme.colors.surface,
     contentColor: Color = contentColorFor(backgroundColor),
-    dialogProvider: AlertDialogProvider = PopupAlertDialogProvider
+    dialogProvider: DialogProperties = DialogProperties()
 ) {
     Box(
         modifier = underlayModifier
@@ -96,55 +97,57 @@ fun SmolAlertDialog(
             shape = shape,
             backgroundColor = backgroundColor,
             contentColor = contentColor,
-            dialogProvider = dialogProvider
+            properties = dialogProvider
         )
     }
 }
 
 /**
  * Shows Alert dialog as popup in the middle of the window.
+ *
+ * Apparently not needed after Compose 1.5.
  */
-@ExperimentalMaterialApi
-class SmolAlertDialogProvider(val boundsModifier: Modifier = Modifier.fillMaxSize()) : AlertDialogProvider {
-    @Composable
-    override fun AlertDialog(
-        onDismissRequest: () -> Unit,
-        content: @Composable () -> Unit
-    ) {
-        Popup(
-            popupPositionProvider = object : PopupPositionProvider {
-                override fun calculatePosition(
-                    anchorBounds: IntRect,
-                    windowSize: IntSize,
-                    layoutDirection: LayoutDirection,
-                    popupContentSize: IntSize
-                ): IntOffset = IntOffset.Zero
-            },
-            focusable = true,
-            onDismissRequest = onDismissRequest,
-            onKeyEvent = {
-                if (it.awtEventOrNull?.keyCode == KeyEvent.VK_ESCAPE) {
-                    onDismissRequest()
-                    true
-                } else {
-                    false
-                }
-            },
-        ) {
-            Box(
-                modifier = boundsModifier
-                    .pointerInput(onDismissRequest) {
-                        detectTapGestures(onPress = { onDismissRequest() })
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Surface(elevation = 24.dp) {
-                    content()
-                }
-            }
-        }
-    }
-}
+//@ExperimentalMaterialApi
+//class SmolAlertDialogProvider(val boundsModifier: Modifier = Modifier.fillMaxSize()) : AlertDialogProvider {
+//    @Composable
+//    override fun AlertDialog(
+//        onDismissRequest: () -> Unit,
+//        content: @Composable () -> Unit
+//    ) {
+//        Popup(
+//            popupPositionProvider = object : PopupPositionProvider {
+//                override fun calculatePosition(
+//                    anchorBounds: IntRect,
+//                    windowSize: IntSize,
+//                    layoutDirection: LayoutDirection,
+//                    popupContentSize: IntSize
+//                ): IntOffset = IntOffset.Zero
+//            },
+//            focusable = true,
+//            onDismissRequest = onDismissRequest,
+//            onKeyEvent = {
+//                if (it.awtEventOrNull?.keyCode == KeyEvent.VK_ESCAPE) {
+//                    onDismissRequest()
+//                    true
+//                } else {
+//                    false
+//                }
+//            },
+//        ) {
+//            Box(
+//                modifier = boundsModifier
+//                    .pointerInput(onDismissRequest) {
+//                        detectTapGestures(onPress = { onDismissRequest() })
+//                    },
+//                contentAlignment = Alignment.Center
+//            ) {
+//                Surface(elevation = 24.dp) {
+//                    content()
+//                }
+//            }
+//        }
+//    }
+//}
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable

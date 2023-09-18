@@ -13,8 +13,11 @@
 package smol.app.home
 
 import AppScope
-import androidx.compose.foundation.*
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.PointerMatcher
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.onClick
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.Icon
 import androidx.compose.material.LocalContentColor
@@ -27,7 +30,6 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
@@ -44,7 +46,10 @@ import smol.access.SL
 import smol.access.model.Mod
 import smol.access.model.VersionCheckerInfo
 import smol.app.UI
-import smol.app.composables.*
+import smol.app.composables.SmolScrollableDialog
+import smol.app.composables.SmolTooltipArea
+import smol.app.composables.SmolTooltipBackground
+import smol.app.composables.SmolTooltipText
 import smol.app.navigation.Screen
 import smol.app.themes.SmolTheme
 import smol.app.util.*
@@ -87,6 +92,7 @@ fun AppScope.ModUpdateIcon(
                     onlineVersionInfo?.directDownloadUrl?.nullIfBlank()
                         ?: mod.findHighestVersion?.versionCheckerInfo?.directDownloadUrl?.nullIfBlank()
 
+                // Has direct download URL
                 if (ddUrl != null) {
                     SmolTooltipArea(tooltip = {
                         SmolTooltipText(
@@ -138,6 +144,7 @@ fun AppScope.ModUpdateIcon(
                         )
                     }
                 } else {
+                    // No direct download URL
                     val modThreadId =
                         mod.findHighestVersion?.versionCheckerInfo?.modThreadId
                     val hasModThread = modThreadId?.isNotBlank() == true
@@ -155,22 +162,20 @@ fun AppScope.ModUpdateIcon(
                                 }
                             }
                         )
-                    }, modifier = Modifier.mouseClickable {
-                        if (this.buttons.isPrimaryPressed) {
-                            if (hasModThread) {
-                                if (Constants.isModBrowserEnabled()) {
-                                    router.replaceCurrent(Screen.ModBrowser(modThreadId?.getModThreadUrl()))
-                                } else {
-                                    kotlin.runCatching {
-                                        modThreadId?.getModThreadUrl()
-                                            ?.openAsUriInBrowser()
-                                    }
-                                        .onFailure { Timber.w(it) }
-                                }
+                    }, modifier = Modifier.onClick {
+                        if (hasModThread) {
+                            if (Constants.isModBrowserEnabled()) {
+                                router.replaceCurrent(Screen.ModBrowser(modThreadId?.getModThreadUrl()))
                             } else {
-                                createGoogleSearchFor("starsector ${mod.findHighestVersion?.modInfo?.name}")
-                                    .openAsUriInBrowser()
+                                kotlin.runCatching {
+                                    modThreadId?.getModThreadUrl()
+                                        ?.openAsUriInBrowser()
+                                }
+                                    .onFailure { Timber.w(it) }
                             }
+                        } else {
+                            createGoogleSearchFor("starsector ${mod.findHighestVersion?.modInfo?.name}")
+                                .openAsUriInBrowser()
                         }
                     }
                         .align(Alignment.CenterVertically)) {
@@ -182,8 +187,7 @@ fun AppScope.ModUpdateIcon(
                             contentDescription = null,
                             colorFilter = ColorFilter.tint(
                                 color =
-                                if (ddUrl == null) MaterialTheme.colors.secondary
-                                else MaterialTheme.colors.secondary.copy(alpha = alpha)
+                                MaterialTheme.colors.secondary
                             ),
                             modifier = Modifier.width(SmolTheme.modUpdateIconSize.dp)
                                 .height(SmolTheme.modUpdateIconSize.dp)
@@ -348,13 +352,6 @@ private fun AppScope.ChangelogIcon(
                     alertDialogSetter {
                         SmolScrollableDialog(
                             onDismissRequest = { dismissAlertDialog() },
-                            dismissButton = {
-                                SmolButton(
-                                    onClick = { dismissAlertDialog() },
-                                ) {
-                                    Text(text = "Close")
-                                }
-                            },
                             title = {
                                 Text(
                                     text = "${mod.findFirstEnabledOrHighestVersion?.modInfo?.name} Changelog",

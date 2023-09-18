@@ -493,7 +493,10 @@ fun AppScope.toolsDropdown(modifier: Modifier = Modifier) {
                 text = "In-game Tips",
                 iconPath = "icon-tips.svg",
                 isEnabled = gamePath?.isReadable() == true,
-                onClick = { router.replaceCurrent(Screen.Tips) }
+                onClick = {
+                    router.replaceCurrent(Screen.Tips)
+                    true
+                }
             ),
         ))
 }
@@ -531,6 +534,7 @@ fun AppScope.quickLinksDropdown(modifier: Modifier = Modifier) {
                 isEnabled = gamePath?.isReadable() == true,
                 onClick = {
                     gamePath?.openInDesktop()
+                    true
                 }
             ),
             SmolDropdownMenuItemTemplate(
@@ -539,6 +543,7 @@ fun AppScope.quickLinksDropdown(modifier: Modifier = Modifier) {
                 isEnabled = modsPath?.isReadable() == true,
                 onClick = {
                     modsPath?.openInDesktop()
+                    true
                 }
             ),
             SmolDropdownMenuItemTemplate(
@@ -547,6 +552,7 @@ fun AppScope.quickLinksDropdown(modifier: Modifier = Modifier) {
                 isEnabled = savesPath?.isReadable() == true,
                 onClick = {
                     savesPath?.openInDesktop()
+                    true
                 }
             ),
             SmolDropdownMenuItemTemplate(
@@ -555,6 +561,7 @@ fun AppScope.quickLinksDropdown(modifier: Modifier = Modifier) {
                 isEnabled = logPath?.isReadable() == true,
                 onClick = {
                     logPath?.openInDesktop()
+                    true
                 }
             ),
             SmolDropdownMenuItemTemplate(
@@ -563,6 +570,7 @@ fun AppScope.quickLinksDropdown(modifier: Modifier = Modifier) {
                 isEnabled = logPath?.isReadable() == true,
                 onClick = {
                     logPath?.openInDesktop()
+                    true
                 }
             )
         )

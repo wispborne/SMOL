@@ -31,7 +31,7 @@ import smol.app.themes.SmolTheme
 
 
 abstract class SmolDropdownMenuItem(
-    val onClick: () -> Unit,
+    val onClick: () -> Boolean,
     val backgroundColor: Color? = null,
     val border: Border? = null,
 ) {
@@ -48,11 +48,11 @@ class SmolDropdownMenuItemTemplate(
     backgroundColor: Color? = null,
     border: Border? = null,
     val contentColor: Color? = null,
-    onClick: () -> Unit,
+    onClick: () -> Boolean,
 ) : SmolDropdownMenuItem(onClick, backgroundColor, border)
 
 class SmolDropdownMenuItemCustom(
-    onClick: () -> Unit,
+    onClick: () -> Boolean,
     backgroundColor: Color? = null,
     border: Border? = null,
     val customItemContent: @Composable RowScope.(isMenuButton: Boolean) -> Unit
@@ -179,11 +179,11 @@ fun SmolDropdownMenu(
                                 ) else this
                             },
                         onClick = {
-                            if (canSelectItems) {
+                            expanded.value = false
+
+                            if (canSelectItems && items[index].onClick()) {
                                 selectedIndex.value = index
                             }
-                            expanded.value = false
-                            items[index].onClick()
                         }) {
                         if (item is SmolDropdownMenuItemCustom) {
                             item.customItemContent.invoke(this, false)

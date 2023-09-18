@@ -33,7 +33,6 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.arkivanov.decompose.extensions.compose.jetbrains.animation.child.crossfade
 import com.mikepenz.markdown.Markdown
 import io.kamel.image.KamelImage
 import io.kamel.image.lazyPainterResource
@@ -41,7 +40,6 @@ import io.ktor.http.*
 import org.tinylog.kotlin.Logger
 import smol.app.WindowState
 import smol.app.composables.*
-import smol.app.themes.LocalUsableBounds
 import smol.app.themes.SmolTheme
 import smol.app.themes.SmolTheme.lighten
 import smol.app.util.onEnterKeyPressed
@@ -104,15 +102,19 @@ fun AppScope.scrapedModCard(
                 when {
                     urls.containsKey(ModUrlType.Forum) ->
                         urls[ModUrlType.Forum]?.run { linkLoader.invoke(this.toString()) }
+
                     urls.containsKey(ModUrlType.NexusMods) ->
                         urls[ModUrlType.NexusMods]?.run { linkLoader.invoke(this.toString()) }
+
                     urls.containsKey(ModUrlType.DirectDownload) -> directDownloadDialog.invoke()
                 }
             }
-            .pointerMoveFilter(
-                onEnter = { isBeingHovered = true; false },
-                onExit = { isBeingHovered = false; false }
-            ),
+            .onPointerEvent(PointerEventType.Enter) {
+                isBeingHovered = true
+            }
+            .onPointerEvent(PointerEventType.Exit) {
+                isBeingHovered = false
+            },
         shape = SmolTheme.smolFullyClippedButtonShape()
     ) {
         Row(modifier = Modifier.padding(12.dp).fillMaxHeight()) {
@@ -381,13 +383,11 @@ fun BrowserIcon(modifier: Modifier = Modifier, iconModifier: Modifier = Modifier
                 modifier = iconModifier
                     .size(16.dp)
                     .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)))
-                    .mouseClickable {
-                        if (this.buttons.isPrimaryPressed) {
-                            runCatching {
-                                forumUrl.let { uriHandler.openUri(it) }
-                            }
-                                .onFailure { Logger.warn(it) }
+                    .onClick {
+                        runCatching {
+                            forumUrl.let { uriHandler.openUri(it) }
                         }
+                            .onFailure { Logger.warn(it) }
                     },
                 tint = SmolTheme.dimmedIconColor()
             )
@@ -413,46 +413,46 @@ fun AppScope.DiscordIcon(modifier: Modifier = Modifier, iconModifier: Modifier =
                     .size(16.dp)
                     .padding(1.dp)
                     .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)))
-                    .mouseClickable {
+                    .onClick(matcher = PointerMatcher.Primary) {
                         runCatching {
-                            if (this.buttons.isPrimaryPressed) {
-                                this@DiscordIcon.alertDialogSetter.invoke {
-                                    SmolAlertDialog(
-                                        onDismissRequest = ::dismissAlertDialog,
-                                        dialogProvider = SmolAlertDialogProvider(boundsModifier = Modifier.fillMaxHeight().width(LocalUsableBounds.width)),
-                                        confirmButton = {
-                                            SmolButton(onClick = {
-                                                discordUrl.toString()
-                                                    .replace("https://", "discord://")
-                                                    .replace("http://", "discord://")
-                                                    .openAsUriInBrowser()
-                                                dismissAlertDialog()
-                                            }) { Text("Open in Discord") }
-                                        },
-                                        dismissButton = {
-                                            SmolSecondaryButton(onClick = ::dismissAlertDialog) {
-                                                Text("Cancel")
-                                            }
-                                        },
-                                        text = {
-                                            Column {
-                                                Text(text = "This will open this post in the Discord application. Do you want to continue?")
-                                                SelectionContainer {
-                                                    Text(
-                                                        modifier = Modifier.padding(top = 8.dp),
-                                                        text = discordUrl.toString().parseHtml()
-                                                    )
-                                                }
+                            this@DiscordIcon.alertDialogSetter.invoke {
+                                SmolAlertDialog(
+                                    onDismissRequest = ::dismissAlertDialog,
+//                                        dialogProvider = SmolAlertDialogProvider(boundsModifier = Modifier.fillMaxHeight().width(LocalUsableBounds.width)),
+                                    confirmButton = {
+                                        SmolButton(onClick = {
+                                            discordUrl.toString()
+                                                .replace("https://", "discord://")
+                                                .replace("http://", "discord://")
+                                                .openAsUriInBrowser()
+                                            dismissAlertDialog()
+                                        }) { Text("Open in Discord") }
+                                    },
+                                    dismissButton = {
+                                        SmolSecondaryButton(onClick = ::dismissAlertDialog) {
+                                            Text("Cancel")
+                                        }
+                                    },
+                                    text = {
+                                        Column {
+                                            Text(text = "This will open this post in the Discord application. Do you want to continue?")
+                                            SelectionContainer {
+                                                Text(
+                                                    modifier = Modifier.padding(top = 8.dp),
+                                                    text = discordUrl.toString().parseHtml()
+                                                )
                                             }
                                         }
-                                    )
-                                }
-                            } else if (this.buttons.isSecondaryPressed) {
-                                copyToClipboard(discordUrl.toString())
+                                    }
+                                )
                             }
                         }
                             .onFailure { Logger.warn(it) }
+                    }
+                    .onClick(matcher = PointerMatcher.mouse(PointerButton.Secondary)) {
+                        copyToClipboard(discordUrl.toString())
                     },
+
                 tint = SmolTheme.dimmedIconColor()
             )
         }
@@ -538,37 +538,35 @@ fun AppScope.DebugIcon(modifier: Modifier = Modifier, iconModifier: Modifier = M
                 .size(16.dp)
                 .padding(1.dp)
                 .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)))
-                .mouseClickable {
-                    if (this.buttons.isPrimaryPressed) {
-                        alertDialogSetter.invoke {
-                            SmolAlertDialog(
-                                modifier = modifier
-                                    .widthIn(min = 700.dp)
-                                    .onEnterKeyPressed { dismissAlertDialog(); true },
-                                dialogProvider = SmolAlertDialogProvider(boundsModifier = Modifier.fillMaxHeight().width(LocalUsableBounds.width)),
-                                onDismissRequest = ::dismissAlertDialog,
-                                title = { Text(text = mod.name, style = SmolTheme.alertDialogTitle()) },
-                                text = {
-                                    SelectionContainer {
-                                        Box(
-                                            Modifier
-                                                .padding(top = SmolTheme.topBarHeight)
-                                        ) {
-                                            Column {
-                                                Divider(
-                                                    Modifier.padding(top = 8.dp, bottom = 4.dp).height(2.dp)
-                                                        .fillMaxWidth()
-                                                )
-                                                Text(
-                                                    "<b>Mod Info</b>\n${mod}".parseHtml(),
-                                                    modifier = Modifier.padding(top = 4.dp)
-                                                )
-                                            }
+                .onClick {
+                    alertDialogSetter.invoke {
+                        SmolAlertDialog(
+                            modifier = modifier
+                                .widthIn(min = 700.dp)
+                                .onEnterKeyPressed { dismissAlertDialog(); true },
+//                                dialogProvider = SmolAlertDialogProvider(boundsModifier = Modifier.fillMaxHeight().width(LocalUsableBounds.width)),
+                            onDismissRequest = ::dismissAlertDialog,
+                            title = { Text(text = mod.name, style = SmolTheme.alertDialogTitle()) },
+                            text = {
+                                SelectionContainer {
+                                    Box(
+                                        Modifier
+                                            .padding(top = SmolTheme.topBarHeight)
+                                    ) {
+                                        Column {
+                                            Divider(
+                                                Modifier.padding(top = 8.dp, bottom = 4.dp).height(2.dp)
+                                                    .fillMaxWidth()
+                                            )
+                                            Text(
+                                                "<b>Mod Info</b>\n${mod}".parseHtml(),
+                                                modifier = Modifier.padding(top = 4.dp)
+                                            )
                                         }
                                     }
                                 }
-                            )
-                        }
+                            }
+                        )
                     }
                 },
             tint = SmolTheme.dimmedIconColor()

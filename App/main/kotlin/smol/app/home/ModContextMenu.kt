@@ -263,6 +263,7 @@ fun AppScope.modGridBulkActionMenuItems(checkedRows: SnapshotStateList<Mod>) =
                 } else {
                     enableAllDisabled(allModVariants)
                 }
+                true
             }
         ))
 
@@ -274,6 +275,7 @@ fun AppScope.modGridBulkActionMenuItems(checkedRows: SnapshotStateList<Mod>) =
                         checkedRows
                             .parallelMap { SL.access.disableMod(it) }
                     }
+                    true
                 }
             ))
         }
@@ -284,6 +286,7 @@ fun AppScope.modGridBulkActionMenuItems(checkedRows: SnapshotStateList<Mod>) =
                     checkedRows
                         .also { mods -> SL.vramChecker.refreshVramUsage(mods) }
                 }
+                true
             }
         ))
     }

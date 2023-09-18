@@ -144,9 +144,11 @@ fun AppScope.TipsView(
                         items = listOf(
                             SmolDropdownMenuItemTemplate(text = "No grouping") {
                                 grouping = TipsGrouping.NONE
+                                true
                             },
                             SmolDropdownMenuItemTemplate(text = "Group by mod") {
                                 grouping = TipsGrouping.MOD
+                                true
                             },
                         ),
                     )

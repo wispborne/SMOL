@@ -44,6 +44,7 @@ import org.tinylog.Logger
 import smol.access.SL
 import smol.access.business.UserManager
 import smol.access.model.Mod
+import smol.access.model.ModVariant
 import smol.access.model.UserProfile
 import smol.app.composables.SmolText
 import smol.app.composables.SmolTooltipArea
@@ -215,30 +216,32 @@ fun AppScope.ModGridRow(
                                         SmolTooltipArea(
                                             tooltip = {
                                                 SmolTooltipText(
-                                                    text = "Mod Info:        ${enabledOrHighest?.modInfo?.version?.raw ?: "(none)"}" +
-                                                            "\nVersion Checker: ${enabledOrHighest?.versionCheckerInfo?.modVersion ?: "(none)"}",
+                                                    text = buildAnnotatedString {
+                                                        appendLine("Mod Info:        ${enabledOrHighest?.modInfo?.version?.raw ?: "(none)"}")
+                                                        appendLine("Version Checker: ${enabledOrHighest?.versionCheckerInfo?.modVersion ?: "(none)"}")
+                                                        appendLine()
+                                                        appendLine("Installed")
+                                                        append(
+                                                            createInstalledVersionsString(
+                                                                mod = mod,
+                                                                enabledVariant = enabledVariant,
+                                                                dimColor = MaterialTheme.colors.onSurface.copy(
+                                                                    alpha = 0.4f
+                                                                )
+                                                            )
+                                                        )
+                                                    },
                                                     fontFamily = SmolTheme.fireCodeFont,
                                                     fontSize = 15.sp
                                                 )
                                             }
                                         ) {
                                             SmolText(
-                                                text = buildAnnotatedString {
-                                                    mod.variants
-                                                        .forEachIndexed { index, element ->
-                                                            this.withStyle(
-                                                                SpanStyle(color = if (element === enabledVariant) Color.Unspecified else dimColor)
-                                                            ) {
-                                                                append(element.modInfo.version.toString())
-                                                                append(
-                                                                    if (index != mod.variants.count() - 1)
-                                                                        ", " else ""
-                                                                )
-                                                            }
-                                                        }
-                                                },
+                                                text = createInstalledVersionsString(mod, enabledVariant, dimColor),
                                                 overflow = TextOverflow.Ellipsis,
-                                                maxLines = 1
+                                                maxLines = 1,
+                                                modifier = Modifier.padding(end = 8.dp),
+                                                showTooltipOnOverflow = false
                                             )
                                         }
                                     }
@@ -359,6 +362,25 @@ fun AppScope.ModGridRow(
             }
         }
     }
+}
+
+private fun createInstalledVersionsString(
+    mod: Mod,
+    enabledVariant: ModVariant?,
+    dimColor: Color
+) = buildAnnotatedString {
+    mod.variants
+        .forEachIndexed { index, element ->
+            this.withStyle(
+                SpanStyle(color = if (element === enabledVariant) Color.Unspecified else dimColor)
+            ) {
+                append(element.modInfo.version.toString())
+                append(
+                    if (index != mod.variants.count() - 1)
+                        ", " else ""
+                )
+            }
+        }
 }
 
 @OptIn(ExperimentalFoundationApi::class)

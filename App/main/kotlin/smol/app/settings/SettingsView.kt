@@ -10,6 +10,8 @@
  * The full license is available from <https://www.gnu.org/licenses/gpl-3.0.txt>.
  */
 
+@file:OptIn(ExperimentalFoundationApi::class)
+
 package smol.app.settings
 
 import AppScope
@@ -29,7 +31,6 @@ import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -188,14 +189,22 @@ fun AppScope.settingsView(
 
                                     themeDropdown(Modifier.padding(start = 16.dp, top = 24.dp))
 
-                                    updateSection(scope)
+                                    updateSection(
+                                        scope = scope,
+                                        modifier = Modifier.padding(start = 16.dp, top = 24.dp)
+                                    )
+
+                                    rendererSettingSection(
+                                        scope = scope,
+                                        modifier = Modifier.padding(start = 16.dp, top = 24.dp)
+                                    )
                                 }
                             }
 
                             item {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(start = 16.dp)
+                                    modifier = Modifier.padding(start = 16.dp, top = 16.dp)
                                 ) {
                                     val isChecked = userProfile.useOrbitronNameFont!!
                                     CheckboxWithText(
@@ -209,7 +218,12 @@ fun AppScope.settingsView(
                                         Text(
                                             text = buildAnnotatedString {
                                                 append("Use ")
-                                                append(AnnotatedString("Starsector font", SpanStyle(fontFamily = SmolTheme.orbitronSpaceFont)))
+                                                append(
+                                                    AnnotatedString(
+                                                        "Starsector font",
+                                                        SpanStyle(fontFamily = SmolTheme.orbitronSpaceFont)
+                                                    )
+                                                )
                                                 append(" for mod names.")
                                             },
                                             modifier = modifier

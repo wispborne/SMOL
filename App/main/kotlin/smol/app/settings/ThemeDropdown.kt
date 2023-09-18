@@ -65,6 +65,7 @@ fun AppScope.themeDropdown(modifier: Modifier = Modifier): String {
                             onClick = {
                                 themeName = entry.key
                                 SL.themeManager.setActiveTheme(entry.key)
+                                true
                             },
                             customItemContent = { isMenuButton ->
                                 val height = 24.dp

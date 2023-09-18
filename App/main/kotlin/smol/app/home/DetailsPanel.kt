@@ -241,6 +241,7 @@ fun BoxScope.detailsPanel(
                                 SmolDropdownMenuItemTemplate(text = existingCategory) {
                                     SL.modMetadata.update(modInfo.id) { it.copy(category = existingCategory) }
                                     shouldExpandPopup = false
+                                    true
                                 }
                             },
                             modifier = Modifier

@@ -42,8 +42,8 @@ import kotlin.system.exitProcess
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun updateSection(scope: CoroutineScope) {
-    Column(modifier = Modifier.padding(start = 16.dp, top = 24.dp)) {
+fun updateSection(scope: CoroutineScope, modifier: Modifier) {
+    Column(modifier = modifier) {
         Text(text = "Updates", style = SettingsView.settingLabelStyle())
         var updateStatus by remember { mutableStateOf("") }
 
@@ -94,6 +94,7 @@ fun updateSection(scope: CoroutineScope) {
                     onClick = {
                         SL.UI.updateChannelManager.setUpdateChannel(UpdateChannel.Stable, SL.appConfig)
                         doUpdateCheck(hasChannelChanged = true)
+                        true
                     }
                 ),
                 SmolDropdownMenuItemTemplate(
@@ -102,6 +103,7 @@ fun updateSection(scope: CoroutineScope) {
                     onClick = {
                         SL.UI.updateChannelManager.setUpdateChannel(UpdateChannel.Unstable, SL.appConfig)
                         doUpdateCheck(hasChannelChanged = true)
+                        true
                     }
                 ),
                 SmolDropdownMenuItemTemplate(
@@ -110,6 +112,7 @@ fun updateSection(scope: CoroutineScope) {
                     onClick = {
                         SL.UI.updateChannelManager.setUpdateChannel(UpdateChannel.Test, SL.appConfig)
                         doUpdateCheck(hasChannelChanged = true)
+                        true
                     }
                 )
             ),

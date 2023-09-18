@@ -44,6 +44,7 @@ class AppConfig(gson: Jsanity) :
         prefKey = "jre8Url",
         defaultValue = "https://github.com/wispborne/JRE/releases/download/jre8-271/jre8-271-Windows.7z"
     )
+    var renderer: String? by pref(prefKey = "renderer", defaultValue = null)
     internal var userProfile: MutableStateFlow<UserProfile> = stateFlowPref(
         prefKey = "userProfile",
         defaultValue = UserManager.defaultProfile,
@@ -65,5 +66,12 @@ class AppConfig(gson: Jsanity) :
         Stable,
         Unstable,
         Test,
+    }
+
+    enum class Renderer {
+        Default,
+        OpenGL,
+        DirectX,
+        Metal
     }
 }

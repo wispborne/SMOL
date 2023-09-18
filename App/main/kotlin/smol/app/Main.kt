@@ -35,6 +35,7 @@ import org.tinylog.Logger
 import smol.access.Constants
 import smol.access.SL
 import smol.access.ServiceLocator
+import smol.access.config.AppConfig
 import smol.app.browser.chromium.CefBrowserPanel
 import smol.app.navigation.Screen
 import smol.app.navigation.rememberRouter
@@ -43,6 +44,7 @@ import smol.app.util.SmolWindowState
 import smol.app.util.isJCEFEnabled
 import smol.timber.LogLevel
 import smol.timber.ktx.Timber
+import smol.utilities.Platform
 import smol.utilities.currentPlatform
 import smol.utilities.makeFinite
 import java.time.Instant
@@ -109,6 +111,21 @@ fun main() = application {
 
     // Service Locator takes some time to init, do any work possible before it that doesn't require it.
     runBlocking { initServiceLocatorJob.join() }
+
+    // Default on Windows is DirectX, but it causes flickering/lowered refresh rate when the monitor has a variable refresh rate
+    // (ie G-Sync or Freesync). OpenGL doesn't have this issue and runs at the monitor's refresh rate.
+    // Side benefit: OpenGL is better supported on super old hardware.
+    if (SL.appConfig.renderer == null) {
+        SL.appConfig.renderer = when (currentPlatform) {
+            Platform.Windows -> AppConfig.Renderer.OpenGL.name
+            Platform.MacOS -> AppConfig.Renderer.Metal.name
+            else -> AppConfig.Renderer.Default.name
+        }
+    }
+    // Must be set before a Window is created.
+    Timber.i { "Setting renderer to ${SL.appConfig.renderer}." }
+    System.setProperty("skiko.renderApi", SL.appConfig.renderer!!)
+
     println("${ServiceLocator::class.simpleName} is ready ${sinceStartStr()}.")
 
     // Load UI Config

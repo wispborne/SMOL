@@ -27,7 +27,6 @@ import smol.app.themes.SmolTheme
 
 @Composable
 @Preview
-@OptIn(ExperimentalMaterialApi::class)
 fun SmolButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
