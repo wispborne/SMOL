@@ -123,7 +123,7 @@ internal object DiscordReader {
             }
             .mapNotNull { it?.let { cleanUpMod(it) } }
             .filter { it.name.isNotBlank() } // Remove any posts that don't contain text.
-            .also { Timber.i { "Discord API calls used: $apiCallsLastRun." } }
+            .also { posts -> Timber.i { "Found ${posts.size} Discord mods. API calls used: $apiCallsLastRun." } }
     }
 
     private suspend fun parseAsSingleMessage(
@@ -155,7 +155,7 @@ internal object DiscordReader {
             urls = listOfNotNull(
                 forumUrl?.let { ModUrlType.Forum to forumUrl },
                 ModUrlType.Discord to
-                            Url("https://discord.com/channels/$serverId/$modUpdatesForumChannelId/${message.id}"),
+                        Url("https://discord.com/channels/$serverId/$modUpdatesForumChannelId/${message.id}"),
                 downloadArtifactUrl?.let { ModUrlType.DirectDownload to downloadArtifactUrl },
                 downloadPageUrl?.let { ModUrlType.DownloadPage to downloadPageUrl },
             ).toMap(),
@@ -208,7 +208,8 @@ internal object DiscordReader {
             source = ModSource.Discord,
             sources = listOf(ModSource.Discord),
             categories = message.parentThread?.applied_tags.orEmpty().mapNotNull { categoriesLookup[it] },
-            images = messagesOrdered.map { getImagesFromMessage(it) }.reduceOrNull { acc, map -> acc.orEmpty().plus(map.orEmpty()) },
+            images = messagesOrdered.map { getImagesFromMessage(it) }
+                .reduceOrNull { acc, map -> acc.orEmpty().plus(map.orEmpty()) },
             dateTimeCreated = message.timestamp,
             dateTimeEdited = message.edited_timestamp
         )
@@ -327,32 +328,52 @@ internal object DiscordReader {
         channelId: String,
         httpClient: HttpClient,
         authToken: String,
-        getFullChannelInfo: Boolean = false
+        getFullChannelInfo: Boolean = false,
+        includeArchived: Boolean = true
     ): List<Channel> {
         val threads = mutableListOf<Channel>()
 
-        val activeThreads = makeHttpRequestWithRateLimiting(httpClient) {
-            httpClient.get("$baseUrl/guilds/$serverId/threads/active") {
-                header("Authorization", "Bot $authToken")
-                accept(ContentType.Application.Json)
-            }
-                .also {
-                    Timber.v { it.bodyAsText() }
+        val allThreads = run {
+            // Active threads
+            makeHttpRequestWithRateLimiting(httpClient) {
+                httpClient.get("$baseUrl/guilds/$serverId/threads/active") {
+                    header("Authorization", "Bot $authToken")
+                    accept(ContentType.Application.Json)
                 }
-        }.body<Threads>()
-            .threads
+                    .also {
+                        Timber.v { it.bodyAsText() }
+                    }
+            }.body<Threads>()
+                .threads
+        }
+            .plus(
+                run {
+                    // Archived threads
+                    if (!includeArchived) emptyList()
+                    else makeHttpRequestWithRateLimiting(httpClient) {
+                        httpClient.get("$baseUrl/channels/$channelId/threads/archived/public") {
+                            header("Authorization", "Bot $authToken")
+                            accept(ContentType.Application.Json)
+                        }
+                            .also {
+                                Timber.v { it.bodyAsText() }
+                            }
+                    }.body<Threads>()
+                        .threads
+                }
+            )
             .filter { it.parent_id == channelId }
             .sortedByDescending { it.timestamp }
 
-        Timber.i { "Found ${activeThreads.count()} active threads in Discord #mod_updates." }
-        threads += activeThreads
-        Timber.v { activeThreads.joinToString(separator = "\n") }
+        Timber.i { "Found ${allThreads.count()} active and archived threads in Discord #mod_updates." }
+        threads += allThreads
+        Timber.v { allThreads.joinToString(separator = "\n") }
 
         val channels = if (getFullChannelInfo) {
-            Timber.i { "Getting full channel info for ${activeThreads.count()} threads." }
-            activeThreads.map { getChannel(it.id, httpClient, authToken) }
+            Timber.i { "Getting full channel info for ${allThreads.count()} threads." }
+            allThreads.map { getChannel(it.id, httpClient, authToken) }
                 .also { Timber.v { it.joinToString(separator = "\n") } }
-        } else activeThreads
+        } else allThreads
 
         return channels
     }
