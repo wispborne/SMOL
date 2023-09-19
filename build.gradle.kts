@@ -26,7 +26,6 @@ repositories {
 dependencies {
     implementation(project.property("kotlinReflect").toString())
     implementation(project.property("coroutines")!!)
-    implementation("com.mayakapps.compose:window-styler:0.3.2")
 }
 
 

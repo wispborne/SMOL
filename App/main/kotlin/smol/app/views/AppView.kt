@@ -56,7 +56,9 @@ import smol.app.views.DuplicateModAlertDialogState
 import smol.app.views.FileDropper
 import smol.timber.ktx.Timber
 import smol.updatestager.UpdateChannelManager
-import smol.utilities.*
+import smol.utilities.IOLock
+import smol.utilities.exists
+import smol.utilities.isAny
 import kotlin.io.path.exists
 import kotlin.system.exitProcess
 
@@ -75,7 +77,7 @@ fun WindowState.appView() {
             })
     }
 
-    if(Constants.isUpdatingEnabled()){
+    if (Constants.isUpdatingEnabled()) {
         LaunchedEffect("runonce") {
             delay(5000) // Doesn't need to contribute to startup time.
             checkForUpdates()

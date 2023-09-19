@@ -18,7 +18,6 @@ import smol.access.Constants
 import smol.access.business.UserManager
 import smol.timber.ktx.Timber
 import smol.utilities.Jsanity
-import java.awt.Color
 import java.nio.file.Path
 
 class ThemeManager(
@@ -65,9 +64,6 @@ class ThemeManager(
                 if (!this.containsKey(defaultTheme.first)) mapOf(defaultTheme) + this
                 else this
             }
-            // TODO turbo awful hack
-            .run { this.map { it.key to it.value.copy(background = "#00000000") } }
-            .toMap()
 
     private fun getActiveTheme(): Pair<String, Theme> {
         val activeThemeName = userManager.activeProfile.value.theme

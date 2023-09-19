@@ -23,10 +23,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
 import appView
 import com.arkivanov.decompose.Router
-import com.mayakapps.compose.windowstyler.WindowBackdrop
-import com.mayakapps.compose.windowstyler.WindowCornerPreference
-import com.mayakapps.compose.windowstyler.WindowFrameStyle
-import com.mayakapps.compose.windowstyler.WindowStyle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
@@ -219,11 +215,6 @@ fun main() = application {
         }
 
         smol.utilities.trace(onFinished = { _, ms -> println("Took ${ms}ms to show AppView ${sinceStartStr()}.") }) {
-            WindowStyle(
-                isDarkTheme = true,
-                backdropType = WindowBackdrop.Default,
-                frameStyle = WindowFrameStyle(cornerPreference = WindowCornerPreference.SMALL_ROUNDED),
-            )
             smolWindowState.appView()
         }
     }

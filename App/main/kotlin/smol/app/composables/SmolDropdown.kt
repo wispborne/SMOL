@@ -181,7 +181,7 @@ fun SmolDropdownMenu(
                         onClick = {
                             expanded.value = false
 
-                            if (canSelectItems && items[index].onClick()) {
+                            if (items[index].onClick() && canSelectItems) {
                                 selectedIndex.value = index
                             }
                         }) {
