@@ -87,14 +87,13 @@ fun AppScope.rendererSettingSection(scope: CoroutineScope, modifier: Modifier) {
                 tooltip = {
                     SmolTooltipText(
                         tooltip,
-                        fontFamily = SmolTheme.normalFont
+                        fontFamily = SmolTheme.normalFont,
+                        color = MaterialTheme.colors.onBackground
                     )
                 }
             ) {
                 SmolText(
-                    text = renderer.name,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colors.onBackground
+                    text = renderer.name
                 )
             }
         }
@@ -114,7 +113,7 @@ fun AppScope.rendererSettingSection(scope: CoroutineScope, modifier: Modifier) {
                 ),
                 rendererSettingsMenuItem(
                     AppConfig.Renderer.OpenGL,
-                    "Recommended for Windows.\nOpenGL doesn't have the issues with VRR (G-Sync, FreeSync) like DirectX seems to (flickering, not running at high refresh rate)."
+                    "Recommended for Windows. Works well on MacOS.\nWindows: OpenGL doesn't have the issues with VRR (G-Sync, FreeSync) that DirectX seems to (flickering, not running at high refresh rate)."
                 ),
                 rendererSettingsMenuItem(
                     AppConfig.Renderer.DirectX,

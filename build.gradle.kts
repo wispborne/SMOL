@@ -11,7 +11,7 @@
  */
 
 plugins {
-    kotlin("jvm") version "1.8.20"
+    kotlin("jvm") version "1.9.0"
 }
 
 group = "com.wisp"
@@ -24,7 +24,7 @@ repositories {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-reflect:1.5.21")
+    implementation(project.property("kotlinReflect").toString())
     implementation(project.property("coroutines")!!)
 }
 

@@ -40,6 +40,7 @@ dependencies {
 
     implementation("org.jetbrains.kotlin:kotlin-reflect:${project.property("kotlin")!!}")
     implementation(project.property("coroutines")!!)
+    implementation("com.mayakapps.compose:window-styler:0.3.2")
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {

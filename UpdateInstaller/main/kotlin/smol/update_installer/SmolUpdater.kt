@@ -18,6 +18,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.update4j.Configuration
 import org.update4j.FileMetadata
+import smol.utilities.Platform
+import smol.utilities.currentPlatform
 import smol.utilities.runCommandInTerminal
 import java.io.File
 import java.nio.file.Path
@@ -56,18 +58,34 @@ class SmolUpdater : BaseAppUpdater() {
             //                        Timber.w(it)
             //                        System.err.println(it)
             //                    }
+            //
             //                    .getOrElse { "" })
-            .files(
+            .run {
                 // JCEF isn't copied to the dist folder when building, if I need to update it later,
                 // I can add a build step to do that.
                 //                    .plus(FileMetadata.streamDirectory(dir.resolve("libs")).asSequence())
-                FileMetadata.streamDirectory(dir.resolve("app")).asSequence()
-                    .plus(FileMetadata.streamDirectory(dir.resolve("runtime")).asSequence())
-                    .plus(FileMetadata.readFrom(dir.resolve("SMOL.exe")))
+                if (currentPlatform == Platform.MacOS) {
+                    val app = dir.resolve("../SMOL.app/Contents")
+                    this.files(
+                        FileMetadata.streamDirectory(dir.resolve("..")).asSequence()
+//                        FileMetadata.streamDirectory(app.resolve("app")).asSequence()
+//                            .plus(FileMetadata.streamDirectory(app.resolve("runtime")).asSequence())
+//                            .plus(FileMetadata.readFrom(dir.resolve("../SMOL.app")))
 //                    .plus(FileMetadata.readFrom(dir.resolve("SMOL.ico")))
-                    .onEach { it.path(it.source.relativeTo(dir)) }
-                    .onEach { r -> r.classpath(r.source.toString().endsWith(".jar")) }
-                    .toList())
+                            .onEach { it.path(it.source.relativeTo(dir)) }
+                            .onEach { r -> r.classpath(r.source.toString().endsWith(".jar")) }
+                            .toList())
+                } else {
+                    this.files(
+                        FileMetadata.streamDirectory(dir.resolve("app")).asSequence()
+                            .plus(FileMetadata.streamDirectory(dir.resolve("runtime")).asSequence())
+                            .plus(FileMetadata.readFrom(dir.resolve("SMOL.exe")))
+//                    .plus(FileMetadata.readFrom(dir.resolve("SMOL.ico")))
+                            .onEach { it.path(it.source.relativeTo(dir)) }
+                            .onEach { r -> r.classpath(r.source.toString().endsWith(".jar")) }
+                            .toList())
+                }
+            }
             .build()
     }
 

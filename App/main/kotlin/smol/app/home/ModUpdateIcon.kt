@@ -34,6 +34,7 @@ import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -56,6 +57,7 @@ import smol.app.util.*
 import smol.timber.ktx.Timber
 import smol.utilities.nullIfBlank
 import java.awt.Cursor
+import kotlin.coroutines.cancellation.CancellationException
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -271,8 +273,11 @@ private fun AppScope.ChangelogIcon(
                 changelog = httpClient.get(changelogUrl).bodyAsText()
             }
         }.onFailure {
-            Timber.w(it)
-            changelog = "Failed to load changelog.\n${it.message}}"
+            // CancellationException is expected when the view goes off-screen.
+            if (it !is CancellationException) {
+                Timber.w(it)
+                changelog = "Failed to load changelog.\n${it.message}}"
+            }
         }
     }
 
@@ -304,16 +309,23 @@ private fun AppScope.ChangelogIcon(
             modifier = modifier.width(800.dp).height(500.dp),
         ) {
             Column {
-
+                Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth().height(SmolTheme.modUpdateIconSize.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        painter = painterResource("icon-bullhorn-variant.svg"),
+                        contentDescription = null,
+                        tint = SmolTheme.dimmedIconColor(),
+                        modifier = Modifier.size(SmolTheme.modUpdateIconSize.dp)
+                            .padding(end = 8.dp)
+                    )
+                    Text(
+                        "Click to see full changelog.\n",
+                        style = TextStyle(fontWeight = FontWeight.Bold),
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
                 Text(
                     modifier = Modifier.padding(bottom = 16.dp),
                     text = buildAnnotatedString {
-                        appendLine(
-                            AnnotatedString(
-                                "Click the icon to see more.\n",
-                                SpanStyle(fontWeight = FontWeight.Bold)
-                            )
-                        )
                         appendLine(
                             AnnotatedString(
                                 "Changelog",

@@ -38,10 +38,10 @@ import smol.app.util.smolPreview
 @Composable
 fun toastInstalledCard(
     modVariant: ModVariant,
-    requestToastDismissal: (delayMs: Long) -> Unit
+    requestToastDismissalAfter: (delayMs: Long) -> Unit
 ) {
     // As soon as we start living, we start dying.
-    requestToastDismissal.invoke(ToasterState.defaultTimeoutMillis)
+    requestToastDismissalAfter.invoke(ToasterState.defaultTimeoutMillis)
 
     Row {
         Column {
@@ -63,7 +63,7 @@ fun toastInstalledCard(
                                     modVariant = modVariant
                                 )
                             }
-                            requestToastDismissal.invoke(ToasterState.defaultTimeoutMillis)
+                            requestToastDismissalAfter.invoke(0)
                         }
                     ) {
                         Text("Enable")
@@ -88,7 +88,7 @@ fun toastInstalledCard(
                 .align(Alignment.CenterVertically)
                 .size(16.dp),
             onClick = {
-                requestToastDismissal.invoke(ToasterState.defaultTimeoutMillis)
+                requestToastDismissalAfter.invoke(0)
             }
         ) {
             Icon(imageVector = Icons.Default.Close, contentDescription = null)
@@ -99,5 +99,5 @@ fun toastInstalledCard(
 @Preview
 @Composable
 fun toastInstalledCardPreview() = smolPreview {
-    toastInstalledCard(ModVariant.MOCK, requestToastDismissal = {})
+    toastInstalledCard(ModVariant.MOCK, requestToastDismissalAfter = {})
 }

@@ -63,19 +63,19 @@ fun main() = application {
     val coroutineScope = rememberCoroutineScope()
 
     val initServiceLocatorJob = coroutineScope.launch(Dispatchers.Default) {
-        smol.utilities.trace(onFinished = { _, ms -> println("Took ${ms}ms to init ${ServiceLocator::class.simpleName} ${sinceStartStr()}.") }) {
-            kotlin.runCatching {
+        kotlin.runCatching {
+            smol.utilities.trace(onFinished = { _, ms -> println("Took ${ms}ms to init ${ServiceLocator::class.simpleName} ${sinceStartStr()}.") }) {
                 ServiceLocator.init()
             }
-                .onFailure {
-                    it.printStackTrace()
-                    println("Something terrible has happened and SMOL cannot start. Try 'Run as administrator'.")
-                    System.console()?.readLine()
-                    // Leave console window open but don't try to open SMOL.
-                    // Something awful happened (they probably need to run as admin)
-                    throw it
-                }
         }
+            .onFailure {
+                it.printStackTrace()
+                println("Something terrible has happened and SMOL cannot start. Try 'Run as administrator'.")
+                System.console()?.readLine()
+                // Leave console window open but don't try to open SMOL.
+                // Something awful happened (they probably need to run as admin)
+                throw it
+            }
     }
 
     // Logger
@@ -92,7 +92,13 @@ fun main() = application {
     }
 
     smol.utilities.trace(onFinished = { _, ms -> println("Took ${ms}ms init 7zip ${sinceStartStr()}.") }) {
+        if (currentPlatform == Platform.MacOS) {
+            // Pretend Apple Silicon doesn't exist, since there is no 7zip binary for aarch64.
+//            System.setProperty("os.arch", "x86_64")
+        }
         SevenZip.initSevenZipFromPlatformJAR()
+        Timber.i { "7zip-JBinding version: ${SevenZip.getSevenZipJBindingVersion()}" }
+        Timber.i { "7zip version: ${SevenZip.getSevenZipVersion().version}" }
     }
 
     // Load current version
