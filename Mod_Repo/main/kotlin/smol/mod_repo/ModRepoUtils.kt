@@ -21,36 +21,50 @@ object ModRepoUtils {
 
     val authorAliases = listOf(
         listOf("Soren", "Søren", "Harmful Mechanic"),
-        listOf("RustyCabbage", "rubi"),
-        listOf("Wisp", "Wispborne"),
+        listOf("RustyCabbage", "rubi", "ceruleanpancake"),
+        listOf("Wisp", "Wispborne", "Tartiflette and Wispborne"),
         listOf("DesperatePeter", "Jannes"),
         listOf("shoi", "gettag"),
         listOf("Dark.Revenant", "DR"),
         listOf("LazyWizard", "Lazy"),
         listOf("Techpriest", "Timid"),
-        listOf("Nick XR", "Nick"),
+        listOf("Nick XR", "Nick", "nick7884"),
         listOf("PMMeCuteBugPhotos", "MrFluffster"),
-        listOf("Dazs", "Spiritfox"),
-        listOf("Histidine, Zaphide", "Histidine"),
+        listOf("Dazs", "Spiritfox", "spiritfox_"),
+        listOf("Histidine, Zaphide", "Histidine", "histidine_my"),
         listOf("Snrasha", "Snrasha, the tinkerer"),
         listOf("Hotpics", "jackwolfskin"),
         listOf("cptdash", "SpeedRacer"),
         listOf("Elseud", "Elseudo"),
         listOf("TobiaF", "Toby"),
         listOf("Mephyr", "Liral"),
+        listOf("Tranquility", "tranquil_light"),
+        listOf("FasterThanSleepyfish", "Sleepyfish"),
+        listOf("Nerzhull_AI", "nerzhulai"),
+        listOf("theDrag", "iryx."),
+        listOf("Audax", "Audaxl"),
+        listOf("Pogre", "noof"),
+        listOf("lord_dalton", "Epta Consortium"),
+        listOf("hakureireimu", "LngA7Gw"),
+        listOf("Nes", "nescom"),
+        listOf("float", "this_is_a_username"),
+        listOf("AERO", "aero.assault"),
+        listOf("Fellout", "felloutwastaken"),
+        listOf("Mr. THG", "thog"),
+        listOf("Derelict_Surveyor", "jdt15"),
     )
 
     fun getOtherMatchingAliases(author: String, fuzzyMatchAliases: Boolean = false): List<String> {
         return if (fuzzyMatchAliases) {
             authorAliases.firstOrNull { aliases ->
                 aliases.any { alias ->
-                    val match1 = Fuzzy.fuzzyMatch(author, alias)
+                    val match1 = Fuzzy.fuzzyMatch(author.lowercase(), alias.lowercase())
                     if (match1.first) {
                         Timber.v { "Matched alias '$author' with '$alias' with score ${match1.second}." }
                         return@any true
                     }
 
-                    val match2 = Fuzzy.fuzzyMatch(alias, author)
+                    val match2 = Fuzzy.fuzzyMatch(alias.lowercase(), author.lowercase())
                     if (match2.first) {
                         Timber.v { "Matched alias '$author' with '$alias' with score ${match2.second}." }
                         return@any true
