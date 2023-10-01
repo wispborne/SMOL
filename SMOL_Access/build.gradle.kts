@@ -29,8 +29,8 @@ dependencies {
     implementation(project(":UpdateInstaller"))
     api(project(":Mod_Repo"))
 
-    implementation("org.jetbrains.kotlin:kotlin-reflect:${project.property("kotlin")!!}")
-    implementation(project.property("coroutines")!!)
+    implementation(libs.kotlin.reflect)
+    implementation(libs.coroutines)
 
     implementation(fileTree("../libs") {
         include("**/*.jar")
@@ -40,22 +40,21 @@ dependencies {
     // CSV
     implementation("org.apache.commons:commons-csv:1.9.0")
     // API
-    api("io.ktor:ktor-client-core:2.1.2")
-    api("io.ktor:ktor-client-cio:2.1.2")
-    api("io.ktor:ktor-client-logging:2.1.2")
+    val ktorVersion = "2.3.4"
+    api("io.ktor:ktor-client-core:$ktorVersion")
+    api("io.ktor:ktor-client-cio:$ktorVersion")
+    api("io.ktor:ktor-client-logging:$ktorVersion")
 
     // Version Checker Dependencies
-    implementation("de.siegmar:fastcsv:2.2.0")
-    implementation("com.fasterxml.jackson.core:jackson-core:2.13.4")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.13.4")
+    implementation("de.siegmar:fastcsv:2.2.2")
+    implementation(libs.jackson.core)
 
     // Save file reading
-    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.13.4")
+    implementation(libs.jackson.dataformat.xml)
 
     // To calculate checksum for archive files
     // https://mvnrepository.com/artifact/commons-codec/commons-codec
-    implementation("commons-codec:commons-codec:1.15")
-    implementation("com.mayakapps.compose:window-styler:0.3.2")
+    implementation("commons-codec:commons-codec:1.16.0")
     testImplementation("org.junit.jupiter:junit-jupiter:5.8.1")
 
 }

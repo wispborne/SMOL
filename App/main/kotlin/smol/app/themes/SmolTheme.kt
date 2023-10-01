@@ -101,6 +101,8 @@ object SmolTheme {
 
     val Colors.hyperlink: Color
         get() = SL.themeManager.activeTheme.value.second.hyperlink?.hexToColor() ?: this.secondary
+
+    val materialTheme = MaterialTheme
 }
 
 data class UsableBounds(val height: Dp = 0.dp, val width: Dp = 0.dp)

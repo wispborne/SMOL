@@ -63,7 +63,7 @@ fun main() = application {
     val coroutineScope = rememberCoroutineScope()
 
     val initServiceLocatorJob = coroutineScope.launch(Dispatchers.Default) {
-        kotlin.runCatching {
+        runCatching {
             smol.utilities.trace(onFinished = { _, ms -> println("Took ${ms}ms to init ${ServiceLocator::class.simpleName} ${sinceStartStr()}.") }) {
                 ServiceLocator.init()
             }
@@ -80,7 +80,7 @@ fun main() = application {
 
     // Logger
     smol.utilities.trace(onFinished = { _, ms -> println("Took ${ms}ms to init logging ${sinceStartStr()}.") }) {
-        kotlin.runCatching {
+        runCatching {
             Logging.logLevel =
                 if (safeMode) LogLevel.VERBOSE
                 else logLevel
@@ -102,7 +102,7 @@ fun main() = application {
     }
 
     // Load current version
-    kotlin.runCatching {
+    runCatching {
         Constants.VERSION_PROPERTIES_FILE!!.let {
             val props = Properties()
             props.load(it.inputStream())
@@ -135,14 +135,14 @@ fun main() = application {
     println("${ServiceLocator::class.simpleName} is ready ${sinceStartStr()}.")
 
     // Load UI Config
-    val uiConfig = kotlin.runCatching { SL.UI.uiConfig }
+    val uiConfig = runCatching { SL.UI.uiConfig }
         .onFailure {
             it.printStackTrace()
             Timber.e(it)
         }
         .getOrNull()
 
-    val access = kotlin.runCatching { SL.access }
+    val access = runCatching { SL.access }
         .onFailure {
             it.printStackTrace()
             Timber.e(it)
@@ -150,7 +150,7 @@ fun main() = application {
         .getOrNull()
 
     smol.utilities.trace(onFinished = { _, ms -> println("Took ${ms}ms to set default paths ${sinceStartStr()}.") }) {
-        kotlin.runCatching {
+        runCatching {
             access?.checkAndSetDefaultPaths(currentPlatform)
         }
             .onFailure {
@@ -162,7 +162,7 @@ fun main() = application {
     }
 
     if (!safeMode) {
-        kotlin.runCatching {
+        runCatching {
             val savedState = uiConfig!!.windowState!!
             rememberWindowState(
                 placement = WindowPlacement.valueOf(savedState.placement),
@@ -180,7 +180,7 @@ fun main() = application {
 
         LaunchedEffect(Unit) {
             delay(4000) // Doesn't need to contribute to startup time.
-            kotlin.runCatching { SL.modRepo.refreshFromInternet(SL.appConfig.updateChannel) }
+            runCatching { SL.modRepo.refreshFromInternet(SL.appConfig.updateChannel) }
                 .onFailure { Timber.w(it) }
         }
     }
@@ -222,7 +222,7 @@ fun main() = application {
 
 private fun ApplicationScope.onQuit() {
     if (Constants.isJCEFEnabled()) {
-        kotlin.runCatching {
+        runCatching {
             Timber.i { "Shutting down JCEF..." }
             CefApp.getInstance().dispose()
             CefBrowserPanel.browser?.close(true)

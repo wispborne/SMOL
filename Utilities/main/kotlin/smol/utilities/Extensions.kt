@@ -46,7 +46,7 @@ import kotlin.system.measureTimeMillis
 
 @Deprecated("Use Path instead", replaceWith = ReplaceWith("toPathOrNull()"))
 fun String?.toFileOrNull() = this?.let { File(it) }
-fun String?.toPathOrNull() = this?.let { kotlin.runCatching { Path.of(it) }.onFailure { Timber.d(it) }.getOrNull() }
+fun String?.toPathOrNull() = this?.let { runCatching { Path.of(it) }.onFailure { Timber.d(it) }.getOrNull() }
 
 @Deprecated("Use Path.createDirectories() instead")
 fun File.mkdirsIfNotExist() {
@@ -105,7 +105,7 @@ fun Path.walk(maxDepth: Int = Int.MAX_VALUE, vararg options: FileVisitOption): S
     Files.walk(this, maxDepth, *options)
         .asSequence()
         .filter {
-            kotlin.runCatching { !it.isSameFileAs(this) }
+            runCatching { !it.isSameFileAs(this) }
                 .onFailure { Timber.i(it) }
                 .getOrElse { false }
         }

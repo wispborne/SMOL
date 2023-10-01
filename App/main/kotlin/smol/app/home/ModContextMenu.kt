@@ -44,7 +44,6 @@ import smol.utilities.parallelMap
 import java.awt.Desktop
 import kotlin.io.path.exists
 
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun AppScope.ModContextMenu(
     showContextMenu: Boolean,
@@ -192,7 +191,24 @@ private fun AppScope.modGridSingleModMenu(
     }
 
     DropdownMenuItem(onClick = {
+        this@modGridSingleModMenu.alertDialogSetter.invoke {
+            BackUpModVariantDialog(
+                variants = mod.variants,
+                onDismiss = this@modGridSingleModMenu::dismissAlertDialog
+            )
+        }
+        onShowContextMenuChange(false)
+    }) {
+        Image(
+            painter = painterResource("icon-archive-create.svg"),
+            colorFilter = ColorFilter.tint(MaterialTheme.colors.onSurface),
+            modifier = Modifier.padding(end = 12.dp).size(24.dp),
+            contentDescription = null
+        )
+        Text("Create backup")
+    }
 
+    DropdownMenuItem(onClick = {
         this@modGridSingleModMenu.alertDialogSetter.invoke {
             DeleteModVariantDialog(
                 variantsToConfirmDeletionOf = mod.variants,

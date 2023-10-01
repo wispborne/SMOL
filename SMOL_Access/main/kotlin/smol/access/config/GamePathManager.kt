@@ -36,6 +36,7 @@ class GamePathManager internal constructor(
 ) {
     private val value_ = MutableStateFlow(appConfig.gamePath.toPathOrNull())
 
+    // Whenever the value changes, change it in the appConfig also.
     val path = value_.asStateFlow()
         .apply {
             CoroutineScope(Job()).launch {
@@ -53,7 +54,7 @@ class GamePathManager internal constructor(
             val f = File(path)
             return if(f.exists()) f else null
         }
-        return kotlin.runCatching {
+        return runCatching {
             when (platform) {
                 Platform.Windows ->
                     listOf(

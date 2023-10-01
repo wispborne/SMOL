@@ -43,7 +43,7 @@ fun runCommandInTerminal(
 
     val finalCommands = launcherCommand
 //    withContext(Dispatchers.IO) {
-    kotlin.runCatching {
+    runCatching {
         ProcessBuilder(*finalCommands, *args.toTypedArray())
             .directory(workingDirectory)
 //            .apply {

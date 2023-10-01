@@ -26,8 +26,6 @@ import smol.access.model.ModVariant
 import smol.timber.ktx.Timber
 import smol.utilities.*
 import smol.utilities.deleteRecursively
-import java.nio.file.FileVisitOption
-import java.nio.file.LinkOption
 import java.nio.file.Path
 import kotlin.io.path.*
 
@@ -41,7 +39,7 @@ class Access internal constructor(
 ) {
 
     /**
-     * Checks the /mods, archives, and staging paths and sets them to null if they don't exist.
+     * Checks the /mods and archives paths and sets them if they don't exist.
      */
     fun checkAndSetDefaultPaths(platform: Platform) {
         if (gamePathManager.path.value == null) {
@@ -50,21 +48,40 @@ class Access internal constructor(
             }
         }
 
-        Timber.i { "Game: ${appConfig.gamePath}" }
+        // If the mod archive path doesn't exist/isn't set, and the game path is set, set the archive path
+        // and create the folder.
+        if (appConfig.areModArchivesEnabled
+            && appConfig.modBackupPath?.toPathOrNull()?.exists() != true
+            && gamePathManager.path.value?.exists() == true
+        ) {
+            appConfig.modBackupPath =
+                gamePathManager.path.value?.resolve(Constants.ARCHIVES_FOLDER_NAME)?.absolutePathString()
+
+            IOLock.write {
+                runCatching {
+                    if (!appConfig.modBackupPath.toPathOrNull()?.exists()!!) {
+                        appConfig.modBackupPath.toPathOrNull()?.createDirectories()
+                    }
+                }
+                    .onFailure {
+                        Timber.w(it) { "Unable to create mod archive folder at ${appConfig.modBackupPath}." }
+                    }
+            }
+        }
+
+        Timber.i { "Game: ${appConfig.gamePath}\nMod Archive: ${appConfig.modBackupPath}" }
     }
 
     /**
-     *
-     *
      * @return A list of errors, or empty if no errors.
      */
     fun validatePaths(
-        newGamePath: Path? = gamePathManager.path.value
+        newGamePath: Path? = gamePathManager.path.value,
+        archivesPath: Path? = appConfig.modBackupPath.toPathOrNull()
     ): SmolResult<Unit, Map<SettingsPath, List<String>>> {
         val errors: Map<SettingsPath, MutableList<String>> = mapOf(
             SettingsPath.Game to mutableListOf(),
-            SettingsPath.Archives to mutableListOf(),
-            SettingsPath.Staging to mutableListOf()
+            SettingsPath.Archives to mutableListOf()
         )
 
         IOLock.read {
@@ -74,22 +91,31 @@ class Access internal constructor(
             } else if (!newGamePath.exists()) {
                 errors[SettingsPath.Game]?.add("Game path '$newGamePath' doesn't exist!")
             } else {
-                var hasGameExe = gamePathManager.getGameExeFolderPath(newGamePath)?.exists() ?: false
-                var hasGameCoreExe = gamePathManager.getGameCoreFolderPath(newGamePath)?.exists() ?: false
-
-//                newGamePath.walk(maxDepth = 1, options = arrayOf(FileVisitOption.FOLLOW_LINKS))
-//                    .map { it.absolutePathString().lowercase() }
-//                    .forEach {
-//                        if (it.endsWith(gamePathManager.getGameExeFolderPath()?.name?.lowercase() ?: "")) hasGameExe = true
-//                        if (it.endsWith(gamePathManager.getGameCoreFolderPath()?.name?.lowercase() ?: "")) hasGameCoreExe = true
-//                    }
+                val hasGameExe = gamePathManager.getGameExeFolderPath(newGamePath)?.exists() ?: false
+                val hasGameCoreExe = gamePathManager.getGameCoreFolderPath(newGamePath)?.exists() ?: false
 
                 if (currentPlatform == Platform.Windows && !hasGameExe) {
                     errors[SettingsPath.Game]?.add("Folder 'starsector' doesn't exist!")
                 }
 
                 if (!hasGameCoreExe) {
-                    errors[SettingsPath.Game]?.add("Folder '${gamePathManager.getGameCoreFolderPath()?.relativeTo(gamePathManager.path.value ?: Path("/"))}' not found!")
+                    errors[SettingsPath.Game]?.add(
+                        "Folder '${
+                            gamePathManager.getGameCoreFolderPath()
+                                ?.relativeTo(gamePathManager.path.value ?: Path("/"))
+                        }' not found!"
+                    )
+                }
+            }
+
+            // Archives path
+            if (appConfig.areModArchivesEnabled) {
+                if (archivesPath == null) {
+                    errors[SettingsPath.Archives]?.add("Archives path invalid or not set.\nSet it or disable Mod Archival.")
+                } else if (!archivesPath.exists()) {
+                    errors[SettingsPath.Archives]?.add("Archives path '$archivesPath' doesn't exist!")
+                } else if (!archivesPath.exists()) {
+                    errors[SettingsPath.Archives]?.add("Folder '${Constants.ARCHIVES_FOLDER_NAME}' not found!")
                 } else {
                 }
             }
@@ -106,10 +132,11 @@ class Access internal constructor(
     val modModificationState = MutableStateFlow<Map<ModId, ModModificationState>>(emptyMap())
 
     sealed class ModModificationState {
-        object Ready : ModModificationState()
-        object DisablingVariants : ModModificationState()
-        object DeletingVariants : ModModificationState()
-        object EnablingVariant : ModModificationState()
+        data object Ready : ModModificationState()
+        data object DisablingVariants : ModModificationState()
+        data object DeletingVariants : ModModificationState()
+        data object EnablingVariant : ModModificationState()
+        data object BackingUpVariant : ModModificationState()
     }
 
     /**
@@ -137,7 +164,7 @@ class Access internal constructor(
     }
 
     /**
-     * Changes the active mod variant, or disables all if `null` is set.
+     * Changes the active mod variant, or disables all if [modVariant] is `null`.
      */
     suspend fun changeActiveVariant(mod: Mod, modVariant: ModVariant?): Result<Unit> {
         Timber.i { "Changing active variant of ${mod.id} to ${modVariant?.smolId}. (current: ${mod.findFirstEnabled?.smolId})." }
@@ -147,6 +174,11 @@ class Access internal constructor(
                 val err = "Variant and mod were different! ${mod.id}, ${modVariant.smolId}"
                 Timber.i { err }
                 return Result.failure(RuntimeException(err))
+            }
+
+            // Back up mod if feature is enabled and the backup file doesn't exist.
+            if (appConfig.areModArchivesEnabled && modVariant != null && modVariant.backupFile?.exists() != true) {
+                backupMod(modVariant)
             }
 
             if (modVariant != null && mod.isEnabled(modVariant)) {
@@ -289,6 +321,12 @@ class Access internal constructor(
 
     suspend fun deleteVariant(modVariant: ModVariant, removeUncompressedFolder: Boolean) {
         Timber.i { "Deleting mod variant ${modVariant.smolId} folders. Remove staging/mods files? $removeUncompressedFolder." }
+
+        // Back up mod if feature is enabled and the backup file doesn't exist.
+        if (appConfig.areModArchivesEnabled && modVariant.backupFile?.exists() != true) {
+            backupMod(modVariant)
+        }
+
         trace(onFinished = { _, millis ->
             Timber.i { "Deleted mod variant ${modVariant.smolId} folders in ${millis}ms. Remove staging/mods files? $removeUncompressedFolder." }
         }) {
@@ -307,7 +345,7 @@ class Access internal constructor(
                         if (!gameModsFolder.exists()) {
                             Timber.w { "Unable to delete folder for variant ${modVariant.smolId}. File: $gameModsFolder." }
                         } else {
-                            kotlin.runCatching { gameModsFolder.deleteRecursively() }
+                            runCatching { gameModsFolder.deleteRecursively() }
                                 .onFailure {
                                     Timber.e(it) { "Unable to delete game mods folder for variant ${modVariant.smolId}." }
                                 }
@@ -323,6 +361,69 @@ class Access internal constructor(
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Creates a .7z archive of the given mod variant in the [AppConfig.modBackupPath] folder.
+     */
+    suspend fun backupMod(modVariant: ModVariant, overwriteExisting: Boolean = false): Archives.ArchiveResult? {
+        val mod = modVariant.mod(this) ?: return null
+        val modArchivePath = appConfig.modBackupPath.toPathOrNull() ?: return null
+        val modArchiveFile = modArchivePath.resolve(modVariant.generateBackupFileName())
+        var result: Archives.ArchiveResult? = null
+
+        if (!overwriteExisting && modArchiveFile.exists()) {
+            Timber.d { "Mod archive file already exists at $modArchiveFile, skipping." }
+            return null
+        }
+
+        Timber.i { "Backing up mod variant ${modVariant.smolId} to $modArchiveFile." }
+        trace(onFinished = { _, millis ->
+            Timber.i { "Backed up mod variant ${modVariant.smolId} to $modArchiveFile in ${millis}ms." }
+        }) {
+            try {
+                modModificationState.update {
+                    it.toMutableMap().apply {
+                        this[mod.id] =
+                            ModModificationState.BackingUpVariant
+                    }
+                }
+                IOLock.read(IOLocks.modFolderLock) {
+                    if (modArchiveFile.exists()) {
+                        Timber.i { "Deleting existing mod archive file at $modArchiveFile." }
+                        runCatching { modArchiveFile.deleteIfExists() }
+                            .onFailure {
+                                Timber.e(it) { "Unable to delete existing mod archive file at $modArchiveFile." }
+                                return null
+                            }
+                    }
+
+                    Timber.i { "Creating mod archive file at $modArchiveFile." }
+                    runCatching {
+                        modArchiveFile.createFile()
+                        result = archives.createArchive(
+                            modVariant = modVariant,
+                            destinationFile = modArchiveFile
+                        )
+                    }
+                        .onFailure {
+                            Timber.e(it) { "Unable to create mod archive file at $modArchiveFile." }
+                        }
+                }
+            } finally {
+                staging.manualReloadTrigger.trigger.emit("Backed up mod variant: $modVariant")
+                modModificationState.update {
+                    it.toMutableMap().apply {
+                        this[mod.id] =
+                            ModModificationState.Ready
+                    }
+                }
+            }
+
+            result?.errors?.forEach { Timber.w(it) }
+
+            return result
         }
     }
 }

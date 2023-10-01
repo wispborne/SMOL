@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import smol.access.Constants
+import smol.access.SL
 import smol.access.config.GamePathManager
 import smol.access.model.Mod
 import smol.access.model.ModId
@@ -26,6 +27,7 @@ import smol.timber.ktx.Timber
 import smol.timber.ktx.i
 import smol.utilities.asList
 import smol.utilities.exists
+import smol.utilities.toPathOrNull
 import smol.utilities.trace
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
@@ -89,7 +91,10 @@ internal class ModLoader internal constructor(
                                     modInfo = modInfo,
                                     versionCheckerInfo = dataFiles.versionCheckerInfo,
                                     modsFolderInfo = Mod.ModsFolderInfo(folder = modFolder),
-                                    doesModInfoFileExist = modFolder.resolve(Constants.UNBRICKED_MOD_INFO_FILE).exists(),
+                                    backupFile = SL.appConfig.modBackupPath?.toPathOrNull()
+                                        ?.resolve(ModVariant.generateBackupFileName(modInfo)),
+                                    doesModInfoFileExist = modFolder.resolve(Constants.UNBRICKED_MOD_INFO_FILE)
+                                        .exists(),
                                 )
                                 Mod(
                                     id = modInfo.id,

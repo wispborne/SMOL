@@ -33,6 +33,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.GlobalScope
@@ -43,6 +44,7 @@ import smol.access.config.SettingsPath
 import smol.app.composables.*
 import smol.app.navigation.Screen
 import smol.app.themes.SmolTheme
+import smol.app.themes.SmolTheme.hyperlink
 import smol.app.toolbar.toolbar
 import smol.timber.ktx.Timber
 import smol.utilities.exists
@@ -63,7 +65,8 @@ object SettingsView {
 @Composable
 @Preview
 fun AppScope.settingsView(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    settingsPath: SettingsPath
 ) {
     val showLogPanel = remember { mutableStateOf(false) }
     val userProfile = SL.userManager.activeProfile.collectAsState().value
@@ -79,35 +82,40 @@ fun AppScope.settingsView(
             ) {
                 Column {
                     var gamePath by remember { mutableStateOf(SL.gamePathManager.path.value?.pathString) }
+                    var modBackupPath by remember { mutableStateOf(SL.appConfig.modBackupPath) }
+                    var areModBackupsEnabled by remember { mutableStateOf(SL.appConfig.areModArchivesEnabled) }
                     val alertDialogMessage = remember { mutableStateOf<String?>(null) }
                     val scope = rememberCoroutineScope()
                     val settingsPathErrors = remember {
                         mutableStateOf(
                             SL.access.validatePaths(
-                                newGamePath = gamePath.toPathOrNull()
+                                newGamePath = gamePath.toPathOrNull(),
+                                archivesPath = modBackupPath.toPathOrNull()
                             ).failure
                         )
                     }
                     val jresFound = remember { SnapshotStateList<JreEntry>() }
 
                     fun saveSettings(): Boolean {
-                        val errors = kotlin.runCatching {
+                        val errors = runCatching {
                             SL.access.validatePaths(
-                                newGamePath = gamePath.toPathOrNull()
+                                newGamePath = gamePath.toPathOrNull(),
+                                archivesPath = modBackupPath.toPathOrNull()
                             ).failure
                         }
                             .recover {
                                 Timber.w(it)
-                                mapOf(SettingsPath.Game to listOf(it.message))
+                                mapOf(settingsPath to listOf(it.message))
                             }
                             .getOrNull()
-                            ?.get(SettingsPath.Game)
+                            ?.get(settingsPath)
 
                         if (errors != null && errors.any()) {
                             alertDialogMessage.value = errors.joinToString(separator = "\n")
                             return false
                         } else {
                             SL.gamePathManager.set(gamePath!!)
+                            SL.appConfig.modBackupPath = modBackupPath
 
                             GlobalScope.launch {
                                 refreshJres(jresFound)
@@ -168,8 +176,49 @@ fun AppScope.settingsView(
                                     )
                                     gamePath = gamePathSetting(
                                         gamePath = gamePath ?: "",
-                                        settingsPathErrors = settingsPathErrors
+                                        settingsPathErrors = settingsPathErrors,
+                                        label = "Starsector folder"
                                     )
+                                    SmolTooltipArea(tooltip = {
+                                        SmolTooltipText("Backs up your mods to $modBackupPath.\nBackups are created whenever you update a mod.")
+                                    }) {
+                                        Row {
+                                            modBackupPath = gamePathSetting(
+                                                gamePath = modBackupPath ?: "",
+                                                settingsPathErrors = settingsPathErrors,
+                                                label = "Mod Backup folder",
+                                                isEnabled = areModBackupsEnabled
+                                            )
+                                            CheckboxWithText(
+                                                checked = areModBackupsEnabled,
+                                                modifier = Modifier.align(Alignment.CenterVertically),
+                                                onCheckedChange = { checked ->
+                                                    areModBackupsEnabled = checked
+                                                    SL.appConfig.areModArchivesEnabled = checked
+                                                }
+                                            ) { modifier ->
+                                                Text(
+                                                    text = "Back Up Mods",
+                                                    modifier = modifier
+                                                )
+                                            }
+                                            SmolClickableText(
+                                                text = "Back Up All Now",
+                                                color = MaterialTheme.colors.hyperlink,
+                                                modifier = Modifier
+                                                    .align(Alignment.CenterVertically)
+                                                    .padding(start = 16.dp),
+                                                textDecoration = TextDecoration.Underline,
+                                                onClick = {
+                                                    GlobalScope.launch {
+                                                        SL.access.mods.value?.mods.orEmpty()
+                                                            .flatMap { it.variants }
+                                                            .forEach { SL.access.backupMod(it) }
+                                                    }
+                                                },
+                                            )
+                                        }
+                                    }
 
                                     // Confirm button
                                     var initialPath by remember { mutableStateOf(gamePath) }
@@ -321,7 +370,9 @@ private suspend fun refreshJres(jresFound: SnapshotStateList<JreEntry>) {
 @Composable
 private fun AppScope.gamePathSetting(
     gamePath: String,
-    settingsPathErrors: MutableState<Map<SettingsPath, List<String>>?>
+    settingsPathErrors: MutableState<Map<SettingsPath, List<String>>?>,
+    label: String,
+    isEnabled: Boolean = true
 ): String {
     var newGamePath by remember { mutableStateOf(gamePath) }
     val errors = settingsPathErrors.value?.get(SettingsPath.Game)
@@ -334,13 +385,14 @@ private fun AppScope.gamePathSetting(
                 .widthIn(max = 700.dp)
                 .fillMaxWidth()
                 .align(Alignment.CenterVertically),
-            label = { Text("Starsector folder") },
+            label = { Text(label) },
             isError = errors?.any() ?: false,
             singleLine = true,
             maxLines = 1,
+            enabled = isEnabled,
             onValueChange = {
                 newGamePath = it
-                settingsPathErrors.value = kotlin.runCatching {
+                settingsPathErrors.value = runCatching {
                     SL.access.validatePaths(
                         newGamePath = it.toPathOrNull()
                     ).failure
@@ -352,6 +404,7 @@ private fun AppScope.gamePathSetting(
             modifier = Modifier
                 .align(Alignment.CenterVertically)
                 .padding(start = 16.dp, end = 16.dp),
+            enabled = isEnabled,
             onClick = {
                 newGamePath =
                     pickFolder(initialPath = newGamePath.ifBlank { null }

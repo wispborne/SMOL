@@ -46,21 +46,21 @@ object GsonBuilder {
                     description = json.getNullable("description")?.nullString,
                     requiredMemoryMB = json.getNullable("requiredMemoryMB")?.nullString,
                     gameVersion = json.getNullable("gameVersion")?.nullString,
-                    isUtilityMod = kotlin.runCatching { json["utility"].bool }
+                    isUtilityMod = runCatching { json["utility"].bool }
                         .onFailure { Timber.d(it) }
                         .getOrElse { false },
-                    isTotalConversion = kotlin.runCatching { json["totalConversion"].bool }
+                    isTotalConversion = runCatching { json["totalConversion"].bool }
                         .onFailure { Timber.d(it) }
                         .getOrElse { false },
-                    jars = kotlin.runCatching { json.getNullable("jars")!!.array.map { it.string } }
+                    jars = runCatching { json.getNullable("jars")!!.array.map { it.string } }
                         .onFailure { Timber.d(it) }
                         .getOrElse { emptyList() },
                     modPlugin = json.getNullable("modPlugin")?.nullString ?: "",
                     version = parseVersion(json) ?: Version.parse("0.0.0"),
-                    dependencies = kotlin.runCatching {
+                    dependencies = runCatching {
                         val deps = json.getNullable("dependencies")?.asJsonArray!!
                         deps.mapNotNull { dep ->
-                            kotlin.runCatching {
+                            runCatching {
                                 Dependency(
                                     id = dep["id"].nullString,
                                     name = dep.getNullable("name")?.nullString,
@@ -78,7 +78,7 @@ object GsonBuilder {
         }
         .registerTypeAdapter<Url> {
             deserialize { arg ->
-                kotlin.runCatching { Url(arg.json.string) }
+                runCatching { Url(arg.json.string) }
                     .onFailure { Timber.w(it) { arg.json.toString() } }
                     .getOrNull()
             }
@@ -86,7 +86,7 @@ object GsonBuilder {
         }
         .registerTypeAdapter<ZonedDateTime> {
             deserialize { arg ->
-                kotlin.runCatching { ZonedDateTime.parse(arg.json.string) }
+                runCatching { ZonedDateTime.parse(arg.json.string) }
                     .onFailure { Timber.w(it) { arg.json.toString() } }
                     .getOrNull()
             }
@@ -106,7 +106,7 @@ object GsonBuilder {
         .create()
 
     private fun parseVersion(json: JsonElement): Version? {
-        return kotlin.runCatching { json["version"].string.let { Version.parse(it) } }
+        return runCatching { json["version"].string.let { Version.parse(it) } }
             .recoverCatching {
                 val versionObj = json["version"].asJsonObject
                 val major by versionObj.byString("major") { "0" }

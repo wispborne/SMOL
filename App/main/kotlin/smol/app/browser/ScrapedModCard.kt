@@ -33,7 +33,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mikepenz.markdown.Markdown
+import com.mikepenz.markdown.compose.Markdown
 import io.kamel.image.KamelImage
 import io.kamel.image.lazyPainterResource
 import io.ktor.http.*
@@ -135,7 +135,7 @@ fun AppScope.scrapedModCard(
                             SmolTooltipBackground {
                                 CompositionLocalProvider(LocalUriHandler provides ModBrowserLinkLoader(linkLoader)) {
                                     Markdown(
-                                        it,
+                                        content = it,
                                         modifier = Modifier
                                             .widthIn(max = markdownWidth.dp)
                                     )

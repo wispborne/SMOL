@@ -52,7 +52,7 @@ class ModRepo internal constructor(private val jsanity: Jsanity, private val htt
         withContext(Dispatchers.IO) {
             val localModRepo = Path.of("../Mod_Repo/ModRepo.json")
             val freshIndexMods =
-                kotlin.runCatching {
+                runCatching {
                     // Try to read from local file first, for debugging, in ./App/ModRepo.json.
                     if (true) {
                         localModRepo.readText()

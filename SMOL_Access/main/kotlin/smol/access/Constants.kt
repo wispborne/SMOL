@@ -31,6 +31,7 @@ object Constants {
     const val ENABLED_MODS_FILENAME = "enabled_mods.json"
     const val MODS_FOLDER_NAME = "mods"
     const val SAVES_FOLDER_NAME = "saves"
+    const val ARCHIVES_FOLDER_NAME = "Mod_Backups"
     fun getGameLogPath(gamePath: Path) = gamePath.resolve("starsector-core/starsector.log")
     const val VERSION_CHECKER_CSV_PATH = "data/config/version/version_files.csv"
     const val VERSION_CHECKER_FILE_ENDING = ".version"

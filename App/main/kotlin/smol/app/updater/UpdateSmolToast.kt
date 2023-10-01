@@ -76,7 +76,7 @@ class UpdateSmolToast {
                     timeoutMillis = null,
                     useStandardToastFrame = true,
                     content = {
-                        kotlin.runCatching {
+                        runCatching {
                             val version = updateConfig.resolvedProperties[smolUpdater.versionPropertyKey]
                             var updateStage by remember {
                                 mutableStateOf(

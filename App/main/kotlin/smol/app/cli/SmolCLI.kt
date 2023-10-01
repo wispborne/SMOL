@@ -49,7 +49,7 @@
 //        )
 //
 //    fun parse(command: String) {
-//        kotlin.runCatching {
+//        runCatching {
 //            chainOfCommand
 //                .parse(
 //                    command

@@ -113,11 +113,11 @@ fun AppScope.rendererSettingSection(scope: CoroutineScope, modifier: Modifier) {
                 ),
                 rendererSettingsMenuItem(
                     AppConfig.Renderer.OpenGL,
-                    "Recommended for Windows. Works well on MacOS.\nWindows: OpenGL doesn't have the issues with VRR (G-Sync, FreeSync) that DirectX seems to (flickering, not running at high refresh rate)."
+                    "Recommended for Windows. Works well on MacOS.\nWindows: OpenGL doesn't have as many issues with VRR (G-Sync, FreeSync) that DirectX seems to (flickering, not running at high refresh rate)."
                 ),
                 rendererSettingsMenuItem(
                     AppConfig.Renderer.DirectX,
-                    "Windows's renderer. SMOL uses OpenGL by default for Windows to avoid flickering issues on displays with G-Sync/FreeSync, but DirectX is an option if OpenGL causes problems."
+                    "Windows's renderer. SMOL uses OpenGL by default for Windows to avoid some flickering issues on displays with G-Sync/FreeSync, but DirectX is an option if OpenGL causes problems."
                 ),
                 rendererSettingsMenuItem(
                     AppConfig.Renderer.Metal,

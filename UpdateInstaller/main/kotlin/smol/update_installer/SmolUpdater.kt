@@ -44,7 +44,7 @@ class SmolUpdater : BaseAppUpdater() {
             .basePath(Path.of("").absolutePathString())
             //            .property(
             //                Updater.PROP_VERSION_NAME,
-            //                kotlin.runCatching {
+            //                runCatching {
             //                    // If not running from a Compose app, but running standalone, we won't have the Constant,
             //                    // so just use a hardcoded path because life is short.
             //                    (Constants.VERSION_PROPERTIES_FILE

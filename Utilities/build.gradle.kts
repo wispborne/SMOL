@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.util.libsDirectory
+
 /*
  * This file is distributed under the GPLv3. An informal description follows:
  * - Anyone can copy, modify and distribute this software as long as the other points are followed.
@@ -34,13 +36,12 @@ dependencies {
     implementation("commons-io:commons-io:2.11.0")
 
     // Gson
-    api("com.github.salomonbrys.kotson:kotson:2.5.0")
-    api ("com.fasterxml.jackson.core:jackson-databind:2.13.4")
-    api ("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.4")
+    api(libs.kotson)
+    api (libs.jackson.databind)
+    api (libs.jackson.module.kotlin)
 
-    implementation("org.jetbrains.kotlin:kotlin-reflect:${project.property("kotlin")!!}")
-    implementation(project.property("coroutines")!!)
-    implementation("com.mayakapps.compose:window-styler:0.3.2")
+    implementation(libs.kotlin.reflect)
+    implementation(libs.coroutines)
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {

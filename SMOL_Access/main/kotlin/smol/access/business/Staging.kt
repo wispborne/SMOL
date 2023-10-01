@@ -52,7 +52,7 @@ internal class Staging(
 
         if (changeFileExtension) {
             IOLock.write {
-                kotlin.runCatching { modInfoFile.moveTo(modInfoFile.parent.resolve(Constants.MOD_INFO_FILE_DISABLED_NAMES.first())) }
+                runCatching { modInfoFile.moveTo(modInfoFile.parent.resolve(Constants.MOD_INFO_FILE_DISABLED_NAMES.first())) }
                     .onFailure {
                         Timber.w(it)
                     }
@@ -105,7 +105,7 @@ internal class Staging(
         IOLock.write {
             if (!modVariant.isModInfoEnabled) {
                 disabledModInfoFiles.forEach { modInfoFile ->
-                    kotlin.runCatching { modInfoFile.moveTo(modInfoFile.parent.resolve(Constants.UNBRICKED_MOD_INFO_FILE)) }
+                    runCatching { modInfoFile.moveTo(modInfoFile.parent.resolve(Constants.UNBRICKED_MOD_INFO_FILE)) }
                         .onFailure {
                             Timber.w(it)
                         }

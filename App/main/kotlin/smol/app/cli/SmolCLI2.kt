@@ -25,7 +25,7 @@
 //    private val userModProfileManager: UserModProfileManager
 //) {
 //    fun parse(args: List<String>) {
-//        kotlin.runCatching {
+//        runCatching {
 //            Smol()
 //                .parse(args.toTypedArray())
 //        }

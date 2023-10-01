@@ -261,7 +261,7 @@ class Timber private constructor() {
         }
 
         private fun logToConsole(priority: LogLevel, tag: String?, message: String, thread: String) {
-            kotlin.runCatching {
+            runCatching {
                 scope.launch {
                     val priorityChar = "${priority.name.firstOrNull()?.uppercase()}"
                     val formattedMsg =

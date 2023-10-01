@@ -83,7 +83,7 @@ fun AppScope.ModGridRow(
             .fillMaxWidth()
             .onClick(onDoubleClick = {
                 GlobalScope.launch {
-                    kotlin.runCatching {
+                    runCatching {
                         // Change mod state
                         if (mod.hasEnabledVariant) {
                             SL.access.disableMod(mod = mod)

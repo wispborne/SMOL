@@ -74,7 +74,7 @@ class Jsanity constructor(
     private fun <T> fromJsonString(json: String, filename: String, typeOfT: Type, shouldStripComments: Boolean): T {
         val strippedJson = if (shouldStripComments) stripJsonComments(json) else json
         // HJson
-        val hjson = kotlin.runCatching {
+        val hjson = runCatching {
             JsonValue.readHjson(strippedJson).toString(Stringify.FORMATTED)
         }
             .onFailure {
@@ -91,7 +91,7 @@ class Jsanity constructor(
             .getOrThrow()
 
         // Jackson
-//        val jacksonJson = kotlin.runCatching {
+//        val jacksonJson = runCatching {
 //            jackson.readValue<T>(hjson, jackson.typeFactory.constructType(typeOfT))
 //        }
 //            .recover { jackson.readTree(hjson) }
@@ -105,7 +105,7 @@ class Jsanity constructor(
             .also { Timber.v { it } }
 
         // Gson
-        return kotlin.runCatching { gson.fromJson<T>(jsonStr, typeOfT) }
+        return runCatching { gson.fromJson<T>(jsonStr, typeOfT) }
             .onFailure { Timber.e(it) { "Gson failed to parse:\n$jsonStr" } }
             .getOrThrow()
     }
@@ -124,4 +124,4 @@ class Jsanity constructor(
     }
 }
 
-fun JsonElement.getNullable(key: String): JsonElement? = kotlin.runCatching { this[key] }.getOrNull()
+fun JsonElement.getNullable(key: String): JsonElement? = runCatching { this[key] }.getOrNull()

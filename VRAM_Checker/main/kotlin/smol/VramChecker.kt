@@ -272,7 +272,7 @@ class VramChecker(
         summaryText.appendLine("    Material Maps Enabled: ${graphicsLibConfig.areGfxLibMaterialMapsEnabled}")
         summaryText.appendLine("    Surface Maps Enabled: ${graphicsLibConfig.areGfxLibSurfaceMapsEnabled}")
         summaryText.appendLine("    Edit 'config.properties' to choose your GraphicsLib settings.")
-        kotlin.runCatching {
+        runCatching {
             getGPUInfo()?.also { info ->
                 summaryText.appendLine("  System")
                 summaryText.appendLine(info.gpuString?.joinToString(separator = "\n") { "    $it" })

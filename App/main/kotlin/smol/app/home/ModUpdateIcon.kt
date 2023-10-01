@@ -169,7 +169,7 @@ fun AppScope.ModUpdateIcon(
                             if (Constants.isModBrowserEnabled()) {
                                 router.replaceCurrent(Screen.ModBrowser(modThreadId?.getModThreadUrl()))
                             } else {
-                                kotlin.runCatching {
+                                runCatching {
                                     modThreadId?.getModThreadUrl()
                                         ?.openAsUriInBrowser()
                                 }

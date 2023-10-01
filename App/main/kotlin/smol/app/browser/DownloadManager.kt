@@ -53,7 +53,7 @@ class DownloadManager(
     }
 
     fun isDownloadable(url: String?): Boolean =
-        kotlin.runCatching {
+        runCatching {
             val conn = URL(url ?: return false).openConnection()
             val headers = conn.headerFields
             Timber.v { "Url $url has headers ${headers.entries.joinToString(separator = "\n")}." }
@@ -134,7 +134,7 @@ class DownloadManager(
                     file.outputStream().use { outs ->
                         downloadItem.status.emit(DownloadItem.Status.Downloading)
 
-                        kotlin.runCatching {
+                        runCatching {
                             // Do the download
                             conn.getInputStream().transferTo(
                                 outs,

@@ -93,7 +93,7 @@ class KWatchChannel(
             clear()
         }
         if (mode == Mode.Recursive) {
-            kotlin.runCatching {
+            runCatching {
                 Files.walkFileTree(path, object : SimpleFileVisitor<Path>() {
                     override fun preVisitDirectory(subPath: Path, attrs: BasicFileAttributes): FileVisitResult {
                         return if (ignorePatterns.any { ignorePattern -> subPath.toString().matches(ignorePattern) }) {

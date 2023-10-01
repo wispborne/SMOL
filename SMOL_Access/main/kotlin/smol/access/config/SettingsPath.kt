@@ -14,6 +14,5 @@ package smol.access.config
 
 enum class SettingsPath {
     Game,
-    Archives,
-    Staging
+    Archives
 }

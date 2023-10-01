@@ -54,7 +54,7 @@ class ThemeManager(
     }
 
     fun getThemes(): Map<String, Theme> =
-        kotlin.runCatching {
+        runCatching {
             baseThemeConfig.themes + userThemeConfig.themes
         }
             .onFailure { Timber.w(it) }
@@ -68,14 +68,14 @@ class ThemeManager(
     private fun getActiveTheme(): Pair<String, Theme> {
         val activeThemeName = userManager.activeProfile.value.theme
         return activeThemeName?.let { themeName ->
-            kotlin.runCatching { activeThemeName to getThemes()[themeName]!! }
+            runCatching { activeThemeName to getThemes()[themeName]!! }
                 .onFailure { Timber.w(it) }
                 .getOrNull()
         } ?: defaultTheme
     }
 
     fun reloadThemes() {
-        kotlin.runCatching {
+        runCatching {
             baseThemeConfig.reload()
             userThemeConfig.reload()
         }
@@ -85,7 +85,7 @@ class ThemeManager(
 
     fun editTheme(themeKey: String): Path {
         if (!userThemeConfig.themes.containsKey(themeKey)) {
-            kotlin.runCatching {
+            runCatching {
                 // Add the theme to the user config so they can edit it.
                 reloadThemes()
                 userThemeConfig.themes = (userThemeConfig.themes.toMutableMap()

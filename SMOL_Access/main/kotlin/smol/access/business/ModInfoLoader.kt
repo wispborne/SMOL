@@ -64,7 +64,7 @@ class ModInfoLoader(
                                     ))
                                 ) {
                                     modInfo =
-                                        kotlin.runCatching { deserializeModInfoFile(file.readText(), file.name) }.getOrNull()
+                                        runCatching { deserializeModInfoFile(file.readText(), file.name) }.getOrNull()
                                 }
                             }
 
@@ -77,7 +77,7 @@ class ModInfoLoader(
                                 val verCheckerCsv = modFolder.resolve(Constants.VERSION_CHECKER_CSV_PATH)
 
                                 if (verCheckerCsv.exists()) {
-                                    kotlin.runCatching {
+                                    runCatching {
                                         val versionFilePath =
                                             CSVParser(
                                                 verCheckerCsv.bufferedReader(),

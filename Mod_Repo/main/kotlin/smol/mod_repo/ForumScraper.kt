@@ -38,7 +38,7 @@ internal object ForumScraper {
 
     private suspend fun scrapeModIndexLinks(): List<ScrapedMod>? {
         Timber.i { "Scraping Mod Index..." }
-        return kotlin.runCatching {
+        return runCatching {
             val doc: Document = Jsoup.connect("https://fractalsoftworks.com/forum/index.php?topic=177.0").get()
 //        Jsoup.parse(
 //            Path.of("C:/Users/whitm/SMOL/web/Starsector_Index/fractalsoftworks.com/forum/indexebd2.html").toFile(), null
@@ -110,7 +110,7 @@ internal object ForumScraper {
 
     private val versionRegex = Regex("""[\[{]([^]}]*?\d+?[^]}]*?)[]}]""")
     private suspend fun scrapeSubforumLinks(forumBaseUrl: String, subforumNumber: Int, take: Int): List<ScrapedMod>? {
-        return kotlin.runCatching {
+        return runCatching {
             (0 until take step 20)
                 .flatMap { page ->
                     Timber.i { "Fetching page ${page / postsPerPage} from subforum $subforumNumber." }

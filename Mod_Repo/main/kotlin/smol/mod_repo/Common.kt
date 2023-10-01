@@ -27,12 +27,12 @@ object Common {
      * Requires Internet.
      */
     fun isDownloadable(url: String?): Boolean =
-        kotlin.runCatching {
+        runCatching {
             Timber.d { "Checking to see if $url is downloadable by opening a connection." }
             val conn = URL(url ?: return false).openConnection()
 
             val hasAttachment = conn.getHeaderField("Content-Disposition")?.let { contentDispoHeader ->
-                kotlin.runCatching { ContentDisposition.parse(contentDispoHeader) }
+                runCatching { ContentDisposition.parse(contentDispoHeader) }
                     .onFailure { Timber.d(it) }
                     .getOrNull()
                     ?.disposition?.startsWith("attachment", ignoreCase = true) ?: false
@@ -40,7 +40,7 @@ object Common {
 
             val hasDownloadableContentType = kotlin.run {
                 conn.getHeaderField("Content-Type")?.let { contentType ->
-                    kotlin.runCatching { ContentType.parse(contentType) }
+                    runCatching { ContentType.parse(contentType) }
                         .onFailure { Timber.d(it) }
                         .getOrNull()
                         ?.let { type -> downloadableContentTypes.any { downloadableContentType -> downloadableContentType.match(type) } }

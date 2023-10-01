@@ -16,8 +16,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import net.sf.sevenzipjbinding.ExtractOperationResult
+import net.sf.sevenzipjbinding.IOutCreateArchive7z
 import net.sf.sevenzipjbinding.SevenZip
 import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream
+import net.sf.sevenzipjbinding.impl.RandomAccessFileOutStream
 import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem
 import smol.access.Constants
 import smol.access.model.*
@@ -26,12 +28,15 @@ import smol.access.util.ArchiveExtractToMemoryCallback
 import smol.timber.ktx.Timber
 import smol.timber.ktx.d
 import smol.utilities.*
+import java.io.IOException
 import java.io.RandomAccessFile
 import java.nio.file.FileVisitOption
 import java.nio.file.Path
 import kotlin.io.path.*
 
-@OptIn(ExperimentalStdlibApi::class)
+/**
+ * Handles installing mods from archives and folders, and other archive-related tasks.
+ */
 class Archives internal constructor(
     private val modInfoLoader: ModInfoLoader,
     private val jsanity: Jsanity
@@ -59,7 +64,7 @@ class Archives internal constructor(
                     val modFolder = inputFile.parent
 
                     if (modFolder.exists() && modFolder.isDirectory()) {
-                        kotlin.runCatching {
+                        runCatching {
                             copyOrCompressDir(
                                 modFolder = modFolder,
                                 destinationFolder = destinationFolder,
@@ -121,7 +126,7 @@ class Archives internal constructor(
                     }
                 }
             } else if (inputFile.isDirectory()) {
-                kotlin.runCatching {
+                runCatching {
                     copyOrCompressDir(
                         modFolder = inputFile,
                         destinationFolder = destinationFolder,
@@ -136,6 +141,9 @@ class Archives internal constructor(
         }
     }
 
+    /**
+     * I don't think this method does what it says it does.
+     */
     private suspend fun copyOrCompressDir(modFolder: Path, destinationFolder: Path, inputFile: Path) {
         val modInfoFile = (findModInfoFileInFolder(modFolder) ?: run {
             val ex = RuntimeException("Archive did not have a valid ${Constants.UNBRICKED_MOD_INFO_FILE} inside!")
@@ -144,7 +152,7 @@ class Archives internal constructor(
 
         val modInfo = modInfoFile.let {
             IOLock.read(lock = IOLocks.modFolderLock) {
-                kotlin.runCatching { jsanity.fromJson<ModInfo>(it.readText(), it.name, shouldStripComments = true) }
+                runCatching { jsanity.fromJson<ModInfo>(it.readText(), it.name, shouldStripComments = true) }
                     .getOrNull()
             }
         }
@@ -160,7 +168,7 @@ class Archives internal constructor(
         }
 
         IOLock.write(lock = IOLocks.modFolderLock) {
-            kotlin.runCatching {
+            runCatching {
                 // Or just copy the files
                 withContext(Dispatchers.IO) {
                     modInfoFile.parent.listDirectoryEntries()
@@ -181,7 +189,7 @@ class Archives internal constructor(
 
     private fun findDataFilesInArchive(inputArchiveFile: Path): DataFiles? {
         val dataFiles: DataFiles? =
-            kotlin.runCatching {
+            runCatching {
                 trace({ _, time ->
                     Timber.tag(Constants.TAG_TRACE).d {
                         "Time to extract mod_info.json & maybe vercheck file from ${inputArchiveFile.absolutePathString()}: ${time}ms."
@@ -224,7 +232,7 @@ class Archives internal constructor(
                                         ArchiveExtractToMemoryCallback(indicesToExtract, inArchive) { results ->
                                             modInfo = modInfoFile?.let {
                                                 results[modInfoFile.itemIndex]?.let {
-                                                    kotlin.runCatching {
+                                                    runCatching {
                                                         modInfoLoader.deserializeModInfoFile(
                                                             modInfoJson = it,
                                                             file = modInfoFile.path
@@ -235,11 +243,14 @@ class Archives internal constructor(
                                             }
 
                                             // If getting version checker file fails, swallow the exception because it was already logged.
-                                            kotlin.runCatching {
+                                            runCatching {
                                                 versionCheckerFile?.let {
                                                     results[versionCheckerFile.itemIndex]?.let { json ->
                                                         versionCheckerInfo =
-                                                            modInfoLoader.deserializeVersionCheckerFile(versionCheckerFile.path, json)
+                                                            modInfoLoader.deserializeVersionCheckerFile(
+                                                                versionCheckerFile.path,
+                                                                json
+                                                            )
                                                     }
                                                 }
                                             }
@@ -274,7 +285,7 @@ class Archives internal constructor(
      */
     @OptIn(ExperimentalPathApi::class)
     fun removedNestedFolders(folderContainingSingleMod: Path) {
-        kotlin.runCatching {
+        runCatching {
             if (!folderContainingSingleMod.isDirectory())
                 throw RuntimeException("folderContainingSingleMod must be a folder! It's in the name!")
 
@@ -367,5 +378,80 @@ class Archives internal constructor(
             bytes.size
         }
         return result
+    }
+
+    data class ArchiveResult(
+        val wasSuccessful: Boolean,
+        val errors: List<Throwable>,
+        val modVariant: UserProfile.ModProfile.ShallowModVariant
+    )
+
+    /**
+     * @param destinationFile Must already exist.
+     */
+    fun createArchive(modVariant: ModVariant, destinationFile: Path): ArchiveResult {
+        // Only need read because we're not modifying the mod folder, we're modifying the archive.
+        // Still, we are reading from the mod folder, so we need to lock it.
+        IOLock.read {
+            val modFolder = modVariant.modsFolderInfo.folder
+            val files =
+                modFolder.walk(maxDepth = 10, options = arrayOf(FileVisitOption.FOLLOW_LINKS))
+                    .toList()
+                    .map { ArchiveFile(it) }
+
+            var wasSuccessful = false
+            var errors: List<Throwable> = emptyList()
+            var raf: RandomAccessFile? = null
+            var outArchive: IOutCreateArchive7z? = null
+            try {
+                raf = RandomAccessFile(destinationFile.absolutePathString(), "rw")
+
+                outArchive = SevenZip.openOutArchive7z()
+
+                // Configure archive
+                //   No need to go crazy on the compression because most of the data is already compressed (png, ogg).
+                outArchive.setLevel(5)
+                outArchive.setSolid(true)
+
+                // Create archive
+                val compress7zFilesCallback = Compress7zFilesCallback(items = files, relativeTo = modFolder.parent)
+                outArchive.createArchive(
+                    RandomAccessFileOutStream(raf),
+                    files.size, compress7zFilesCallback
+                )
+                errors = compress7zFilesCallback.errors
+                wasSuccessful = true
+            } catch (e: Exception) {
+                Timber.w(e) { "Error creating archive '$destinationFile'." }
+            } finally {
+                if (outArchive != null) {
+                    try {
+                        outArchive.close()
+                    } catch (e: IOException) {
+                        Timber.w(e) { "Error closing archive $destinationFile" }
+                        wasSuccessful = false
+                    }
+                }
+                if (raf != null) {
+                    try {
+                        raf.close()
+                    } catch (e: IOException) {
+                        Timber.w(e) { "Error closing file $destinationFile" }
+                        wasSuccessful = false
+                    }
+                }
+            }
+            if (wasSuccessful) {
+                Timber.d { "Compression operation succeeded" }
+            } else {
+                destinationFile.deleteIfExists()
+            }
+
+            return ArchiveResult(
+                wasSuccessful = wasSuccessful,
+                errors = errors,
+                modVariant = UserProfile.ModProfile.ShallowModVariant(modVariant)
+            )
+        }
     }
 }

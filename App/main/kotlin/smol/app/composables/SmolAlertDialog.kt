@@ -65,7 +65,6 @@ import java.awt.event.KeyEvent
  * @param dialogProvider Defines how to create dialog in which will be placed AlertDialog's content.
  */
 @Composable
-@ExperimentalMaterialApi
 fun SmolAlertDialog(
     onDismissRequest: () -> Unit,
     confirmButton: @Composable () -> Unit = { SmolButton(onClick = { onDismissRequest() }) { Text("Ok") } },

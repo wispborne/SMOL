@@ -36,6 +36,9 @@ data class Mod constructor(
     // Moved to `ModLoader.reload` and cached, as calling File.exists constantly is expensive.
     //&& modVariant.modsFolderInfo.folder.resolve(Constants.MOD_INFO_FILE).exists()
 
+    /**
+     * Path of a specific mod's folder.
+     */
     data class ModsFolderInfo(
         val folder: Path
     )
@@ -81,6 +84,7 @@ data class Mod constructor(
                         requiredMemoryMB = null,
                         isTotalConversion = false
                     ),
+                    backupFile = null,
                     versionCheckerInfo = null,
                     modsFolderInfo = ModsFolderInfo(Path.of("")),
                     doesModInfoFileExist = true,
@@ -90,10 +94,14 @@ data class Mod constructor(
     }
 }
 
-data class ModVariant constructor(
+/**
+ * @param modsFolderInfo The location of the mod variant; its folder.
+ */
+data class ModVariant(
     val modInfo: ModInfo,
     val versionCheckerInfo: VersionCheckerInfo?,
     val modsFolderInfo: Mod.ModsFolderInfo,
+    val backupFile: Path?,
     val doesModInfoFileExist: Boolean,
 ) {
     companion object {
@@ -118,6 +126,9 @@ data class ModVariant constructor(
         fun generateVariantFolderName(modInfo: ModInfo) =
             "${modInfo.name?.replace(systemFolderNameAllowedChars, "")?.take(100)}-${modInfo.version}"
 
+        fun generateBackupFileName(modInfo: ModInfo, extension: String = "7z") =
+            "${generateVariantFolderName(modInfo)}.$extension"
+
         val MOCK: ModVariant
             get() = Mod.MOCK.variants.first()
     }
@@ -135,6 +146,7 @@ data class ModVariant constructor(
         get() = modsFolderInfo.folder.resolve(Constants.UNBRICKED_MOD_INFO_FILE).exists()
 
     fun generateVariantFolderName() = Companion.generateVariantFolderName(this.modInfo)
+    fun generateBackupFileName(extension: String = "7z") = Companion.generateBackupFileName(this.modInfo, extension)
 
     /**
      * Use the version in VersionChecker if possible (authors sometimes will do 0.35 in ModInfo but 0.3.5 in Version Checker).

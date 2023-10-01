@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.tinylog.Logger
+import smol.access.Access
 import smol.access.SL
 import smol.access.model.Mod
 import smol.access.model.ModVariant
@@ -104,7 +105,7 @@ fun AppScope.ModVariantsDropdown(
                     if (hasSingleVariant) {
                         // If only one variant, one-click to enable and disable
                         GlobalScope.launch {
-                            kotlin.runCatching {
+                            runCatching {
                                 if (hasEnabledVariant) {
                                     SL.access.disableMod(mod)
                                 } else {
@@ -127,7 +128,20 @@ fun AppScope.ModVariantsDropdown(
                 )
             ) {
                 if (modState != smol.access.Access.ModModificationState.Ready) {
-                    CircularProgressIndicator(Modifier.size(16.dp), color = MaterialTheme.colors.onPrimary)
+                    SmolTooltipArea(tooltip = {
+                        SmolTooltipText(
+                            when (modState) {
+                                Access.ModModificationState.DisablingVariants -> "Disabling..."
+                                Access.ModModificationState.EnablingVariant -> "Enabling..."
+                                Access.ModModificationState.BackingUpVariant -> "Backup in progress"
+                                Access.ModModificationState.DeletingVariants -> "Deleting..."
+                                Access.ModModificationState.Ready -> "Ready"
+                            }
+                        )
+                    }
+                    ) {
+                        CircularProgressIndicator(Modifier.size(16.dp), color = MaterialTheme.colors.onPrimary)
+                    }
                 } else {
                     // Text of the dropdown menu, current state of the mod
                     if (mod.enabledVariants.size > 1) {
@@ -156,6 +170,7 @@ fun AppScope.ModVariantsDropdown(
                             hasEnabledVariant -> mod.enabledVariants.joinToString {
                                 it.modInfo.version.toString().replace(' ', ' ')
                             }
+
                             hasSingleVariant && !hasEnabledVariant -> "Enable"
                             // If no enabled variant, show "Disabled"
                             else -> "Enable"
@@ -206,7 +221,7 @@ fun AppScope.ModVariantsDropdown(
                                             // A two-step operation will trigger a mod refresh and therefore recomposition and cancel
                                             // the second part of the operation!
                                             GlobalScope.launch {
-                                                kotlin.runCatching {
+                                                runCatching {
                                                     // Change mod state
                                                     when (action) {
                                                         is DropdownAction.ChangeToVariant -> {

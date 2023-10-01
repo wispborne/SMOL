@@ -23,3 +23,20 @@ plugins {
 }
 rootProject.name = "SMOL"
 include("App", "SMOL_Access", "VRAM_Checker", "UpdateStager", "Utilities", "Mod_Repo", "UpdateInstaller")
+
+
+dependencyResolutionManagement {
+    versionCatalogs {
+        create("libs") {
+            library("kotlin-reflect", "org.jetbrains.kotlin:kotlin-reflect:1.9.0")
+            library("kotson", "com.github.salomonbrys.kotson:kotson:2.5.0")
+            library("coroutines", "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0-native-mt")
+            library("coroutines-swing", "org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.6.0")
+            library("jackson-core", "com.fasterxml.jackson.core:jackson-core:2.15.2")
+            library("jackson-dataformat-xml", "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.15.2")
+            library("jackson-databind", "com.fasterxml.jackson.core:jackson-databind:2.15.2")
+            library("jackson-module-kotlin", "com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2")
+            library("update4j", "org.update4j:update4j:1.5.9")
+        }
+    }
+}

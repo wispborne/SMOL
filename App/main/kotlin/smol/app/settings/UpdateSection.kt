@@ -49,7 +49,7 @@ fun updateSection(scope: CoroutineScope, modifier: Modifier) {
 
         fun doUpdateCheck(hasChannelChanged: Boolean) {
             scope.launch {
-                kotlin.runCatching {
+                runCatching {
                     updateStatus =
                         if (!checkForUpdate().requiresUpdate()) {
                             "No update found."
@@ -72,7 +72,7 @@ fun updateSection(scope: CoroutineScope, modifier: Modifier) {
                     }
 
                 if (hasChannelChanged) {
-                    kotlin.runCatching { SL.modRepo.refreshFromInternet(SL.appConfig.updateChannel) }
+                    runCatching { SL.modRepo.refreshFromInternet(SL.appConfig.updateChannel) }
                         .onFailure { Timber.w(it) }
                 }
             }

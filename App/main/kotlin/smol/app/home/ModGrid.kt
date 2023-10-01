@@ -74,7 +74,7 @@ fun AppScope.ModGridView(
         remember { mutableStateOf(vramUsage?.values?.maxOfOrNull { it.bytesForMod }) }
     val profile = SL.userManager.activeProfile.collectAsState()
     val activeSortField = profile.value.modGridPrefs.sortField?.let {
-        kotlin.runCatching { ModGridSortField.valueOf(it) }.getOrNull()
+        runCatching { ModGridSortField.valueOf(it) }.getOrNull()
     }
     val showVramRefreshWarning = remember { mutableStateOf(false) }
     val secondaryColor = MaterialTheme.colors.secondary

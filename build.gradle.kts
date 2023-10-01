@@ -24,8 +24,8 @@ repositories {
 }
 
 dependencies {
-    implementation(project.property("kotlinReflect").toString())
-    implementation(project.property("coroutines")!!)
+    implementation(libs.kotlin.reflect)
+    implementation(libs.coroutines)
 }
 
 

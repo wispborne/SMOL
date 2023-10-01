@@ -51,7 +51,7 @@ class SaveReader(
             saveFolder.listDirectoryEntries("save*")
                 .filter { it.isDirectory() }
                 .mapNotNull { folder ->
-                    kotlin.runCatching { readSave(folder) }
+                    runCatching { readSave(folder) }
                         .onFailure { Timber.i { "Failed to read save folder $folder. ${it.message}" } }
                         .getOrNull()
                 }
@@ -91,7 +91,7 @@ class SaveReader(
                 saveFileVersion = saveTree["saveFileVersion"]?.asText() ?: "",
                 saveDate = (saveTree["saveDate"]?.get("")?.textValue())
                     .let { dateString ->
-                        kotlin.runCatching {
+                        runCatching {
                             LocalDateTime.parse(
                                 dateString
                                     ?.replace(" UTC", "")

@@ -106,7 +106,7 @@ fun AppScope.ModBrowserView(
 //                        modifier = Modifier,
 //                        onClick = {
 //                            coroutineScope.launch {
-//                                kotlin.runCatching { SL.modRepo.refreshFromInternet() }
+//                                runCatching { SL.modRepo.refreshFromInternet() }
 //                                    .onFailure { Timber.w(it) }
 //                            }
 //                        }

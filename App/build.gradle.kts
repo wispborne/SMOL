@@ -16,7 +16,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm")
-    id("org.jetbrains.compose") version "1.5.1"
+    id("org.jetbrains.compose") version "1.5.2"
 }
 
 group = "com.wisp"
@@ -37,9 +37,9 @@ val jcefFolder = "jcef-v1.0.18"
 dependencies {
     implementation(compose.desktop.currentOs)
     implementation("org.jetbrains.compose.components:components-splitpane-desktop:1.0.1")
-    implementation(project.property("kotlinReflect").toString())
-    implementation(project.property("coroutines")!!)
-    implementation(project.property("coroutinesSwing")!!)
+    implementation(libs.kotlin.reflect)
+    implementation(libs.coroutines)
+    implementation(libs.coroutines.swing)
 
     implementation(fileTree("../libs") { include("**/*.jar") })
     implementation(fileTree("libs") { include("**/*.jar") })
@@ -51,13 +51,13 @@ dependencies {
 
     // Logging
     implementation("org.tinylog:tinylog-api-kotlin:2.5.0")
-    implementation("org.tinylog:tinylog-impl:2.5.0")
+    implementation("org.tinylog:tinylog-impl:2.6.2")
 
     // Modifying mod pages
-    implementation("org.jsoup:jsoup:1.15.3")
+    implementation("org.jsoup:jsoup:1.16.1")
 
     // Gson
-    implementation("com.github.salomonbrys.kotson:kotson:2.5.0")
+    implementation(libs.kotson)
 
     // CLI builder, Clikt
 //    implementation("com.github.ajalt.clikt:clikt:3.5.1")
@@ -66,15 +66,14 @@ dependencies {
 //    implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.4")
 
     // Fuzzy Search - not used
-    implementation("com.github.android-password-store:sublime-fuzzy:2.3.0")
+    implementation("com.github.android-password-store:sublime-fuzzy:2.3.4")
 //    implementation("me.xdrop:fuzzywuzzy:1.4.0") // This one not used
 
     // List diffing
     implementation("dev.andrewbailey.difference:difference:1.0.0")
 
     // Markdown
-    implementation("com.mikepenz:multiplatform-markdown-renderer-jvm:0.6.1")
-    implementation("com.mayakapps.compose:window-styler:0.3.2")
+    implementation("com.mikepenz:multiplatform-markdown-renderer-jvm:0.8.0")
 
     // Navigation
     val decomposeVer = "0.3.1"

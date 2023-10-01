@@ -60,7 +60,7 @@ class Main {
                 }
 
                 runBlocking(Dispatchers.IO) {
-                    kotlin.runCatching {
+                    runCatching {
                         updateZipPath = updater.downloadUpdateZip(updater.fetchRemoteConfig(channel))!!
                     }
                         .onFailure {
@@ -86,7 +86,7 @@ class Main {
 
                 println("Installing ${updateZipPath.absolutePathString()}...")
                 while (timesToRepeat > 0) {
-                    kotlin.runCatching {
+                    runCatching {
                         Archive.read(updateZipPath.absolutePathString()).install()
                         success = true
                     }

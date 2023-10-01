@@ -62,7 +62,7 @@
 //    private fun <T> fromJsonString(json: String, typeOfT: Type, shouldStripComments: Boolean): T {
 //        val strippedJson = if (shouldStripComments) stripJsonComments(json) else json
 //
-//        return kotlin.runCatching { moshi.adapter<T>(typeOfT).fromJson(strippedJson)!! }
+//        return runCatching { moshi.adapter<T>(typeOfT).fromJson(strippedJson)!! }
 //            .onFailure { Timber.e(it) { "Moshi failed to parse:\n$strippedJson" } }
 //            .getOrThrow()
 //    }

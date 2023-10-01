@@ -39,6 +39,8 @@ class AppConfig(gson: Jsanity) :
 
     var updateChannel: UpdateChannel by pref(prefKey = "updateChannel", defaultValue = UpdateChannel.Unstable)
     internal var gamePath: String? by pref(prefKey = "gamePath", defaultValue = null)
+    var areModArchivesEnabled: Boolean by pref(prefKey = "areModArchivesEnabled", defaultValue = false)
+    var modBackupPath: String? by pref(prefKey = "modBackupPath", defaultValue = null)
     var lastFilePickerDirectory: String? by pref(prefKey = "lastFilePickerDirectory", defaultValue = null)
     var jre8Url: String by pref(
         prefKey = "jre8Url",

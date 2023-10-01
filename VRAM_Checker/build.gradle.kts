@@ -30,16 +30,15 @@ dependencies {
         exclude("TinyLog")
     })
 
-    implementation(project.property("kotlinReflect").toString())
-    implementation(project.property("coroutines")!!)
+    implementation(libs.kotlin.reflect)
+    implementation(libs.coroutines)
 
     implementation("de.siegmar:fastcsv:2.2.0")
-    implementation("com.fasterxml.jackson.core:jackson-core:2.13.4")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.13.4.2")
+    implementation(libs.jackson.core)
+    implementation(libs.jackson.databind)
 
     // Hardware info
-    api("com.github.oshi:oshi-core:6.2.2")
-    implementation("com.mayakapps.compose:window-styler:0.3.2")
+    api("com.github.oshi:oshi-core:6.4.5")
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {

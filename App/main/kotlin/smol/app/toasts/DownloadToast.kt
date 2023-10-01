@@ -111,7 +111,7 @@ fun DownloadToast(
                 modifier = Modifier
                     .padding(start = 4.dp, top = 4.dp, bottom = 4.dp, end = 8.dp)
                     .onClick {
-                        kotlin.runCatching { download.path.value?.parent?.openInDesktop() }
+                        runCatching { download.path.value?.parent?.openInDesktop() }
                             .onFailure { Timber.e(it) }
                     }
                     .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)))

@@ -97,7 +97,7 @@ internal class VersionChecker(
                             }
                             .parallelMap { modVariant ->
                                 val fixedUrl = fixUrl(modVariant.versionCheckerInfo?.masterVersionFile ?: "")
-                                kotlin.runCatching {
+                                runCatching {
                                     client.get(fixedUrl)
                                         .body<String>()
                                         .let {

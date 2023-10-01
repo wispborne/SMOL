@@ -218,7 +218,7 @@ fun AppScope.homeView(
 //                leadingIcon = { Icon(painter = painterResource("icon-console.svg"), contentDescription = null) },
 //                modifier = Modifier
 //                    .onEnterKeyPressed {
-//                        kotlin.runCatching {
+//                        runCatching {
 //                            SmolCLI(
 //                                userManager = SL.userManager,
 //                                userModProfileManager = SL.userModProfileManager,

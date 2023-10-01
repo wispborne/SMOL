@@ -219,7 +219,7 @@ internal object DiscordReader {
         val forumUrl = messageLines
             .mapNotNull { urlFinderRegex.find(it)?.value }
             .firstOrNull { it.contains("fractalsoftworks") }
-            ?.let { kotlin.runCatching { Url(it) }.onFailure { Timber.w(it) }.getOrNull() }
+            ?.let { runCatching { Url(it) }.onFailure { Timber.w(it) }.getOrNull() }
 
         // Get all urls, remove ones that definitely aren't download urls, then check each to see
         // if there's a file at the other end, as opposed to a website.
@@ -233,13 +233,13 @@ internal object DiscordReader {
             .mapNotNull { if (it.isDownloadable) it.url else null }
             .let { getBestPossibleDownloadHost(it) }
             .firstOrNull()
-            ?.let { kotlin.runCatching { Url(it) }.onFailure { Timber.w(it) }.getOrNull() }
+            ?.let { runCatching { Url(it) }.onFailure { Timber.w(it) }.getOrNull() }
 
         val downloadPageUrl = downloadyUrls
             .mapNotNull { if (it.isDownloadable) null else it.url }
             .let { getBestPossibleDownloadHost(it) }
             .firstOrNull()
-            ?.let { kotlin.runCatching { Url(it) }.onFailure { Timber.w(it) }.getOrNull() }
+            ?.let { runCatching { Url(it) }.onFailure { Timber.w(it) }.getOrNull() }
             ?: forumUrl
         return Triple(forumUrl, downloadArtifactUrl, downloadPageUrl)
     }

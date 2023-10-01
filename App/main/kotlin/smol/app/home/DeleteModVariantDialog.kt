@@ -13,31 +13,22 @@
 package smol.app.home
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import smol.access.SL
 import smol.access.model.ModVariant
-import smol.app.composables.CheckboxWithText
 import smol.app.composables.SmolAlertDialog
 import smol.app.composables.SmolButton
 import smol.app.composables.SmolSecondaryButton
 import smol.app.themes.SmolTheme
-import smol.timber.ktx.Timber
-import smol.utilities.bytesAsShortReadableMB
-import smol.utilities.calculateFileSize
-import kotlin.io.path.absolutePathString
-import kotlin.io.path.exists
-import kotlin.io.path.name
 
 @Composable
 @OptIn(ExperimentalMaterialApi::class)
@@ -67,42 +58,7 @@ fun DeleteModVariantDialog(
                     style = SmolTheme.alertDialogBody()
                 )
 
-                variantsToConfirmDeletionOf.forEach { variant ->
-                    val looseFilesToShow = variant.modsFolderInfo.folder
-
-                    if (looseFilesToShow.exists()) {
-                        val isChecked = variantSelections[variant] ?: true
-
-                        Row {
-                            var folderSize by remember { mutableStateOf<String?>("calculating") }
-
-                            LaunchedEffect(looseFilesToShow.absolutePathString()) {
-                                withContext(Dispatchers.Default) {
-                                    folderSize = kotlin.runCatching {
-                                        looseFilesToShow.calculateFileSize()
-                                    }
-                                        .onFailure { Timber.w(it) }
-                                        .getOrNull()?.bytesAsShortReadableMB
-                                }
-                            }
-
-                            CheckboxWithText(
-                                modifier = Modifier.align(Alignment.CenterVertically),
-                                checked = isChecked,
-                                onCheckedChange = { variantSelections[variant] = isChecked.not() }
-                            ) {
-                                Text(
-                                    text = "${looseFilesToShow.name} ${
-                                        folderSize.let { "($it)" }
-                                    }",
-                                    modifier = it.align(Alignment.CenterVertically),
-                                    style = SmolTheme.alertDialogBody()
-                                )
-                            }
-
-                        }
-                    }
-                }
+                VariantList(variantsToConfirmDeletionOf, variantSelections)
             }
         },
         onDismissRequest = { onDismiss.invoke() },

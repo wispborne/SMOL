@@ -183,7 +183,7 @@ fun Constants.isJCEFEnabled(): Boolean {
     }
 
     return currentPlatform == Platform.Windows &&
-            kotlin.runCatching {
+            runCatching {
                 Path.of("libs").listDirectoryEntries().any { it.name.startsWith("jcef") }
             }
                 .onFailure { Timber.d { it.message ?: "Couldn't find jcef" } }

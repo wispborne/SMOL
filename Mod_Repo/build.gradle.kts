@@ -29,7 +29,6 @@ dependencies {
         include("**/*.jar")
         exclude("TinyLog")
     })
-    implementation("com.mayakapps.compose:window-styler:0.3.2")
 
     // API
     val ktorVersion = "2.1.2"
@@ -48,7 +47,7 @@ dependencies {
     // Copied into project
     // implementation("com.github.android-password-store:sublime-fuzzy:2.3.1")
 
-    implementation(project.property("coroutines")!!)
+    implementation(libs.coroutines)
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {

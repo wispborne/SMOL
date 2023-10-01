@@ -28,7 +28,7 @@ class GameEnabledMods(
     private val gamePathManager: GamePathManager
 ) {
     fun getEnabledMods(): EnabledMods? =
-        kotlin.runCatching {
+        runCatching {
             IOLock.write {
                 val enabledModsFile = getEnabledModsFile() ?: return null
 
@@ -51,10 +51,10 @@ class GameEnabledMods(
 
                 createFileIfMissing()
 
-                kotlin.runCatching { readEnabledModsFile() }
+                runCatching { readEnabledModsFile() }
                     .recoverCatching {
                         Timber.w(it)
-                        kotlin.runCatching { enabledModsFile.moveTo(enabledModsFile.parent.resolve(enabledModsFile.name + ".invalid")) }
+                        runCatching { enabledModsFile.moveTo(enabledModsFile.parent.resolve(enabledModsFile.name + ".invalid")) }
                             .onFailure { enabledModsFile.deleteIfExists() }
                         createFileIfMissing()
                         readEnabledModsFile()
@@ -108,7 +108,7 @@ class GameEnabledMods(
     }
 
     private fun updateEnabledModsFile(mutator: (EnabledMods?) -> EnabledMods?) {
-        kotlin.runCatching {
+        runCatching {
             IOLock.write {
                 val enabledModsFile = getEnabledModsFile()
                 createBackupFileIfDoesntExist(enabledModsFile ?: return)

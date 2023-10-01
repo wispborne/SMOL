@@ -29,12 +29,11 @@ dependencies {
     implementation(project(":SMOL_Access"))
     implementation(project(":UpdateInstaller"))
 
-    implementation(project.property("kotlinReflect").toString())
-    implementation(project.property("coroutines")!!)
+    implementation(libs.kotlin.reflect)
+    implementation(libs.coroutines)
 
     // Auto-update
-    api("org.update4j:update4j:1.5.9")
-    implementation("com.mayakapps.compose:window-styler:0.3.2")
+    api(libs.update4j)
 }
 
 application {

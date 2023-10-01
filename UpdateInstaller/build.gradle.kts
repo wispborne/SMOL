@@ -27,11 +27,10 @@ dependencies {
     implementation(kotlin("stdlib"))
     implementation(project(":Utilities"))
 
-    implementation(project.property("coroutines")!!)
+    implementation(libs.coroutines)
 
     // Auto-update
-    implementation("org.update4j:update4j:1.5.9")
-    implementation("com.mayakapps.compose:window-styler:0.3.2")
+    implementation(libs.update4j)
 }
 
 application {

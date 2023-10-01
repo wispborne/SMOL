@@ -96,13 +96,13 @@ class VmParamsManager(
             }
 
             if (path.value?.exists() != true) {
-                kotlin.runCatching {
+                runCatching {
                     path.value?.createFile()
                 }
                     .onFailure { Timber.w(it) { "Unable to create a vmparams file. Ensure that SMOL has permission (run as admin?)." } }
             }
 
-            kotlin.runCatching {
+            runCatching {
                 path.value?.writeText(vmparams.fullString)
             }
                 .onFailure { Timber.w(it) { "Unable to update vmparams file. Ensure that SMOL has permission (run as admin?)." } }

@@ -52,19 +52,19 @@ class UpdaterUpdater : BaseAppUpdater() {
     override val canBeInstalledWhileSMOLIsRunning: Boolean = true
 
     override fun installUpdateInternal() {
-        val archive = kotlin.runCatching {
+        val archive = runCatching {
             Archive.read(updateZipFile)
         }
             .onFailure { t ->
                 Timber.e(t) { "Reading $updateZipFile failed, deleting it to set up for a redownload." }
-                kotlin.runCatching {
+                runCatching {
                     updateZipFile.deleteIfExists()
                 }
                     .onFailure { Timber.e(it) { "Error deleting $updateZipFile." } }
             }
             .getOrThrow()
 
-        kotlin.runCatching {
+        runCatching {
             archive.install(true)
         }
             .onFailure { Timber.e(it) }

@@ -64,7 +64,7 @@ class JreManager(
                         val javaExe = path.resolve("bin/java.exe")
                         if (!javaExe.exists()) return@mapNotNull null
 
-                        val versionString = kotlin.runCatching {
+                        val versionString = runCatching {
                             ProcessBuilder()
                                 .command(javaExe.absolutePathString(), "-version")
                                 .directory(path.toFile().resolve("bin"))
@@ -91,16 +91,16 @@ class JreManager(
     }
 
     suspend fun changeJre(newJre: JreEntry) {
-        kotlin.runCatching {
+        runCatching {
             val gamePathNN = gamePathManager.path.value!!
             val currentJreSource = findJREs().firstOrNull { it.isUsedByGame }
             var currentJreDest: Path? = null
-            val gameJrePath = kotlin.runCatching { gamePathNN.resolve(gameJreFolderName) }
+            val gameJrePath = runCatching { gamePathNN.resolve(gameJreFolderName) }
                 .onFailure { Timber.w(it) }
                 .getOrNull() ?: return
 
             // Move current JRE to a new folder.
-            kotlin.runCatching {
+            runCatching {
                 if (currentJreSource != null && currentJreSource.path.exists()) {
                     currentJreDest =
                         Path.of(gameJrePath.absolutePathString() + "-${currentJreSource.versionString}")
@@ -125,7 +125,7 @@ class JreManager(
                 }
 
             // Rename target JRE to "jre".
-            kotlin.runCatching {
+            runCatching {
                 IOLock.write(IOLocks.gameMainFolderLock) {
                     newJre.path.awaitWrite()
                     Timber.i { "Moving JRE ${newJre.versionString} from '${newJre.path}' to '$gameJrePath'." }
@@ -160,9 +160,9 @@ class JreManager(
      */
     @OptIn(ExperimentalPathApi::class)
     suspend fun downloadJre8() {
-        kotlin.runCatching {
+        runCatching {
             val gamePathNN = gamePathManager.path.value!!
-            val gameJrePath = kotlin.runCatching { gamePathNN.resolve(gameJreFolderName) }
+            val gameJrePath = runCatching { gamePathNN.resolve(gameJreFolderName) }
                 .onFailure { Timber.w(it) }
                 .getOrNull() ?: return@runCatching
 
@@ -240,7 +240,7 @@ data class JreEntry(
     val path: Path
 ) {
     val isUsedByGame = path.name == JreManager.gameJreFolderName
-    val version = kotlin.runCatching {
+    val version = runCatching {
         if (versionString.startsWith("1.")) versionString.removePrefix("1.").take(1).toInt()
         else versionString.takeWhile { it != '.' }.toInt()
     }

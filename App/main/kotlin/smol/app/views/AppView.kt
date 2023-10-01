@@ -32,6 +32,7 @@ import smol.access.Constants
 import smol.access.SL
 import smol.access.business.KWatchEvent
 import smol.access.business.asWatchChannel
+import smol.access.config.SettingsPath
 import smol.app.IWindowState
 import smol.app.UI
 import smol.app.WindowState
@@ -104,7 +105,7 @@ fun WindowState.appView() {
 
                     when (configuration) {
                         is Screen.Home -> appScope.homeView()
-                        is Screen.Settings -> appScope.settingsView()
+                        is Screen.Settings -> appScope.settingsView(settingsPath = SettingsPath.Game)
                         is Screen.Profiles -> appScope.ModProfilesView()
                         is Screen.ModBrowser -> appScope.ModBrowserView(defaultUrl = configuration.defaultUri)
                         is Screen.Tips -> appScope.TipsView()
@@ -156,9 +157,9 @@ private suspend fun checkForUpdates() {
     withContext(Dispatchers.IO) {
         val updateChannel = UpdateChannelManager.getUpdateChannelSetting(SL.appConfig)
         val remoteConfigAsync =
-            async { kotlin.runCatching { SL.UI.smolUpdater.fetchRemoteConfig(updateChannel) }.getOrNull() }
+            async { runCatching { SL.UI.smolUpdater.fetchRemoteConfig(updateChannel) }.getOrNull() }
         val updaterConfigAsync =
-            async { kotlin.runCatching { SL.UI.updaterUpdater.fetchRemoteConfig(updateChannel) }.getOrNull() }
+            async { runCatching { SL.UI.updaterUpdater.fetchRemoteConfig(updateChannel) }.getOrNull() }
 
         val updaterConfig = updaterConfigAsync.await()
 
@@ -336,7 +337,7 @@ private suspend fun reloadModsInner(forceRefreshVersionChecker: Boolean, forceRe
                         )
                     },
                     async {
-                        kotlin.runCatching { SL.saveReader.readAllSaves(forceRefresh = forceRefreshSaves) }
+                        runCatching { SL.saveReader.readAllSaves(forceRefresh = forceRefreshSaves) }
                             .onFailure { Timber.w(it) }
                     }
                 ).awaitAll()

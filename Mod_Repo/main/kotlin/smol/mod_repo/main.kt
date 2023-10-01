@@ -82,7 +82,7 @@ class Main {
                 .disableHtmlEscaping()
                 .registerTypeAdapter<Url> {
                     deserialize { arg ->
-                        kotlin.runCatching { Url(arg.json.string) }
+                        runCatching { Url(arg.json.string) }
                             .onFailure { Timber.w(it) { arg.json.toString() } }
                             .getOrNull()
                     }
@@ -98,7 +98,7 @@ class Main {
             val modRepoCache = ModRepoCache(jsanity)
 
             val scrapeJob = CoroutineScope(Job()).async {
-                kotlin.runCatching {
+                runCatching {
                     withTimeout(90000) {
                         if (config.enableForums) {
                             ForumScraper.run(
@@ -114,7 +114,7 @@ class Main {
             }
 
             val discordJob = CoroutineScope(Job()).async {
-                kotlin.runCatching {
+                runCatching {
                     // isDownloadable takes forever, don't use a timeout.
 //                    withTimeout(90000) {
                         if (config.enableDiscord) {
@@ -130,7 +130,7 @@ class Main {
             }
 
             val nexusModsJob = CoroutineScope(Job()).async {
-                kotlin.runCatching {
+                runCatching {
                     withTimeout(180000) {
                         if (config.enableNexus) {
                             NexusReader.readAllMessages(
@@ -164,14 +164,14 @@ class Main {
 
                 delay(1000)
                 println("Wrote log to ${logFile.absolutePathString()}.")
-                kotlin.runCatching {
+                runCatching {
                     logOut.close()
                 }
             }
         }
 
         private fun readConfig(): Config? =
-            if (kotlin.runCatching { configFilePath.exists() }
+            if (runCatching { configFilePath.exists() }
                     .onFailure { System.err.println(it) }
                     .getOrNull() == true)
                 Properties().apply { this.load(configFilePath.bufferedReader()) }

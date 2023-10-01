@@ -120,7 +120,7 @@ fun AppScope.DirectDownloadAlertDialog(
                                 router.replaceCurrent(Screen.ModBrowser(modThreadId.getModThreadUrl()))
                                 alertDialogSetter(null)
                             } else {
-                                kotlin.runCatching {
+                                runCatching {
                                     modThreadId.openModThread()
                                 }
                                     .onFailure { Timber.w(it) }

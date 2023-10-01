@@ -202,7 +202,7 @@ private fun AppScope.launchStarsector() {
         val workingDir = SL.gamePathManager.getGameCoreFolderPath()
         val starsectorCoreDir = SL.gamePathManager.getGameCoreFolderPath()
         val gameLauncher = SL.gamePathManager.path.value?.resolve("jre/bin/java.exe")?.normalize()
-        val (vmparams, launchPrefs) = kotlin.runCatching {
+        val (vmparams, launchPrefs) = runCatching {
             val vmp = getCurrentVmParams()
 
             vmp to getStarsectorLaunchPrefs()
@@ -507,7 +507,7 @@ fun AppScope.quickLinksDropdown(modifier: Modifier = Modifier) {
     val savesPath = gamePath?.resolve(Constants.SAVES_FOLDER_NAME)
     val modsPath = gamePath?.resolve(Constants.MODS_FOLDER_NAME)
     val logPath = gamePath?.let {
-        kotlin.runCatching { Constants.getGameLogPath(gamePath) }.onFailure { Timber.w(it) }.getOrNull()
+        runCatching { Constants.getGameLogPath(gamePath) }.onFailure { Timber.w(it) }.getOrNull()
     }
     SmolDropdownWithButton(
         shouldShowSelectedItemInMenu = false,

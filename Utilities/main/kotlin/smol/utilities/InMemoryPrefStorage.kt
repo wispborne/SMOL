@@ -40,7 +40,7 @@ class InMemoryPrefStorage(private val wrapped: IConfig.PrefStorage) : IConfig.Pr
     override fun <T> put(key: String, value: T?, type: KType) {
         memory[key] = value
         scope.launch(Dispatchers.IO) {
-            kotlin.runCatching {
+            runCatching {
                 wrapped.put(key, value, type)
             }
                 .onFailure { Timber.w(it) }

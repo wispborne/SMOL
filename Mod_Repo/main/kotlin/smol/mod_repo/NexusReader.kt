@@ -49,7 +49,7 @@ internal object NexusReader {
                 this.followRedirects = true
             }
 
-        val gameInfo = kotlin.runCatching {
+        val gameInfo = runCatching {
             getGameInfo(httpClient = httpClient, authToken = authToken)
         }
             .onFailure { Timber.w(it) }
@@ -107,7 +107,7 @@ internal object NexusReader {
                 }
 
                 val author = mod.author?.nullIfBlank() ?: mod.uploadedBy?.nullIfBlank() ?: mod.user?.name ?: ""
-                val nexusModsUrl = kotlin.runCatching { getWebLinkForModId(modId) }.getOrNull()
+                val nexusModsUrl = runCatching { getWebLinkForModId(modId) }.getOrNull()
                 ScrapedMod(
                     name = mod.name ?: "(no name)",
                     summary = mod.summary,
@@ -137,9 +137,9 @@ internal object NexusReader {
                             )
                         }
                         ?: emptyMap(),
-                    dateTimeCreated = kotlin.runCatching { Date.from(Instant.parse(mod.createdTime)) }
+                    dateTimeCreated = runCatching { Date.from(Instant.parse(mod.createdTime)) }
                         .onFailure { Timber.w(it) }.getOrNull(),
-                    dateTimeEdited = kotlin.runCatching { Date.from(Instant.parse(mod.updatedTime)) }
+                    dateTimeEdited = runCatching { Date.from(Instant.parse(mod.updatedTime)) }
                         .onFailure { Timber.w(it) }.getOrNull(),
                 )
             }
