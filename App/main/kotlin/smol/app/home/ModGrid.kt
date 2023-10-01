@@ -263,7 +263,7 @@ fun AppScope.ModGridView(
             detailsPanel(
                 modifier = Modifier.padding(bottom = contentPadding),
                 selectedRow = selectedRow,
-                mods = SL.access.mods.value?.mods ?: emptyList()
+                mods = SL.access.modsFlow.value?.mods ?: emptyList()
             )
         }
 

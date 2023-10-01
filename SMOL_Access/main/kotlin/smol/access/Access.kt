@@ -12,9 +12,13 @@
 
 package smol.access
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import smol.access.business.*
 import smol.access.config.AppConfig
 import smol.access.config.GamePathManager
@@ -37,6 +41,23 @@ class Access internal constructor(
     private val gamePathManager: GamePathManager,
     private val modsCache: ModsCache
 ) {
+    private val scope = CoroutineScope(Job())
+
+    init {
+        scope.launch {
+            modsFlow.collectLatest { modListUpdate ->
+                runCatching {
+                    modListUpdate?.added.orEmpty().forEach { modVariant ->
+                        // Back up mod if feature is enabled and the backup file doesn't exist.
+                        if (appConfig.areModArchivesEnabled && modVariant.backupFile?.exists() != true) {
+                            backupMod(modVariant)
+                        }
+                    }
+                }
+                    .onFailure { Timber.w(it) }
+            }
+        }
+    }
 
     /**
      * Checks the /mods and archives paths and sets them if they don't exist.
@@ -125,8 +146,10 @@ class Access internal constructor(
         else SmolResult.Failure(errors)
     }
 
-    val mods: StateFlow<ModListUpdate?>
+    val modsFlow: StateFlow<ModListUpdate?>
         get() = modsCache.mods
+    val mods: List<Mod>
+        get() = modsCache.mods.value?.mods.orEmpty()
     val areModsLoading = modLoader.isLoading
 
     val modModificationState = MutableStateFlow<Map<ModId, ModModificationState>>(emptyMap())
@@ -174,11 +197,6 @@ class Access internal constructor(
                 val err = "Variant and mod were different! ${mod.id}, ${modVariant.smolId}"
                 Timber.i { err }
                 return Result.failure(RuntimeException(err))
-            }
-
-            // Back up mod if feature is enabled and the backup file doesn't exist.
-            if (appConfig.areModArchivesEnabled && modVariant != null && modVariant.backupFile?.exists() != true) {
-                backupMod(modVariant)
             }
 
             if (modVariant != null && mod.isEnabled(modVariant)) {
@@ -248,28 +266,28 @@ class Access internal constructor(
         }
     }
 
-    @Deprecated("Use changeActiveVariant instead, it disables other variants properly.")
-    private suspend fun enableModVariant(modToEnable: ModVariant): Result<Unit> {
-        try {
-            modModificationState.update {
-                it.toMutableMap().apply {
-                    val mod = modToEnable.mod(this@Access) ?: return Result.failure(NullPointerException())
-                    this[mod.id] =
-                        ModModificationState.EnablingVariant
-                }
-            }
-            return staging.enableModVariant(modToEnable, modLoader)
-        } finally {
-            staging.manualReloadTrigger.trigger.emit("Enabled mod: $modToEnable")
-            modModificationState.update {
-                it.toMutableMap().apply {
-                    val mod = modToEnable.mod(this@Access) ?: return Result.failure(NullPointerException())
-                    this[mod.id] =
-                        ModModificationState.Ready
-                }
-            }
-        }
-    }
+//    @Deprecated("Use changeActiveVariant instead, it disables other variants properly.")
+//    private suspend fun enableModVariant(modToEnable: ModVariant): Result<Unit> {
+//        try {
+//            modModificationState.update {
+//                it.toMutableMap().apply {
+//                    val mod = modToEnable.mod(this@Access) ?: return Result.failure(NullPointerException())
+//                    this[mod.id] =
+//                        ModModificationState.EnablingVariant
+//                }
+//            }
+//            return staging.enableModVariant(modToEnable, modLoader)
+//        } finally {
+//            staging.manualReloadTrigger.trigger.emit("Enabled mod: $modToEnable")
+//            modModificationState.update {
+//                it.toMutableMap().apply {
+//                    val mod = modToEnable.mod(this@Access) ?: return Result.failure(NullPointerException())
+//                    this[mod.id] =
+//                        ModModificationState.Ready
+//                }
+//            }
+//        }
+//    }
 
     suspend fun disableMod(mod: Mod): Result<Unit> {
         try {
@@ -374,13 +392,13 @@ class Access internal constructor(
         var result: Archives.ArchiveResult? = null
 
         if (!overwriteExisting && modArchiveFile.exists()) {
-            Timber.d { "Mod archive file already exists at $modArchiveFile, skipping." }
+            Timber.d { "Mod archive file already exists at '$modArchiveFile', skipping." }
             return null
         }
 
-        Timber.i { "Backing up mod variant ${modVariant.smolId} to $modArchiveFile." }
+        Timber.i { "Backing up mod variant ${modVariant.smolId} to '$modArchiveFile'." }
         trace(onFinished = { _, millis ->
-            Timber.i { "Backed up mod variant ${modVariant.smolId} to $modArchiveFile in ${millis}ms." }
+            Timber.i { "Backed up mod variant ${modVariant.smolId} to '$modArchiveFile' in ${millis}ms." }
         }) {
             try {
                 modModificationState.update {
@@ -391,15 +409,15 @@ class Access internal constructor(
                 }
                 IOLock.read(IOLocks.modFolderLock) {
                     if (modArchiveFile.exists()) {
-                        Timber.i { "Deleting existing mod archive file at $modArchiveFile." }
+                        Timber.i { "Deleting existing mod archive file at '$modArchiveFile'." }
                         runCatching { modArchiveFile.deleteIfExists() }
                             .onFailure {
-                                Timber.e(it) { "Unable to delete existing mod archive file at $modArchiveFile." }
+                                Timber.e(it) { "Unable to delete existing mod archive file at '$modArchiveFile'." }
                                 return null
                             }
                     }
 
-                    Timber.i { "Creating mod archive file at $modArchiveFile." }
+                    Timber.i { "Creating mod archive file at '$modArchiveFile'." }
                     runCatching {
                         modArchiveFile.createFile()
                         result = archives.createArchive(
@@ -408,7 +426,7 @@ class Access internal constructor(
                         )
                     }
                         .onFailure {
-                            Timber.e(it) { "Unable to create mod archive file at $modArchiveFile." }
+                            Timber.e(it) { "Unable to create mod archive file at '$modArchiveFile'." }
                         }
                 }
             } finally {

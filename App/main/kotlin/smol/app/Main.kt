@@ -57,7 +57,7 @@ import kotlin.io.path.inputStream
 var safeMode = false
 
 fun main() = application {
-    val logLevel = LogLevel.INFO
+    val logLevel = LogLevel.VERBOSE
     val startTime = Instant.now().toEpochMilli()
     fun sinceStartStr() = "(since start: ${(Instant.now().minusMillis(startTime).toEpochMilli())}ms)"
     val coroutineScope = rememberCoroutineScope()

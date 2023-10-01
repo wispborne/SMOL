@@ -202,6 +202,9 @@ fun AppScope.settingsView(
                                                     modifier = modifier
                                                 )
                                             }
+//                                            val isBackingUp =
+//                                            val modState =
+//                                                SL.access.modModificationState.collectAsState().value[mod.id] ?: smol.access.Access.ModModificationState.Ready
                                             SmolClickableText(
                                                 text = "Back Up All Now",
                                                 color = MaterialTheme.colors.hyperlink,
@@ -211,7 +214,7 @@ fun AppScope.settingsView(
                                                 textDecoration = TextDecoration.Underline,
                                                 onClick = {
                                                     GlobalScope.launch {
-                                                        SL.access.mods.value?.mods.orEmpty()
+                                                        SL.access.modsFlow.value?.mods.orEmpty()
                                                             .flatMap { it.variants }
                                                             .forEach { SL.access.backupMod(it) }
                                                     }
@@ -352,10 +355,9 @@ fun AppScope.settingsView(
         },
         bottomBar = {
             SmolBottomAppBar(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                logButtonAndErrorDisplay(showLogPanel = showLogPanel)
-            }
+                modifier = Modifier.fillMaxWidth(),
+                showLogPanel = showLogPanel
+            )
         }
     )
 }

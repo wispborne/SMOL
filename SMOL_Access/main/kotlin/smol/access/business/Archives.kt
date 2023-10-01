@@ -389,7 +389,11 @@ class Archives internal constructor(
     /**
      * @param destinationFile Must already exist.
      */
-    fun createArchive(modVariant: ModVariant, destinationFile: Path): ArchiveResult {
+    fun createArchive(
+        modVariant: ModVariant,
+        destinationFile: Path,
+        enableModInfoFileIfBricked: Boolean = true
+    ): ArchiveResult {
         // Only need read because we're not modifying the mod folder, we're modifying the archive.
         // Still, we are reading from the mod folder, so we need to lock it.
         IOLock.read {
@@ -397,7 +401,18 @@ class Archives internal constructor(
             val files =
                 modFolder.walk(maxDepth = 10, options = arrayOf(FileVisitOption.FOLLOW_LINKS))
                     .toList()
-                    .map { ArchiveFile(it) }
+                    .map { path ->
+                        // If mod_info.json is disabled, rename it to mod_info.json (the non-bricked version).
+                        val destPath =
+                            if (enableModInfoFileIfBricked && Constants.MOD_INFO_FILE_DISABLED_NAMES.any {
+                                    path.endsWith(
+                                        it
+                                    )
+                                })
+                                path.parent.resolve(Constants.UNBRICKED_MOD_INFO_FILE)
+                            else path
+                        ArchiveFile(path, destPath)
+                    }
 
             var wasSuccessful = false
             var errors: List<Throwable> = emptyList()
@@ -428,7 +443,7 @@ class Archives internal constructor(
                     try {
                         outArchive.close()
                     } catch (e: IOException) {
-                        Timber.w(e) { "Error closing archive $destinationFile" }
+                        Timber.w(e) { "Error closing archive '$destinationFile'" }
                         wasSuccessful = false
                     }
                 }
@@ -436,14 +451,15 @@ class Archives internal constructor(
                     try {
                         raf.close()
                     } catch (e: IOException) {
-                        Timber.w(e) { "Error closing file $destinationFile" }
+                        Timber.w(e) { "Error closing file '$destinationFile'" }
                         wasSuccessful = false
                     }
                 }
             }
             if (wasSuccessful) {
-                Timber.d { "Compression operation succeeded" }
+                Timber.d { "Created archive '$destinationFile'." }
             } else {
+                Timber.d { "Failed to create archive '$destinationFile'.\nDeleting incomplete archive." }
                 destinationFile.deleteIfExists()
             }
 

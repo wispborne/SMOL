@@ -50,9 +50,9 @@ class GamePathManager internal constructor(
     fun set(path: Path) = value_.update { path }
 
     fun getDefaultStarsectorPath(platform: Platform): File? {
-        fun getFileOrNull(path: String): File?{
+        fun getFileOrNull(path: String): File? {
             val f = File(path)
-            return if(f.exists()) f else null
+            return if (f.exists()) f else null
         }
         return runCatching {
             when (platform) {
@@ -78,9 +78,9 @@ class GamePathManager internal constructor(
                 else -> listOf("") // TODO
             }.firstNotNullOfOrNull { getFileOrNull(it) }
         }.onFailure {
-                Timber.d { it.message ?: "" }
-                it.printStackTrace()
-            }.getOrNull()
+            Timber.d { it.message ?: "" }
+            it.printStackTrace()
+        }.getOrNull()
 
 
 //            .mapCatching { File(it) }
@@ -93,7 +93,7 @@ class GamePathManager internal constructor(
 
 
     fun getGameExeFolderPath(gameFolderPath: Path = value_.value!!) =
-        when(currentPlatform) {
+        when (currentPlatform) {
             Platform.Windows -> gameFolderPath
             Platform.MacOS -> gameFolderPath.parent
             Platform.Linux -> gameFolderPath
@@ -101,7 +101,7 @@ class GamePathManager internal constructor(
         }
 
     fun getGameCoreFolderPath(gameFolderPath: Path = value_.value!!) =
-        when(currentPlatform) {
+        when (currentPlatform) {
             Platform.Windows -> gameFolderPath
             Platform.MacOS -> gameFolderPath.resolve("Contents/Resources/Java")
             Platform.Linux -> gameFolderPath
@@ -118,12 +118,12 @@ class GamePathManager internal constructor(
 
         val mods = starsectorPath.resolve(Constants.MODS_FOLDER_NAME)
 
-        IOLock.write {
-            if (!mods.exists()) {
-                if (!mods.isWritable()) {
-                    Timber.e { "Unable to write to ${mods.absolutePathString()}. Ensure that it exists and SMOL has write permission (run as admin?)." }
-                    return null
-                } else {
+        if (!mods.exists()) {
+            if (!mods.isWritable()) {
+                Timber.e { "Unable to write to ${mods.absolutePathString()}. Ensure that it exists and SMOL has write permission (run as admin?)." }
+                return null
+            } else {
+                IOLock.write {
                     mods.createDirectories()
                 }
             }

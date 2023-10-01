@@ -21,7 +21,6 @@ import java.io.PrintWriter
 import java.io.StringWriter
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.time.temporal.TemporalUnit
 import java.util.*
 import java.util.Collections.unmodifiableList
 import java.util.regex.Pattern
@@ -265,7 +264,9 @@ class Timber private constructor() {
                 scope.launch {
                     val priorityChar = "${priority.name.firstOrNull()?.uppercase()}"
                     val formattedMsg =
-                        "${Instant.now().truncatedTo(ChronoUnit.SECONDS)} [$thread] ${if (priorityChar.isNotBlank()) "$priorityChar/" else ""}${if (!tag.isNullOrBlank()) "$tag/" else ""} $message"
+                        "${
+                            Instant.now().truncatedTo(ChronoUnit.SECONDS)
+                        } [$thread] ${if (priorityChar.isNotBlank()) "$priorityChar/" else ""}${if (!tag.isNullOrBlank()) "$tag/" else ""} $message"
                     if (priority < LogLevel.WARN) {
                         System.out.println(formattedMsg)
                     } else {
@@ -293,8 +294,9 @@ class Timber private constructor() {
 
     companion object Forest : Tree() {
         fun findClassName() = Throwable().stackTrace
-            .first { it.className !in fqcnIgnore }
-            .let(Forest::createStackElementTag)
+            .filter { it.className !in fqcnIgnore }
+            .take(2)
+            .joinToString(separator = "->") { createStackElementTag(it) ?: "" }
 
         /**
          * Extract the tag which should be used for the message from the `element`. By default

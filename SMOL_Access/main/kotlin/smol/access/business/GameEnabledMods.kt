@@ -29,18 +29,20 @@ class GameEnabledMods(
 ) {
     fun getEnabledMods(): EnabledMods? =
         runCatching {
-            IOLock.write {
-                val enabledModsFile = getEnabledModsFile() ?: return null
+            val enabledModsFile = getEnabledModsFile() ?: return null
 
-                fun createFileIfMissing() {
-                    if (!enabledModsFile.exists()) {
+            fun createFileIfMissing() {
+                if (!enabledModsFile.exists()) {
+                    IOLock.write {
                         enabledModsFile.writer().use { outStream ->
                             gson.toJson(EnabledMods(emptyList()), outStream)
                         }
                     }
                 }
+            }
 
-                fun readEnabledModsFile() =
+            fun readEnabledModsFile() =
+                IOLock.read {
                     enabledModsFile.reader().use { inStream ->
                         gson.fromJson<EnabledMods>(
                             json = JsonObject.readHjson(inStream).toString(),
@@ -48,19 +50,21 @@ class GameEnabledMods(
                             shouldStripComments = true
                         )
                     }
+                }
 
-                createFileIfMissing()
+            createFileIfMissing()
 
-                runCatching { readEnabledModsFile() }
-                    .recoverCatching {
-                        Timber.w(it)
+            runCatching { readEnabledModsFile() }
+                .recoverCatching {
+                    Timber.w(it)
+                    IOLock.write {
                         runCatching { enabledModsFile.moveTo(enabledModsFile.parent.resolve(enabledModsFile.name + ".invalid")) }
                             .onFailure { enabledModsFile.deleteIfExists() }
-                        createFileIfMissing()
-                        readEnabledModsFile()
                     }
-                    .getOrNull()
-            }
+                    createFileIfMissing()
+                    readEnabledModsFile()
+                }
+                .getOrNull()
         }
             .onFailure { Timber.w(it) }
             .getOrThrow()

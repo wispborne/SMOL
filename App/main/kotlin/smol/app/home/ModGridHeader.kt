@@ -142,7 +142,7 @@ fun AppScope.ModGridHeader(
 
                     UserProfile.ModGridHeader.VramImpact -> {
                         // VRAM
-                        val enabledMods = SL.access.mods.collectAsState().value?.mods?.filter { it.uiEnabled }.orEmpty()
+                        val enabledMods = SL.access.modsFlow.collectAsState().value?.mods?.filter { it.uiEnabled }.orEmpty()
                         val vramUsage = SL.vramChecker.vramUsage.collectAsState().value
                         val allImpactsFromMods = enabledMods.map { getVramImpactForMod(it, vramUsage) }
                         val totalBytesFromMods = allImpactsFromMods.sumOf { it?.bytesForMod ?: 0L }

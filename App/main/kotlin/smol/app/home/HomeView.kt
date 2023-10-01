@@ -19,7 +19,10 @@ import AppScope
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
+import androidx.compose.material.Scaffold
+import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
@@ -40,7 +43,6 @@ import smol.app.toolbar.toolbar
 import smol.app.util.filterModGrid
 import smol.app.util.replaceAllUsingDifference
 import smol.timber.ktx.Timber
-import smol.utilities.IOLock
 import kotlin.random.Random
 
 private typealias ModListFilter = suspend (List<Mod>) -> List<Mod>
@@ -53,11 +55,10 @@ private typealias ModListFilter = suspend (List<Mod>) -> List<Mod>
 fun AppScope.homeView(
     modifier: Modifier = Modifier
 ) {
-    val allMods: SnapshotStateList<Mod> = remember { SL.access.mods.value?.mods.orEmpty().toMutableStateList() }
+    val allMods: SnapshotStateList<Mod> = remember { SL.access.modsFlow.value?.mods.orEmpty().toMutableStateList() }
     var modListFilter: ModListFilter? by remember { mutableStateOf(null) }
     val shownMods: SnapshotStateList<Mod> = remember { SnapshotStateList() }
     var modlistUpdateTrigger by remember { mutableStateOf(0) }
-    val isWriteLocked = IOLock.stateFlow.collectAsState()
 
     LaunchedEffect(modListFilter, modlistUpdateTrigger) {
         val newList = modListFilter?.invoke(allMods) ?: allMods
@@ -125,16 +126,6 @@ fun AppScope.homeView(
                                     contentDescription = null,
                                     modifier = Modifier.size(24.dp),
                                 )
-                                if (isWriteLocked.value) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(24.dp)
-                                    )
-//                                SmolText(
-//                                    text = SL.access.modModificationState.collectAsState().value
-//                                        .firstNotNullOfOrNull { it.value != smol.access.Access.ModModificationState.Ready }
-//                                        ?.toString() ?: "",
-//                                )
-                                }
                             }
                         }
                     }
@@ -176,18 +167,15 @@ fun AppScope.homeView(
         },
         bottomBar = {
             SmolBottomAppBar(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    logButtonAndErrorDisplay(showLogPanel = showLogPanel)
-                }
-            }
+                modifier = Modifier.fillMaxWidth(),
+                showLogPanel = showLogPanel
+            )
         }
     )
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.Default) {
-            SL.access.mods.collectLatest { freshMods ->
+            SL.access.modsFlow.collectLatest { freshMods ->
                 if (freshMods != null) {
                     withContext(Dispatchers.Main) {
                         allMods.replaceAllUsingDifference(freshMods.mods, doesOrderMatter = true)

@@ -87,7 +87,7 @@ class UserModProfileManager internal constructor(
                     .filter { profileMod -> profileMod.modId !in modVariantOverrides.map { override -> override.modId } }
                     .let { it + modVariantOverrides }
 
-                val currentlyEnabledMods = access.mods.value?.mods.orEmpty()
+                val currentlyEnabledMods = access.modsFlow.value?.mods.orEmpty()
                     .mapNotNull {
                         it.findFirstEnabled?.let { firstEnableVariant ->
                             UserProfile.ModProfile.ShallowModVariant(firstEnableVariant)
@@ -152,7 +152,7 @@ class UserModProfileManager internal constructor(
                     }
 
                 access.reload()
-                access.ensureLatestDisabledVariantIsVisibleInVanillaLauncher(access.mods.value?.mods.orEmpty())
+                access.ensureLatestDisabledVariantIsVisibleInVanillaLauncher(access.modsFlow.value?.mods.orEmpty())
 
                 userManager.updateUserProfile { it.copy(activeModProfileId = newModProfileId) }
                 Timber.i { "Changed mod profile to $newModProfile" }

@@ -20,11 +20,12 @@ import java.nio.file.Path
 import kotlin.io.path.*
 
 internal class ArchiveFile(
-    val path: Path
+    val sourcePath: Path,
+    val targetPath: Path = sourcePath
 ) {
     val content: ByteArray? by lazy {
-        if (path.isDirectory()) null
-        else path.readBytes()
+        if (sourcePath.isDirectory()) null
+        else sourcePath.readBytes()
     }
 }
 
@@ -64,7 +65,7 @@ internal class Compress7zFilesCallback(val items: List<ArchiveFile>, val relativ
                 // File
                 item.dataSize = content.size.toLong()
             }
-            item.propertyPath = items[index].path.relativeTo(relativeTo).normalizeAndRelativize().toString()
+            item.propertyPath = items[index].targetPath.relativeTo(relativeTo).normalizeAndRelativize().toString()
             return item
         }
             .onFailure {

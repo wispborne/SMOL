@@ -205,7 +205,7 @@ private fun AppScope.modGridSingleModMenu(
             modifier = Modifier.padding(end = 12.dp).size(24.dp),
             contentDescription = null
         )
-        Text("Create backup")
+        Text("Create backup...")
     }
 
     DropdownMenuItem(onClick = {
@@ -223,7 +223,7 @@ private fun AppScope.modGridSingleModMenu(
             modifier = Modifier.padding(end = 12.dp).size(24.dp),
             contentDescription = null
         )
-        Text("Delete files")
+        Text("Delete files...")
     }
 
     DropdownMenuItem(onClick = {
@@ -247,7 +247,7 @@ fun AppScope.modGridBulkActionMenuItems(checkedRows: SnapshotStateList<Mod>) =
         add(SmolDropdownMenuItemTemplate(
             text = "Enable all",
             onClick = {
-                val allModVariants = SL.access.mods.value?.mods?.flatMap { it.variants }
+                val allModVariants = SL.access.modsFlow.value?.mods?.flatMap { it.variants }
                 val doAnyModsHaveMultipleVariants =
                     allModVariants?.groupBy { it.modInfo.id }?.any { it.value.size > 1 } == true
 

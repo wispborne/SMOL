@@ -59,7 +59,7 @@ fun AppScope.ModProfilesView(
     val userProfile = SL.userManager.activeProfile.collectAsState().value
     val saveGames = SL.saveReader.saves.collectAsState()
     val showLogPanel = remember { mutableStateOf(false) }
-    val modVariants: Map<SmolId, ModVariant> = (SL.access.mods.collectAsState().value?.mods
+    val modVariants: Map<SmolId, ModVariant> = (SL.access.modsFlow.collectAsState().value?.mods
         ?.flatMap { it.variants }
         ?.associateBy { it.smolId }
         ?: emptyMap())
@@ -196,10 +196,9 @@ fun AppScope.ModProfilesView(
         },
         bottomBar = {
             SmolBottomAppBar(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                logButtonAndErrorDisplay(showLogPanel = showLogPanel)
-            }
+                modifier = Modifier.fillMaxWidth(),
+                showLogPanel = showLogPanel
+            )
         }
     )
 }
@@ -237,7 +236,7 @@ private fun NewModProfileCard(onProfileCreated: () -> Unit) {
                         name = newProfileName.ifBlank { "Unnamed Profile" },
                         sortOrder = (SL.userManager.activeProfile.value.modProfiles.maxOfOrNull { it.sortOrder }
                             ?: 0) + 1,
-                        enabledModVariants = SL.access.mods.value?.mods?.flatMap { it.enabledVariants }
+                        enabledModVariants = SL.access.modsFlow.value?.mods?.flatMap { it.enabledVariants }
                             ?.map { UserProfile.ModProfile.ShallowModVariant(it) } ?: emptyList()
                     )
                     newProfileName = ""

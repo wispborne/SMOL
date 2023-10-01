@@ -433,10 +433,9 @@ fun AppScope.ModBrowserView(
         },
         bottomBar = {
             SmolBottomAppBar(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                logButtonAndErrorDisplay(showLogPanel = showLogPanel)
-            }
+                modifier = Modifier.fillMaxWidth(),
+                showLogPanel = showLogPanel
+            )
         }
     )
 

@@ -59,7 +59,7 @@ fun AppScope.TipsView(
 ) {
     var tipsChangedNotifier by remember { mutableStateOf(0) }
     val showLogPanel = remember { mutableStateOf(false) }
-    val mods = SL.access.mods.collectAsState().value?.mods.orEmpty()
+    val mods = SL.access.modsFlow.collectAsState().value?.mods.orEmpty()
     var grouping by remember { mutableStateOf(TipsGrouping.NONE) }
     var onlyEnabled by remember { mutableStateOf(false) }
     val unfilteredTips = remember { mutableStateListOf<ModTip>() }
@@ -220,10 +220,9 @@ fun AppScope.TipsView(
         },
         bottomBar = {
             SmolBottomAppBar(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                logButtonAndErrorDisplay(showLogPanel = showLogPanel)
-            }
+                modifier = Modifier.fillMaxWidth(),
+                showLogPanel = showLogPanel
+            )
         }
     )
 }

@@ -24,6 +24,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerMoveFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -127,7 +129,7 @@ fun AppScope.ModVariantsDropdown(
                     },
                 )
             ) {
-                if (modState != smol.access.Access.ModModificationState.Ready) {
+                if (modState != Access.ModModificationState.Ready) {
                     SmolTooltipArea(tooltip = {
                         SmolTooltipText(
                             when (modState) {
@@ -207,10 +209,12 @@ fun AppScope.ModVariantsDropdown(
 
                                     DropdownMenuItem(
                                         modifier = Modifier.sizeIn(maxWidth = 400.dp)
-                                            .pointerMoveFilter(
-                                                onEnter = { isHovered = true; false },
-                                                onExit = { isHovered = false; false }
-                                            )
+                                            .onPointerEvent(PointerEventType.Enter) {
+                                                isHovered = true
+                                            }
+                                            .onPointerEvent(PointerEventType.Exit) {
+                                                isHovered = false
+                                            }
                                             .background(background),
                                         onClick = {
                                             expanded = false

@@ -144,7 +144,7 @@ class ObservableReentrantReadWriteLock() {
 
     fun lockLock(lock: ReentrantReadWriteLock) {
         smol.timber.ktx.Timber.tag(tag)
-            .d { "Write locked from ${Timber.findClassName()} on ${getCurrentThreadName()}." }
+            .d { "Write locked from '${Timber.findClassName()}' on ${getCurrentThreadName()}." }
         val rl = lock.readLock()
         val readCount = if (lock.writeHoldCount == 0) lock.readHoldCount else 0
         repeat(readCount) { rl.unlock() }
@@ -153,7 +153,7 @@ class ObservableReentrantReadWriteLock() {
 
     fun unlockLock(lock: ReentrantReadWriteLock) {
         smol.timber.ktx.Timber.tag(tag)
-            .d { "Write unlocked from ${Timber.findClassName()} on ${getCurrentThreadName()}." }
+            .d { "Write unlocked from '${Timber.findClassName()}' on ${getCurrentThreadName()}." }
         val readCount = if (lock.writeHoldCount == 0) lock.readHoldCount else 0
         repeat(readCount) { lock.readLock().lock() }
         lock.writeLock().unlock()

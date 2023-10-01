@@ -206,7 +206,7 @@ private fun setUpToasts() {
 //                        }
 //                    }
     LaunchedEffect(12342345) {
-        SL.access.mods.collect { modListUpdate ->
+        SL.access.modsFlow.collect { modListUpdate ->
             val addedModVariants = modListUpdate?.added ?: return@collect
 
             addedModVariants
@@ -320,10 +320,10 @@ private suspend fun reloadModsInner(forceRefreshVersionChecker: Boolean, forceRe
         coroutineScope {
             smol.utilities.trace(onFinished = { _, millis -> Timber.i { "Finished reloading mods+VC+saves in ${millis}ms." } }) {
                 Timber.i { "Reloading all mods." }
-                val previousVariantIds = SL.access.mods.value?.mods.orEmpty().flatMap { it.variants }.map { it.smolId }
+                val previousVariantIds = SL.access.modsFlow.value?.mods.orEmpty().flatMap { it.variants }.map { it.smolId }
                 SL.access.reload()
-                val mods = SL.access.mods.value?.mods ?: emptyList()
-                val newlyAddedModIds = SL.access.mods.value?.mods.orEmpty()
+                val mods = SL.access.modsFlow.value?.mods ?: emptyList()
+                val newlyAddedModIds = SL.access.modsFlow.value?.mods.orEmpty()
                     .flatMap { it.variants }
                     .filter { newVariant -> newVariant.smolId !in previousVariantIds }
                     .map { it.modInfo.id }

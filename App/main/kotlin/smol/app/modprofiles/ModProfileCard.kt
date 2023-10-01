@@ -495,7 +495,7 @@ fun AppScope.profileControls(
             enabled = !isActiveProfile && areAllModsSettled,
             onClick = {
                 if (!isActiveProfile) {
-                    val allModVariantIds = SL.access.mods.value?.mods
+                    val allModVariantIds = SL.access.modsFlow.value?.mods
                         ?.flatMap { it.variants }
                         ?.map { it.smolId } ?: emptyList()
 
@@ -638,7 +638,7 @@ private fun AppScope.MissingModVariantsAlertDialog(
     modProfile: ModProfileCardInfo
 ) {
     // See if any missing variants have newer versions that do exist.
-    val newerVersionsAvailable = SL.access.mods.value?.mods.orEmpty()
+    val newerVersionsAvailable = SL.access.modsFlow.value?.mods.orEmpty()
         .mapNotNull { it.findHighestVersion }
         .filter { newestVariant -> newestVariant.modInfo.id in missingVariants.map { it.modId } }
         .map { UserProfile.ModProfile.ShallowModVariant(it) }
