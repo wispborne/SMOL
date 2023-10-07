@@ -57,7 +57,7 @@ import kotlin.io.path.inputStream
 var safeMode = false
 
 fun main() = application {
-    val logLevel = LogLevel.VERBOSE
+    val logLevel = if (System.getProperty("user.name") == "whitm") LogLevel.VERBOSE else LogLevel.INFO
     val startTime = Instant.now().toEpochMilli()
     fun sinceStartStr() = "(since start: ${(Instant.now().minusMillis(startTime).toEpochMilli())}ms)"
     val coroutineScope = rememberCoroutineScope()

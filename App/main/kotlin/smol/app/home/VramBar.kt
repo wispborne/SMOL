@@ -77,7 +77,7 @@ fun RowScope.vramBar(mod: Mod, largestVramUsage: Long?) {
             text =
             vramResult?.bytesForMod?.bytesAsReadableMB
                 ?.let { if (vramResult.bytesForMod == 0L) "None" else it }
-                ?: "Unavailable",
+                ?: "(needs scan)",
             modifier = Modifier.fillMaxSize()
                 .align(Alignment.CenterVertically),
             color = SmolTheme.dimmedTextColor()
