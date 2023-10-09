@@ -19,10 +19,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.TooltipPlacement
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -34,8 +31,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.arkivanov.decompose.replaceCurrent
 import kotlinx.coroutines.*
 import org.tinylog.Logger
@@ -443,9 +442,20 @@ fun AppScope.profilesButton(modifier: Modifier = Modifier, isSelected: Boolean) 
         tabButton(
             onClick = { router.replaceCurrent(Screen.Profiles) },
             forceDisabled = !Constants.isModProfilesEnabled(),
-            isSelected = isSelected
+            isSelected = isSelected,
+            modifier = Modifier.padding(top = 13.dp)
         ) {
-            Text("Profiles")
+            Column {
+                Text("Profiles", modifier = Modifier)
+                Text(
+                    text = SL.userManager.activeProfile.collectAsState().value.activeModProfile.name,
+                    style = MaterialTheme.typography.caption,
+                    fontSize = 10.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.align(Alignment.CenterHorizontally).widthIn(max = 80.dp),
+                )
+            }
         }
     }
 }

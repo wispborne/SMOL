@@ -16,7 +16,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm")
-    id("org.jetbrains.compose") version "1.5.2"
+    id("org.jetbrains.compose") version "1.5.10-beta02"
 }
 
 group = "com.wisp"

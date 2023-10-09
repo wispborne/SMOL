@@ -15,10 +15,10 @@ package smol.app.navigation
 import com.arkivanov.essenty.parcelable.Parcelable
 
 sealed class Screen : Parcelable {
-    object Home : Screen()
-    object Settings : Screen()
-    object Profiles : Screen()
+    data object Home : Screen()
+    data object Settings : Screen()
+    data object Profiles : Screen()
     data class ModBrowser(val defaultUri: String? = null) : Screen()
-    object Tips : Screen()
-    object About : Screen()
+    data object Tips : Screen()
+    data object About : Screen()
 }

@@ -14,7 +14,6 @@ package smol.app.modprofiles
 
 import AppScope
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.desktop.ui.tooling.preview.Preview
@@ -75,7 +74,7 @@ fun ModProfileCardPreview() = smolPreview {
 
 private val dateFormat = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalAnimationApi::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun AppScope.ModProfileCard(
     userProfile: UserProfile,
@@ -126,20 +125,20 @@ fun AppScope.ModProfileCard(
                         bottom = 16.dp
                     )
                 ) {
-                    SelectionContainer {
-                        Row {
-                            if (!isEditMode.value) {
-                                if (modProfile is ModProfileCardInfo.SaveModProfileCardInfo) {
-                                    Icon(
-                                        painter = painterResource("icon-save.svg"),
-                                        contentDescription = null,
-                                        modifier = Modifier
-                                            .padding(end = 8.dp)
-                                            .size(20.dp)
-                                            .align(Alignment.CenterVertically)
-                                            .alpha(0.7f)
-                                    )
-                                }
+                    Row {
+                        if (!isEditMode.value) {
+                            if (modProfile is ModProfileCardInfo.SaveModProfileCardInfo) {
+                                Icon(
+                                    painter = painterResource("icon-save.svg"),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .padding(end = 8.dp)
+                                        .size(20.dp)
+                                        .align(Alignment.CenterVertically)
+                                        .alpha(0.7f)
+                                )
+                            }
+                            SelectionContainer {
                                 Text(
                                     modifier = Modifier
                                         .weight(1f)
@@ -149,7 +148,9 @@ fun AppScope.ModProfileCard(
                                     fontFamily = SmolTheme.orbitronSpaceFont,
                                     text = modProfileName.value
                                 )
-                            } else {
+                            }
+                        } else {
+                            SelectionContainer {
                                 SmolTextField(
                                     modifier = Modifier
                                         .weight(1f)
@@ -184,32 +185,35 @@ fun AppScope.ModProfileCard(
                                     }
                                 )
                             }
+                        }
 
-                            if (isUserMade) {
-                                SmolTooltipArea(tooltip = {
-                                    SmolTooltipText(
-                                        text = if (isEditMode.value) "Done." else "Edit name."
+                        Spacer(Modifier.weight(1f))
+
+                        if (isUserMade) {
+                            SmolTooltipArea(tooltip = {
+                                SmolTooltipText(
+                                    text = if (isEditMode.value) "Done." else "Edit name."
+                                )
+                            }) {
+                                IconToggleButton(
+                                    modifier = Modifier
+                                        .padding(top = 8.dp)
+                                        .align(Alignment.CenterVertically)
+                                        .height(20.dp),
+                                    checked = isEditMode.value,
+                                    onCheckedChange = { isEditMode.value = !isEditMode.value }
+                                ) {
+                                    val alphaOfHoverDimmedElements =
+                                        animateFloatAsState(if (isBeingHovered) 0.8f else 0.5f)
+                                    Icon(
+                                        painter = if (isEditMode.value)
+                                            painterResource("icon-done.svg")
+                                        else
+                                            painterResource("icon-edit.svg"),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp),
+                                        tint = MaterialTheme.colors.onSurface.copy(alpha = alphaOfHoverDimmedElements.value)
                                     )
-                                }) {
-                                    IconToggleButton(
-                                        modifier = Modifier
-                                            .padding(top = 8.dp)
-                                            .align(Alignment.CenterVertically)
-                                            .height(20.dp),
-                                        checked = isEditMode.value,
-                                        onCheckedChange = { isEditMode.value = !isEditMode.value }
-                                    ) {
-                                        val alphaOfHoverDimmedElements =
-                                            animateFloatAsState(if (isBeingHovered) 0.8f else 0.5f)
-                                        Icon(
-                                            painter = if (isEditMode.value)
-                                                painterResource("icon-done.svg")
-                                            else
-                                                painterResource("icon-edit.svg"),
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colors.onSurface.copy(alpha = alphaOfHoverDimmedElements.value)
-                                        )
-                                    }
                                 }
                             }
                         }
