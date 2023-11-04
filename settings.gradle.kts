@@ -28,6 +28,9 @@ include("App", "SMOL_Access", "VRAM_Checker", "UpdateStager", "Utilities", "Mod_
 dependencyResolutionManagement {
     versionCatalogs {
         create("libs") {
+            plugin("compose", "org.jetbrains.compose").version("1.5.10")
+
+            library("kotlin-reflect", "org.jetbrains.kotlin:kotlin-reflect:1.9.0")
             library("kotlin-reflect", "org.jetbrains.kotlin:kotlin-reflect:1.9.0")
             library("kotson", "com.github.salomonbrys.kotson:kotson:2.5.0")
             library("coroutines", "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0-native-mt")

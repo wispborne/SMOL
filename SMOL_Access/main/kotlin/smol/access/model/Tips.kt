@@ -13,7 +13,7 @@
 package smol.access.model
 
 data class Tips(
-    val tips: List<Tip>
+    val tips: List<Tip>?
 )
 
 data class Tip(

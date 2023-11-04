@@ -17,12 +17,12 @@ import kotlinx.coroutines.flow.collectLatest
 import org.update4j.Archive
 import smol.timber.LogLevel
 import smol.timber.ktx.Timber
+import smol.utilities.asList
 import smol.utilities.bytesAsShortReadableMB
 import smol.utilities.bytesToMB
+import smol.utilities.readonlyFiles
 import java.nio.file.Path
-import kotlin.io.path.absolutePathString
-import kotlin.io.path.deleteIfExists
-import kotlin.io.path.exists
+import kotlin.io.path.*
 
 class Main {
     companion object {
@@ -45,11 +45,11 @@ class Main {
                 val updater = SmolUpdater()
 
                 println("Which channel would you like to update using?")
-                UpdateChannel.values().forEachIndexed { i, channel ->
+                UpdateChannel.entries.forEachIndexed { i, channel ->
                     println("${i + 1}) ${channel.name}")
                 }
                 println("Enter a number:")
-                val channel = readln().toInt().let { UpdateChannel.values()[it - 1] }
+                val channel = readln().toInt().let { UpdateChannel.entries[it - 1] }
 
                 GlobalScope.launch(Dispatchers.Default) {
                     updater.currentFileDownload.collectLatest {
@@ -87,7 +87,33 @@ class Main {
                 println("Installing ${updateZipPath.absolutePathString()}...")
                 while (timesToRepeat > 0) {
                     runCatching {
-                        Archive.read(updateZipPath.absolutePathString()).install()
+                        val archive = Archive.read(updateZipPath.absolutePathString())
+
+                        val readonlyFiles = archive.files.map { it.path }.readonlyFiles()
+
+                        runCatching {
+                            readonlyFiles.forEach { file ->
+                                Timber.i { "Making '${file.absolutePathString()}' writable..." }
+                                file.toFile().setWritable(true)
+                            }
+
+                            // Test: make all files writable in the current directory.
+                            Path.of("").toAbsolutePath().asList().readonlyFiles().forEach { file ->
+                                Timber.i { "Making '$file' writable..." }
+                                file.toFile().setWritable(true)
+                            }
+                        }
+                            .onFailure {
+                                Timber.e(it) {
+                                    "Please run as an Admin and retry." +
+                                            "\nUnable to make files writable." +
+                                            "\n\nIf running as Admin did not work, open update.zip, open the 'files' folder, click through" +
+                                            " to the end, and replace the files in the SMOL folder with those files."
+                                }
+                                return
+                            }
+
+                        archive.install()
                         success = true
                     }
                         .onFailure {
@@ -131,4 +157,11 @@ class Main {
             readln()
         }
     }
+
+    @OptIn(ExperimentalPathApi::class)
+    fun Iterable<Path>.readonlyFiles() =
+        this.flatMap { it.walk(PathWalkOption.FOLLOW_LINKS) }
+            .filter { it.isRegularFile() }
+            .filter { !it.isWritable() }
+            .toList()
 }

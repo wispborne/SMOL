@@ -17,11 +17,11 @@ import org.update4j.Configuration
 import org.update4j.FileMetadata
 import smol.timber.ktx.Timber
 import smol.update_installer.BaseAppUpdater
-import smol.utilities.deleteRecursively
-import smol.utilities.exists
+import smol.utilities.readonlyFiles
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.deleteIfExists
+import kotlin.io.path.isWritable
 import kotlin.io.path.relativeTo
 import kotlin.streams.asSequence
 
@@ -49,11 +49,37 @@ class UpdaterUpdater : BaseAppUpdater() {
                     .toList())
             .build()
     }
+
     override val canBeInstalledWhileSMOLIsRunning: Boolean = true
 
     override fun installUpdateInternal() {
         val archive = runCatching {
-            Archive.read(updateZipFile)
+            val archive = Archive.read(updateZipFile)
+
+            val readonlyFiles = archive.files.map { it.path }.readonlyFiles()
+
+            runCatching {
+                if (updateZipFile.isWritable().not()) {
+                    Timber.i { "Making '$updateZipFile' writable..." }
+                    updateZipFile.toFile().setWritable(true)
+                }
+
+                readonlyFiles.forEach { file ->
+                    Timber.i { "Making '${file.absolutePathString()}' writable..." }
+                    file.toFile().setWritable(true)
+                }
+            }
+                .onFailure {
+                    Timber.e(it) {
+                        "Please run as an Admin and retry." +
+                                "\nUnable to make files writable." +
+                                "\n\nIf running as Admin did not work, open update.zip, open the 'files' folder, click through" +
+                                " to the end, and replace the files in the SMOL folder with those files."
+                    }
+                    return
+                }
+
+            archive
         }
             .onFailure { t ->
                 Timber.e(t) { "Reading $updateZipFile failed, deleting it to set up for a redownload." }

@@ -47,6 +47,7 @@ import smol.timber.ktx.Timber
 import smol.utilities.Platform
 import smol.utilities.currentPlatform
 import smol.utilities.makeFinite
+import smol.utilities.trace
 import java.time.Instant
 import java.util.*
 import javax.swing.UIManager
@@ -214,7 +215,7 @@ fun main() = application {
             saveWindowParamsOnChange(appWindowState, uiConfig)
         }
 
-        smol.utilities.trace(onFinished = { _, ms -> println("Took ${ms}ms to show AppView ${sinceStartStr()}.") }) {
+        trace(onFinished = { _, ms -> println("Took ${ms}ms to show AppView ${sinceStartStr()}.") }) {
             smolWindowState.appView()
         }
     }

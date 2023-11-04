@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import smol.access.SL
 import smol.access.model.Mod
@@ -77,10 +78,11 @@ fun RowScope.vramBar(mod: Mod, largestVramUsage: Long?) {
             text =
             vramResult?.bytesForMod?.bytesAsReadableMB
                 ?.let { if (vramResult.bytesForMod == 0L) "None" else it }
-                ?: "(needs scan)",
+                ?: "scan needed",
             modifier = Modifier.fillMaxSize()
                 .align(Alignment.CenterVertically),
-            color = SmolTheme.dimmedTextColor()
+            color =  if (vramResult == null) SmolTheme.dimmedTextColor().copy(alpha = .5f) else SmolTheme.dimmedTextColor(),
+            fontStyle = if (vramResult == null) FontStyle.Italic else FontStyle.Normal
         )
     }
 }

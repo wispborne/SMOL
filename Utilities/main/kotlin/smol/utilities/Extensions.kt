@@ -171,6 +171,13 @@ fun File.moveDirectory(destDir: File) {
     }
 }
 
+@OptIn(ExperimentalPathApi::class)
+fun Iterable<Path>.readonlyFiles() =
+    this.flatMap { it.walk(PathWalkOption.FOLLOW_LINKS) }
+        .filter { it.isRegularFile() }
+        .filter { !it.isWritable() }
+        .toList()
+
 /**
  * From FileUtils in apache commons.
  */
@@ -180,7 +187,10 @@ fun Path.moveDirectory(destDir: Path) = this.toFile().moveDirectory(destDir.toFi
 /**
  * [https://jivimberg.io/blog/2018/05/04/parallel-map-in-kotlin/]
  */
-suspend fun <A, B> Iterable<A>.parallelMap(context: CoroutineContext = Dispatchers.Default, f: suspend (A) -> B): List<B> =
+suspend fun <A, B> Iterable<A>.parallelMap(
+    context: CoroutineContext = Dispatchers.Default,
+    f: suspend (A) -> B
+): List<B> =
     coroutineScope {
         map { async(context) { f(it) } }.awaitAll()
     }

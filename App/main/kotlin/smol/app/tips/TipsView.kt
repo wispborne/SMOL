@@ -86,7 +86,7 @@ fun AppScope.TipsView(
                                 json = tipFilePath.readText(),
                                 filename = tipFilePath.absolutePathString(),
                                 shouldStripComments = true
-                            ).tips
+                            ).tips.orEmpty()
                         }
                             .getOrElse { emptyList() }
                     } else {

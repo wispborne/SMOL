@@ -16,7 +16,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm")
-    id("org.jetbrains.compose") version "1.5.10-beta02"
+    alias(libs.plugins.compose)
 }
 
 group = "com.wisp"
@@ -40,7 +40,6 @@ dependencies {
     implementation(libs.kotlin.reflect)
     implementation(libs.coroutines)
     implementation(libs.coroutines.swing)
-
     implementation(fileTree("../libs") { include("**/*.jar") })
     implementation(fileTree("libs") { include("**/*.jar") })
     implementation(project(":SMOL_Access"))

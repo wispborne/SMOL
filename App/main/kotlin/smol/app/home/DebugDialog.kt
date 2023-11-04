@@ -12,27 +12,14 @@
 
 package smol.app.home
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.Divider
 import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.type
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.*
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupPositionProvider
+import androidx.compose.ui.unit.dp
 import smol.access.Constants
 import smol.access.model.Mod
 import smol.app.composables.SmolAlertDialog
@@ -59,11 +46,11 @@ fun debugDialog(
                     Modifier
                         .padding(top = SmolTheme.topBarHeight)
                 ) {
-                    Column {//(Modifier.verticalScroll(scrollState)) {
+                    Column {
+                        // (Modifier.verticalScroll(rememberScrollState()))
 //                        Text(
 //                            "<b>NOTE: The wacky scrolling is due to a bug in the UI framework.</b>\n(https://github.com/JetBrains/compose-jb/issues/976)".parseHtml(),
 //                            modifier = Modifier.padding(bottom = 8.dp)
-//                        )
                         Text("<b>Id</b>: <code>${mod.id}</code>".parseHtml())
                         Text(
                             "<b>Enabled in ${Constants.ENABLED_MODS_FILENAME}?</b>: ${mod.isEnabledInGame}".parseHtml(),

@@ -81,7 +81,7 @@ class TipsManager internal constructor(val jsanity: Jsanity, val userManager: Us
                         }
                         allTips
                             .let { tipsObj ->
-                                tipsObj.tips
+                                tipsObj.tips.orEmpty()
                                     .filter { it !in variantTips }
                                     .let { tipsObj.copy(tips = it) }
                             }
