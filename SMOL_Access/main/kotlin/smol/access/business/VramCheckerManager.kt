@@ -12,10 +12,11 @@
 
 package smol.access.business
 
-import smol.GraphicsLibConfig
-import smol.VramChecker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import smol.GraphicsLibConfig
+import smol.VramChecker
+import smol.access.SL
 import smol.access.config.GamePathManager
 import smol.access.config.VramCheckerCache
 import smol.access.model.Mod
@@ -23,6 +24,10 @@ import smol.access.model.ModVariant
 import smol.access.model.SmolId
 import smol.access.model.Version
 import smol.timber.ktx.Timber
+import smol.utilities.IOLock
+import smol.utilities.exists
+import kotlin.io.path.name
+import kotlin.io.path.readText
 
 class VramCheckerManager(
     private val gamePathManager: GamePathManager,
@@ -41,6 +46,32 @@ class VramCheckerManager(
 
         val modsPath = gamePathManager.getModsPath()
 
+        val glConfig = IOLock.read {
+            return@read runCatching {
+                val graphicsLib = SL.access.mods.firstOrNull { it.id == "shaderLib" }?.findFirstEnabled
+                    ?: return@runCatching GraphicsLibConfig.Disabled
+
+                val configFile = graphicsLib.modsFolderInfo.folder
+                    .resolve("GRAPHICS_OPTIONS.ini")
+
+                if (!configFile.exists())
+                    return@runCatching GraphicsLibConfig.Disabled
+
+                val config = configFile
+                    .readText()
+                    .let { SL.jsanity.fromJson<GraphicsLibConfig>(it, configFile.name, shouldStripComments = true) }
+
+                if (!config.areAnyEffectsEnabled)
+                    return@runCatching GraphicsLibConfig.Disabled
+                return@runCatching config
+            }
+                .onFailure {
+                    Timber.w(it)
+                    GraphicsLibConfig.Disabled
+                }
+                .getOrNull()
+        } ?: GraphicsLibConfig.Disabled
+
         val results = VramChecker(
             enabledModIds = mods.filter { it.hasEnabledVariant }.map { it.id },
             modIdsToCheck = modIdsToUpdate,
@@ -49,13 +80,8 @@ class VramCheckerManager(
             showPerformance = false,
             showSkippedFiles = false,
             showCountedFiles = false,
-            graphicsLibConfig = GraphicsLibConfig(
-                // TODO Set these properly.
-                areGfxLibNormalMapsEnabled = true,
-                areGfxLibMaterialMapsEnabled = true,
-                areGfxLibSurfaceMapsEnabled = true
-            ),
-            traceOut = { Timber.v { it } },
+            graphicsLibConfig = glConfig,
+            verboseOut = { Timber.v { it } },
             debugOut = { Timber.d { it } },
         )
             .check()

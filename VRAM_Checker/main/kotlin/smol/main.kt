@@ -73,11 +73,7 @@ suspend fun main(args: Array<String>) {
 
     val graphicsLibConfig =
         if (enabledModIds?.contains(GRAPHICSLIB_ID) != true) {
-            GraphicsLibConfig(
-                areGfxLibNormalMapsEnabled = false,
-                areGfxLibMaterialMapsEnabled = false,
-                areGfxLibSurfaceMapsEnabled = false
-            )
+            GraphicsLibConfig.Disabled
         } else {
             // GraphicsLib enabled
             if (listOf(
@@ -89,6 +85,7 @@ suspend fun main(args: Array<String>) {
                 askUserForGfxLibConfig()
             } else {
                 GraphicsLibConfig(
+                    areAnyEffectsEnabled = true,
                     areGfxLibNormalMapsEnabled = areGfxLibNormalMapsEnabledProp!!,
                     areGfxLibMaterialMapsEnabled = areGfxLibMaterialMapsEnabledProp!!,
                     areGfxLibSurfaceMapsEnabled = areGfxLibSurfaceMapsEnabledProp!!
@@ -106,7 +103,7 @@ suspend fun main(args: Array<String>) {
             showCountedFiles = showCountedFiles,
             graphicsLibConfig = graphicsLibConfig,
             foldersToCheck = gameModsFolder.toPath().toList(),
-            traceOut = { println(it) },
+            verboseOut = { println(it) },
             debugOut = { println(it) }
         )
             .also { it.check() }
@@ -153,10 +150,11 @@ private fun askUserForGfxLibConfig(): GraphicsLibConfig {
     val didUserChangeConfig = parseYesNoInput(readLine(), defaultResultIfBlank = false)
         ?: return askUserForGfxLibConfig()
 
-    var result = GraphicsLibConfig(false, false, false)
+    var result = GraphicsLibConfig.Disabled
 
     if (!didUserChangeConfig) {
         return GraphicsLibConfig(
+            areAnyEffectsEnabled = true,
             areGfxLibNormalMapsEnabled = true,
             areGfxLibMaterialMapsEnabled = true,
             areGfxLibSurfaceMapsEnabled = true
