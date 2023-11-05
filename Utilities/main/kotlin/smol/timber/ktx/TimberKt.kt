@@ -92,7 +92,7 @@ object Timber {
 
     /** A [Timber.Tree] for debug builds. Automatically infers the tag from the calling class. */
     @JvmStatic
-    inline fun DebugTree(logLevel: LogLevel) = Timber.DebugTree(logLevel)
+    inline fun DebugTree(minLogLevelToShow: LogLevel) = Timber.DebugTree(minLogLevelToShow)
 }
 
 //

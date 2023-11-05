@@ -17,7 +17,6 @@ import kotlinx.coroutines.flow.collectLatest
 import org.update4j.Archive
 import smol.timber.LogLevel
 import smol.timber.ktx.Timber
-import smol.utilities.asList
 import smol.utilities.bytesAsShortReadableMB
 import smol.utilities.bytesToMB
 import smol.utilities.readonlyFiles
@@ -33,7 +32,15 @@ class Main {
          */
         @JvmStatic
         fun main(args: Array<String>) {
-            Timber.plant(Timber.DebugTree(LogLevel.WARN))
+            Timber.plant(object : smol.timber.Timber.DebugTree(LogLevel.INFO) {
+                // Don't show the time/priority/thread/tag in the output window.
+                override fun formatLogString(
+                    priority: LogLevel,
+                    thread: String,
+                    tag: String?,
+                    message: String
+                ) = message
+            })
             val updateZipUri = args.getOrNull(0)?.removeSurrounding("\'")?.ifBlank { null }
                 ?: smolUpdateZipFile.toString()
 
@@ -44,17 +51,17 @@ class Main {
 
                 val updater = SmolUpdater()
 
-                println("Which channel would you like to update using?")
+                Timber.i { "Which channel would you like to update using?" }
                 UpdateChannel.entries.forEachIndexed { i, channel ->
-                    println("${i + 1}) ${channel.name}")
+                    Timber.i { "${i + 1}) ${channel.name}" }
                 }
-                println("Enter a number:")
+                Timber.i { "Enter a number:" }
                 val channel = readln().toInt().let { UpdateChannel.entries[it - 1] }
 
                 GlobalScope.launch(Dispatchers.Default) {
                     updater.currentFileDownload.collectLatest {
                         it ?: return@collectLatest
-                        println("Download status: ${it.name} (${"%.2f".format(updater.totalDownloadedBytes.value.bytesToMB)}/${updater.totalDownloadBytes.value?.bytesAsShortReadableMB}).                                           ")
+                        Timber.i { "Download status: ${it.name} (${"%.2f".format(updater.totalDownloadedBytes.value.bytesToMB)}/${updater.totalDownloadBytes.value?.bytesAsShortReadableMB}).                                           " }
                         delay(500)
                     }
                 }
@@ -76,15 +83,15 @@ class Main {
                 }
             }
 
-            println("Found update zip at ${updateZipPath.absolutePathString()}.")
+            Timber.i { "Found update zip at ${updateZipPath.absolutePathString()}." }
             var success = false
 
             try {
-                println("Waiting 5 seconds for SMOL to quit and release file locks.")
+                Timber.i { "Waiting 5 seconds for SMOL to quit and release file locks." }
                 Thread.sleep(5000)
                 var timesToRepeat = 3
 
-                println("Installing ${updateZipPath.absolutePathString()}...")
+                Timber.i { "Installing ${updateZipPath.absolutePathString()}..." }
                 while (timesToRepeat > 0) {
                     runCatching {
                         val archive = Archive.read(updateZipPath.absolutePathString())
@@ -96,16 +103,11 @@ class Main {
                                 Timber.i { "Making '${file.absolutePathString()}' writable..." }
                                 file.toFile().setWritable(true)
                             }
-
-                            // Test: make all files writable in the current directory.
-                            Path.of("").toAbsolutePath().asList().readonlyFiles().forEach { file ->
-                                Timber.i { "Making '$file' writable..." }
-                                file.toFile().setWritable(true)
-                            }
                         }
                             .onFailure {
-                                Timber.e(it) {
-                                    "Please run as an Admin and retry." +
+                                Timber.e(it)
+                                Timber.e {
+                                    "\n\nPlease run as an Admin and retry." +
                                             "\nUnable to make files writable." +
                                             "\n\nIf running as Admin did not work, open update.zip, open the 'files' folder, click through" +
                                             " to the end, and replace the files in the SMOL folder with those files."
@@ -129,7 +131,7 @@ class Main {
                         }
                         .onSuccess {
                             timesToRepeat = 0
-                            println("Done. Please relaunch SMOL to continue.")
+                            Timber.i { "Done. Please relaunch SMOL to continue." }
                         }
                 }
             } catch (e: Exception) {
@@ -140,7 +142,7 @@ class Main {
             val pathOfAppToStartAfterUpdating = args.getOrNull(1)?.removeSurrounding("\'")?.ifBlank { null }
 
             if (pathOfAppToStartAfterUpdating != null) {
-                println("Launching '$pathOfAppToStartAfterUpdating'...")
+                Timber.i { "Launching '$pathOfAppToStartAfterUpdating'..." }
 
                 Runtime.getRuntime().exec("cmd /C \"$pathOfAppToStartAfterUpdating\"")
             }
@@ -153,7 +155,7 @@ class Main {
         }
 
         fun pause() {
-            println("Press enter to continue...")
+            Timber.i { "Press enter to continue..." }
             readln()
         }
     }

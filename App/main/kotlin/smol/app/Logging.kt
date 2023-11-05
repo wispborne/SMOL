@@ -82,7 +82,7 @@ object Logging {
         Timber.uprootAll()
         Timber.plant(
             Timber.DebugTree(
-                logLevel = logLevel,
+                minLogLevelToShow = logLevel,
                 appenders = listOf(
                     { level, formattedMessage ->
                         logFlow.tryEmit(

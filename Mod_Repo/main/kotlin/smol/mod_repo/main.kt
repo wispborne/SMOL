@@ -66,7 +66,7 @@ class Main {
 
             Timber.plant(
                 Timber.DebugTree(
-                    logLevel = logLevel, appenders = listOf { level, log ->
+                    minLogLevelToShow = logLevel, appenders = listOf { level, log ->
                         if (level >= logLevel)
                             logOut.appendLine(log)
                     }

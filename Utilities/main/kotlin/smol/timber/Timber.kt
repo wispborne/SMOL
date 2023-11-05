@@ -217,7 +217,7 @@ class Timber private constructor() {
 
     /** A [Tree] for debug builds. Automatically infers the tag from the calling class. */
     open class DebugTree(
-        var logLevel: LogLevel,
+        var minLogLevelToShow: LogLevel,
         val appenders: List<(level: LogLevel, formattedMessage: String) -> Unit> = emptyList()
     ) : Tree() {
         private val logDispatcher = newSingleThreadContext("smol_logger")
@@ -226,7 +226,7 @@ class Timber private constructor() {
         override val tag: String?
             get() = super.tag ?: findClassName()
 
-        override fun shouldLog(priority: LogLevel): Boolean = priority >= logLevel
+        override fun shouldLog(priority: LogLevel): Boolean = priority >= minLogLevelToShow
 
         /**
          * Break up `message` into maximum-length chunks (if needed) and send to either
@@ -259,14 +259,22 @@ class Timber private constructor() {
             }
         }
 
+        open fun formatLogString(
+            priority: LogLevel,
+            thread: String,
+            tag: String?,
+            message: String
+        ): String {
+            val logLevelSection = if (priority.name.isNotBlank()) "${priority.name.firstOrNull()?.uppercase()}/" else ""
+            val tagSection = if (!tag.isNullOrBlank()) "$tag/" else ""
+            return "${Instant.now().truncatedTo(ChronoUnit.SECONDS)} [$thread] $logLevelSection$tagSection $message"
+        }
+
         private fun logToConsole(priority: LogLevel, tag: String?, message: String, thread: String) {
             runCatching {
                 scope.launch {
-                    val priorityChar = "${priority.name.firstOrNull()?.uppercase()}"
                     val formattedMsg =
-                        "${
-                            Instant.now().truncatedTo(ChronoUnit.SECONDS)
-                        } [$thread] ${if (priorityChar.isNotBlank()) "$priorityChar/" else ""}${if (!tag.isNullOrBlank()) "$tag/" else ""} $message"
+                        formatLogString(priority, thread, tag, message)
                     if (priority < LogLevel.WARN) {
                         System.out.println(formattedMsg)
                     } else {
