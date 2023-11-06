@@ -12,13 +12,8 @@
 
 package smol.access
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import smol.access.business.*
 import smol.access.config.AppConfig
 import smol.access.config.GamePathManager
@@ -39,26 +34,10 @@ class Access internal constructor(
     private val archives: Archives,
     private val appConfig: AppConfig,
     private val gamePathManager: GamePathManager,
-    private val modsCache: ModsCache
+    private val modsCache: ModsCache,
+    private val backupManager: BackupManager,
+    private val modModificationStateHolder: ModModificationStateHolder,
 ) {
-    private val scope = CoroutineScope(Job())
-
-    init {
-        scope.launch {
-            modsFlow.collectLatest { modListUpdate ->
-                runCatching {
-                    modListUpdate?.added.orEmpty().forEach { modVariant ->
-                        // Back up mod if feature is enabled and the backup file doesn't exist.
-                        if (appConfig.areModArchivesEnabled && modVariant.backupFile?.exists() != true) {
-                            backupMod(modVariant)
-                        }
-                    }
-                }
-                    .onFailure { Timber.w(it) }
-            }
-        }
-    }
-
     /**
      * Checks the /mods and archives paths and sets them if they don't exist.
      */
@@ -152,16 +131,6 @@ class Access internal constructor(
         get() = modsCache.mods.value?.mods.orEmpty()
     val areModsLoading = modLoader.isLoading
 
-    val modModificationState = MutableStateFlow<Map<ModId, ModModificationState>>(emptyMap())
-
-    sealed class ModModificationState {
-        data object Ready : ModModificationState()
-        data object DisablingVariants : ModModificationState()
-        data object DeletingVariants : ModModificationState()
-        data object EnablingVariant : ModModificationState()
-        data object BackingUpVariant : ModModificationState()
-    }
-
     /**
      * Reads all mods from /mods, staging, and archive folders.
      */
@@ -222,7 +191,7 @@ class Access internal constructor(
             mod.variants
                 .filter { it != modVariant }
                 .also {
-                    modModificationState.update {
+                    modModificationStateHolder.state.update {
                         it.toMutableMap().apply {
                             this[mod.id] =
                                 ModModificationState.DisablingVariants
@@ -245,7 +214,7 @@ class Access internal constructor(
                     }
                 // Faster: Assume we disabled it and change the mod to be disabled.
 //                modVariant.mod = modVariant.mod.copy(isEnabledInGame = false)
-                modModificationState.update {
+                modModificationStateHolder.state.update {
                     it.toMutableMap().apply {
                         this[mod.id] =
                             ModModificationState.EnablingVariant
@@ -257,7 +226,7 @@ class Access internal constructor(
             }
         } finally {
             staging.manualReloadTrigger.trigger.emit("For mod ${mod.id}, staged variant: $modVariant.")
-            modModificationState.update {
+            modModificationStateHolder.state.update {
                 it.toMutableMap().apply {
                     this[mod.id] =
                         ModModificationState.Ready
@@ -266,32 +235,9 @@ class Access internal constructor(
         }
     }
 
-//    @Deprecated("Use changeActiveVariant instead, it disables other variants properly.")
-//    private suspend fun enableModVariant(modToEnable: ModVariant): Result<Unit> {
-//        try {
-//            modModificationState.update {
-//                it.toMutableMap().apply {
-//                    val mod = modToEnable.mod(this@Access) ?: return Result.failure(NullPointerException())
-//                    this[mod.id] =
-//                        ModModificationState.EnablingVariant
-//                }
-//            }
-//            return staging.enableModVariant(modToEnable, modLoader)
-//        } finally {
-//            staging.manualReloadTrigger.trigger.emit("Enabled mod: $modToEnable")
-//            modModificationState.update {
-//                it.toMutableMap().apply {
-//                    val mod = modToEnable.mod(this@Access) ?: return Result.failure(NullPointerException())
-//                    this[mod.id] =
-//                        ModModificationState.Ready
-//                }
-//            }
-//        }
-//    }
-
     suspend fun disableMod(mod: Mod): Result<Unit> {
         try {
-            modModificationState.update {
+            modModificationStateHolder.state.update {
                 it.toMutableMap().apply {
                     this[mod.id] =
                         ModModificationState.DisablingVariants
@@ -300,7 +246,7 @@ class Access internal constructor(
             return staging.disableMod(mod, modLoader)
         } finally {
             staging.manualReloadTrigger.trigger.emit("Disabled mod: $mod")
-            modModificationState.update {
+            modModificationStateHolder.state.update {
                 it.toMutableMap().apply {
                     this[mod.id] =
                         ModModificationState.Ready
@@ -319,7 +265,7 @@ class Access internal constructor(
     ): Result<Unit> {
         val mod = modVariant.mod(this@Access) ?: return Result.failure(NullPointerException())
         try {
-            modModificationState.update {
+            modModificationStateHolder.state.update {
                 it.toMutableMap().apply {
                     this[mod.id] =
                         ModModificationState.DisablingVariants
@@ -328,7 +274,7 @@ class Access internal constructor(
             return staging.disableModVariant(modVariant = modVariant, changeFileExtension = changeFileExtension)
         } finally {
             staging.manualReloadTrigger.trigger.emit("Disabled mod variant: $modVariant")
-            modModificationState.update {
+            modModificationStateHolder.state.update {
                 it.toMutableMap().apply {
                     this[mod.id] =
                         ModModificationState.Ready
@@ -350,7 +296,7 @@ class Access internal constructor(
         }) {
             val mod = modVariant.mod(this) ?: return
             try {
-                modModificationState.update {
+                modModificationStateHolder.state.update {
                     it.toMutableMap().apply {
                         this[mod.id] =
                             ModModificationState.DeletingVariants
@@ -372,7 +318,7 @@ class Access internal constructor(
                 }
             } finally {
                 staging.manualReloadTrigger.trigger.emit("Deleted mod variant: $modVariant")
-                modModificationState.update {
+                modModificationStateHolder.state.update {
                     it.toMutableMap().apply {
                         this[mod.id] =
                             ModModificationState.Ready
@@ -385,63 +331,6 @@ class Access internal constructor(
     /**
      * Creates a .7z archive of the given mod variant in the [AppConfig.modBackupPath] folder.
      */
-    suspend fun backupMod(modVariant: ModVariant, overwriteExisting: Boolean = false): Archives.ArchiveResult? {
-        val mod = modVariant.mod(this) ?: return null
-        val modArchivePath = appConfig.modBackupPath.toPathOrNull() ?: return null
-        val modArchiveFile = modArchivePath.resolve(modVariant.generateBackupFileName())
-        var result: Archives.ArchiveResult? = null
-
-        if (!overwriteExisting && modArchiveFile.exists()) {
-            Timber.d { "Mod archive file already exists at '$modArchiveFile', skipping." }
-            return null
-        }
-
-        Timber.i { "Backing up mod variant ${modVariant.smolId} to '$modArchiveFile'." }
-        trace(onFinished = { _, millis ->
-            Timber.i { "Backed up mod variant ${modVariant.smolId} to '$modArchiveFile' in ${millis}ms." }
-        }) {
-            try {
-                modModificationState.update {
-                    it.toMutableMap().apply {
-                        this[mod.id] =
-                            ModModificationState.BackingUpVariant
-                    }
-                }
-                IOLock.read(IOLocks.modFolderLock) {
-                    if (modArchiveFile.exists()) {
-                        Timber.i { "Deleting existing mod archive file at '$modArchiveFile'." }
-                        runCatching { modArchiveFile.deleteIfExists() }
-                            .onFailure {
-                                Timber.e(it) { "Unable to delete existing mod archive file at '$modArchiveFile'." }
-                                return null
-                            }
-                    }
-
-                    Timber.i { "Creating mod archive file at '$modArchiveFile'." }
-                    runCatching {
-                        modArchiveFile.createFile()
-                        result = archives.createArchive(
-                            modVariant = modVariant,
-                            destinationFile = modArchiveFile
-                        )
-                    }
-                        .onFailure {
-                            Timber.e(it) { "Unable to create mod archive file at '$modArchiveFile'." }
-                        }
-                }
-            } finally {
-                staging.manualReloadTrigger.trigger.emit("Backed up mod variant: $modVariant")
-                modModificationState.update {
-                    it.toMutableMap().apply {
-                        this[mod.id] =
-                            ModModificationState.Ready
-                    }
-                }
-            }
-
-            result?.errors?.forEach { Timber.w(it) }
-
-            return result
-        }
-    }
+    suspend fun backupMod(modVariant: ModVariant, overwriteExisting: Boolean = false) =
+        backupManager.backupMod(modVariant, overwriteExisting)
 }

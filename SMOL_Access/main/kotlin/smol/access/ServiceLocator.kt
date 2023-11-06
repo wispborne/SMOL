@@ -112,6 +112,15 @@ class ServiceLocator internal constructor(
             httpClientBuilder = httpClientBuilder
         )
     }
+    val modModificationStateHolder: ModModificationStateHolder by lazy { ModModificationStateHolder() }
+    val backupManager: BackupManager =
+        BackupManager(
+            appConfig = appConfig,
+            modsCache = modsCache,
+            modModificationStateHolder = modModificationStateHolder,
+            archives = archives,
+            staging = staging
+        )
     val access: Access by lazy {
         Access(
             staging = staging,
@@ -119,7 +128,9 @@ class ServiceLocator internal constructor(
             archives = archives,
             appConfig = appConfig,
             gamePathManager = gamePathManager,
-            modsCache = modsCache
+            modsCache = modsCache,
+            backupManager = backupManager,
+            modModificationStateHolder = modModificationStateHolder,
         )
     }
     val userModProfileManager: UserModProfileManager =

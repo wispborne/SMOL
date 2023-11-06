@@ -376,6 +376,7 @@ class VramChecker(
         graphicsLibConfig: GraphicsLibConfig
     ): List<GraphicsLibInfo>? {
         return filesInMod
+            .asSequence()
             .filter { it.name.endsWith(".csv") }
             .mapNotNull { file ->
                 runCatching { csvReader.build(file.reader()) }
@@ -386,6 +387,7 @@ class VramChecker(
                     .getOrNull()
                     ?.map { it.fields }
             }
+            .filter { it.isNotEmpty() }
             // Look for a CSV with a header row containing certain column names
             .firstOrNull {
                 it.first().containsAll(listOf("id", "type", "map", "path"))

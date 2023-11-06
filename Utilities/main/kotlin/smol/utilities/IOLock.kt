@@ -12,12 +12,11 @@
 
 package smol.utilities
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import smol.timber.Timber
-import smol.timber.ktx.*
+import smol.timber.ktx.d
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReentrantReadWriteLock
@@ -64,37 +63,43 @@ class ObservableReentrantReadWriteLock() {
      * @return the return value of the action.
      */
     inline fun <T> read(lockContext: LockContext = IOLocks.defaultLock, action: () -> T): T {
-        lockContext.locks.forEach { lock ->
-            if (lock === lockContext.locks.last()) {
-                val result = try {
-                    lock.read {
-                        smol.timber.ktx.Timber.tag(tag)
-                            .d { "Read locked from ${Timber.findClassName()} on ${getCurrentThreadName()}." }
-                        return@read try {
-                            action.invoke()
-                        } finally {
-                            smol.timber.ktx.Timber.tag(tag)
-                                .d { "Read unlocked from ${Timber.findClassName()} on ${getCurrentThreadName()}." }
-                        }
-                    }
-                } finally {
-                    lockContext.locks.dropLast(1).forEach {
-                        smol.timber.ktx.Timber.v { "Unlocking $it" }
-                        runCatching {
-                            it.readLock().unlock()
-                        }
-                            .onFailure { smol.timber.ktx.Timber.e(it) }
-                    }
-                }
-                return result
-            } else {
-                smol.timber.ktx.Timber.v { "Locking $lock" }
-                lock.readLock().lock()
-            }
+        // If no locks, run func and return result.
+        if (lockContext.locks.isEmpty()) {
+            return action.invoke()
         }
 
-        // If no locks, run func and return result.
-        return action.invoke()
+        val lockToUse = lockContext.locks.last()
+        val otherLocks = lockContext.locks.dropLast(1)
+
+        // Lock all locks except the one used to run the action.
+        otherLocks.forEach { lock ->
+            smol.timber.ktx.Timber.v { "Locking read $lock" }
+            lock.readLock().lock()
+        }
+
+        val result = try {
+            lockToUse.read {
+                smol.timber.ktx.Timber.tag(tag)
+                    .d { "Read locked from ${Timber.findClassName()} on ${getCurrentThreadName()}." }
+                return@read try {
+                    action.invoke()
+                } finally {
+                    smol.timber.ktx.Timber.tag(tag)
+                        .d { "Read unlocked from ${Timber.findClassName()} on ${getCurrentThreadName()}." }
+                }
+            }
+        } finally {
+            // Unlock all locks except the one used to run the action.
+            otherLocks.forEach {
+                smol.timber.ktx.Timber.v { "Unlocking read $it" }
+                runCatching {
+                    it.readLock().unlock()
+                }
+                    .onFailure { smol.timber.ktx.Timber.e(it) }
+            }
+        }
+        
+        return result
     }
 
     inline fun <T> write(lock: ReentrantReadWriteLock, action: () -> T): T = write(
@@ -125,7 +130,6 @@ class ObservableReentrantReadWriteLock() {
      *
      * @return the return value of the action.
      */
-    @OptIn(ExperimentalCoroutinesApi::class)
     inline fun <T> write(lockContext: LockContext = IOLocks.defaultLock, action: () -> T): T {
         lockContext.locks.forEach { lock ->
             lockLock(lock)

@@ -53,8 +53,8 @@ fun SmolBottomAppBar(
                 content.invoke(this)
                 Spacer(Modifier.weight(1f))
 
-                val modsBeingModified = SL.access.modModificationState.collectAsState().value
-                    .filter { it.value != smol.access.Access.ModModificationState.Ready }
+                val modsBeingModified = SL.modModificationStateHolder.state.collectAsState().value
+                    .filter { it.value != smol.access.ModModificationState.Ready }
 
                 if (modsBeingModified.isNotEmpty()) {
                     SmolTooltipArea(tooltip = {
@@ -65,11 +65,11 @@ fun SmolBottomAppBar(
                                 val modName =
                                     SL.access.mods.firstOrNull { it.id == modId }?.findFirstEnabledOrHighestVersion?.modInfo?.name
                                 val stateStr = when (state) {
-                                    smol.access.Access.ModModificationState.Ready -> "ready"
-                                    smol.access.Access.ModModificationState.DisablingVariants -> "disabling"
-                                    smol.access.Access.ModModificationState.DeletingVariants -> "deleting"
-                                    smol.access.Access.ModModificationState.EnablingVariant -> "enabling"
-                                    smol.access.Access.ModModificationState.BackingUpVariant -> "backing up"
+                                    smol.access.ModModificationState.Ready -> "ready"
+                                    smol.access.ModModificationState.DisablingVariants -> "disabling"
+                                    smol.access.ModModificationState.DeletingVariants -> "deleting"
+                                    smol.access.ModModificationState.EnablingVariant -> "enabling"
+                                    smol.access.ModModificationState.BackingUpVariant -> "backing up"
                                 }
                                 "$modName: $stateStr"
                             })

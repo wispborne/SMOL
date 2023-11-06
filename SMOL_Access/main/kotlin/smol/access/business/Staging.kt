@@ -27,6 +27,13 @@ import kotlin.io.path.exists
 import kotlin.io.path.isReadable
 import kotlin.io.path.moveTo
 
+/**
+ * Contains mod management logic that is internal to [Access].
+ * [Access], by comparison, can be used by the app.
+ *
+ * Honestly this is a messy, terrible excuse for separation of logic that doesn't make
+ * sense after some early refactors.
+ */
 internal class Staging(
     private val gamePathManager: GamePathManager,
     private val modsCache: ModsCache,

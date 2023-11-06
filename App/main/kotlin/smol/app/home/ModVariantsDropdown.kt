@@ -34,6 +34,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.tinylog.Logger
 import smol.access.Access
+import smol.access.ModModificationState
 import smol.access.SL
 import smol.access.model.Mod
 import smol.access.model.ModVariant
@@ -95,7 +96,7 @@ fun AppScope.ModVariantsDropdown(
 
     var expanded by remember { mutableStateOf(false) }
     val modState =
-        SL.access.modModificationState.collectAsState().value[mod.id] ?: smol.access.Access.ModModificationState.Ready
+        SL.modModificationStateHolder.state.collectAsState().value[mod.id] ?: ModModificationState.Ready
 
     Box(modifier) {
         Box(Modifier.width(IntrinsicSize.Min)) {
@@ -129,15 +130,15 @@ fun AppScope.ModVariantsDropdown(
                     },
                 )
             ) {
-                if (modState != Access.ModModificationState.Ready) {
+                if (modState != ModModificationState.Ready) {
                     SmolTooltipArea(tooltip = {
                         SmolTooltipText(
                             when (modState) {
-                                Access.ModModificationState.DisablingVariants -> "Disabling..."
-                                Access.ModModificationState.EnablingVariant -> "Enabling..."
-                                Access.ModModificationState.BackingUpVariant -> "Backup in progress"
-                                Access.ModModificationState.DeletingVariants -> "Deleting..."
-                                Access.ModModificationState.Ready -> "Ready"
+                                ModModificationState.DisablingVariants -> "Disabling..."
+                                ModModificationState.EnablingVariant -> "Enabling..."
+                                ModModificationState.BackingUpVariant -> "Backup in progress"
+                                ModModificationState.DeletingVariants -> "Deleting..."
+                                ModModificationState.Ready -> "Ready"
                             }
                         )
                     }
