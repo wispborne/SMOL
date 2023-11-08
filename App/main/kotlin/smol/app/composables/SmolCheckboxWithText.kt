@@ -24,7 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 
 @Composable
-fun CheckboxWithText(
+fun SmolCheckboxWithText(
     checked: Boolean,
     onCheckedChange: ((Boolean) -> Unit)?,
     modifier: Modifier = Modifier,
@@ -40,10 +40,9 @@ fun CheckboxWithText(
         Checkbox(
             checked = checked,
             onCheckedChange = onCheckedChange,
-            modifier = modifier,
             enabled = enabled,
             interactionSource = interactionSource,
-            colors = colors,
+            colors = colors
         )
         text.invoke(Modifier
             .clickable(

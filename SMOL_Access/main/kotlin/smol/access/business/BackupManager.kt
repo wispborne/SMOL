@@ -26,9 +26,8 @@ import smol.utilities.IOLock
 import smol.utilities.IOLocks
 import smol.utilities.toPathOrNull
 import smol.utilities.trace
-import kotlin.io.path.createFile
-import kotlin.io.path.deleteIfExists
-import kotlin.io.path.exists
+import java.nio.file.Path
+import kotlin.io.path.*
 
 class BackupManager internal constructor(
     private val appConfig: AppConfig,
@@ -39,13 +38,20 @@ class BackupManager internal constructor(
 ) {
     private val scope = CoroutineScope(Job())
 
+    val folderPath: Path?
+        get() = appConfig.modBackupPath.toPathOrNull()
+    val isEnabled: Boolean
+        get() = appConfig.areModBackupsEnabled
+    val hasValidPath: Boolean
+        get() = folderPath?.exists() == true && folderPath?.isDirectory() == true && folderPath?.isWritable() == true
+
     init {
         // Back up newly added mods if the backup feature is enabled and the backup file doesn't exist.
         scope.launch {
             modsCache.mods.collectLatest { modListUpdate ->
                 runCatching {
                     modListUpdate?.added.orEmpty().forEach { modVariant ->
-                        if (appConfig.areModArchivesEnabled && modVariant.backupFile?.exists() != true) {
+                        if (appConfig.areModBackupsEnabled && modVariant.backupFile?.exists() != true) {
                             backupMod(modVariant)
                         }
                     }

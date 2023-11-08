@@ -25,7 +25,6 @@ class InMemoryPrefStorage(private val wrapped: IConfig.PrefStorage) : IConfig.Pr
     private val memory = mutableMapOf<String, Any?>()
     private val scope = CoroutineScope(Job())
 
-    @OptIn(ExperimentalStdlibApi::class)
     override fun <T> get(key: String, defaultValue: T, type: KType): T =
         if (memory.containsKey(key)) {
             (memory[key] as? T) ?: defaultValue
@@ -36,7 +35,6 @@ class InMemoryPrefStorage(private val wrapped: IConfig.PrefStorage) : IConfig.Pr
                 }
         }
 
-    @OptIn(ExperimentalStdlibApi::class)
     override fun <T> put(key: String, value: T?, type: KType) {
         memory[key] = value
         scope.launch(Dispatchers.IO) {

@@ -31,7 +31,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import smol.access.SL
 import smol.access.model.ModVariant
-import smol.app.composables.CheckboxWithText
+import smol.app.composables.SmolCheckboxWithText
 import smol.app.composables.SmolAlertDialog
 import smol.app.composables.SmolButton
 import smol.app.composables.SmolSecondaryButton
@@ -186,7 +186,7 @@ fun VariantList(
 
                 val doesModBackupExist = variant.backupFile?.exists() == true
 
-                CheckboxWithText(
+                SmolCheckboxWithText(
                     modifier = Modifier.align(Alignment.CenterVertically),
                     checked = isChecked,
                     onCheckedChange = { variantSelections[variant] = isChecked.not() }

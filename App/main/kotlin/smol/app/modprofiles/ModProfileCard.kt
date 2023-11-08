@@ -56,6 +56,7 @@ import smol.app.themes.SmolTheme.lighten
 import smol.app.util.smolPreview
 import smol.utilities.copyToClipboard
 import smol.utilities.equalsAny
+import smol.utilities.sIfPlural
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -721,7 +722,11 @@ private fun AppScope.MissingModVariantsAlertDialog(
                     alertDialogSetter.invoke(null)
                 }
             ) {
-                Text("Swap ${if (useNewerModVariantsForMissing) "and update" else "without"} ${missingVariants.count()} mod${if (missingVariants.count() != 1) "s" else ""}")
+                val count = missingVariants.count()
+                if (useNewerModVariantsForMissing)
+                    Text("Swap and use $count newer version${missingVariants.sIfPlural()}")
+                else
+                    Text("Swap without $count mod${missingVariants.sIfPlural()}")
             }
         },
         dismissButton = {

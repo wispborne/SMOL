@@ -356,3 +356,5 @@ fun <T, K> StateFlow<T>.mapState(
     }
         .stateIn(scope, SharingStarted.Eagerly, initialValue)
 }
+
+fun Iterable<Any>.sIfPlural() = if (this.count() == 1) "" else "s"

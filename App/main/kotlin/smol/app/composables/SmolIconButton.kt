@@ -10,6 +10,8 @@
  * The full license is available from <https://www.gnu.org/licenses/gpl-3.0.txt>.
  */
 
+@file:Suppress("FunctionName")
+
 package smol.app.composables
 
 import androidx.compose.foundation.clickable

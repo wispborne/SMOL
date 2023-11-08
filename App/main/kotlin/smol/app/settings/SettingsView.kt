@@ -11,6 +11,7 @@
  */
 
 @file:OptIn(ExperimentalFoundationApi::class)
+@file:Suppress("FunctionName")
 
 package smol.app.settings
 
@@ -28,6 +29,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -50,6 +52,7 @@ import smol.timber.ktx.Timber
 import smol.utilities.exists
 import smol.utilities.toPathOrNull
 import java.io.File
+import java.nio.file.Path
 import javax.swing.JFileChooser
 import kotlin.io.path.pathString
 
@@ -59,7 +62,6 @@ object SettingsView {
 }
 
 @OptIn(
-    ExperimentalMaterialApi::class,
     ExperimentalFoundationApi::class
 )
 @Composable
@@ -70,6 +72,7 @@ fun AppScope.settingsView(
 ) {
     val showLogPanel = remember { mutableStateOf(false) }
     val userProfile = SL.userManager.activeProfile.collectAsState().value
+
     Scaffold(topBar = {
         SmolTopAppBar(modifier = Modifier.height(SmolTheme.topBarHeight)) {
             toolbar(router.state.value.activeChild.instance as Screen)
@@ -83,49 +86,9 @@ fun AppScope.settingsView(
                 Column {
                     var gamePath by remember { mutableStateOf(SL.gamePathManager.path.value?.pathString) }
                     var modBackupPath by remember { mutableStateOf(SL.appConfig.modBackupPath) }
-                    var areModBackupsEnabled by remember { mutableStateOf(SL.appConfig.areModArchivesEnabled) }
                     val alertDialogMessage = remember { mutableStateOf<String?>(null) }
                     val scope = rememberCoroutineScope()
-                    val settingsPathErrors = remember {
-                        mutableStateOf(
-                            SL.access.validatePaths(
-                                newGamePath = gamePath.toPathOrNull(),
-                                archivesPath = modBackupPath.toPathOrNull()
-                            ).failure
-                        )
-                    }
                     val jresFound = remember { SnapshotStateList<JreEntry>() }
-
-                    fun saveSettings(): Boolean {
-                        val errors = runCatching {
-                            SL.access.validatePaths(
-                                newGamePath = gamePath.toPathOrNull(),
-                                archivesPath = modBackupPath.toPathOrNull()
-                            ).failure
-                        }
-                            .recover {
-                                Timber.w(it)
-                                mapOf(settingsPath to listOf(it.message))
-                            }
-                            .getOrNull()
-                            ?.get(settingsPath)
-
-                        if (errors != null && errors.any()) {
-                            alertDialogMessage.value = errors.joinToString(separator = "\n")
-                            return false
-                        } else {
-                            SL.gamePathManager.set(gamePath!!)
-                            SL.appConfig.modBackupPath = modBackupPath
-
-                            GlobalScope.launch {
-                                refreshJres(jresFound)
-                                SL.access.reload()
-                            }
-                        }
-
-                        recomposeAppUI()
-                        return true
-                    }
 
                     if (alertDialogMessage.value != null) {
                         SmolAlertDialog(
@@ -174,56 +137,69 @@ fun AppScope.settingsView(
                                         modifier = Modifier.padding(start = 16.dp, bottom = 8.dp),
                                         style = SettingsView.settingLabelStyle()
                                     )
-                                    gamePath = gamePathSetting(
+                                    gamePath = FolderPathTextFieldSetting(
                                         gamePath = gamePath ?: "",
-                                        settingsPathErrors = settingsPathErrors,
-                                        label = "Starsector folder"
+                                        label = "Starsector folder",
+                                        validator = SL.access::validateStarsectorFolderPath
                                     )
-                                    SmolTooltipArea(tooltip = {
-                                        SmolTooltipText("Backs up your mods to $modBackupPath.\nBackups are created whenever you update a mod.")
-                                    }) {
-                                        Row {
-                                            modBackupPath = gamePathSetting(
-                                                gamePath = modBackupPath ?: "",
-                                                settingsPathErrors = settingsPathErrors,
-                                                label = "Mod Backup folder",
-                                                isEnabled = areModBackupsEnabled
-                                            )
-                                            CheckboxWithText(
-                                                checked = areModBackupsEnabled,
-                                                modifier = Modifier.align(Alignment.CenterVertically),
-                                                onCheckedChange = { checked ->
-                                                    areModBackupsEnabled = checked
-                                                    SL.appConfig.areModArchivesEnabled = checked
+
+                                    Column {
+                                        var areModBackupsEnabled by remember { mutableStateOf(SL.appConfig.areModBackupsEnabled) }
+                                        val isModBackupPathValid =
+                                            SL.access.validateBackupFolderPath(modBackupPath.toPathOrNull()).isEmpty()
+
+                                        SmolTooltipArea(tooltip = {
+                                            SmolTooltipText("Creates a 7z backup in the specified folder whenever you update or remove a mod.")
+                                        }) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                modifier = Modifier.padding(top = 16.dp).scale(0.9f),
+                                            ) {
+                                                SmolCheckboxWithText(
+                                                    checked = areModBackupsEnabled,
+                                                    onCheckedChange = { checked ->
+                                                        areModBackupsEnabled = checked
+                                                        SL.appConfig.areModBackupsEnabled = checked
+                                                    }
+                                                ) { modifier ->
+                                                    Text(
+                                                        text = "Enable automatic mod backups",
+                                                        modifier = modifier,
+                                                        style = MaterialTheme.typography.body2
+                                                    )
                                                 }
-                                            ) { modifier ->
-                                                Text(
-                                                    text = "Back Up Mods",
-                                                    modifier = modifier
+                                                SmolClickableText(
+                                                    text = "Back Up All Now",
+                                                    color = MaterialTheme.colors.hyperlink,
+                                                    modifier = Modifier
+                                                        .align(Alignment.CenterVertically)
+                                                        .padding(start = 24.dp),
+                                                    textDecoration = TextDecoration.Underline,
+                                                    isEnabled = isModBackupPathValid,
+                                                    onClick = {
+                                                        GlobalScope.launch {
+                                                            SL.access.modsFlow.value?.mods.orEmpty()
+                                                                .flatMap { it.variants }
+                                                                .forEach { SL.access.backupMod(it) }
+                                                        }
+                                                    },
                                                 )
                                             }
+                                        }
+
+                                        Row(Modifier.offset(y = (-8).dp)) {
+                                            modBackupPath = FolderPathTextFieldSetting(
+                                                gamePath = modBackupPath ?: "",
+                                                label = "Mod Backup folder",
+                                                validator = SL.access::validateBackupFolderPath
+                                            )
 //                                            val isBackingUp =
 //                                            val modState =
 //                                                SL.access.modModificationState.collectAsState().value[mod.id] ?: smol.access.Access.ModModificationState.Ready
-                                            SmolClickableText(
-                                                text = "Back Up All Now",
-                                                color = MaterialTheme.colors.hyperlink,
-                                                modifier = Modifier
-                                                    .align(Alignment.CenterVertically)
-                                                    .padding(start = 16.dp),
-                                                textDecoration = TextDecoration.Underline,
-                                                onClick = {
-                                                    GlobalScope.launch {
-                                                        SL.access.modsFlow.value?.mods.orEmpty()
-                                                            .flatMap { it.variants }
-                                                            .forEach { SL.access.backupMod(it) }
-                                                    }
-                                                },
-                                            )
                                         }
                                     }
 
-                                    // Confirm button
+                                    // Confirm/Apply button
                                     var initialPath by remember { mutableStateOf(gamePath) }
                                     Row(
                                         modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp)
@@ -232,7 +208,13 @@ fun AppScope.settingsView(
                                             enabled = gamePath != initialPath
                                                     && gamePath?.toPathOrNull()?.exists() == true,
                                             onClick = {
-                                                saveSettings()
+                                                savePaths(
+                                                    gamePath,
+                                                    modBackupPath,
+                                                    alertDialogMessage,
+                                                    jresFound,
+                                                    settingsPath
+                                                )
                                                 initialPath = gamePath
                                             }) {
                                             Text("Apply")
@@ -259,7 +241,7 @@ fun AppScope.settingsView(
                                     modifier = Modifier.padding(start = 16.dp, top = 16.dp)
                                 ) {
                                     val isChecked = userProfile.useOrbitronNameFont!!
-                                    CheckboxWithText(
+                                    SmolCheckboxWithText(
                                         checked = isChecked,
                                         onCheckedChange = { checked ->
                                             SL.userManager.updateUserProfile {
@@ -290,7 +272,7 @@ fun AppScope.settingsView(
                                     modifier = Modifier.padding(start = 16.dp)
                                 ) {
                                     val isChecked = userProfile.warnAboutOneClickUpdates ?: true
-                                    CheckboxWithText(
+                                    SmolCheckboxWithText(
                                         checked = isChecked,
                                         onCheckedChange = { checked ->
                                             SL.userManager.updateUserProfile {
@@ -362,6 +344,43 @@ fun AppScope.settingsView(
     )
 }
 
+private fun AppScope.savePaths(
+    gamePath: String?,
+    modBackupPath: String?,
+    alertDialogMessage: MutableState<String?>,
+    jresFound: SnapshotStateList<JreEntry>,
+    settingsPath: SettingsPath
+): Boolean {
+    val errors = runCatching {
+        SL.access.validatePaths(
+            newGamePath = gamePath.toPathOrNull(),
+            archivesPath = modBackupPath.toPathOrNull()
+        ).failure
+    }
+        .recover {
+            Timber.w(it)
+            mapOf(settingsPath to listOf(it.message))
+        }
+        .getOrNull()
+        ?.get(settingsPath)
+
+    if (errors != null && errors.any()) {
+        alertDialogMessage.value = errors.joinToString(separator = "\n")
+        return false
+    } else {
+        SL.gamePathManager.set(gamePath!!)
+        SL.appConfig.modBackupPath = modBackupPath
+
+        GlobalScope.launch {
+            refreshJres(jresFound)
+            SL.access.reload()
+        }
+    }
+
+    recomposeAppUI()
+    return true
+}
+
 private suspend fun refreshJres(jresFound: SnapshotStateList<JreEntry>) {
     jresFound.clear()
     jresFound.addAll(
@@ -370,63 +389,59 @@ private suspend fun refreshJres(jresFound: SnapshotStateList<JreEntry>) {
 }
 
 @Composable
-private fun AppScope.gamePathSetting(
+private fun AppScope.FolderPathTextFieldSetting(
     gamePath: String,
-    settingsPathErrors: MutableState<Map<SettingsPath, List<String>>?>,
     label: String,
-    isEnabled: Boolean = true
+    isEnabled: Boolean = true,
+    validator: (Path?) -> List<String>,
 ): String {
     var newGamePath by remember { mutableStateOf(gamePath) }
-    val errors = settingsPathErrors.value?.get(SettingsPath.Game)
+    val errors = validator(newGamePath.toPathOrNull())
 
-    Row {
-        SmolTextField(
-            value = newGamePath,
-            modifier = Modifier
-                .padding(start = 16.dp)
-                .widthIn(max = 700.dp)
-                .fillMaxWidth()
-                .align(Alignment.CenterVertically),
-            label = { Text(label) },
-            isError = errors?.any() ?: false,
-            singleLine = true,
-            maxLines = 1,
-            enabled = isEnabled,
-            onValueChange = {
-                newGamePath = it
-                settingsPathErrors.value = runCatching {
-                    SL.access.validatePaths(
-                        newGamePath = it.toPathOrNull()
-                    ).failure
-                }
-                    .onFailure { ex -> Timber.w(ex) }
-                    .getOrElse { emptyMap() }
-            })
-        SmolIconButton(
-            modifier = Modifier
-                .align(Alignment.CenterVertically)
-                .padding(start = 16.dp, end = 16.dp),
-            enabled = isEnabled,
-            onClick = {
-                newGamePath =
-                    pickFolder(initialPath = newGamePath.ifBlank { null }
-                        ?: "",
-                        window = window)
-                        ?: newGamePath
-            }) {
-            Icon(
-                painter = painterResource("icon-open-folder.svg"),
-                tint = MaterialTheme.colors.onBackground,
-                contentDescription = null
+    Column {
+        Row {
+            // Text field
+            SmolTextField(
+                value = newGamePath,
+                modifier = Modifier
+                    .padding(start = 16.dp)
+                    .widthIn(max = 700.dp)
+                    .fillMaxWidth()
+                    .align(Alignment.CenterVertically),
+                label = { Text(label) },
+                isError = errors.any(),
+                singleLine = true,
+                maxLines = 1,
+                enabled = isEnabled,
+                onValueChange = { newGamePath = it })
+
+            // Open folder button
+            SmolIconButton(
+                modifier = Modifier
+                    .align(Alignment.CenterVertically)
+                    .padding(start = 16.dp, end = 16.dp),
+                enabled = isEnabled,
+                onClick = {
+                    newGamePath =
+                        pickFolder(initialPath = newGamePath.ifBlank { null }
+                            ?: "",
+                            window = window)
+                            ?: newGamePath
+                }) {
+                Icon(
+                    painter = painterResource("icon-open-folder.svg"),
+                    tint = MaterialTheme.colors.onBackground,
+                    contentDescription = null
+                )
+            }
+        }
+        if (!errors.isNullOrEmpty()) {
+            Text(
+                text = errors.joinToString(separator = "\n"),
+                color = MaterialTheme.colors.error,
+                modifier = Modifier.padding(start = 16.dp)
             )
         }
-    }
-    if (!errors.isNullOrEmpty()) {
-        Text(
-            text = errors.joinToString(separator = "\n"),
-            color = MaterialTheme.colors.error,
-            modifier = Modifier.padding(start = 16.dp)
-        )
     }
 
     return newGamePath

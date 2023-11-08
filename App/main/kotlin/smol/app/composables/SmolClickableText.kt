@@ -12,14 +12,12 @@
 
 package smol.app.composables
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.material.LocalTextStyle
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerIcon
@@ -38,7 +36,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import java.awt.Cursor
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun SmolClickableText(
     text: String,
@@ -57,7 +54,8 @@ fun SmolClickableText(
     softWrap: Boolean = true,
     maxLines: Int = Int.MAX_VALUE,
     onTextLayout: (TextLayoutResult) -> Unit = {},
-    style: TextStyle = LocalTextStyle.current
+    style: TextStyle = LocalTextStyle.current,
+    isEnabled: Boolean = true
 ) {
     SmolClickableText(
         text = buildAnnotatedString { append(text) },
@@ -77,10 +75,10 @@ fun SmolClickableText(
         maxLines = maxLines,
         onTextLayout = onTextLayout,
         style = style,
+        isEnabled = isEnabled
     )
 }
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun SmolClickableText(
     text: AnnotatedString,
@@ -99,7 +97,8 @@ fun SmolClickableText(
     softWrap: Boolean = true,
     maxLines: Int = Int.MAX_VALUE,
     onTextLayout: (TextLayoutResult) -> Unit = {},
-    style: TextStyle = LocalTextStyle.current
+    style: TextStyle = LocalTextStyle.current,
+    isEnabled: Boolean = true
 ) {
     val layoutResult = remember { mutableStateOf<TextLayoutResult?>(null) }
     val pressIndicator = Modifier.pointerInput(onClick) {
@@ -113,9 +112,13 @@ fun SmolClickableText(
     Text(
         text = text,
         modifier = modifier
-            .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)))
-            .then(pressIndicator),
-        color = color,
+            .run {
+                if (isEnabled)
+                    this.pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)))
+                        .then(pressIndicator)
+                else this
+            },
+        color = color.run { if (!isEnabled) copy(alpha = 0.5f) else this },
         fontSize = fontSize,
         fontStyle = fontStyle,
         fontWeight = fontWeight,

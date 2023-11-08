@@ -40,6 +40,7 @@ import kotlinx.coroutines.*
 import org.tinylog.Logger
 import smol.access.Constants
 import smol.access.SL
+import smol.app.Logging
 import smol.app.composables.*
 import smol.app.navigation.Screen
 import smol.app.themes.SmolTheme
@@ -519,6 +520,9 @@ fun AppScope.quickLinksDropdown(modifier: Modifier = Modifier) {
     val logPath = gamePath?.let {
         runCatching { Constants.getGameLogPath(gamePath) }.onFailure { Timber.w(it) }.getOrNull()
     }
+    val smolLog = Logging.logPath
+    val backupsPath = SL.backupManager.folderPath
+
     SmolDropdownWithButton(
         shouldShowSelectedItemInMenu = false,
         canSelectItems = false,
@@ -566,7 +570,7 @@ fun AppScope.quickLinksDropdown(modifier: Modifier = Modifier) {
                 }
             ),
             SmolDropdownMenuItemTemplate(
-                text = "Log" + if (logPath?.isReadable() != true) " (not found)" else "",
+                text = "Starsector Log" + if (logPath?.isReadable() != true) " (not found)" else "",
                 iconPath = "icon-file-debug.svg",
                 isEnabled = logPath?.isReadable() == true,
                 onClick = {
@@ -575,11 +579,20 @@ fun AppScope.quickLinksDropdown(modifier: Modifier = Modifier) {
                 }
             ),
             SmolDropdownMenuItemTemplate(
-                text = "SMOL",
+                text = "SMOL Log",
                 iconPath = "icon-file-debug.svg",
-                isEnabled = logPath?.isReadable() == true,
+                isEnabled = smolLog?.isReadable() == true,
                 onClick = {
-                    logPath?.openInDesktop()
+                    smolLog?.openInDesktop()
+                    true
+                }
+            ),
+            SmolDropdownMenuItemTemplate(
+                text = "Mod Backups",
+                iconPath = "icon-file-history.svg",
+                isEnabled = backupsPath?.isReadable() == true,
+                onClick = {
+                    backupsPath?.openInDesktop()
                     true
                 }
             )

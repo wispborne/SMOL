@@ -50,7 +50,7 @@ class Access internal constructor(
 
         // If the mod archive path doesn't exist/isn't set, and the game path is set, set the archive path
         // and create the folder.
-        if (appConfig.areModArchivesEnabled
+        if (appConfig.areModBackupsEnabled
             && appConfig.modBackupPath?.toPathOrNull()?.exists() != true
             && gamePathManager.path.value?.exists() == true
         ) {
@@ -79,50 +79,63 @@ class Access internal constructor(
         newGamePath: Path? = gamePathManager.path.value,
         archivesPath: Path? = appConfig.modBackupPath.toPathOrNull()
     ): SmolResult<Unit, Map<SettingsPath, List<String>>> {
-        val errors: Map<SettingsPath, MutableList<String>> = mapOf(
-            SettingsPath.Game to mutableListOf(),
-            SettingsPath.Archives to mutableListOf()
-        )
+        val errors: MutableMap<SettingsPath, MutableList<String>> = mutableMapOf()
 
-        IOLock.read {
-            // Game path
-            if (newGamePath == null) {
-                errors[SettingsPath.Game]?.add("Game path invalid or not set!")
-            } else if (!newGamePath.exists()) {
-                errors[SettingsPath.Game]?.add("Game path '$newGamePath' doesn't exist!")
-            } else {
-                val hasGameExe = gamePathManager.getGameExeFolderPath(newGamePath)?.exists() ?: false
-                val hasGameCoreExe = gamePathManager.getGameCoreFolderPath(newGamePath)?.exists() ?: false
-
-                if (currentPlatform == Platform.Windows && !hasGameExe) {
-                    errors[SettingsPath.Game]?.add("Folder 'starsector' doesn't exist!")
-                }
-
-                if (!hasGameCoreExe) {
-                    errors[SettingsPath.Game]?.add(
-                        "Folder '${
-                            gamePathManager.getGameCoreFolderPath()
-                                ?.relativeTo(gamePathManager.path.value ?: Path("/"))
-                        }' not found!"
-                    )
-                }
-            }
-
-            // Archives path
-            if (appConfig.areModArchivesEnabled) {
-                if (archivesPath == null) {
-                    errors[SettingsPath.Archives]?.add("Archives path invalid or not set.\nSet it or disable Mod Archival.")
-                } else if (!archivesPath.exists()) {
-                    errors[SettingsPath.Archives]?.add("Archives path '$archivesPath' doesn't exist!")
-                } else if (!archivesPath.exists()) {
-                    errors[SettingsPath.Archives]?.add("Folder '${Constants.ARCHIVES_FOLDER_NAME}' not found!")
-                } else {
-                }
-            }
-        }
+        errors[SettingsPath.Game] = validateStarsectorFolderPath(newGamePath).toMutableList()
+        errors[SettingsPath.Archives] = validateBackupFolderPath(archivesPath).toMutableList()
 
         return if (errors.flatMap { it.value }.none()) SmolResult.Success(Unit)
         else SmolResult.Failure(errors)
+    }
+
+    /**
+     * @return A list of errors, or empty if no errors.
+     */
+    fun validateStarsectorFolderPath(
+        newGamePath: Path?
+    ): List<String> {
+        val errors = mutableListOf<String>()
+        if (newGamePath == null) {
+            errors.add("Game path invalid or not set!")
+        } else if (!newGamePath.exists()) {
+            errors.add("Game path '$newGamePath' doesn't exist!")
+        } else {
+            val hasGameExe = gamePathManager.getGameExeFolderPath(newGamePath)?.exists() ?: false
+            val hasGameCoreExe = gamePathManager.getGameCoreFolderPath(newGamePath)?.exists() ?: false
+
+            if (currentPlatform == Platform.Windows && !hasGameExe) {
+                errors.add("Folder 'starsector' doesn't exist!")
+            }
+
+            if (!hasGameCoreExe) {
+                errors.add(
+                    "Folder '${
+                        gamePathManager.getGameCoreFolderPath()
+                            ?.relativeTo(gamePathManager.path.value ?: Path("/"))
+                    }' not found!"
+                )
+            }
+        }
+
+        return errors
+    }
+
+    /**
+     * @return A list of errors, or empty if no errors.
+     */
+    fun validateBackupFolderPath(backupFolderPath: Path?): List<String> {
+        val errors = mutableListOf<String>()
+        if (appConfig.areModBackupsEnabled) {
+            if (backupFolderPath == null) {
+                errors.add("Archives path invalid or not set.\nSet it or disable Mod Archival.")
+            } else if (!backupFolderPath.exists()) {
+                errors.add("Archives path '$backupFolderPath' doesn't exist!")
+            } else if (!backupFolderPath.exists()) {
+                errors.add("Folder '${Constants.ARCHIVES_FOLDER_NAME}' not found!")
+            }
+        }
+
+        return errors
     }
 
     val modsFlow: StateFlow<ModListUpdate?>
@@ -287,7 +300,7 @@ class Access internal constructor(
         Timber.i { "Deleting mod variant ${modVariant.smolId} folders. Remove staging/mods files? $removeUncompressedFolder." }
 
         // Back up mod if feature is enabled and the backup file doesn't exist.
-        if (appConfig.areModArchivesEnabled && modVariant.backupFile?.exists() != true) {
+        if (appConfig.areModBackupsEnabled && modVariant.backupFile?.exists() != true) {
             backupMod(modVariant)
         }
 

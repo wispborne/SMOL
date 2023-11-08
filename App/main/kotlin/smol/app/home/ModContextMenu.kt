@@ -13,6 +13,7 @@
 package smol.app.home
 
 import AppScope
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -33,10 +34,7 @@ import smol.access.Constants
 import smol.access.SL
 import smol.access.model.Mod
 import smol.access.model.ModVariant
-import smol.app.composables.SmolAlertDialog
-import smol.app.composables.SmolButton
-import smol.app.composables.SmolDropdownMenuItemTemplate
-import smol.app.composables.SmolSecondaryButton
+import smol.app.composables.*
 import smol.app.navigation.Screen
 import smol.app.themes.SmolTheme
 import smol.app.util.*
@@ -77,6 +75,7 @@ fun AppScope.ModContextMenu(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun AppScope.modGridSingleModMenu(
     mod: Mod,
@@ -190,22 +189,32 @@ private fun AppScope.modGridSingleModMenu(
         Text("Check VRAM impact")
     }
 
-    DropdownMenuItem(onClick = {
-        this@modGridSingleModMenu.alertDialogSetter.invoke {
-            BackUpModVariantDialog(
-                variants = mod.variants,
-                onDismiss = this@modGridSingleModMenu::dismissAlertDialog
-            )
-        }
-        onShowContextMenuChange(false)
-    }) {
+    val hasValidBackupPath = SL.backupManager.hasValidPath
+    DropdownMenuItem(
+        enabled = hasValidBackupPath,
+        onClick = {
+            this@modGridSingleModMenu.alertDialogSetter.invoke {
+                BackUpModVariantDialog(
+                    variants = mod.variants,
+                    onDismiss = this@modGridSingleModMenu::dismissAlertDialog
+                )
+            }
+            onShowContextMenuChange(false)
+        }) {
         Image(
             painter = painterResource("icon-archive-create.svg"),
             colorFilter = ColorFilter.tint(MaterialTheme.colors.onSurface),
             modifier = Modifier.padding(end = 12.dp).size(24.dp),
+            alpha = if (hasValidBackupPath) 1f else 0.5f,
             contentDescription = null
         )
-        Text("Create backup...")
+        if (hasValidBackupPath) {
+            Text("Create backup...")
+        } else {
+            SmolTooltipArea(tooltip = { SmolTooltipText("Set backup path in Settings") }) {
+                Text("Create backup...")
+            }
+        }
     }
 
     DropdownMenuItem(onClick = {
