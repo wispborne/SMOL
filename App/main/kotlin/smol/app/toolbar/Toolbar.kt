@@ -578,7 +578,7 @@ fun AppScope.quickLinksDropdown(modifier: Modifier = Modifier) {
                     )
                 }
             },
-            items = listOf(
+            items = listOfNotNull(
                 SmolDropdownMenuItemTemplate(
                     text = "Starsector" + if (gamePath?.isReadable() != true) " (not found)" else "",
                     iconPath = "icon-folder-game.svg",
@@ -624,15 +624,17 @@ fun AppScope.quickLinksDropdown(modifier: Modifier = Modifier) {
                         true
                     }
                 ),
-                SmolDropdownMenuItemTemplate(
-                    text = "Mod Backups",
-                    iconPath = "icon-file-history.svg",
-                    isEnabled = backupsPath?.isReadable() == true,
-                    onClick = {
-                        backupsPath?.openInDesktop()
-                        true
-                    }
-                )
+                if (SL.appConfig.isModBackupFeatureEnabled)
+                    SmolDropdownMenuItemTemplate(
+                        text = "Mod Backups",
+                        iconPath = "icon-file-history.svg",
+                        isEnabled = backupsPath?.isReadable() == true,
+                        onClick = {
+                            backupsPath?.openInDesktop()
+                            true
+                        }
+                    )
+                else null
             )
         )
     }

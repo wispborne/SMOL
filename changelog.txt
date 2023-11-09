@@ -1,0 +1,11 @@
+Beta 16
+
+- Fixed self-updater, hopefully.
+- Revamped toolbar and displayed current profile under Profiles.
+- VRAM estimation now reads your GraphicsLib settings, if any. Previously assumed you had maxed GraphicsLib settings, even if it wasn't enabled.
+- Fixed a mod getting copied to its own mod folder when you tried to install the same version again and canceled the confirmation dialog.
+- Fixed possible crash when hoving over mod profiles.
+- Fixed possible crash if a tip.json had a null tips array.
+- Added setting to choose your SMOL renderer.
+- Maybe added a deadlock. Not sure. Might've fixed it. Let me know if it softlocks.
+- Many various little text improvements, e.g. making the "not yet scanned" text more obvious but subtle.

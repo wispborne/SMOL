@@ -99,6 +99,10 @@ class Archives internal constructor(
                                     Timber.i { "Deleting ${modFolder.absolutePathString()}." }
                                     modFolder.deleteRecursively()
                                 }
+                            } else {
+                                // Abort: Mod was already present and user doesn't want to replace it.
+                                Timber.i { "User chose not to replace ${modFolder.absolutePathString()}." }
+                                return
                             }
                         }
 
