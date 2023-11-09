@@ -89,7 +89,7 @@ fun AppScope.homeView(
                             .weight(1f, fill = false)
                             .align(Alignment.CenterVertically),
                         tooltipText = "Hotkey: Ctrl-F",
-                        label = "Filter"
+                        label = "Search"
                     ) { query ->
                         if (query.isBlank()) {
                             modListFilter = null
@@ -114,7 +114,7 @@ fun AppScope.homeView(
 //                        )
 //                    }
 
-                    SmolTooltipArea(tooltip = { SmolTooltipText("About") }) {
+                    SmolTooltipArea(tooltip = { SmolTooltipText("About SMOL") }) {
                         IconButton(
                             onClick = { router.replaceCurrent(Screen.About) }
                         ) {

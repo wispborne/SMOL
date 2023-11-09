@@ -25,6 +25,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
@@ -49,6 +51,7 @@ import smol.access.model.UserProfile
 import smol.app.composables.SmolText
 import smol.app.composables.SmolTooltipArea
 import smol.app.composables.SmolTooltipText
+import smol.app.isAprilFools
 import smol.app.themes.SmolTheme
 import smol.utilities.exhaustiveWhen
 
@@ -179,9 +182,13 @@ fun AppScope.ModGridRow(
 
                             UserProfile.ModGridHeader.Author -> {
                                 // Mod Author
+                                var modAuthorName = ((mod.findFirstEnabledOrHighestVersion)?.modInfo?.author
+                                    ?: "")
+                                if (isAprilFools())
+                                    modAuthorName =
+                                        if (modAuthorName.isBlank()) "Tartiflette" else "$modAuthorName, Tartiflette"
                                 SmolText(
-                                    text = (mod.findFirstEnabledOrHighestVersion)?.modInfo?.author
-                                        ?: "",
+                                    text = modAuthorName,
                                     color = SmolTheme.dimmedTextColor(),
                                     modifier = Modifier.weight(1f)
                                         .align(Alignment.CenterVertically),
@@ -262,6 +269,19 @@ fun AppScope.ModGridRow(
                                     val alpha = 0.7f
 
                                     when {
+                                        isAprilFools() && listOf("Nia")
+                                            .any { modInfo?.author?.contains(it, ignoreCase = true) == true } ->
+                                            Image(
+                                                painter = painterResource("icon-yawn.svg"),
+                                                modifier = Modifier.size(24.dp),
+                                                contentDescription = null,
+                                                colorFilter = ColorFilter
+                                                    .colorMatrix(ColorMatrix().apply {
+                                                        setToSaturation(0F)
+                                                    }),
+                                                alpha = alpha
+                                            )
+
                                         modInfo?.isTotalConversion == true -> {
                                             SmolTooltipArea(tooltip = { SmolTooltipText(text = "Total Conversion mods should not be run with any other mods, except for Utility Mods, unless explicitly stated to be compatible.") }) {
                                                 Icon(

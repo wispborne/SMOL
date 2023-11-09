@@ -189,30 +189,32 @@ private fun AppScope.modGridSingleModMenu(
         Text("Check VRAM impact")
     }
 
-    val hasValidBackupPath = SL.backupManager.hasValidPath
-    DropdownMenuItem(
-        enabled = hasValidBackupPath,
-        onClick = {
-            this@modGridSingleModMenu.alertDialogSetter.invoke {
-                BackUpModVariantDialog(
-                    variants = mod.variants,
-                    onDismiss = this@modGridSingleModMenu::dismissAlertDialog
-                )
-            }
-            onShowContextMenuChange(false)
-        }) {
-        Image(
-            painter = painterResource("icon-archive-create.svg"),
-            colorFilter = ColorFilter.tint(MaterialTheme.colors.onSurface),
-            modifier = Modifier.padding(end = 12.dp).size(24.dp),
-            alpha = if (hasValidBackupPath) 1f else 0.5f,
-            contentDescription = null
-        )
-        if (hasValidBackupPath) {
-            Text("Create backup...")
-        } else {
-            SmolTooltipArea(tooltip = { SmolTooltipText("Set backup path in Settings") }) {
+    if (SL.appConfig.isModBackupFeatureEnabled) {
+        val hasValidBackupPath = SL.backupManager.hasValidPath
+        DropdownMenuItem(
+            enabled = hasValidBackupPath,
+            onClick = {
+                this@modGridSingleModMenu.alertDialogSetter.invoke {
+                    BackUpModVariantDialog(
+                        variants = mod.variants,
+                        onDismiss = this@modGridSingleModMenu::dismissAlertDialog
+                    )
+                }
+                onShowContextMenuChange(false)
+            }) {
+            Image(
+                painter = painterResource("icon-archive-create.svg"),
+                colorFilter = ColorFilter.tint(MaterialTheme.colors.onSurface),
+                modifier = Modifier.padding(end = 12.dp).size(24.dp),
+                alpha = if (hasValidBackupPath) 1f else 0.5f,
+                contentDescription = null
+            )
+            if (hasValidBackupPath) {
                 Text("Create backup...")
+            } else {
+                SmolTooltipArea(tooltip = { SmolTooltipText("Set backup path in Settings") }) {
+                    Text("Create backup...")
+                }
             }
         }
     }

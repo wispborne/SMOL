@@ -143,59 +143,62 @@ fun AppScope.settingsView(
                                         validator = SL.access::validateStarsectorFolderPath
                                     )
 
-                                    Column {
-                                        var areModBackupsEnabled by remember { mutableStateOf(SL.appConfig.areModBackupsEnabled) }
-                                        val isModBackupPathValid =
-                                            SL.access.validateBackupFolderPath(modBackupPath.toPathOrNull()).isEmpty()
+                                    if (SL.appConfig.isModBackupFeatureEnabled) {
+                                        Column {
+                                            var areModBackupsEnabled by remember { mutableStateOf(SL.appConfig.areModBackupsEnabled) }
+                                            val isModBackupPathValid =
+                                                SL.access.validateBackupFolderPath(modBackupPath.toPathOrNull())
+                                                    .isEmpty()
 
-                                        SmolTooltipArea(tooltip = {
-                                            SmolTooltipText("Creates a 7z backup in the specified folder whenever you update or remove a mod.")
-                                        }) {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                modifier = Modifier.padding(top = 16.dp).scale(0.9f),
-                                            ) {
-                                                SmolCheckboxWithText(
-                                                    checked = areModBackupsEnabled,
-                                                    onCheckedChange = { checked ->
-                                                        areModBackupsEnabled = checked
-                                                        SL.appConfig.areModBackupsEnabled = checked
+                                            SmolTooltipArea(tooltip = {
+                                                SmolTooltipText("Creates a 7z backup in the specified folder whenever you update or remove a mod.")
+                                            }) {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    modifier = Modifier.padding(top = 16.dp).scale(0.9f),
+                                                ) {
+                                                    SmolCheckboxWithText(
+                                                        checked = areModBackupsEnabled,
+                                                        onCheckedChange = { checked ->
+                                                            areModBackupsEnabled = checked
+                                                            SL.appConfig.areModBackupsEnabled = checked
+                                                        }
+                                                    ) { modifier ->
+                                                        Text(
+                                                            text = "Enable automatic mod backups",
+                                                            modifier = modifier,
+                                                            style = MaterialTheme.typography.body2
+                                                        )
                                                     }
-                                                ) { modifier ->
-                                                    Text(
-                                                        text = "Enable automatic mod backups",
-                                                        modifier = modifier,
-                                                        style = MaterialTheme.typography.body2
+                                                    SmolClickableText(
+                                                        text = "Back Up All Now",
+                                                        color = MaterialTheme.colors.hyperlink,
+                                                        modifier = Modifier
+                                                            .align(Alignment.CenterVertically)
+                                                            .padding(start = 24.dp),
+                                                        textDecoration = TextDecoration.Underline,
+                                                        isEnabled = isModBackupPathValid,
+                                                        onClick = {
+                                                            GlobalScope.launch {
+                                                                SL.access.modsFlow.value?.mods.orEmpty()
+                                                                    .flatMap { it.variants }
+                                                                    .forEach { SL.access.backupMod(it) }
+                                                            }
+                                                        },
                                                     )
                                                 }
-                                                SmolClickableText(
-                                                    text = "Back Up All Now",
-                                                    color = MaterialTheme.colors.hyperlink,
-                                                    modifier = Modifier
-                                                        .align(Alignment.CenterVertically)
-                                                        .padding(start = 24.dp),
-                                                    textDecoration = TextDecoration.Underline,
-                                                    isEnabled = isModBackupPathValid,
-                                                    onClick = {
-                                                        GlobalScope.launch {
-                                                            SL.access.modsFlow.value?.mods.orEmpty()
-                                                                .flatMap { it.variants }
-                                                                .forEach { SL.access.backupMod(it) }
-                                                        }
-                                                    },
-                                                )
                                             }
-                                        }
 
-                                        Row(Modifier.offset(y = (-8).dp)) {
-                                            modBackupPath = FolderPathTextFieldSetting(
-                                                gamePath = modBackupPath ?: "",
-                                                label = "Mod Backup folder",
-                                                validator = SL.access::validateBackupFolderPath
-                                            )
-//                                            val isBackingUp =
-//                                            val modState =
-//                                                SL.access.modModificationState.collectAsState().value[mod.id] ?: smol.access.Access.ModModificationState.Ready
+                                            Row(Modifier.offset(y = (-8).dp)) {
+                                                modBackupPath = FolderPathTextFieldSetting(
+                                                    gamePath = modBackupPath ?: "",
+                                                    label = "Mod Backup folder",
+                                                    validator = SL.access::validateBackupFolderPath
+                                                )
+                                                //                                            val isBackingUp =
+                                                //                                            val modState =
+                                                //                                                SL.access.modModificationState.collectAsState().value[mod.id] ?: smol.access.Access.ModModificationState.Ready
+                                            }
                                         }
                                     }
 

@@ -194,8 +194,8 @@ fun main() = application {
     Window(
         onCloseRequest = ::onQuit,
         state = appWindowState,
-        title = "${Constants.APP_NAME} ${Constants.APP_VERSION}",
-        icon = painterResource("smol.ico"),
+        title = if (!isAprilFools()) "${Constants.APP_NAME} ${Constants.APP_VERSION}" else "Star Citizen Alpha 4.34",
+        icon = painterResource(if (!isAprilFools()) "smol.ico" else "smolslaught.png"),
         onPreviewKeyEvent = { event -> onKeyEventHandlers.any { it(event) } }
     ) {
         val router = rememberRouter<Screen>(
@@ -218,6 +218,18 @@ fun main() = application {
         trace(onFinished = { _, ms -> println("Took ${ms}ms to show AppView ${sinceStartStr()}.") }) {
             smolWindowState.appView()
         }
+    }
+
+    aprilfools()
+}
+
+fun isAprilFools() = Calendar.getInstance().get(Calendar.MONTH) == Calendar.APRIL
+        && Calendar.getInstance().get(Calendar.DAY_OF_MONTH) == 1
+
+private fun aprilfools() {
+    if (isAprilFools()) {
+        Timber.i { "Happy April 1st!" }
+        SL.themeManager.setActiveTheme(SL.themeManager.getThemes().keys.random())
     }
 }
 

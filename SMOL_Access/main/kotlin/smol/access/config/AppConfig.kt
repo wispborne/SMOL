@@ -31,12 +31,6 @@ class AppConfig(gson: Jsanity) :
             )
         )
     ) {
-//    val updateChannel: MutableStateFlow<UpdateChannel> by stateFlowPref(
-//        prefKey = "updateChannel",
-//        defaultValue = UpdateChannel.Unstable,
-//        property = this::updateChannel
-//    )
-
     var updateChannel: UpdateChannel by pref(prefKey = "updateChannel", defaultValue = UpdateChannel.Unstable)
     internal var gamePath: String? by pref(prefKey = "gamePath", defaultValue = null)
     var areModBackupsEnabled: Boolean by pref(prefKey = "areModBackupsEnabled", defaultValue = false)
@@ -47,6 +41,8 @@ class AppConfig(gson: Jsanity) :
         defaultValue = "https://github.com/wispborne/JRE/releases/download/jre8-271/jre8-271-Windows.7z"
     )
     var renderer: String? by pref(prefKey = "renderer", defaultValue = null)
+    var isModBackupFeatureEnabled: Boolean by pref(prefKey = "isModBackupFeatureEnabled", defaultValue = false)
+
     internal var userProfile: MutableStateFlow<UserProfile> = stateFlowPref(
         prefKey = "userProfile",
         defaultValue = UserManager.defaultProfile,

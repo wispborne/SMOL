@@ -318,7 +318,7 @@ private fun AppScope.ChangelogIcon(
                             .padding(end = 8.dp)
                     )
                     Text(
-                        "Click to see full changelog.\n",
+                        "Click horn to see full changelog.\n",
                         style = TextStyle(fontWeight = FontWeight.Bold),
                         modifier = Modifier.padding(top = 4.dp)
                     )

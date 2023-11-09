@@ -42,6 +42,7 @@ import smol.access.Constants
 import smol.access.SL
 import smol.app.Logging
 import smol.app.composables.*
+import smol.app.isAprilFools
 import smol.app.navigation.Screen
 import smol.app.themes.SmolTheme
 import smol.app.util.doesGamePathExist
@@ -59,6 +60,40 @@ import java.util.prefs.Preferences
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.isReadable
 import kotlin.io.path.readText
+
+@Composable
+fun AppScope.toolbar(currentScreen: Screen) {
+    launchButton()
+    installModsButton()
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Divider(
+            modifier = Modifier
+                .padding(start = 16.dp, end = 0.dp)
+                .size(height = 24.dp, width = 1.dp)
+                .align(Alignment.CenterVertically)
+                .background(color = MaterialTheme.colors.onSurface.copy(alpha = .3f))
+        )
+        homeButton(isSelected = currentScreen is Screen.Home)
+        modBrowserButton(isSelected = currentScreen is Screen.ModBrowser)
+        profilesButton(isSelected = currentScreen is Screen.Profiles)
+        Divider(
+            modifier = Modifier
+                .padding(start = 8.dp)
+                .size(height = 16.dp, width = 1.dp)
+                .align(Alignment.CenterVertically)
+                .background(color = MaterialTheme.colors.onSurface.copy(alpha = .3f))
+        )
+        toolsDropdown(Modifier.padding(start = 8.dp))
+        quickLinksDropdown(Modifier.padding(start = 8.dp))
+        settingsButton(Modifier.padding(end = 8.dp), isSelected = currentScreen is Screen.Settings)
+        Divider(
+            modifier = Modifier
+                .size(height = 24.dp, width = 1.dp)
+                .align(Alignment.CenterVertically)
+                .background(color = MaterialTheme.colors.onSurface.copy(alpha = .3f))
+        )
+    }
+}
 
 @Composable
 fun tabButton(
@@ -99,27 +134,6 @@ fun tabButton(
     }
 }
 
-@Composable
-fun AppScope.toolbar(currentScreen: Screen) {
-    launchButton()
-    installModsButton()
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Divider(
-            modifier = Modifier
-                .padding(start = 24.dp, end = 8.dp)
-                .size(height = 24.dp, width = 1.dp)
-                .align(Alignment.CenterVertically)
-                .background(color = MaterialTheme.colors.onSurface.copy(alpha = .3f))
-        )
-        homeButton(isSelected = currentScreen is Screen.Home)
-        modBrowserButton(isSelected = currentScreen is Screen.ModBrowser)
-        profilesButton(isSelected = currentScreen is Screen.Profiles)
-        settingsButton(isSelected = currentScreen is Screen.Settings)
-        toolsDropdown()
-        quickLinksDropdown()
-    }
-}
-
 val launchQuotes = listOf(
     "Engage!" to 10f,
     "Make it so." to 10f,
@@ -133,7 +147,7 @@ val launchQuotes = listOf(
     "One smol step for humankind." to 5f,
     "I am a leaf on the wind. Watch how I soar." to 4f,
     "Alfonzo put me in the screenshot" to 1f
-)
+).let { if (isAprilFools()) it + ("Happy April 1st!" to 200f) else it }
 
 data class StarsectorLaunchPrefs(
     val isFullscreen: Boolean,
@@ -193,7 +207,6 @@ fun AppScope.launchButton(modifier: Modifier = Modifier) {
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
 private fun AppScope.launchStarsector() {
     // Game crashes with missing OpenAL unless we use Direct Launch and provide an absolute path to OpenAL.
     // No idea why.
@@ -425,6 +438,14 @@ fun AppScope.modBrowserButton(modifier: Modifier = Modifier, isSelected: Boolean
 
 @Composable
 fun AppScope.profilesButton(modifier: Modifier = Modifier, isSelected: Boolean) {
+    val profileName = runCatching { SL.userManager.activeProfile.collectAsState().value.activeModProfile.name }
+        .getOrElse { "" }
+    val profileAbbr = runCatching {
+        profileName.takeWhile { !it.isWhitespace() } +
+                profileName.split(' ').getOrNull(1)?.firstOrNull()?.uppercase().let { " $it." }
+    }
+        .getOrElse { profileName }
+
     SmolTooltipArea(
         tooltipPlacement = TooltipPlacement.CursorPoint(
             offset = DpOffset(x = 8.dp, y = 8.dp),
@@ -434,7 +455,7 @@ fun AppScope.profilesButton(modifier: Modifier = Modifier, isSelected: Boolean) 
             SmolTooltipText(
                 text = when {
                     !Constants.doesGamePathExist() -> "Set a valid game path."
-                    else -> "Create and swap between enabled mods."
+                    else -> "Create and swap between enabled mods.\nCurrent profile: '$profileName'"
                 }
             )
         },
@@ -449,12 +470,12 @@ fun AppScope.profilesButton(modifier: Modifier = Modifier, isSelected: Boolean) 
             Column {
                 Text("Profiles", modifier = Modifier)
                 Text(
-                    text = SL.userManager.activeProfile.collectAsState().value.activeModProfile.name,
+                    text = profileAbbr,
                     style = MaterialTheme.typography.caption,
                     fontSize = 10.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.align(Alignment.CenterHorizontally).widthIn(max = 80.dp),
+                    modifier = Modifier.align(Alignment.CenterHorizontally).widthIn(max = 77.dp),
                 )
             }
         }
@@ -463,53 +484,69 @@ fun AppScope.profilesButton(modifier: Modifier = Modifier, isSelected: Boolean) 
 
 @Composable
 fun AppScope.settingsButton(modifier: Modifier = Modifier, isSelected: Boolean) {
-    tabButton(
-        onClick = { router.replaceCurrent(Screen.Settings) },
-        forceDisabled = false,
-        isSelected = isSelected
-    ) {
-        Text("Settings")
+
+    SmolTooltipArea(tooltip = { SmolTooltipText("Settings") }) {
+        IconButton(
+            onClick = { router.replaceCurrent(Screen.Settings) },
+            modifier = modifier
+        ) {
+            Icon(
+                painter = painterResource("icon-settings.svg"),
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                tint = if (isSelected) MaterialTheme.colors.secondary
+                else MaterialTheme.colors.onSurface.copy(alpha = .6f)
+            )
+        }
     }
+//    tabButton(
+//        onClick = { router.replaceCurrent(Screen.Settings) },
+//        forceDisabled = false,
+//        isSelected = isSelected
+//    ) {
+//        Text("Settings")
+//    }
 }
 
 @Composable
 fun AppScope.toolsDropdown(modifier: Modifier = Modifier) {
     val gamePath = SL.gamePathManager.path.collectAsState().value
 
-    SmolDropdownWithButton(
-        shouldShowSelectedItemInMenu = false,
-        canSelectItems = false,
-        modifier = modifier
-            .padding(start = 16.dp),
-        customButtonContent = { _: SmolDropdownMenuItem, isExpanded: Boolean, _: (Boolean) -> Unit ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(vertical = 4.dp, horizontal = 8.dp)
-            ) {
-                Icon(
-                    painter = painterResource("icon-toolbox.svg"),
-                    contentDescription = null,
-                    modifier = Modifier.size(28.dp)
-                )
+    SmolTooltipArea(tooltip = { SmolTooltipText("Tool(s)") }) {
+        SmolDropdownWithButton(
+            shouldShowSelectedItemInMenu = false,
+            canSelectItems = false,
+            modifier = modifier,
+            customButtonContent = { _: SmolDropdownMenuItem, isExpanded: Boolean, _: (Boolean) -> Unit ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(vertical = 4.dp, horizontal = 8.dp)
+                ) {
+                    Icon(
+                        painter = painterResource("icon-toolbox.svg"),
+                        contentDescription = null,
+                        modifier = Modifier.size(28.dp)
+                    )
 //                Text(text = "Tools", modifier = Modifier.padding(start = 4.dp))
-                SmolDropdownArrow(
-                    modifier = Modifier
-                        .align(Alignment.CenterVertically),
-                    expanded = isExpanded
-                )
-            }
-        },
-        items = listOf(
-            SmolDropdownMenuItemTemplate(
-                text = "In-game Tips",
-                iconPath = "icon-tips.svg",
-                isEnabled = gamePath?.isReadable() == true,
-                onClick = {
-                    router.replaceCurrent(Screen.Tips)
-                    true
+                    SmolDropdownArrow(
+                        modifier = Modifier
+                            .align(Alignment.CenterVertically),
+                        expanded = isExpanded
+                    )
                 }
-            ),
-        ))
+            },
+            items = listOf(
+                SmolDropdownMenuItemTemplate(
+                    text = "In-game Tips",
+                    iconPath = "icon-tips.svg",
+                    isEnabled = gamePath?.isReadable() == true,
+                    onClick = {
+                        router.replaceCurrent(Screen.Tips)
+                        true
+                    }
+                ),
+            ))
+    }
 }
 
 @Composable
@@ -523,79 +560,80 @@ fun AppScope.quickLinksDropdown(modifier: Modifier = Modifier) {
     val smolLog = Logging.logPath
     val backupsPath = SL.backupManager.folderPath
 
-    SmolDropdownWithButton(
-        shouldShowSelectedItemInMenu = false,
-        canSelectItems = false,
-        modifier = modifier
-            .padding(start = 16.dp),
-        customButtonContent = { _: SmolDropdownMenuItem, isExpanded: Boolean, _: (Boolean) -> Unit ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(vertical = 4.dp, horizontal = 8.dp)
-            ) {
-                Icon(painter = painterResource("icon-folder.svg"), contentDescription = null)
-                SmolDropdownArrow(
-                    modifier = Modifier
-                        .align(Alignment.CenterVertically),
-                    expanded = isExpanded
+    SmolTooltipArea(tooltip = { SmolTooltipText("Open...") }) {
+        SmolDropdownWithButton(
+            shouldShowSelectedItemInMenu = false,
+            canSelectItems = false,
+            modifier = modifier,
+            customButtonContent = { _: SmolDropdownMenuItem, isExpanded: Boolean, _: (Boolean) -> Unit ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(vertical = 4.dp, horizontal = 8.dp)
+                ) {
+                    Icon(painter = painterResource("icon-folder.svg"), contentDescription = null)
+                    SmolDropdownArrow(
+                        modifier = Modifier
+                            .align(Alignment.CenterVertically),
+                        expanded = isExpanded
+                    )
+                }
+            },
+            items = listOf(
+                SmolDropdownMenuItemTemplate(
+                    text = "Starsector" + if (gamePath?.isReadable() != true) " (not found)" else "",
+                    iconPath = "icon-folder-game.svg",
+                    isEnabled = gamePath?.isReadable() == true,
+                    onClick = {
+                        gamePath?.openInDesktop()
+                        true
+                    }
+                ),
+                SmolDropdownMenuItemTemplate(
+                    text = "Mods" + if (modsPath?.isReadable() != true) " (not found)" else "",
+                    iconPath = "icon-folder-mods.svg",
+                    isEnabled = modsPath?.isReadable() == true,
+                    onClick = {
+                        modsPath?.openInDesktop()
+                        true
+                    }
+                ),
+                SmolDropdownMenuItemTemplate(
+                    text = "Saves" + if (savesPath?.isReadable() != true) " (not found)" else "",
+                    iconPath = "icon-folder-saves.svg",
+                    isEnabled = savesPath?.isReadable() == true,
+                    onClick = {
+                        savesPath?.openInDesktop()
+                        true
+                    }
+                ),
+                SmolDropdownMenuItemTemplate(
+                    text = "Starsector Log" + if (logPath?.isReadable() != true) " (not found)" else "",
+                    iconPath = "icon-file-debug.svg",
+                    isEnabled = logPath?.isReadable() == true,
+                    onClick = {
+                        logPath?.openInDesktop()
+                        true
+                    }
+                ),
+                SmolDropdownMenuItemTemplate(
+                    text = "SMOL Log",
+                    iconPath = "icon-file-debug.svg",
+                    isEnabled = smolLog?.isReadable() == true,
+                    onClick = {
+                        smolLog?.openInDesktop()
+                        true
+                    }
+                ),
+                SmolDropdownMenuItemTemplate(
+                    text = "Mod Backups",
+                    iconPath = "icon-file-history.svg",
+                    isEnabled = backupsPath?.isReadable() == true,
+                    onClick = {
+                        backupsPath?.openInDesktop()
+                        true
+                    }
                 )
-            }
-        },
-        items = listOf(
-            SmolDropdownMenuItemTemplate(
-                text = "Starsector" + if (gamePath?.isReadable() != true) " (not found)" else "",
-                iconPath = "icon-folder-game.svg",
-                isEnabled = gamePath?.isReadable() == true,
-                onClick = {
-                    gamePath?.openInDesktop()
-                    true
-                }
-            ),
-            SmolDropdownMenuItemTemplate(
-                text = "Mods" + if (modsPath?.isReadable() != true) " (not found)" else "",
-                iconPath = "icon-folder-mods.svg",
-                isEnabled = modsPath?.isReadable() == true,
-                onClick = {
-                    modsPath?.openInDesktop()
-                    true
-                }
-            ),
-            SmolDropdownMenuItemTemplate(
-                text = "Saves" + if (savesPath?.isReadable() != true) " (not found)" else "",
-                iconPath = "icon-folder-saves.svg",
-                isEnabled = savesPath?.isReadable() == true,
-                onClick = {
-                    savesPath?.openInDesktop()
-                    true
-                }
-            ),
-            SmolDropdownMenuItemTemplate(
-                text = "Starsector Log" + if (logPath?.isReadable() != true) " (not found)" else "",
-                iconPath = "icon-file-debug.svg",
-                isEnabled = logPath?.isReadable() == true,
-                onClick = {
-                    logPath?.openInDesktop()
-                    true
-                }
-            ),
-            SmolDropdownMenuItemTemplate(
-                text = "SMOL Log",
-                iconPath = "icon-file-debug.svg",
-                isEnabled = smolLog?.isReadable() == true,
-                onClick = {
-                    smolLog?.openInDesktop()
-                    true
-                }
-            ),
-            SmolDropdownMenuItemTemplate(
-                text = "Mod Backups",
-                iconPath = "icon-file-history.svg",
-                isEnabled = backupsPath?.isReadable() == true,
-                onClick = {
-                    backupsPath?.openInDesktop()
-                    true
-                }
             )
         )
-    )
+    }
 }

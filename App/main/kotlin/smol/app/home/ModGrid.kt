@@ -45,6 +45,7 @@ import smol.app.composables.SmolAlertDialog
 import smol.app.composables.SmolButton
 import smol.app.composables.SmolOverflowMenu
 import smol.app.composables.SmolSecondaryButton
+import smol.app.isAprilFools
 import smol.app.themes.SmolTheme
 import smol.app.util.uiEnabled
 import smol.timber.ktx.Timber
@@ -156,7 +157,12 @@ fun AppScope.ModGridView(
                                 val modItemsToDisplay = modsInGroup
                                     .map { ModRow(mod = it) }
                                     .sortedWith(
-                                        compareByDescending<ModRow> { it.mod.id in profile.value.favoriteMods }
+                                        compareByDescending<ModRow> {
+                                            isFavorited(
+                                                it.mod,
+                                                profile.value.favoriteMods
+                                            )
+                                        }
                                             .let { comparator ->
                                                 when {
                                                     activeSortField == null -> comparator.thenBy { null }
@@ -175,7 +181,7 @@ fun AppScope.ModGridView(
                                             .thenBy { it.mod.findFirstEnabledOrHighestVersion?.modInfo?.name }
                                     )
                                 this.items(items = modItemsToDisplay) { modRow ->
-                                    val isFavorited = modRow.mod.id in profile.value.favoriteMods
+                                    val isFavorited = isFavorited(modRow.mod, profile.value.favoriteMods)
                                     val nextModRow =
                                         modItemsToDisplay.getOrNull(modItemsToDisplay.indexOf(modRow) + 1)
                                     val isFinalFavoritedRow =
@@ -298,6 +304,13 @@ fun AppScope.ModGridView(
         }
     }
 }
+
+private fun isFavorited(
+    mod: Mod,
+    favoriteModIds: List<Any>
+) = (mod.id in favoriteModIds
+        || (isAprilFools() && mod.findFirstEnabledOrHighestVersion
+    ?.modInfo?.author?.contains("Wisp", ignoreCase = true) == true))
 
 fun getVramImpactForMod(mod: Mod, map: Map<SmolId, VramCheckerCache.Result>?) =
     map?.get(

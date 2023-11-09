@@ -36,6 +36,7 @@ import smol.app.composables.SmolLinkText
 import smol.app.composables.SmolTooltipArea
 import smol.app.composables.SmolTooltipText
 import smol.app.composables.SmolTopAppBar
+import smol.app.isAprilFools
 import smol.app.navigation.Screen
 import smol.app.themes.SmolTheme
 import smol.app.toolbar.toolbar
@@ -83,9 +84,10 @@ fun AppScope.AboutView(modifier: Modifier = Modifier) {
                         var showOnsmolt by remember { mutableStateOf(false) }
                         DisableSelection {
                             Image(
-                                painter = if (!showOnsmolt)
-                                    painterResource("smol_tart_blue_wisped.png")
-                                else painterResource("smolslaught.png"),
+                                painter = if (showOnsmolt || isAprilFools())
+                                    painterResource("smolslaught.png")
+                                else
+                                    painterResource("smol_tart_blue_wisped.png"),
                                 contentDescription = null,
                                 modifier = Modifier.size(96.dp).padding(top = 24.dp)
                                     .mouseClickable {
@@ -94,6 +96,12 @@ fun AppScope.AboutView(modifier: Modifier = Modifier) {
                                     .pointerHoverIcon(PointerIcon(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)))
                             )
                         }
+                        if (isAprilFools())
+                            Text(
+                                text = "Happy April 1st!",
+                                style = MaterialTheme.typography.body2,
+                                modifier = Modifier.padding(top = 16.dp)
+                            )
                         Text(
                             text = Constants.APP_NAME,
                             style = MaterialTheme.typography.h5,
