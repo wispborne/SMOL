@@ -442,7 +442,7 @@ fun AppScope.profilesButton(modifier: Modifier = Modifier, isSelected: Boolean) 
         .getOrElse { "" }
     val profileAbbr = runCatching {
         profileName.takeWhile { !it.isWhitespace() } +
-                profileName.split(' ').getOrNull(1)?.firstOrNull()?.uppercase().let { " $it." }
+                (profileName.split(' ').getOrNull(1)?.firstOrNull()?.uppercase()?.let { " $it." } ?: "")
     }
         .getOrElse { profileName }
 

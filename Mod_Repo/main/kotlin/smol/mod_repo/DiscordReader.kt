@@ -97,6 +97,7 @@ internal object DiscordReader {
                             httpClient = httpClient,
                             authToken = authToken,
                             emoji = noscrapeReaction,
+                            channelId = msg.parentThread?.id ?: modUpdatesForumChannelId,
                             messageId = msg.id
                         ).any { reacter -> reacter.id == msg.author?.id }
 
@@ -425,19 +426,25 @@ internal object DiscordReader {
         return messages
     }
 
+    // May respond with `{"message": "Unknown Message", "code": 10008}`
     private suspend fun getReacters(
         httpClient: HttpClient,
         authToken: String,
         emoji: String,
+        channelId: String,
         messageId: String
     ): List<User> {
-        return makeHttpRequestWithRateLimiting(httpClient) {
-            Timber.i { "Checking to see who reacted to $messageId." }
-            httpClient.get("$baseUrl/channels/$modUpdatesForumChannelId/messages/$messageId/reactions/$emoji") {
-                header("Authorization", "Bot $authToken")
-                accept(ContentType.Application.Json)
-            }.body()
+        return runCatching {
+            return@runCatching makeHttpRequestWithRateLimiting<List<User>>(httpClient) {
+                Timber.i { "Checking to see who reacted to $messageId." }
+                httpClient.get("$baseUrl/channels/$channelId/messages/$messageId/reactions/$emoji") {
+                    header("Authorization", "Bot $authToken")
+                    accept(ContentType.Application.Json)
+                }.body()
+            }
         }
+            .onFailure { Timber.e(it) }
+            .getOrElse { emptyList() }
     }
 
     private suspend fun <T> makeHttpRequestWithRateLimiting(

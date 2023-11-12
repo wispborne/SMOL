@@ -26,7 +26,9 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.PopupProperties
 import smol.app.themes.SmolTheme
 
 
@@ -157,59 +159,61 @@ fun SmolDropdownMenu(
     neverShowFirstItemInPopupMenu: Boolean = false,
     focusable: Boolean = true
 ) {
-    DropdownMenu(
-        expanded = expanded.value,
-        focusable = focusable,
+    // For some reason, setting the size prevents the text from wrapping prematurely.
+    DropdownMenu(expanded = expanded.value,
+        onDismissRequest = { expanded.value = false },
         modifier = modifier
             .background(MaterialTheme.colors.background),
-        onDismissRequest = { expanded.value = false }
-    ) {
-        items.forEachIndexed { index, item ->
-            if (shouldShowSelectedItemInMenu || index != selectedIndex.value || !canSelectItems) {
-                if (!(neverShowFirstItemInPopupMenu && index == 0)) {
-                    DropdownMenuItem(
-                        modifier = Modifier.let {
-                            if (item.backgroundColor != null)
-                                it.background(item.backgroundColor) else it
-                        }
-                            .run {
-                                if (item.border != null) this.border(
-                                    item.border.borderStroke,
-                                    item.border.shape
-                                ) else this
-                            },
-                        onClick = {
-                            expanded.value = false
+        offset = DpOffset(0.dp, 0.dp),
+        scrollState = rememberScrollState(),
+        properties = PopupProperties(focusable = focusable),
+        content = {
+            items.forEachIndexed { index, item ->
+                if (shouldShowSelectedItemInMenu || index != selectedIndex.value || !canSelectItems) {
+                    if (!(neverShowFirstItemInPopupMenu && index == 0)) {
+                        DropdownMenuItem(
+                            modifier = Modifier.let {
+                                if (item.backgroundColor != null)
+                                    it.background(item.backgroundColor) else it
+                            }
+                                .run {
+                                    if (item.border != null) border(
+                                        item.border.borderStroke,
+                                        item.border.shape
+                                    ) else this
+                                },
+                            onClick = {
+                                expanded.value = false
 
-                            if (items[index].onClick() && canSelectItems) {
-                                selectedIndex.value = index
-                            }
-                        }) {
-                        if (item is SmolDropdownMenuItemCustom) {
-                            item.customItemContent.invoke(this, false)
-                        } else if (item is SmolDropdownMenuItemTemplate) {
-                            if (!item.iconPath.isNullOrBlank()) {
-                                Icon(
-                                    painter = painterResource(item.iconPath),
-                                    // For some reason, setting the size prevents the text from wrapping prematurely.
-                                    modifier = Modifier.padding(end = 12.dp).size(24.dp),
-                                    contentDescription = null
+                                if (items[index].onClick() && canSelectItems) {
+                                    selectedIndex.value = index
+                                }
+                            }) {
+                            if (item is SmolDropdownMenuItemCustom) {
+                                item.customItemContent.invoke(this, false)
+                            } else if (item is SmolDropdownMenuItemTemplate) {
+                                if (!item.iconPath.isNullOrBlank()) {
+                                    Icon(
+                                        painter = painterResource(item.iconPath),
+                                        // For some reason, setting the size prevents the text from wrapping prematurely.
+                                        modifier = Modifier.padding(end = 12.dp).size(24.dp),
+                                        contentDescription = null
+                                    )
+                                }
+                                Text(
+                                    text = item.text,
+                                    modifier = Modifier.weight(1f),
+                                    fontWeight = FontWeight.Bold,
+                                    color = item.contentColor ?: contentColorFor(
+                                        item.backgroundColor ?: MaterialTheme.colors.surface
+                                    )
                                 )
                             }
-                            Text(
-                                text = item.text,
-                                modifier = Modifier.weight(1f),
-                                fontWeight = FontWeight.Bold,
-                                color = item.contentColor ?: contentColorFor(
-                                    item.backgroundColor ?: MaterialTheme.colors.surface
-                                )
-                            )
                         }
                     }
                 }
             }
-        }
-    }
+        })
 }
 
 @Composable

@@ -167,7 +167,7 @@ fun main() = application {
             val savedState = uiConfig!!.windowState!!
             rememberWindowState(
                 placement = WindowPlacement.valueOf(savedState.placement),
-                isMinimized = savedState.isMinimized,
+                isMinimized = false,
                 position = WindowPosition(savedState.position.first.dp, savedState.position.second.dp),
                 size = DpSize(savedState.size.first.dp, savedState.size.second.dp)
             )
