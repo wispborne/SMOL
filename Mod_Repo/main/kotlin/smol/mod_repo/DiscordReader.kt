@@ -99,7 +99,9 @@ internal object DiscordReader {
                             emoji = noscrapeReaction,
                             channelId = msg.parentThread?.id ?: modUpdatesForumChannelId,
                             messageId = msg.id
-                        ).any { reacter -> reacter.id == msg.author?.id }
+                        )
+                            .also { Timber.i { "$noscrapeReaction️ reactor(s): ${it.joinToString { it.username ?: it.id }}" } }
+                            .any { reacter -> reacter.id == msg.author?.id }
 
                         if (isReactionFromPostAuthor) {
                             Timber.i {
@@ -108,6 +110,11 @@ internal object DiscordReader {
                             }
 
                             return@filter false
+                        } else {
+                            Timber.i {
+                                "Not skipping Discord mod '${msg.content?.lines()?.firstOrNull()}' " +
+                                        "because no $noscrapeReaction is from the post author."
+                            }
                         }
                     }
                 }
@@ -436,7 +443,7 @@ internal object DiscordReader {
     ): List<User> {
         return runCatching {
             return@runCatching makeHttpRequestWithRateLimiting<List<User>>(httpClient) {
-                Timber.i { "Checking to see who reacted to $messageId." }
+                Timber.i { "Checking to see who reacted to message $messageId with 🕸️." }
                 httpClient.get("$baseUrl/channels/$channelId/messages/$messageId/reactions/$emoji") {
                     header("Authorization", "Bot $authToken")
                     accept(ContentType.Application.Json)

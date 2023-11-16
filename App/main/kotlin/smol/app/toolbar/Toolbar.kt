@@ -484,8 +484,13 @@ fun AppScope.profilesButton(modifier: Modifier = Modifier, isSelected: Boolean) 
 
 @Composable
 fun AppScope.settingsButton(modifier: Modifier = Modifier, isSelected: Boolean) {
-
-    SmolTooltipArea(tooltip = { SmolTooltipText("Settings") }) {
+    SmolTooltipArea(
+        tooltip = { SmolTooltipText("Settings") },
+        tooltipPlacement = TooltipPlacement.CursorPoint(
+            offset = DpOffset(x = 12.dp, y = 12.dp),
+            alignment = Alignment.BottomEnd
+        )
+    ) {
         IconButton(
             onClick = { router.replaceCurrent(Screen.Settings) },
             modifier = modifier

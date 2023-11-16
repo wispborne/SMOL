@@ -1,6 +1,7 @@
-## Beta 17
+## Beta 16 hotfixes
 
 - No longer starts minimized if it was closed while minimized.
+- Settings gear tooltip no longer blocks the settings gear.
 
 ## Beta 16
 
