@@ -101,8 +101,9 @@ fun AppScope.ModUpdateIcon(
                             text = buildAnnotatedString {
                                 append("Newer version available: ${onlineVersionInfo?.modVersion}")
                                 append("\nCurrent version: $highestLocalVersion.")
+                                append("\nFile: ${onlineVersionInfo?.directDownloadUrl}".parseHtml())
                                 append("\n\n<i>Update information is provided by the mod author, not SMOL, and cannot be guaranteed.</i>".parseHtml())
-                                append("\n\nClick to download and update.")
+                                append("\n\n<b>Click to download and update.</b>".parseHtml())
                             }
                         )
                     }, modifier = Modifier.onClick(

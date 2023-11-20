@@ -77,7 +77,8 @@ fun AppScope.DirectDownloadAlertDialog(
                 Text(
                     text = ("Do you want to automatically download and update <b>${mod.findFirstEnabledOrHighestVersion?.modInfo?.name}</b> " +
                             "from version <b>${mod.findFirstEnabledOrHighestVersion?.modInfo?.version}</b> " +
-                            "to version <b>$onlineVersion</b>?")
+                            "to version <b>$onlineVersion</b>?" +
+                            "\n\n<i>$ddUrl</i>")
                         .parseHtml(),
                     fontSize = 16.sp
                 )
