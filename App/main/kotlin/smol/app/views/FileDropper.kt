@@ -201,7 +201,7 @@ fun AppScope.FileDropper(
                                     .align(Alignment.CenterHorizontally)
                                     .padding(bottom = 8.dp),
                                 contentDescription = null,
-                                colorFilter = ColorFilter.tint(color = MaterialTheme.colors.onPrimary)
+                                colorFilter = ColorFilter.tint(color = MaterialTheme.colors.onSurface)
                             )
                             Text(
                                 text = "Add to Starsector",

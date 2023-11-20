@@ -358,16 +358,7 @@ internal object DiscordReader {
                 run {
                     // Archived threads
                     if (!includeArchived) emptyList()
-                    else makeHttpRequestWithRateLimiting(httpClient) {
-                        httpClient.get("$baseUrl/channels/$channelId/threads/archived/public") {
-                            header("Authorization", "Bot $authToken")
-                            accept(ContentType.Application.Json)
-                        }
-                            .also {
-                                Timber.v { it.bodyAsText() }
-                            }
-                    }.body<Threads>()
-                        .threads
+                    else getArchivedThreads(httpClient, channelId, authToken)
                 }
             )
             .filter { it.parent_id == channelId }
@@ -384,6 +375,48 @@ internal object DiscordReader {
         } else allThreads
 
         return channels
+    }
+
+    /**
+     * Gets all archived threads in a forum channel. Keeps making requests until there are no more threads.
+     */
+    private suspend fun getArchivedThreads(
+        httpClient: HttpClient,
+        channelId: String,
+        authToken: String
+    ): List<Channel> {
+        // ISO8601 format
+        var date: String? = null
+        val archivedThreads = mutableListOf<Channel>()
+        var hasMore = true
+        var runs = 0
+
+        while (hasMore) {
+            runs++
+            if (runs > 50) {
+                Timber.e { "Fetched 'more archives' 50 times, probably an error. Stopping." }
+                break
+            }
+
+            val result = makeHttpRequestWithRateLimiting(httpClient) {
+                httpClient.get("$baseUrl/channels/$channelId/threads/archived/public") {
+                    header("Authorization", "Bot $authToken")
+                    accept(ContentType.Application.Json)
+                    parameter("limit", "100")
+                    parameter("before", date)
+                }
+                    .also {
+                        Timber.v { it.bodyAsText() }
+                    }
+            }.body<Threads>()
+
+            archivedThreads += result.threads
+            hasMore = result.has_more ?: false
+            date = result.threads.minByOrNull { it.thread_metadata?.archive_timestamp ?: Date() }
+                ?.thread_metadata?.archive_timestamp?.toInstant()?.toString()
+        }
+
+        return archivedThreads
     }
 
     private suspend fun getMessages(
@@ -481,11 +514,19 @@ internal object DiscordReader {
         val owner_id: String?,
         val message_count: Int?,
         val available_tags: List<Tag>?,
-        val applied_tags: List<String>?
+        val applied_tags: List<String>?,
+        val thread_metadata: ThreadMetadata?
+    )
+
+    private data class ThreadMetadata(
+        val archived: Boolean?,
+        val archive_timestamp: Date?,
+        val locked: Boolean?
     )
 
     private data class Threads(
-        val threads: List<Channel>
+        val threads: List<Channel>,
+        val has_more: Boolean?,
     )
 
     private data class Tag(
