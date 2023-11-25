@@ -73,6 +73,7 @@ class UpdateSmolToast {
             toasterState.addItem(
                 toastContainer = ToastContainer(
                     id = UPDATE_TOAST_ID,
+                    priority = 900,
                     timeoutMillis = null,
                     useStandardToastFrame = true,
                     content = {
@@ -87,9 +88,9 @@ class UpdateSmolToast {
 
                             Row(modifier = Modifier
                                 .let {
-                                    if (updateStage == UpdateStage.Downloading)
-                                        it.width(400.dp)
-                                    else it
+//                                    if (updateStage == UpdateStage.Downloading)
+                                        it.width(300.dp)
+//                                    else it.width(200)
                                 }) {
                                 val fileProgress = smolUpdater.currentFileDownload.collectAsState()
 

@@ -41,7 +41,7 @@ class AppConfig(gson: Jsanity) :
         defaultValue = "https://github.com/wispborne/JRE/releases/download/jre8-271/jre8-271-Windows.7z"
     )
     var renderer: String? by pref(prefKey = "renderer", defaultValue = null)
-    var isModBackupFeatureEnabled: Boolean by pref(prefKey = "isModBackupFeatureEnabled", defaultValue = false)
+    var isModBackupFeatureEnabled: Boolean by pref(prefKey = "isModBackupFeatureEnabled", defaultValue = true)
 
     internal var userProfile: MutableStateFlow<UserProfile> = stateFlowPref(
         prefKey = "userProfile",

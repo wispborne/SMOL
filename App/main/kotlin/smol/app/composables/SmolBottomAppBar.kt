@@ -12,19 +12,26 @@
 
 package smol.app.composables
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import smol.access.BackgroundTaskState
 import smol.access.SL
+import smol.app.themes.SmolTheme
 import smol.utilities.IOLock
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -53,31 +60,78 @@ fun SmolBottomAppBar(
                 content.invoke(this)
                 Spacer(Modifier.weight(1f))
 
-                val modsBeingModified = SL.modModificationStateHolder.state.collectAsState().value
-                    .filter { it.value != smol.access.ModModificationState.Ready }
+                val tasks = SL.backgroundTasksStateHolder.state.collectAsState().value
 
-                if (modsBeingModified.isNotEmpty()) {
+                return@CompositionLocalProvider
+
+                if (tasks.isNotEmpty()) {
                     SmolTooltipArea(tooltip = {
-                        SmolTooltipText(text =
-                        modsBeingModified
-                            .entries
-                            .joinToString(separator = "\n") { (modId, state) ->
-                                val modName =
-                                    SL.access.mods.firstOrNull { it.id == modId }?.findFirstEnabledOrHighestVersion?.modInfo?.name
-                                val stateStr = when (state) {
-                                    smol.access.ModModificationState.Ready -> "ready"
-                                    smol.access.ModModificationState.DisablingVariants -> "disabling"
-                                    smol.access.ModModificationState.DeletingVariants -> "deleting"
-                                    smol.access.ModModificationState.EnablingVariant -> "enabling"
-                                    smol.access.ModModificationState.BackingUpVariant -> "backing up"
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                            horizontalAlignment = Alignment.End
+                        ) {
+                            tasks
+                                .entries
+                                .map {
+                                    TaskCard(
+                                        Modifier.width(300.dp),
+                                        task = it.value)
+//                            .joinToString(separator = "\n") { (modId, state) ->
+//                                val modName =
+//                                    SL.access.mods.firstOrNull { it.id == modId }?.findFirstEnabledOrHighestVersion?.modInfo?.name
+//                                val stateStr = when (state) {
+//                                    smol.access.ModModificationState.Ready -> "ready"
+//                                    smol.access.ModModificationState.DisablingVariants -> "disabling"
+//                                    smol.access.ModModificationState.DeletingVariants -> "deleting"
+//                                    smol.access.ModModificationState.EnablingVariant -> "enabling"
+//                                    smol.access.ModModificationState.BackingUpVariant -> "backing up"
+//                                }
+//                                "$modName: $stateStr"
+//                            }
                                 }
-                                "$modName: $stateStr"
-                            })
+                        }
                     }) {
-                        CircularProgressIndicator(Modifier.padding(end = 16.dp).size(36.dp))
+                        Box(contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(Modifier.padding(end = 16.dp).size(36.dp))
+                            Text(
+                                text = tasks.count().let { if (it > 99) "99" else it.toString() },
+                                style = MaterialTheme.typography.subtitle2,
+                            )
+                        }
                     }
                 }
             }
         },
     )
+}
+
+@Composable
+fun TaskCard(modifier: Modifier = Modifier, task: BackgroundTaskState) {
+    Card(
+        modifier = modifier
+            .border(
+                shape = SmolTheme.smolFullyClippedButtonShape(),
+                border = BorderStroke(
+                    width = 1.dp,
+                    color = MaterialTheme.colors.surface
+                )
+            ),
+        shape = SmolTheme.smolFullyClippedButtonShape(),
+        backgroundColor = MaterialTheme.colors.surface,
+    ) {
+        Column(Modifier.padding(8.dp)) {
+            Text(
+                text = task.displayName,
+                style = MaterialTheme.typography.subtitle1,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.alpha(0.65f).padding(end = 8.dp),
+            )
+            if (!task.description.isNullOrBlank()) {
+                Text(
+                    text = task.description!!,
+                    style = MaterialTheme.typography.body2
+                )
+            }
+        }
+    }
 }

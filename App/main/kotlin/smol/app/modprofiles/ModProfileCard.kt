@@ -475,7 +475,7 @@ fun profileControlsPreview() = smolPreview {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AppScope.profileControls(
     modifier: Modifier = Modifier,
@@ -487,7 +487,7 @@ fun AppScope.profileControls(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        val modsModificationState = SL.modModificationStateHolder.state.collectAsState()
+        val modsModificationState = SL.access.modModificationState.collectAsState()
         val areAllModsSettled =
             modsModificationState.value.all { it.value == smol.access.ModModificationState.Ready }
 

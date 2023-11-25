@@ -120,7 +120,7 @@ fun String.ellipsizeAfter(length: Int): String {
     var lengthMod = length
     lengthMod += ceil(this.replace("[^iIl]".toRegex(), "").length / 2.0).toInt()
     return if (this.length > lengthMod) {
-        this.substring(0, lengthMod - 3) + "…"
+        this.substring(0, (lengthMod - 3).coerceAtLeast(length)) + "…"
     } else this
 }
 

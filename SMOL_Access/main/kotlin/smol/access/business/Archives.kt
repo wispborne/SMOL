@@ -107,7 +107,6 @@ class Archives internal constructor(
                         }
 
                         IOLock.write {
-
                             RandomAccessFileInStream(
                                 RandomAccessFile(inputFile.toFile(), "r")
                             ).use { fileInStream ->

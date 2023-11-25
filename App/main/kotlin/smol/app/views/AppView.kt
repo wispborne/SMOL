@@ -46,9 +46,7 @@ import smol.app.settings.settingsView
 import smol.app.themes.SmolTheme
 import smol.app.themes.SmolTheme.toColors
 import smol.app.tips.TipsView
-import smol.app.toasts.DownloadToast
-import smol.app.toasts.ToastContainer
-import smol.app.toasts.toastInstalledCard
+import smol.app.toasts.ToastMasterDave
 import smol.app.toasts.toaster
 import smol.app.updater.UpdateSmolToast
 import smol.app.util.isUpdatingEnabled
@@ -59,7 +57,6 @@ import smol.timber.ktx.Timber
 import smol.updatestager.UpdateChannelManager
 import smol.utilities.IOLock
 import smol.utilities.exists
-import smol.utilities.isAny
 import kotlin.io.path.exists
 import kotlin.system.exitProcess
 
@@ -121,7 +118,7 @@ fun WindowState.appView() {
             // Toasts
             toaster(
                 modifier = Modifier.align(Alignment.BottomStart).padding(start = 64.dp, bottom = 8.dp, end = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp, alignment = Alignment.Bottom),
             )
 
             val refreshTrigger by remember { mutableStateOf(Unit) }
@@ -197,6 +194,10 @@ private suspend fun checkForUpdates() {
 
 @Composable
 private fun setUpToasts() {
+    ToastMasterDave.addFoundNewModToastWatcher()
+    ToastMasterDave.addDownloadingModsToastWatcher()
+    ToastMasterDave.addBackgroundTasksToastWatcher()
+
     // Uncomment to clear out completed downloads after 10s.
 //                downloads.map { it to it.status.collectAsState() }
 //                    .filter { (_, status) -> status.value is DownloadItem.Status.Completed }
@@ -205,62 +206,11 @@ private fun setUpToasts() {
 //                            toasterState.timersByToastId[item.id] = Toaster.defaultTimeoutMillis
 //                        }
 //                    }
-    LaunchedEffect(12342345) {
-        SL.access.modsFlow.collect { modListUpdate ->
-            val addedModVariants = modListUpdate?.added ?: return@collect
-
-            addedModVariants
-                .forEach { newModVariant ->
-                    Timber.i { "Found new mod ${newModVariant.modInfo.id} ${newModVariant.modInfo.version}." }
-                    val id = "new-mod-" + newModVariant.smolId
-                    SL.UI.toaster.addItem(ToastContainer(
-                        id = id,
-                        timeoutMillis = null,
-                        useStandardToastFrame = true
-                    ) {
-                        toastInstalledCard(
-                            modVariant = newModVariant,
-                            requestToastDismissalAfter = { delayMillis ->
-                                SL.UI.toaster.setTimeout(id, delayMillis)
-                            }
-                        )
-                    })
-                }
-        }
-    }
-
-//    LaunchedEffect(1) {
-    val items = SL.UI.toaster.items
-    SL.UI.downloadManager.downloadsInner
-        .filter { it.id !in items.value.map { it.id } }
-        .filter {
-            !it.status.value.isAny(
-                DownloadItem.Status.Completed::class,
-                DownloadItem.Status.Cancelled::class,
-                DownloadItem.Status.Failed::class
-            )
-        }
-        .map {
-            val toastId = "download-${it.id}"
-            ToastContainer(id = toastId, timeoutMillis = null, useStandardToastFrame = true) {
-                DownloadToast(
-                    download = it,
-                    requestToastDismissal = { delayMillis ->
-                        SL.UI.toaster.setTimeout(toastId, delayMillis)
-                        SL.UI.downloadManager.downloadsInner.remove(it)
-                    }
-                )
-            }
-        }
-        .also {
-            SL.UI.toaster.addItems(it)
-        }
-//    }
 
 //    LaunchedEffect(345456) {
 //        while (true) {
-//            delay(5000)
-//            SL.UI.downloadManager.addDownload(DownloadItem("test", "test url"))
+//            delay(3000)
+//            SL.UI.downloadManager.addDownload(DownloadItem("test", "test url", "urls"))
 //        }
 //    }
 }
@@ -320,7 +270,8 @@ private suspend fun reloadModsInner(forceRefreshVersionChecker: Boolean, forceRe
         coroutineScope {
             smol.utilities.trace(onFinished = { _, millis -> Timber.i { "Finished reloading mods+VC+saves in ${millis}ms." } }) {
                 Timber.i { "Reloading all mods." }
-                val previousVariantIds = SL.access.modsFlow.value?.mods.orEmpty().flatMap { it.variants }.map { it.smolId }
+                val previousVariantIds =
+                    SL.access.modsFlow.value?.mods.orEmpty().flatMap { it.variants }.map { it.smolId }
                 SL.access.reload()
                 val mods = SL.access.modsFlow.value?.mods ?: emptyList()
                 val newlyAddedModIds = SL.access.modsFlow.value?.mods.orEmpty()

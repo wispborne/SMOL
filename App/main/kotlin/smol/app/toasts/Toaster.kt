@@ -13,10 +13,7 @@
 package smol.app.toasts
 
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -90,10 +87,14 @@ class ToasterState {
     /**
      * Removes the toast.
      */
-    fun burn(toastId: String) {
+    fun burn(toastId: String, delay: Long = 0L) {
         if (!timersByToastId.containsKey(toastId)) {
-            timersByToastId[toastId] = 0
+            timersByToastId[toastId] = delay
         }
+    }
+
+    fun burnAll(toastIds: List<String>, delay: Long = 0L) {
+        toastIds.forEach { burn(it, delay) }
     }
 
     fun setTimeout(toastId: String, timeoutMillis: Long) {
@@ -107,7 +108,7 @@ class ToasterState {
 @Composable
 fun toaster(
     modifier: Modifier = Modifier,
-    verticalArrangement: Arrangement.Vertical? = Arrangement.Top,
+    verticalArrangement: Arrangement.Vertical? = null,
     horizontalArrangement: Arrangement.Horizontal? = null
 ) {
     val recomposeScope = currentRecomposeScope
@@ -144,16 +145,23 @@ fun toaster(
 
     if (horizontalArrangement != null) {
         LazyRow(modifier, horizontalArrangement = horizontalArrangement, verticalAlignment = Alignment.Bottom) {
-            items(items.value) {
+            items(items.value.sortedByDescending { it.priority }) {
                 renderToast(it)
             }
         }
     } else if (verticalArrangement != null) {
-        LazyColumn(modifier, verticalArrangement = verticalArrangement) {
-            items(items.value) {
+//        Row(verticalAlignment = Alignment.Bottom) {
+        LazyColumn(
+            modifier.fillMaxWidth(),
+            verticalArrangement = verticalArrangement,
+            horizontalAlignment = Alignment.End,
+            reverseLayout = true
+        ) {
+            items(items.value.sortedByDescending { it.priority }) {
                 renderToast(it)
             }
         }
+//        }
     }
 }
 
@@ -190,7 +198,14 @@ private fun renderToast(toastContainer: ToastContainer) {
  */
 data class ToastContainer(
     val id: String,
+    /**
+     * Higher priority toasts are shown first.
+     * 000 is standard priority.
+     * 999 is pinned priority.
+     */
+    val priority: Int = 0,
     val timeoutMillis: Long? = ToasterState.defaultTimeoutMillis,
     val useStandardToastFrame: Boolean = true,
     val content: @Composable () -> Unit
-)
+) {
+}

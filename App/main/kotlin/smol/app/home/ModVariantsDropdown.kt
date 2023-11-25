@@ -96,7 +96,7 @@ fun AppScope.ModVariantsDropdown(
 
     var expanded by remember { mutableStateOf(false) }
     val modState =
-        SL.modModificationStateHolder.state.collectAsState().value[mod.id] ?: ModModificationState.Ready
+        SL.access.modModificationState.collectAsState().value[mod.id] ?: ModModificationState.Ready
 
     Box(modifier) {
         Box(Modifier.width(IntrinsicSize.Min)) {

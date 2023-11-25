@@ -12,6 +12,7 @@
 
 package smol.access
 
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import smol.access.business.*
@@ -37,7 +38,16 @@ class Access internal constructor(
     private val modsCache: ModsCache,
     private val backupManager: BackupManager,
     private val modModificationStateHolder: ModModificationStateHolder,
+    private val backgroundTasksStateHolder: BackgroundTasksStateHolder,
 ) {
+    val modsFlow: StateFlow<ModListUpdate?>
+        get() = modsCache.mods
+    val mods: List<Mod>
+        get() = modsCache.mods.value?.mods.orEmpty()
+    val areModsLoading = modLoader.isLoading
+    val modModificationState: StateFlow<Map<ModId, ModModificationState>>
+        get() = modModificationStateHolder.state
+
     /**
      * Checks the /mods and archives paths and sets them if they don't exist.
      */
@@ -138,16 +148,20 @@ class Access internal constructor(
         return errors
     }
 
-    val modsFlow: StateFlow<ModListUpdate?>
-        get() = modsCache.mods
-    val mods: List<Mod>
-        get() = modsCache.mods.value?.mods.orEmpty()
-    val areModsLoading = modLoader.isLoading
-
     /**
      * Reads all mods from /mods, staging, and archive folders.
      */
     suspend fun reload(modIds: List<ModId>? = null) = modLoader.reload()
+    // testing code
+//        .also { it?.mods.orEmpty().forEach { mod ->
+//
+//            modModificationStateHolder.state.update {
+//                it.toMutableMap().apply {
+//                    this[mod.id] =
+//                        ModModificationState.EnablingVariant
+//                }
+//            }
+//        } }
 
     /**
      * Given an arbitrary file, find and install the associated mod into the given folder.
@@ -160,12 +174,31 @@ class Access internal constructor(
         destinationFolder: Path,
         promptUserToReplaceExistingFolder: suspend (modInfo: ModInfo) -> Boolean
     ) {
-        archives.installFromUnknownSource(
-            inputFile = inputFile,
-            destinationFolder = destinationFolder,
-            existingMods = modsCache.mods.value?.mods.orEmpty(),
-            promptUserToReplaceExistingFolder = promptUserToReplaceExistingFolder
-        )
+        backgroundTasksStateHolder.updateSingleTask(inputFile.toString()) {
+            BackgroundTaskState(
+                id = inputFile.toString(),
+                displayName = "Installing ${inputFile.fileName}",
+                description = inputFile.toString(),
+                progress = -1
+            )
+        }
+        try {
+            archives.installFromUnknownSource(
+                inputFile = inputFile,
+                destinationFolder = destinationFolder,
+                existingMods = modsCache.mods.value?.mods.orEmpty(),
+                promptUserToReplaceExistingFolder = promptUserToReplaceExistingFolder
+            )
+            backgroundTasksStateHolder.updateSingleTask(inputFile.toString()) {
+                BackgroundTaskState(
+                    id = inputFile.toString(),
+                    displayName = "Installed ${inputFile.fileName}",
+                    description = inputFile.toString()
+                )
+            }
+        } finally {
+            backgroundTasksStateHolder.removeTask(inputFile.toString())
+        }
     }
 
     /**
