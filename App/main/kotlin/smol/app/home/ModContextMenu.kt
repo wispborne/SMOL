@@ -34,6 +34,7 @@ import smol.access.Constants
 import smol.access.SL
 import smol.access.model.Mod
 import smol.access.model.ModVariant
+import smol.access.model.isModInfoFile
 import smol.app.composables.*
 import smol.app.navigation.Screen
 import smol.app.themes.SmolTheme
@@ -41,6 +42,7 @@ import smol.app.util.*
 import smol.utilities.parallelMap
 import java.awt.Desktop
 import kotlin.io.path.exists
+import kotlin.io.path.listDirectoryEntries
 
 @Composable
 fun AppScope.ModContextMenu(
@@ -83,7 +85,11 @@ private fun AppScope.modGridSingleModMenu(
     coroutineScope: CoroutineScope,
     modInDebugDialog: MutableState<Mod?>
 ) {
-    val modsFolder = (mod.findFirstEnabledOrHighestVersion)?.modsFolderInfo?.folder
+    val highestVersion = mod.findFirstEnabledOrHighestVersion
+
+    // Open Folder
+    // Mod Info
+    val modsFolder = highestVersion?.modsFolderInfo?.folder
     if (modsFolder?.exists() == true) {
         DropdownMenuItem(onClick = {
             runCatching {
@@ -102,8 +108,30 @@ private fun AppScope.modGridSingleModMenu(
             )
             Text("Open folder")
         }
+
+        DropdownMenuItem(onClick = {
+            runCatching {
+                highestVersion.modsFolderInfo.folder.listDirectoryEntries().first { it.isModInfoFile() }
+                    .also {
+                    Desktop.getDesktop().open(it.toFile())
+                }
+            }
+                .onFailure { Logger.warn(it) { "Error trying to open mod info file for $mod." } }
+            onShowContextMenuChange(false)
+        }) {
+            Image(
+                painter = painterResource("icon-text-box-edit.svg"),
+                colorFilter = ColorFilter.tint(MaterialTheme.colors.onSurface),
+                modifier = Modifier.padding(end = 12.dp).size(24.dp),
+                contentDescription = null
+            )
+            Text("Open mod_info.json")
+        }
     }
 
+
+
+    // Open Mod Thread
     val modThreadId = mod.getModThreadId()
 
     if (Constants.isModBrowserEnabled()) {
@@ -129,6 +157,7 @@ private fun AppScope.modGridSingleModMenu(
         }
     }
 
+    // Open Mod Thread in Browser
     if (modThreadId != null) {
         DropdownMenuItem(
             onClick = {
@@ -150,6 +179,7 @@ private fun AppScope.modGridSingleModMenu(
         }
     }
 
+    // Open NexusMods
     val nexusId = mod.getNexusId()
     if (nexusId != null) {
         DropdownMenuItem(
@@ -172,6 +202,7 @@ private fun AppScope.modGridSingleModMenu(
         }
     }
 
+    // Check VRAM
     DropdownMenuItem(onClick = {
         coroutineScope.launch {
             withContext(Dispatchers.Default) {
@@ -186,9 +217,10 @@ private fun AppScope.modGridSingleModMenu(
             modifier = Modifier.padding(end = 12.dp).size(24.dp),
             contentDescription = null
         )
-        Text("Check VRAM impact")
+        Text("Estimate VRAM impact")
     }
 
+    // Create Backup
     if (SL.appConfig.isModBackupFeatureEnabled) {
         val hasValidBackupPath = SL.backupManager.hasValidPath
         DropdownMenuItem(
@@ -219,6 +251,7 @@ private fun AppScope.modGridSingleModMenu(
         }
     }
 
+    // Delete Files
     DropdownMenuItem(onClick = {
         this@modGridSingleModMenu.alertDialogSetter.invoke {
             DeleteModVariantDialog(
@@ -237,6 +270,7 @@ private fun AppScope.modGridSingleModMenu(
         Text("Delete files...")
     }
 
+    // Debug Info
     DropdownMenuItem(onClick = {
         modInDebugDialog.value = mod
         onShowContextMenuChange(false)

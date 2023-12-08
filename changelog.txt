@@ -1,3 +1,7 @@
+## Beta 17
+
+- Added "Open mod_info.json" to context menu.
+
 ## Beta 16 hotfixes
 
 - No longer starts minimized if it was closed while minimized.
