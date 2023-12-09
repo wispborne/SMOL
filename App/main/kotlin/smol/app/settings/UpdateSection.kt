@@ -139,7 +139,6 @@ fun updateSection(scope: CoroutineScope, modifier: Modifier) {
 private suspend fun checkForUpdate(): Configuration {
     val updaterConfig = runCatching {
         SL.UI.updateChannelManager.fetchRemoteConfig(SL.UI.updaterUpdater, SL.appConfig)
-
     }
         .onFailure { Timber.w(it) }
         .getOrNull()

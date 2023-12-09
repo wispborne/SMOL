@@ -291,6 +291,27 @@ fun AppScope.settingsView(
                                 }
                             }
 
+                            item {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(start = 16.dp)
+                                ) {
+                                    var isChecked by remember { mutableStateOf(SL.appConfig.isUpdateOnCloseEnabled) }
+                                    SmolCheckboxWithText(
+                                        checked = isChecked,
+                                        onCheckedChange = { checked ->
+                                            isChecked = checked
+                                            SL.appConfig.isUpdateOnCloseEnabled = checked
+                                        }
+                                    ) { modifier ->
+                                        Text(
+                                            text = "Update SMOL in background on exit.",
+                                            modifier = modifier
+                                        )
+                                    }
+                                }
+                            }
+
                             item { Divider(modifier = Modifier.padding(top = 32.dp, bottom = 8.dp)) }
 
                             if (SL.gamePathManager.path.value.exists()) {
