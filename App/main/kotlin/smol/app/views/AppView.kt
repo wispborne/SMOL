@@ -37,7 +37,6 @@ import smol.app.IWindowState
 import smol.app.UI
 import smol.app.WindowState
 import smol.app.about.AboutView
-import smol.app.browser.DownloadItem
 import smol.app.browser.ModBrowserView
 import smol.app.home.homeView
 import smol.app.modprofiles.ModProfilesView
@@ -47,6 +46,7 @@ import smol.app.themes.SmolTheme
 import smol.app.themes.SmolTheme.toColors
 import smol.app.tips.TipsView
 import smol.app.toasts.ToastMasterDave
+import smol.app.toasts.ToastMasterDave.addJre8NagToast
 import smol.app.toasts.toaster
 import smol.app.updater.UpdateSmolToast
 import smol.app.util.isUpdatingEnabled
@@ -89,7 +89,7 @@ fun WindowState.appView() {
         )
     ) {
         val scope = rememberCoroutineScope()
-        setUpToasts()
+        appScope.setUpToasts()
 
         Box(Modifier.background(MaterialTheme.colors.background)) {
             Children(router.state, animation = crossfade()) { screen ->
@@ -193,10 +193,22 @@ private suspend fun checkForUpdates() {
 }
 
 @Composable
-private fun setUpToasts() {
+private fun AppScope.setUpToasts() {
     ToastMasterDave.addFoundNewModToastWatcher()
     ToastMasterDave.addDownloadingModsToastWatcher()
     ToastMasterDave.addBackgroundTasksToastWatcher()
+
+    var showJre8Nag by remember { mutableStateOf(false) }
+    LaunchedEffect(565656) {
+        if (!SL.appConfig.doNotNagAboutJre8 && (SL.jreManager.findJREs()
+                .firstOrNull { it.isUsedByGame }?.version ?: 8) < 8
+        ) {
+            showJre8Nag = true
+        }
+    }
+    if (showJre8Nag) {
+        addJre8NagToast()
+    }
 
     // Uncomment to clear out completed downloads after 10s.
 //                downloads.map { it to it.status.collectAsState() }

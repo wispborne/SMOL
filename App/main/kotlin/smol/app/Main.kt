@@ -65,7 +65,7 @@ fun main() = application {
 
     val initServiceLocatorJob = coroutineScope.launch(Dispatchers.Default) {
         runCatching {
-            smol.utilities.trace(onFinished = { _, ms -> println("Took ${ms}ms to init ${ServiceLocator::class.simpleName} ${sinceStartStr()}.") }) {
+            trace(onFinished = { _, ms -> println("Took ${ms}ms to init ${ServiceLocator::class.simpleName} ${sinceStartStr()}.") }) {
                 ServiceLocator.init()
             }
         }
@@ -80,7 +80,7 @@ fun main() = application {
     }
 
     // Logger
-    smol.utilities.trace(onFinished = { _, ms -> println("Took ${ms}ms to init logging ${sinceStartStr()}.") }) {
+    trace(onFinished = { _, ms -> println("Took ${ms}ms to init logging ${sinceStartStr()}.") }) {
         runCatching {
             Logging.logLevel =
                 if (safeMode) LogLevel.VERBOSE
@@ -92,7 +92,7 @@ fun main() = application {
             }
     }
 
-    smol.utilities.trace(onFinished = { _, ms -> println("Took ${ms}ms init 7zip ${sinceStartStr()}.") }) {
+    trace(onFinished = { _, ms -> println("Took ${ms}ms init 7zip ${sinceStartStr()}.") }) {
         if (currentPlatform == Platform.MacOS) {
             // Pretend Apple Silicon doesn't exist, since there is no 7zip binary for aarch64.
 //            System.setProperty("os.arch", "x86_64")
@@ -150,7 +150,7 @@ fun main() = application {
         }
         .getOrNull()
 
-    smol.utilities.trace(onFinished = { _, ms -> println("Took ${ms}ms to set default paths ${sinceStartStr()}.") }) {
+    trace(onFinished = { _, ms -> println("Took ${ms}ms to set default paths ${sinceStartStr()}.") }) {
         runCatching {
             access?.checkAndSetDefaultPaths(currentPlatform)
         }

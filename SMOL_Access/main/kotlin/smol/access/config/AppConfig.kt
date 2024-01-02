@@ -42,6 +42,7 @@ class AppConfig(gson: Jsanity) :
     )
     var renderer: String? by pref(prefKey = "renderer", defaultValue = null)
     var isModBackupFeatureEnabled: Boolean by pref(prefKey = "isModBackupFeatureEnabled", defaultValue = true)
+    var doNotNagAboutJre8: Boolean by pref(prefKey = "doNotNagAboutJre8", defaultValue = false)
 
     internal var userProfile: MutableStateFlow<UserProfile> = stateFlowPref(
         prefKey = "userProfile",
@@ -51,13 +52,7 @@ class AppConfig(gson: Jsanity) :
 
 
     override fun toString(): String {
-        return "AppConfig(" +
-                "updateChannel=$updateChannel, " +
-                "gamePath=$gamePath, " +
-                "lastFilePickerDirectory=$lastFilePickerDirectory, " +
-                "jre8Url=$jre8Url, " +
-                "userProfile=$userProfile" +
-                ")"
+        return "AppConfig(updateChannel=$updateChannel, gamePath=$gamePath, areModBackupsEnabled=$areModBackupsEnabled, modBackupPath=$modBackupPath, lastFilePickerDirectory=$lastFilePickerDirectory, jre8Url='$jre8Url', renderer=$renderer, isModBackupFeatureEnabled=$isModBackupFeatureEnabled, doNotNagAboutJre8=$doNotNagAboutJre8, userProfile=$userProfile)"
     }
 
     enum class UpdateChannel {

@@ -12,6 +12,7 @@
 
 package smol.app.toasts
 
+import AppScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -159,5 +160,23 @@ object ToastMasterDave {
             .also {
                 SL.UI.toaster.addItems(it)
             }
+    }
+
+    @Composable
+    fun AppScope.addJre8NagToast() {
+        val toastId = "jre8-nag"
+        if (toastId !in SL.UI.toaster.items.value.map { it.id }) {
+            SL.UI.toaster.addItem(ToastContainer(
+                id = toastId,
+                timeoutMillis = null,
+                useStandardToastFrame = true
+            ) {
+                jre8NagToast(
+                    requestToastDismissalAfter = { delayMillis ->
+                        SL.UI.toaster.setTimeout(toastId, delayMillis)
+                    }
+                )
+            })
+        }
     }
 }

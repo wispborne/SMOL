@@ -10,8 +10,6 @@
  * The full license is available from <https://www.gnu.org/licenses/gpl-3.0.txt>.
  */
 
-@file:OptIn(ExperimentalFoundationApi::class)
-
 package smol.app.composables
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
@@ -22,18 +20,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Icon
 import androidx.compose.material.IconToggleButton
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.flow.collectLatest
-import smol.app.Logging
 import smol.app.themes.SmolTheme
-import smol.app.util.replaceTabsWithSpaces
 import smol.app.util.smolPreview
-import smol.timber.LogLevel
 
 @Composable
 @Preview
@@ -62,18 +57,19 @@ fun logButtonAndErrorDisplay(modifier: Modifier = Modifier, showLogPanel: Mutabl
             )
         }
 
-        var newestLogLine by remember { mutableStateOf("") }
-        LaunchedEffect(Unit) {
-            Logging.logFlow.collectLatest {
-                if (it.logLevel >= LogLevel.ERROR) {
-                    newestLogLine = it.message.replaceTabsWithSpaces()
-                }
-            }
-        }
-        SmolText(
-            text = newestLogLine,
-            maxLines = 1,
-            modifier = Modifier.padding(start = 8.dp).align(Alignment.CenterVertically)
-        )
+        // Shows the most recent error - removed because it kept confusing people
+//        var newestLogLine by remember { mutableStateOf("") }
+//        LaunchedEffect(Unit) {
+//            Logging.logFlow.collectLatest {
+//                if (it.logLevel >= LogLevel.ERROR) {
+//                    newestLogLine = it.message.replaceTabsWithSpaces()
+//                }
+//            }
+//        }
+//        SmolText(
+//            text = newestLogLine,
+//            maxLines = 1,
+//            modifier = Modifier.padding(start = 8.dp).align(Alignment.CenterVertically)
+//        )
     }
 }
