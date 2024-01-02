@@ -54,20 +54,38 @@ object ModRepoUtils {
         listOf("Derelict_Surveyor", "jdt15"),
     )
 
-    fun getOtherMatchingAliases(author: String, fuzzyMatchAliases: Boolean = false): List<String> {
+    fun getOtherMatchingAliases(
+        author: String,
+        fuzzyMatchAliases: Boolean = false,
+        matchScoreNeeded: Int = 150
+    ): List<String> {
+        val aliasesFormatted = authorAliases
+            .map { aliases -> aliases.map { alias -> alias.lowercase() } }
+        val authorFormatted = author.lowercase()
+
+        // fuzzyMatchAliases is slower, more flexible, but risks false positives.
+        // Last check, using score limit of 150, it only confused "nick", "nick7884", and "nicke535".
+        // Without fuzzy merge: Total time to merge 726 mods: 2565ms
+        // With fuzzy merge: Total time to merge 726 mods: 4938ms
         return if (fuzzyMatchAliases) {
-            authorAliases.firstOrNull { aliases ->
+            aliasesFormatted.firstOrNull { aliases ->
                 aliases.any { alias ->
-                    val match1 = Fuzzy.fuzzyMatch(author.lowercase(), alias.lowercase())
+                    val match1 = Fuzzy.fuzzyMatch(authorFormatted.lowercase(), alias.lowercase())
                     if (match1.first) {
-                        Timber.v { "Matched alias '$author' with '$alias' with score ${match1.second}." }
-                        return@any true
+                        if (match1.second > matchScoreNeeded) {
+                            Timber.v { "Matched alias '$author' with '$alias' with score ${match1.second}." }
+                            return@any true
+                        } else
+                            Timber.v { "Did not match alias '$author' with '$alias' with score ${match1.second}." }
                     }
 
-                    val match2 = Fuzzy.fuzzyMatch(alias.lowercase(), author.lowercase())
+                    val match2 = Fuzzy.fuzzyMatch(alias.lowercase(), authorFormatted.lowercase())
                     if (match2.first) {
-                        Timber.v { "Matched alias '$author' with '$alias' with score ${match2.second}." }
-                        return@any true
+                        if (match2.second > matchScoreNeeded) {
+                            Timber.v { "Matched alias '$author' with '$alias' with score ${match2.second}." }
+                            return@any true
+                        } else
+                            Timber.v { "Did not match alias '$author' with '$alias' with score ${match2.second}." }
                     }
 
                     return@any false
@@ -75,8 +93,14 @@ object ModRepoUtils {
             }
                 .orEmpty()
         } else {
-            authorAliases
-                .firstOrNull() { author.equalsAny(*it.toTypedArray(), ignoreCase = true) }
+            aliasesFormatted
+                // No need to ignore case, everything is already lowercase.
+                .firstOrNull { aliasesRow ->
+                    aliasesRow.any { alias ->
+                        (alias == authorFormatted)
+                            .also { if (it) Timber.v { "Matched author '$author' with alias list '${aliasesRow.joinToString()}'." } }
+                    }
+                }
                 .orEmpty()
         }
     }

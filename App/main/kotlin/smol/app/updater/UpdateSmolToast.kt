@@ -13,10 +13,7 @@
 package smol.app.updater
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.runtime.*
@@ -28,6 +25,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import org.update4j.Configuration
+import smol.access.SL
 import smol.app.composables.SmolButton
 import smol.app.toasts.ToastContainer
 import smol.app.toasts.ToasterState
@@ -89,7 +87,7 @@ class UpdateSmolToast {
                             Row(modifier = Modifier
                                 .let {
 //                                    if (updateStage == UpdateStage.Downloading)
-                                        it.width(300.dp)
+                                    it.width(300.dp)
 //                                    else it.width(200)
                                 }) {
                                 val fileProgress = smolUpdater.currentFileDownload.collectAsState()
@@ -100,6 +98,7 @@ class UpdateSmolToast {
                                             UpdateStage.Downloading ->
                                                 "Downloading ${version?.let { version -> "$version: " } ?: ""}" +
                                                         (fileProgress.value?.name?.ellipsizeAfter(30) ?: "...")
+
                                             UpdateStage.DownloadFailed -> "$name update download failed."
                                             UpdateStage.ReadyToInstall -> "$name update downloaded."
                                             UpdateStage.Installing -> "Installing $name update."
@@ -126,10 +125,12 @@ class UpdateSmolToast {
                                                             }
                                                         }
                                                     }
+
                                                     UpdateStage.Downloading -> {
                                                         job.cancel()
                                                         updateStage = UpdateStage.Idle
                                                     }
+
                                                     UpdateStage.ReadyToInstall -> {
                                                         job = CoroutineScope(Job())
                                                         job.launch {
@@ -145,10 +146,12 @@ class UpdateSmolToast {
                                                             }
                                                         }
                                                     }
+
                                                     UpdateStage.Installing -> {
                                                         job.cancel()
                                                         updateStage = UpdateStage.ReadyToInstall
                                                     }
+
                                                     else -> {
                                                     }
                                                 }
@@ -158,10 +161,12 @@ class UpdateSmolToast {
                                                 text = when (updateStage) {
                                                     UpdateStage.Idle,
                                                     UpdateStage.DownloadFailed -> "Download"
+
                                                     UpdateStage.Downloading -> "Cancel"
                                                     UpdateStage.ReadyToInstall,
                                                     UpdateStage.Installing,
                                                     UpdateStage.InstallFailed -> "Install"
+
                                                     UpdateStage.Done -> "Done"
                                                 }
                                             )
@@ -189,6 +194,14 @@ class UpdateSmolToast {
                                         text = "${if (updateStage >= UpdateStage.Downloading) downloadedAmountText else ""}${downloadTotal?.bytesAsShortReadableMB ?: "unknown"}",
                                         modifier = Modifier.padding(start = 8.dp)
                                     )
+
+                                    if (SL.appConfig.isUpdateOnCloseEnabled) {
+                                        Text(
+                                            text = "Update will be installed on exit.",
+                                            modifier = Modifier.padding(start = 8.dp, top = 8.dp),
+                                            style = MaterialTheme.typography.caption
+                                        )
+                                    }
                                 }
 
 

@@ -192,7 +192,7 @@ fun main() = application {
     val onKeyEventHandlers = remember { mutableListOf<(KeyEvent) -> Boolean>() }
 
     Window(
-        onCloseRequest = ::onQuit,
+        onCloseRequest = { onQuit(appWindowState) },
         state = appWindowState,
         title = if (!isAprilFools()) "${Constants.APP_NAME} ${Constants.APP_VERSION}" else "Star Citizen Alpha 4.34",
         icon = painterResource(if (!isAprilFools()) "smol.ico" else "smolslaught.png"),
@@ -233,7 +233,7 @@ private fun aprilfools() {
     }
 }
 
-private fun ApplicationScope.onQuit() {
+private fun ApplicationScope.onQuit(appWindowState: androidx.compose.ui.window.WindowState) {
     if (Constants.isJCEFEnabled()) {
         runCatching {
             Timber.i { "Shutting down JCEF..." }
@@ -243,6 +243,42 @@ private fun ApplicationScope.onQuit() {
             Timber.i { "Shut down JCEF." }
         }
             .onFailure { Timber.e(it) }
+    }
+
+    if (SL.appConfig.isUpdateOnCloseEnabled) {
+        runBlocking {
+            val updaterConfig = runCatching {
+                appWindowState.isMinimized = true
+                SL.UI.updateChannelManager.fetchRemoteConfig(SL.UI.updaterUpdater, SL.appConfig)
+            }
+                .onFailure { Timber.w(it) }
+                .getOrNull()
+
+            if (updaterConfig?.requiresUpdate() == true) {
+                Timber.i { "Found update for the SMOL updater, updating it in the background." }
+                runCatching {
+                    SL.UI.updaterUpdater.downloadUpdateZip(updaterConfig)
+                    SL.UI.updaterUpdater.installUpdate()
+                }
+                    .onFailure { Timber.e(it) }
+            }
+
+            val smolUpdateConfig = runCatching {
+                appWindowState.isMinimized = true
+                SL.UI.updateChannelManager.fetchRemoteConfig(SL.UI.smolUpdater, SL.appConfig)
+            }
+                .onFailure { Timber.w(it) }
+                .getOrNull()
+
+            if (smolUpdateConfig?.requiresUpdate() == true) {
+                Timber.i { "Found update for SMOL, updating it in the background." }
+                runCatching {
+                    SL.UI.smolUpdater.downloadUpdateZip(smolUpdateConfig)
+                    SL.UI.smolUpdater.installUpdate()
+                }
+                    .onFailure { Timber.e(it) }
+            }
+        }
     }
 
     exitApplication()

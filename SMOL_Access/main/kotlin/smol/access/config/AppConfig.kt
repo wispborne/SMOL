@@ -43,6 +43,7 @@ class AppConfig(gson: Jsanity) :
     var renderer: String? by pref(prefKey = "renderer", defaultValue = null)
     var isModBackupFeatureEnabled: Boolean by pref(prefKey = "isModBackupFeatureEnabled", defaultValue = true)
     var doNotNagAboutJre8: Boolean by pref(prefKey = "doNotNagAboutJre8", defaultValue = false)
+    var isUpdateOnCloseEnabled: Boolean by pref(prefKey = "isUpdateOnCloseEnabled", defaultValue = true)
 
     internal var userProfile: MutableStateFlow<UserProfile> = stateFlowPref(
         prefKey = "userProfile",
