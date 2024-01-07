@@ -126,7 +126,7 @@ data class ModVariant(
         fun generateVariantFolderName(modInfo: ModInfo) =
             "${modInfo.name?.replace(systemFolderNameAllowedChars, "")?.take(100)}-${modInfo.version}"
 
-        fun generateBackupFileName(modInfo: ModInfo, extension: String = "7z") =
+        fun generateBackupFileName(modInfo: ModInfo, extension: String = Constants.backupFileExtension) =
             "${generateVariantFolderName(modInfo)}.$extension"
 
         val MOCK: ModVariant
@@ -146,7 +146,7 @@ data class ModVariant(
         get() = modsFolderInfo.folder.resolve(Constants.UNBRICKED_MOD_INFO_FILE).exists()
 
     fun generateVariantFolderName() = Companion.generateVariantFolderName(this.modInfo)
-    fun generateBackupFileName(extension: String = "7z") = Companion.generateBackupFileName(this.modInfo, extension)
+    fun generateBackupFileName(extension: String = Constants.backupFileExtension) = Companion.generateBackupFileName(this.modInfo, extension)
 
     /**
      * Use the version in VersionChecker if possible (authors sometimes will do 0.35 in ModInfo but 0.3.5 in Version Checker).

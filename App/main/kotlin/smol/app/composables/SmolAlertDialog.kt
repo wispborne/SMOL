@@ -17,10 +17,10 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.awt.awtEventOrNull
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -33,8 +33,8 @@ import androidx.compose.ui.unit.*
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
+import smol.app.themes.SmolTheme
 import smol.app.util.onEnterKeyPressed
-import java.awt.event.KeyEvent
 
 /**
  * Alert dialog is a Dialog which interrupts the user with urgent information, details or actions.
@@ -91,8 +91,8 @@ fun SmolAlertDialog(
             modifier = modifier
                 .clickable(enabled = false) {}, // Don't dismiss the dialog when you click on it!,
             dismissButton = dismissButton,
-            title = title,
-            text = text,
+            title = { CompositionLocalProvider(LocalTextStyle provides SmolTheme.alertDialogTitle()) { title?.invoke() } },
+            text = { CompositionLocalProvider(LocalTextStyle provides SmolTheme.alertDialogBody()) { text?.invoke() } },
             shape = shape,
             backgroundColor = backgroundColor,
             contentColor = contentColor,

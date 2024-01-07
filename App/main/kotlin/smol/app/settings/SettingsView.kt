@@ -17,12 +17,10 @@ package smol.app.settings
 
 import AppScope
 import androidx.compose.desktop.ui.tooling.preview.Preview
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.VerticalScrollbar
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -39,13 +37,16 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import smol.access.Constants
 import smol.access.SL
 import smol.access.business.JreEntry
 import smol.access.config.SettingsPath
 import smol.app.composables.*
 import smol.app.navigation.Screen
 import smol.app.themes.SmolTheme
+import smol.app.themes.SmolTheme.GlowingBorderColor
 import smol.app.themes.SmolTheme.hyperlink
 import smol.app.toolbar.toolbar
 import smol.timber.ktx.Timber
@@ -54,6 +55,7 @@ import smol.utilities.toPathOrNull
 import java.io.File
 import java.nio.file.Path
 import javax.swing.JFileChooser
+import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.pathString
 
 object SettingsView {
@@ -86,25 +88,8 @@ fun AppScope.settingsView(
                 Column {
                     var gamePath by remember { mutableStateOf(SL.gamePathManager.path.value?.pathString) }
                     var modBackupPath by remember { mutableStateOf(SL.appConfig.modBackupPath) }
-                    val alertDialogMessage = remember { mutableStateOf<String?>(null) }
                     val scope = rememberCoroutineScope()
                     val jresFound = remember { SnapshotStateList<JreEntry>() }
-
-                    if (alertDialogMessage.value != null) {
-                        SmolAlertDialog(
-                            title = { Text("Error", style = SmolTheme.alertDialogTitle()) },
-                            text = {
-                                alertDialogMessage.value?.let {
-                                    Text(
-                                        alertDialogMessage.value!!,
-                                        style = SmolTheme.alertDialogBody()
-                                    )
-                                }
-                            },
-                            onDismissRequest = { alertDialogMessage.value = null },
-                            confirmButton = { Button(onClick = { alertDialogMessage.value = null }) { Text("Ok") } }
-                        )
-                    }
 
                     LaunchedEffect(Unit) {
                         refreshJres(jresFound)
@@ -137,13 +122,41 @@ fun AppScope.settingsView(
                                         modifier = Modifier.padding(start = 16.dp, bottom = 8.dp),
                                         style = SettingsView.settingLabelStyle()
                                     )
-                                    gamePath = FolderPathTextFieldSetting(
-                                        gamePath = gamePath ?: "",
-                                        label = "Starsector folder",
-                                        validator = SL.access::validateStarsectorFolderPath
-                                    )
+                                    Row {
+                                        gamePath = FolderPathTextFieldSetting(
+                                            gamePath = gamePath ?: "",
+                                            label = "Starsector folder",
+                                            validator = SL.access::validateStarsectorFolderPath
+                                        )
 
-                                    if (SL.appConfig.isModBackupFeatureEnabled) {
+                                        // Confirm/Apply button
+                                        var initialGamePath by remember { mutableStateOf(gamePath) }
+                                        val wasChanged = (gamePath != initialGamePath
+                                                && gamePath?.toPathOrNull()?.exists() == true)
+                                        SmolButton(
+                                            enabled = wasChanged,
+                                            modifier = Modifier.let {
+                                                if (wasChanged) it.border(
+                                                    1.dp,
+                                                    MaterialTheme.colors.secondary
+                                                ) else it
+                                            },
+                                            onClick = {
+                                                val errors = saveGamePath(
+                                                    gamePath,
+                                                    jresFound,
+                                                )
+                                                if (errors.any()) showSimpleErrorDialog(
+                                                    "Error",
+                                                    errors.joinToString(separator = "\n")
+                                                )
+                                                else initialGamePath = gamePath
+                                            }) {
+                                            Text("Apply")
+                                        }
+                                    }
+
+                                    if (SL.appConfig.isAlphaModBackupFeatureEnabled) {
                                         Column {
                                             var areModBackupsEnabled by remember { mutableStateOf(SL.appConfig.areModBackupsEnabled) }
                                             val isModBackupPathValid =
@@ -193,34 +206,54 @@ fun AppScope.settingsView(
                                                 modBackupPath = FolderPathTextFieldSetting(
                                                     gamePath = modBackupPath ?: "",
                                                     label = "Mod Backup folder",
-                                                    validator = SL.access::validateBackupFolderPath
+                                                    validator = SL.access::validateBackupFolderPath,
+                                                    isEnabled = areModBackupsEnabled
                                                 )
-                                                //                                            val isBackingUp =
-                                                //                                            val modState =
-                                                //                                                SL.access.modModificationState.collectAsState().value[mod.id] ?: smol.access.Access.ModModificationState.Ready
-                                            }
-                                        }
-                                    }
 
-                                    // Confirm/Apply button
-                                    var initialPath by remember { mutableStateOf(gamePath) }
-                                    Row(
-                                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp)
-                                    ) {
-                                        SmolButton(
-                                            enabled = gamePath != initialPath
-                                                    && gamePath?.toPathOrNull()?.exists() == true,
-                                            onClick = {
-                                                savePaths(
-                                                    gamePath,
-                                                    modBackupPath,
-                                                    alertDialogMessage,
-                                                    jresFound,
-                                                    settingsPath
-                                                )
-                                                initialPath = gamePath
-                                            }) {
-                                            Text("Apply")
+                                                // Confirm/Apply button
+                                                var initialBackupPath by remember { mutableStateOf(modBackupPath) }
+                                                val wasChanged = (initialBackupPath != modBackupPath)
+
+                                                SmolButton(
+                                                    enabled = areModBackupsEnabled && wasChanged,
+                                                    border = if (areModBackupsEnabled && wasChanged) BorderStroke(
+                                                        3.dp,
+                                                        GlowingBorderColor()
+                                                    ) else null,
+                                                    onClick = {
+                                                        val errors = saveBackupPath(modBackupPath)
+                                                        if (errors.any()) showSimpleErrorDialog(
+                                                            "Error",
+                                                            errors.joinToString(separator = "\n")
+                                                        )
+                                                        else {
+                                                            val initialBackupPathSaved = initialBackupPath
+                                                            initialBackupPath = modBackupPath
+
+                                                            if (initialBackupPathSaved != modBackupPath
+                                                                && initialBackupPathSaved.toPathOrNull()
+                                                                    ?.exists() == true
+                                                                && modBackupPath.toPathOrNull()?.exists() == true
+                                                            ) {
+                                                                val backupFiles = initialBackupPathSaved.toPathOrNull()
+                                                                    ?.listDirectoryEntries("*.${Constants.backupFileExtension}")
+                                                                    ?: emptyList()
+
+                                                                if (backupFiles.isNotEmpty())
+                                                                    ShowMoveBackupFilesDialog(
+                                                                        backupFiles,
+                                                                        initialBackupPathSaved!!,
+                                                                        modBackupPath!!
+                                                                    )
+                                                            }
+                                                        }
+                                                    }) {
+                                                    Text("Apply")
+                                                }
+                                            }
+                                            //                                            val isBackingUp =
+                                            //                                            val modState =
+                                            //                                                SL.access.modModificationState.collectAsState().value[mod.id] ?: smol.access.Access.ModModificationState.Ready
                                         }
                                     }
 
@@ -368,32 +401,89 @@ fun AppScope.settingsView(
     )
 }
 
-private fun AppScope.savePaths(
+private fun AppScope.ShowMoveBackupFilesDialog(
+    backupFiles: List<Path>,
+    source: String,
+    destination: String
+) {
+    alertDialogSetter.invoke {
+        SmolAlertDialog(
+            title = { Text("Move Backups") },
+            text = {
+                Text("Do you want SMOL to move your existing ${backupFiles.count()} backups to the new location?")
+            },
+            onDismissRequest = {
+                alertDialogSetter.invoke(null)
+            },
+            confirmButton = {
+                Button(onClick = {
+                    alertDialogSetter.invoke {
+                        var isDone by remember { mutableStateOf(false) }
+                        SmolAlertDialog(
+                            title = { Text("Moving Backups") },
+                            text = {
+                                val pathsMoved = remember { MutableStateFlow(emptyList<Path>()) }
+
+                                LaunchedEffect(0) {
+                                    SL.backupManager.moveFolder(
+                                        source.toPathOrNull()!!,
+                                        destination.toPathOrNull()!!,
+                                        pathsMoved
+                                    )
+                                    isDone = true
+                                }
+                                Column {
+                                    Text("Moving ${backupFiles.count()} backups to the new location...")
+                                    Spacer(Modifier.height(16.dp))
+                                    CircularProgressIndicator(
+                                        progress = pathsMoved.value.count() / backupFiles.count().toFloat()
+                                    )
+
+                                    if (isDone) {
+                                        Spacer(Modifier.height(16.dp))
+                                        Text("Files moved!")
+                                        if (pathsMoved.value.count() != backupFiles.count()) {
+                                            Spacer(Modifier.height(16.dp))
+                                            Text("Some files could not be moved. Check the logs for more info.")
+                                        }
+                                    }
+                                }
+                            },
+                            onDismissRequest = { if (isDone) alertDialogSetter.invoke(null) },
+                            confirmButton = { if (isDone) Button(onClick = { alertDialogSetter.invoke(null) }) { Text("Close") } },
+                        )
+                    }
+                }) { Text("Move Backups") }
+            },
+            dismissButton = {
+                Button(onClick = {
+                    alertDialogSetter.invoke(null)
+                }) { Text("No") }
+            }
+        )
+    }
+}
+
+private fun AppScope.saveGamePath(
     gamePath: String?,
-    modBackupPath: String?,
-    alertDialogMessage: MutableState<String?>,
-    jresFound: SnapshotStateList<JreEntry>,
-    settingsPath: SettingsPath
-): Boolean {
+    jresFound: SnapshotStateList<JreEntry>
+): List<String> {
     val errors = runCatching {
-        SL.access.validatePaths(
+        SL.access.validateStarsectorFolderPath(
             newGamePath = gamePath.toPathOrNull(),
-            archivesPath = modBackupPath.toPathOrNull()
-        ).failure
+        )
     }
         .recover {
             Timber.w(it)
-            mapOf(settingsPath to listOf(it.message))
+            listOf(it.message)
         }
         .getOrNull()
-        ?.get(settingsPath)
+        ?.filterNotNull()
 
     if (errors != null && errors.any()) {
-        alertDialogMessage.value = errors.joinToString(separator = "\n")
-        return false
+        return errors
     } else {
         SL.gamePathManager.set(gamePath!!)
-        SL.appConfig.modBackupPath = modBackupPath
 
         GlobalScope.launch {
             refreshJres(jresFound)
@@ -401,8 +491,30 @@ private fun AppScope.savePaths(
         }
     }
 
-    recomposeAppUI()
-    return true
+    return emptyList()
+}
+
+
+private fun AppScope.saveBackupPath(
+    backupPath: String?
+): List<String> {
+    val errors = runCatching {
+        SL.access.validateBackupFolderPath(backupPath.toPathOrNull())
+    }
+        .recover {
+            Timber.w(it)
+            listOf(it.message)
+        }
+        .getOrNull()
+        ?.filterNotNull()
+
+    if (errors != null && errors.any()) {
+        return errors
+    } else {
+        SL.appConfig.modBackupPath = backupPath!!
+    }
+
+    return emptyList()
 }
 
 private suspend fun refreshJres(jresFound: SnapshotStateList<JreEntry>) {

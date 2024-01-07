@@ -29,7 +29,8 @@ object IOLocks {
     val configLock = ReentrantReadWriteLock()
     val gameMainFolderLock = ReentrantReadWriteLock()
     val defaultLock = configLock + modFolderLock
-    val everythingLock = configLock + modFolderLock + gameMainFolderLock
+    val backupFolderLock = ReentrantReadWriteLock()
+    val everythingLock = configLock + modFolderLock + gameMainFolderLock + backupFolderLock
 }
 
 data class LockContext(val locks: List<ReentrantReadWriteLock>)

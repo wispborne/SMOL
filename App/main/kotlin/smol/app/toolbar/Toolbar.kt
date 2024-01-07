@@ -629,7 +629,7 @@ fun AppScope.quickLinksDropdown(modifier: Modifier = Modifier) {
                         true
                     }
                 ),
-                if (SL.appConfig.isModBackupFeatureEnabled)
+                if (SL.appConfig.isAlphaModBackupFeatureEnabled)
                     SmolDropdownMenuItemTemplate(
                         text = "Mod Backups",
                         iconPath = "icon-file-history.svg",

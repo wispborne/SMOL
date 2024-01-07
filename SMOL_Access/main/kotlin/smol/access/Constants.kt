@@ -67,6 +67,8 @@ object Constants {
     const val UPDATE_URL_UNSTABLE = UpdaterConstants.UPDATE_URL_UNSTABLE
     const val UPDATE_URL_TEST = UpdaterConstants.UPDATE_URL_TEST
 
+    const val backupFileExtension = "7z"
+
     val TEMP_DIR = System.getProperty("java.io.tmpdir")?.let { Path.of(it) } ?: APP_FOLDER_PATH
 
     const val TAG_TRACE = "trace"

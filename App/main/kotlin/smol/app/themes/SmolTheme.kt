@@ -12,16 +12,20 @@
 
 package smol.app.themes
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Easing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.platform.Font
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import smol.access.SL
 import smol.access.themes.Theme
 import smol.app.util.hexToColor
@@ -103,6 +107,27 @@ object SmolTheme {
         get() = SL.themeManager.activeTheme.value.second.hyperlink?.hexToColor() ?: this.secondary
 
     val materialTheme = MaterialTheme
+
+
+    @Composable
+    fun GlowingBorderColor(
+        borderColors: List<Color>? = null,
+        animationDurationInMillis: Int = 750,
+        easing: Easing = LinearEasing
+    ): Color {
+        val colors =
+            borderColors ?: listOf(MaterialTheme.colors.secondary, MaterialTheme.colors.primary)
+        var color by remember { mutableStateOf(colors.first()) }
+        val colorState by animateColorAsState(color, animationSpec = tween(animationDurationInMillis, easing = easing))
+        LaunchedEffect(0f) {
+            var i = 0
+            while (true) {
+                color = colors[i++ % colors.size]
+                delay(timeMillis = animationDurationInMillis.toLong())
+            }
+        }
+        return colorState
+    }
 }
 
 data class UsableBounds(val height: Dp = 0.dp, val width: Dp = 0.dp)

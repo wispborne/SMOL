@@ -14,9 +14,11 @@ package smol.access.business
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import smol.access.Constants
 import smol.access.ModModificationState
 import smol.access.ModModificationStateHolder
 import smol.access.config.AppConfig
@@ -122,6 +124,49 @@ class BackupManager internal constructor(
             result?.errors?.forEach { Timber.w(it) }
 
             return result
+        }
+    }
+
+    fun moveFolder(source: Path, destination: Path, pathsMoved: MutableStateFlow<List<Path>>) {
+        IOLock.read(IOLocks.backupFolderLock) {
+            if (!source.exists()) {
+                Timber.w { "Source folder '$source' does not exist, aborting move." }
+                return@read
+            }
+
+            if (!source.isDirectory()) {
+                Timber.w { "Source folder '$source' is not a directory, aborting move." }
+                return@read
+            }
+
+            if (!destination.exists()) {
+                Timber.w { "Destination folder '$destination' does not exist, aborting move." }
+                return@read
+            }
+
+            if (!destination.isDirectory()) {
+                Timber.w { "Destination folder '$destination' is not a directory, aborting move." }
+                return@read
+            }
+
+            val filesToMove = source.listDirectoryEntries()
+                .filter { it.isRegularFile() && it.extension == Constants.backupFileExtension }
+
+            filesToMove.forEach { file ->
+                val destinationFile = destination.resolve(file.name)
+                if (destinationFile.exists()) {
+                    Timber.w { "Destination file '$destinationFile' already exists, skipping." }
+                    pathsMoved.update { listOf(*it.toTypedArray(), file) }
+                    return@forEach
+                }
+
+                Timber.i { "Moving file '$file' to '$destinationFile'." }
+                runCatching {
+                    file.moveTo(destinationFile)
+                    pathsMoved.update { listOf(*it.toTypedArray(), file) }
+                }
+                    .onFailure { Timber.e(it) { "Unable to move file '$file' to '$destinationFile'." } }
+            }
         }
     }
 }

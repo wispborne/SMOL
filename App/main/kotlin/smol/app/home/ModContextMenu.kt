@@ -221,7 +221,7 @@ private fun AppScope.modGridSingleModMenu(
     }
 
     // Create Backup
-    if (SL.appConfig.isModBackupFeatureEnabled) {
+    if (SL.appConfig.isAlphaModBackupFeatureEnabled) {
         val hasValidBackupPath = SL.backupManager.hasValidPath
         DropdownMenuItem(
             enabled = hasValidBackupPath,

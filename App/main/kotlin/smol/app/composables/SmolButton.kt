@@ -12,7 +12,6 @@
 
 package smol.app.composables
 
-import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.PaddingValues
@@ -26,7 +25,6 @@ import androidx.compose.ui.unit.dp
 import smol.app.themes.SmolTheme
 
 @Composable
-@Preview
 fun SmolButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,

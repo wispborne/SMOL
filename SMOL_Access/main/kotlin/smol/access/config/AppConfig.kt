@@ -41,7 +41,7 @@ class AppConfig(gson: Jsanity) :
         defaultValue = "https://github.com/wispborne/JRE/releases/download/jre8-271/jre8-271-Windows.7z"
     )
     var renderer: String? by pref(prefKey = "renderer", defaultValue = null)
-    var isModBackupFeatureEnabled: Boolean by pref(prefKey = "isModBackupFeatureEnabled", defaultValue = true)
+    var isAlphaModBackupFeatureEnabled: Boolean by pref(prefKey = "isModBackupFeatureEnabled", defaultValue = true)
     var doNotNagAboutJre8: Boolean by pref(prefKey = "doNotNagAboutJre8", defaultValue = false)
     var isUpdateOnCloseEnabled: Boolean by pref(prefKey = "isUpdateOnCloseEnabled", defaultValue = true)
 
@@ -53,7 +53,7 @@ class AppConfig(gson: Jsanity) :
 
 
     override fun toString(): String {
-        return "AppConfig(updateChannel=$updateChannel, gamePath=$gamePath, areModBackupsEnabled=$areModBackupsEnabled, modBackupPath=$modBackupPath, lastFilePickerDirectory=$lastFilePickerDirectory, jre8Url='$jre8Url', renderer=$renderer, isModBackupFeatureEnabled=$isModBackupFeatureEnabled, doNotNagAboutJre8=$doNotNagAboutJre8, userProfile=$userProfile)"
+        return "AppConfig(updateChannel=$updateChannel, gamePath=$gamePath, areModBackupsEnabled=$areModBackupsEnabled, modBackupPath=$modBackupPath, lastFilePickerDirectory=$lastFilePickerDirectory, jre8Url='$jre8Url', renderer=$renderer, isModBackupFeatureEnabled=$isAlphaModBackupFeatureEnabled, doNotNagAboutJre8=$doNotNagAboutJre8, userProfile=$userProfile)"
     }
 
     enum class UpdateChannel {

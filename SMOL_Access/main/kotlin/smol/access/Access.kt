@@ -12,7 +12,6 @@
 
 package smol.access
 
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import smol.access.business.*
@@ -137,11 +136,9 @@ class Access internal constructor(
         val errors = mutableListOf<String>()
         if (appConfig.areModBackupsEnabled) {
             if (backupFolderPath == null) {
-                errors.add("Archives path invalid or not set.\nSet it or disable Mod Archival.")
+                errors.add("Mod Backup path invalid or not set..")
             } else if (!backupFolderPath.exists()) {
-                errors.add("Archives path '$backupFolderPath' doesn't exist!")
-            } else if (!backupFolderPath.exists()) {
-                errors.add("Folder '${Constants.ARCHIVES_FOLDER_NAME}' not found!")
+                errors.add("'$backupFolderPath' doesn't exist!")
             }
         }
 

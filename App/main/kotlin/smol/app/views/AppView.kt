@@ -15,7 +15,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
 import androidx.compose.material.Typography
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,6 +40,7 @@ import smol.app.UI
 import smol.app.WindowState
 import smol.app.about.AboutView
 import smol.app.browser.ModBrowserView
+import smol.app.composables.SmolAlertDialog
 import smol.app.home.homeView
 import smol.app.modprofiles.ModProfilesView
 import smol.app.navigation.Screen
@@ -239,6 +242,28 @@ class AppScope(windowState: WindowState, private val recomposer: RecomposeScope)
 
     suspend fun forceReloadMods() = reloadModsInner(forceRefreshVersionChecker = true, forceRefreshSaves = true)
     fun recomposeAppUI() = recomposer.invalidate()
+
+    fun showSimpleErrorDialog(title: String, message: String) {
+        alertDialogSetter.invoke {
+            alertDialogSetter.invoke {
+                SmolAlertDialog(
+                    title = { Text(title, style = SmolTheme.alertDialogTitle()) },
+                    text = {
+                        Text(
+                            message,
+                            style = SmolTheme.alertDialogBody()
+                        )
+                    },
+                    onDismissRequest = { alertDialogSetter.invoke(null) },
+                    confirmButton = {
+                        Button(onClick = {
+                            alertDialogSetter.invoke(null)
+                        }) { Text("Ok") }
+                    }
+                )
+            }
+        }
+    }
 }
 
 private suspend fun watchDirsAndReloadOnChange(scope: CoroutineScope) {
