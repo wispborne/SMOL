@@ -190,10 +190,18 @@ fun main() = application {
     Timber.i { "Launched SMOL ${Constants.APP_VERSION} ${sinceStartStr()}." }
 
     val onKeyEventHandlers = remember { mutableListOf<(KeyEvent) -> Boolean>() }
+    var isVisible by remember { mutableStateOf(true) }
 
     Window(
-        onCloseRequest = { onQuit(appWindowState) },
+        onCloseRequest = {
+            isVisible = false
+            coroutineScope.launch {
+                delay(1000) // Without this, runBlocking in onQuit will block the window from closing.
+                onQuit(appWindowState)
+            }
+        },
         state = appWindowState,
+        visible = isVisible,
         title = if (!isAprilFools()) "${Constants.APP_NAME} ${Constants.APP_VERSION}" else "Star Citizen Alpha 4.34",
         icon = painterResource(if (!isAprilFools()) "smol.ico" else "smolslaught.png"),
         onPreviewKeyEvent = { event -> onKeyEventHandlers.any { it(event) } }
@@ -233,7 +241,9 @@ private fun aprilfools() {
     }
 }
 
-private fun ApplicationScope.onQuit(appWindowState: androidx.compose.ui.window.WindowState) {
+private fun ApplicationScope.onQuit(
+    appWindowState: androidx.compose.ui.window.WindowState
+) {
     if (Constants.isJCEFEnabled()) {
         runCatching {
             Timber.i { "Shutting down JCEF..." }
@@ -246,9 +256,9 @@ private fun ApplicationScope.onQuit(appWindowState: androidx.compose.ui.window.W
     }
 
     if (SL.appConfig.isUpdateOnCloseEnabled) {
+        appWindowState.isMinimized = true
         runBlocking {
             val updaterConfig = runCatching {
-                appWindowState.isMinimized = true
                 SL.UI.updateChannelManager.fetchRemoteConfig(SL.UI.updaterUpdater, SL.appConfig)
             }
                 .onFailure { Timber.w(it) }

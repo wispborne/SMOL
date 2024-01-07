@@ -27,6 +27,7 @@ import kotlinx.coroutines.launch
 import org.update4j.Configuration
 import smol.access.SL
 import smol.app.composables.SmolButton
+import smol.app.composables.SmolCheckboxWithText
 import smol.app.toasts.ToastContainer
 import smol.app.toasts.ToasterState
 import smol.timber.ktx.Timber
@@ -195,10 +196,19 @@ class UpdateSmolToast {
                                         modifier = Modifier.padding(start = 8.dp)
                                     )
 
-                                    if (SL.appConfig.isUpdateOnCloseEnabled) {
+                                    var isUpdateOnCloseEnabled by remember {
+                                        mutableStateOf(SL.appConfig.isUpdateOnCloseEnabled)
+                                    }
+                                    SmolCheckboxWithText(
+                                        checked = isUpdateOnCloseEnabled,
+                                        modifier = Modifier.offset(x = -(8.dp)),
+                                        onCheckedChange = { checked ->
+                                            isUpdateOnCloseEnabled = checked
+                                            SL.appConfig.isUpdateOnCloseEnabled = isUpdateOnCloseEnabled
+                                        }
+                                    ) {
                                         Text(
-                                            text = "Update will be installed on exit.",
-                                            modifier = Modifier.padding(start = 8.dp, top = 8.dp),
+                                            text = "Install on exit",
                                             style = MaterialTheme.typography.caption
                                         )
                                     }
