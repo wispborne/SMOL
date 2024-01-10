@@ -19,10 +19,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Card
 import androidx.compose.material.MaterialTheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.currentRecomposeScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -71,6 +68,36 @@ class ToasterState {
                 }
             }
         }
+
+        // Loop through the timers and update the toast list when they expire.
+        scope.launch {
+            while (true) {
+                val toasts = items.value
+                val loopDelay = 500L
+                toasts.toList().forEach {
+                    val millisRemaining = getMillisRemaining(it.id)
+
+                    if (millisRemaining != null) {
+                        setTimeout(it.id, millisRemaining - loopDelay)
+                    }
+                }
+
+                val preFilterHash = toasts.hashCode()
+                items.value =
+                    toasts.filter { toast ->
+                        val hasTimeLeftOrIndefinite = (getMillisRemaining(toast.id) ?: 1) > 0
+                        if (!hasTimeLeftOrIndefinite) Timber.i { "Removing expired toast $toast." }
+
+                        hasTimeLeftOrIndefinite
+                    }
+
+                if (preFilterHash != toasts.hashCode()) {
+//                    recomposeScope.invalidate()
+                }
+
+                delay(loopDelay)
+            }
+        }
     }
 
     fun addItems(toastContainers: List<ToastContainer>) {
@@ -113,39 +140,11 @@ fun toaster(
 ) {
     val recomposeScope = currentRecomposeScope
     val toasterState = SL.UI.toaster
-    val items = toasterState.items.collectAsState()
-
-    // Constantly loop to update Toast timers.
-    LaunchedEffect(Unit) {
-        while (true) {
-            val loopDelay = 500L
-            items.value.toList().forEach {
-                val millisRemaining = toasterState.getMillisRemaining(it.id)
-
-                if (millisRemaining != null) {
-                    toasterState.setTimeout(it.id, millisRemaining - loopDelay)
-                }
-            }
-
-            val preFilterSize = items.value.size
-            toasterState.items.value =
-                items.value.filter { toast ->
-                    val hasTimeLeftOrIndefinite = (toasterState.getMillisRemaining(toast.id) ?: 1) > 0
-                    if (!hasTimeLeftOrIndefinite) Timber.i { "Removing expired toast $toast." }
-                    hasTimeLeftOrIndefinite
-                }
-
-            if (preFilterSize != items.value.size) {
-                recomposeScope.invalidate()
-            }
-
-            delay(loopDelay)
-        }
-    }
+    val toasts by toasterState.items.collectAsState()
 
     if (horizontalArrangement != null) {
         LazyRow(modifier, horizontalArrangement = horizontalArrangement, verticalAlignment = Alignment.Bottom) {
-            items(items.value.sortedByDescending { it.priority }) {
+            items(toasts.sortedByDescending { it.priority }) {
                 renderToast(it)
             }
         }
@@ -157,7 +156,7 @@ fun toaster(
             horizontalAlignment = Alignment.End,
             reverseLayout = true
         ) {
-            items(items.value.sortedByDescending { it.priority }) {
+            items(toasts.sortedByDescending { it.priority }) {
                 renderToast(it)
             }
         }

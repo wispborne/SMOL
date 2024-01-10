@@ -242,7 +242,10 @@ class Access internal constructor(
                     }
                 }
                 // We've enabled one variant, so any other variants need to be ignored by the vanilla launcher (changeFileExtension = true).
-                .forEach { staging.disableModVariant(it, changeFileExtension = true) }
+                .forEach {
+                    backupMod(it)
+                    staging.disableModVariant(it, changeFileExtension = true)
+                }
 
             return if (modVariant != null) {
                 // Enable the one we want.
@@ -269,12 +272,7 @@ class Access internal constructor(
             }
         } finally {
             staging.manualReloadTrigger.trigger.emit("For mod ${mod.id}, staged variant: $modVariant.")
-            modModificationStateHolder.state.update {
-                it.toMutableMap().apply {
-                    this[mod.id] =
-                        ModModificationState.Ready
-                }
-            }
+            modModificationStateHolder.remove(mod.id)
         }
     }
 
@@ -289,12 +287,7 @@ class Access internal constructor(
             return staging.disableMod(mod, modLoader)
         } finally {
             staging.manualReloadTrigger.trigger.emit("Disabled mod: $mod")
-            modModificationStateHolder.state.update {
-                it.toMutableMap().apply {
-                    this[mod.id] =
-                        ModModificationState.Ready
-                }
-            }
+            modModificationStateHolder.remove(mod.id)
         }
     }
 
@@ -317,12 +310,7 @@ class Access internal constructor(
             return staging.disableModVariant(modVariant = modVariant, changeFileExtension = changeFileExtension)
         } finally {
             staging.manualReloadTrigger.trigger.emit("Disabled mod variant: $modVariant")
-            modModificationStateHolder.state.update {
-                it.toMutableMap().apply {
-                    this[mod.id] =
-                        ModModificationState.Ready
-                }
-            }
+            modModificationStateHolder.remove(mod.id)
         }
     }
 
@@ -361,12 +349,7 @@ class Access internal constructor(
                 }
             } finally {
                 staging.manualReloadTrigger.trigger.emit("Deleted mod variant: $modVariant")
-                modModificationStateHolder.state.update {
-                    it.toMutableMap().apply {
-                        this[mod.id] =
-                            ModModificationState.Ready
-                    }
-                }
+                modModificationStateHolder.remove(mod.id)
             }
         }
     }

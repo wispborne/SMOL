@@ -69,18 +69,18 @@ class BackupManager internal constructor(
      */
     suspend fun backupMod(modVariant: ModVariant, overwriteExisting: Boolean = false): Archives.ArchiveResult? {
         val mod = modVariant.mod(modsCache) ?: return null
-        val modArchivePath = appConfig.modBackupPath.toPathOrNull() ?: return null
-        val modArchiveFile = modArchivePath.resolve(modVariant.generateBackupFileName())
+        val modBackupPath = appConfig.modBackupPath.toPathOrNull() ?: return null
+        val modBackupFile = modBackupPath.resolve(modVariant.generateBackupFileName())
         var result: Archives.ArchiveResult? = null
 
-        if (!overwriteExisting && modArchiveFile.exists()) {
-            Timber.d { "Mod archive file already exists at '$modArchiveFile', skipping." }
+        if (!overwriteExisting && modBackupFile.exists()) {
+            Timber.d { "Mod backup file already exists at '$modBackupFile', skipping." }
             return null
         }
 
-        Timber.i { "Backing up mod variant ${modVariant.smolId} to '$modArchiveFile'." }
+        Timber.i { "Backing up mod variant ${modVariant.smolId} to '$modBackupFile'." }
         trace(onFinished = { _, millis ->
-            Timber.i { "Backed up mod variant ${modVariant.smolId} to '$modArchiveFile' in ${millis}ms." }
+            Timber.i { "Backed up mod variant ${modVariant.smolId} to '$modBackupFile' in ${millis}ms." }
         }) {
             try {
                 modModificationStateHolder.state.update {
@@ -90,35 +90,30 @@ class BackupManager internal constructor(
                     }
                 }
                 IOLock.read(IOLocks.modFolderLock) {
-                    if (modArchiveFile.exists()) {
-                        Timber.i { "Deleting existing mod archive file at '$modArchiveFile'." }
-                        runCatching { modArchiveFile.deleteIfExists() }
+                    if (modBackupFile.exists()) {
+                        Timber.i { "Deleting existing mod backup file at '$modBackupFile'." }
+                        runCatching { modBackupFile.deleteIfExists() }
                             .onFailure {
-                                Timber.e(it) { "Unable to delete existing mod archive file at '$modArchiveFile'." }
+                                Timber.e(it) { "Unable to delete existing mod backup file at '$modBackupFile'." }
                                 return null
                             }
                     }
 
-                    Timber.i { "Creating mod archive file at '$modArchiveFile'." }
+                    Timber.i { "Creating mod backup file at '$modBackupFile'." }
                     runCatching {
-                        modArchiveFile.createFile()
+                        modBackupFile.createFile()
                         result = archives.createArchive(
                             modVariant = modVariant,
-                            destinationFile = modArchiveFile
+                            destinationFile = modBackupFile
                         )
                     }
                         .onFailure {
-                            Timber.e(it) { "Unable to create mod archive file at '$modArchiveFile'." }
+                            Timber.e(it) { "Unable to create mod backup file at '$modBackupFile'." }
                         }
                 }
             } finally {
                 staging.manualReloadTrigger.trigger.emit("Backed up mod variant: $modVariant")
-                modModificationStateHolder.state.update {
-                    it.toMutableMap().apply {
-                        this[mod.id] =
-                            ModModificationState.Ready
-                    }
-                }
+                modModificationStateHolder.remove(mod.id)
             }
 
             result?.errors?.forEach { Timber.w(it) }

@@ -30,6 +30,8 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
+import smol.access.ModModificationState
+import smol.access.ModModificationStateTask
 import smol.access.SL
 import smol.app.UI
 import smol.app.browser.DownloadItem
@@ -74,7 +76,16 @@ object ToastMasterDave {
                                         fontWeight = FontWeight.Bold,
                                         modifier = Modifier.alpha(0.65f).padding(end = 8.dp),
                                     )
-                                    if (!task.description.isNullOrBlank()) {
+                                    if (task is ModModificationStateTask) {
+                                        Text(
+                                            text = when (task.state) {
+                                                ModModificationState.DisablingVariants -> "Disabling"
+                                                ModModificationState.BackingUpVariant -> "Backing up"
+                                                ModModificationState.DeletingVariants -> "Deleting"
+                                                ModModificationState.EnablingVariant -> "Enabling"
+                                            }
+                                        )
+                                    } else if (!task.description.isNullOrBlank()) {
                                         Text(
                                             text = task.description!!,
                                             style = MaterialTheme.typography.body2
@@ -141,8 +152,7 @@ object ToastMasterDave {
             .filter {
                 !it.status.value.isAny(
                     DownloadItem.Status.Completed::class,
-                    DownloadItem.Status.Cancelled::class,
-                    DownloadItem.Status.Failed::class
+                    DownloadItem.Status.Cancelled::class
                 )
             }
             .map {

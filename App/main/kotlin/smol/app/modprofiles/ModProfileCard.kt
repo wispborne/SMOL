@@ -489,7 +489,7 @@ fun AppScope.profileControls(
     ) {
         val modsModificationState = SL.access.modModificationState.collectAsState()
         val areAllModsSettled =
-            modsModificationState.value.all { it.value == smol.access.ModModificationState.Ready }
+            modsModificationState.value.none()
 
         IconButton(
             modifier = Modifier

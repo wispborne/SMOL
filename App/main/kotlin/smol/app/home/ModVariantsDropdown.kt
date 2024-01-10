@@ -96,7 +96,7 @@ fun AppScope.ModVariantsDropdown(
 
     var expanded by remember { mutableStateOf(false) }
     val modState =
-        SL.access.modModificationState.collectAsState().value[mod.id] ?: ModModificationState.Ready
+        SL.access.modModificationState.collectAsState().value[mod.id]
 
     Box(modifier) {
         Box(Modifier.width(IntrinsicSize.Min)) {
@@ -130,7 +130,7 @@ fun AppScope.ModVariantsDropdown(
                     },
                 )
             ) {
-                if (modState != ModModificationState.Ready) {
+                if (modState != null) {
                     SmolTooltipArea(tooltip = {
                         SmolTooltipText(
                             when (modState) {
@@ -138,7 +138,6 @@ fun AppScope.ModVariantsDropdown(
                                 ModModificationState.EnablingVariant -> "Enabling..."
                                 ModModificationState.BackingUpVariant -> "Backup in progress"
                                 ModModificationState.DeletingVariants -> "Deleting..."
-                                ModModificationState.Ready -> "Ready"
                             }
                         )
                     }

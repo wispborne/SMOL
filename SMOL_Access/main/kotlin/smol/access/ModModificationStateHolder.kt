@@ -16,10 +16,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import smol.access.business.ModsCache
 import smol.access.model.ModId
 
+/**
+ * If any mods are having actions taken, this will hold the state of the action.
+ * Mods with no actions will not be present in this map. */
 internal class ModModificationStateHolder(
     private val backgroundTaskState: BackgroundTasksStateHolder,
     private val modsCache: ModsCache
@@ -28,6 +32,7 @@ internal class ModModificationStateHolder(
     private val context = CoroutineScope(Job())
 
     init {
+        // Update the background tasks state when the mod modification state changes.
         context.launch {
             state.collectLatest { newState ->
                 val mods = modsCache.mods.value?.mods.orEmpty()
@@ -38,17 +43,17 @@ internal class ModModificationStateHolder(
                             id = id,
                             displayName = mods.firstOrNull { it.id == id }?.findFirstEnabledOrHighestVersion?.modInfo?.name
                                 ?: id,
-                            description = when (newModState) {
-                                ModModificationState.Ready -> "Ready"
-                                ModModificationState.DisablingVariants -> "Disabling variants"
-                                ModModificationState.DeletingVariants -> "Deleting variants"
-                                ModModificationState.EnablingVariant -> "Enabling variant"
-                                ModModificationState.BackingUpVariant -> "Backing up variant"
-                            }
+                            state = newModState
                         )
                     }
                 }
             }
+        }
+    }
+
+    fun remove(id: ModId) {
+        state.update { oldState ->
+            oldState - id
         }
     }
 }
@@ -56,12 +61,12 @@ internal class ModModificationStateHolder(
 class ModModificationStateTask(
     override val id: ModId,
     override val displayName: String,
-    override val description: String?,
-    override val tooltip: String? = description
+    override val description: String? = null,
+    override val tooltip: String? = description,
+    val state: ModModificationState
 ) : BackgroundTaskState(id, displayName, description, tooltip)
 
 sealed class ModModificationState {
-    data object Ready : ModModificationState()
     data object DisablingVariants : ModModificationState()
     data object DeletingVariants : ModModificationState()
     data object EnablingVariant : ModModificationState()
