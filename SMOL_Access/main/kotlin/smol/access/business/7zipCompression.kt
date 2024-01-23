@@ -16,6 +16,7 @@ import io.ktor.util.*
 import net.sf.sevenzipjbinding.*
 import net.sf.sevenzipjbinding.impl.OutItemFactory
 import net.sf.sevenzipjbinding.util.ByteArrayStream
+import smol.timber.ktx.Timber
 import java.nio.file.Path
 import kotlin.io.path.*
 
@@ -57,6 +58,7 @@ internal class Compress7zFilesCallback(val items: List<ArchiveFile>, val relativ
     ): IOutItem7z {
         runCatching {
             val item = outItemFactory.createOutItem()
+            Timber.v { "Compressing ${items[index].sourcePath}." }
             val content = items[index].content
             if (content == null) {
                 // Directory

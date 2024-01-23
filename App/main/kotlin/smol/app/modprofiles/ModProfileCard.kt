@@ -575,7 +575,7 @@ fun AppScope.profileControls(
 
         val alphaOfHoverDimmedElements = animateFloatAsState(if (isBeingHovered) 0.8f else 0.5f).value
 
-        SmolTooltipArea(tooltip = { SmolTooltipText(text = "Copy mod list.") }) {
+        SmolTooltipArea(tooltip = { SmolTooltipText(text = "Copy to clipboard.") }) {
             IconButton(
                 modifier = Modifier
                     .align(Alignment.CenterVertically)

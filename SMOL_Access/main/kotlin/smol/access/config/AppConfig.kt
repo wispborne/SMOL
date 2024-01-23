@@ -33,7 +33,7 @@ class AppConfig(gson: Jsanity) :
     ) {
     var updateChannel: UpdateChannel by pref(prefKey = "updateChannel", defaultValue = UpdateChannel.Unstable)
     internal var gamePath: String? by pref(prefKey = "gamePath", defaultValue = null)
-    var areModBackupsEnabled: Boolean by pref(prefKey = "areModBackupsEnabled", defaultValue = false)
+    var areAutoModBackupsEnabled: Boolean by pref(prefKey = "areModBackupsEnabled", defaultValue = false)
     var modBackupPath: String? by pref(prefKey = "modBackupPath", defaultValue = null)
     var lastFilePickerDirectory: String? by pref(prefKey = "lastFilePickerDirectory", defaultValue = null)
     var jre8Url: String by pref(
@@ -53,7 +53,7 @@ class AppConfig(gson: Jsanity) :
 
 
     override fun toString(): String {
-        return "AppConfig(updateChannel=$updateChannel, gamePath=$gamePath, areModBackupsEnabled=$areModBackupsEnabled, modBackupPath=$modBackupPath, lastFilePickerDirectory=$lastFilePickerDirectory, jre8Url='$jre8Url', renderer=$renderer, isModBackupFeatureEnabled=$isAlphaModBackupFeatureEnabled, doNotNagAboutJre8=$doNotNagAboutJre8, userProfile=$userProfile)"
+        return "AppConfig(updateChannel=$updateChannel, gamePath=$gamePath, areModBackupsEnabled=$areAutoModBackupsEnabled, modBackupPath=$modBackupPath, lastFilePickerDirectory=$lastFilePickerDirectory, jre8Url='$jre8Url', renderer=$renderer, isModBackupFeatureEnabled=$isAlphaModBackupFeatureEnabled, doNotNagAboutJre8=$doNotNagAboutJre8, userProfile=$userProfile)"
     }
 
     enum class UpdateChannel {

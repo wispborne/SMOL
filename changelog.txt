@@ -1,6 +1,7 @@
 ## Beta 17
 
 - Added "Open mod_info.json" to context menu.
+- Added "Auto mod backup" feature, enable in settings.
 
 ## Beta 16 hotfixes
 

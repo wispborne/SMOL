@@ -43,7 +43,7 @@ class BackupManager internal constructor(
     val folderPath: Path?
         get() = appConfig.modBackupPath.toPathOrNull()
     val isEnabled: Boolean
-        get() = appConfig.areModBackupsEnabled
+        get() = appConfig.areAutoModBackupsEnabled
     val hasValidPath: Boolean
         get() = folderPath?.exists() == true && folderPath?.isDirectory() == true && folderPath?.isWritable() == true
 
@@ -53,7 +53,7 @@ class BackupManager internal constructor(
             modsCache.mods.collectLatest { modListUpdate ->
                 runCatching {
                     modListUpdate?.added.orEmpty().forEach { modVariant ->
-                        if (appConfig.areModBackupsEnabled && modVariant.backupFile?.exists() != true) {
+                        if (appConfig.areAutoModBackupsEnabled && modVariant.backupFile?.exists() != true) {
                             backupMod(modVariant)
                         }
                     }
@@ -68,80 +68,87 @@ class BackupManager internal constructor(
      * Creates a .7z archive of the given mod variant in the [AppConfig.modBackupPath] folder.
      */
     suspend fun backupMod(modVariant: ModVariant, overwriteExisting: Boolean = false): Archives.ArchiveResult? {
-        val mod = modVariant.mod(modsCache) ?: return null
-        val modBackupPath = appConfig.modBackupPath.toPathOrNull() ?: return null
-        val modBackupFile = modBackupPath.resolve(modVariant.generateBackupFileName())
-        var result: Archives.ArchiveResult? = null
+        IOLock.write(IOLocks.backupFolderLock) {
+            val mod = modVariant.mod(modsCache) ?: return null
+            val modBackupPath = appConfig.modBackupPath.toPathOrNull() ?: return null
+            val modBackupFile = modBackupPath.resolve(modVariant.generateBackupFileName())
+            var result: Archives.ArchiveResult? = null
 
-        if (!overwriteExisting && modBackupFile.exists()) {
-            Timber.d { "Mod backup file already exists at '$modBackupFile', skipping." }
-            return null
-        }
-
-        Timber.i { "Backing up mod variant ${modVariant.smolId} to '$modBackupFile'." }
-        trace(onFinished = { _, millis ->
-            Timber.i { "Backed up mod variant ${modVariant.smolId} to '$modBackupFile' in ${millis}ms." }
-        }) {
-            try {
-                modModificationStateHolder.state.update {
-                    it.toMutableMap().apply {
-                        this[mod.id] =
-                            ModModificationState.BackingUpVariant
-                    }
-                }
-                IOLock.read(IOLocks.modFolderLock) {
-                    if (modBackupFile.exists()) {
-                        Timber.i { "Deleting existing mod backup file at '$modBackupFile'." }
-                        runCatching { modBackupFile.deleteIfExists() }
-                            .onFailure {
-                                Timber.e(it) { "Unable to delete existing mod backup file at '$modBackupFile'." }
-                                return null
-                            }
-                    }
-
-                    Timber.i { "Creating mod backup file at '$modBackupFile'." }
-                    runCatching {
-                        modBackupFile.createFile()
-                        result = archives.createArchive(
-                            modVariant = modVariant,
-                            destinationFile = modBackupFile
-                        )
-                    }
+            if (!overwriteExisting && modBackupFile.exists()) {
+                if (modBackupFile.fileSize() == 0L) {
+                    Timber.d { "Mod backup file already exists at '$modBackupFile', but it's empty. Deleting." }
+                    runCatching { modBackupFile.deleteIfExists() }
                         .onFailure {
-                            Timber.e(it) { "Unable to create mod backup file at '$modBackupFile'." }
+                            Timber.e(it) { "Unable to delete empty mod backup file at '$modBackupFile'." }
+                            return null
                         }
+                } else {
+                    Timber.d { "Mod backup file already exists at '$modBackupFile', skipping." }
+                    return null
                 }
-            } finally {
-                staging.manualReloadTrigger.trigger.emit("Backed up mod variant: $modVariant")
-                modModificationStateHolder.remove(mod.id)
             }
 
-            result?.errors?.forEach { Timber.w(it) }
+            Timber.i { "Backing up mod variant ${modVariant.smolId} to '$modBackupFile'." }
+            trace(onFinished = { _, millis ->
+                Timber.i { "Backed up mod variant ${modVariant.smolId} to '$modBackupFile' in ${millis}ms." }
+            }) {
+                try {
+                    modModificationStateHolder.doWithModState(mod.id, ModModificationState.BackingUpVariant) {
+                        IOLock.read(IOLocks.modFolderLock) {
+                            if (modBackupFile.exists()) {
+                                Timber.i { "Deleting existing mod backup file at '$modBackupFile'." }
+                                runCatching { modBackupFile.deleteIfExists() }
+                                    .onFailure {
+                                        Timber.e(it) { "Unable to delete existing mod backup file at '$modBackupFile'." }
+                                        return null
+                                    }
+                            }
 
-            return result
+                            Timber.i { "Creating mod backup file at '$modBackupFile'." }
+                            runCatching {
+                                modBackupFile.createFile()
+                                // Automatically changes a bricked mod_info.json to a regular one.
+                                result = archives.createBackupArchive(
+                                    modVariant = modVariant,
+                                    destinationFile = modBackupFile
+                                )
+                            }
+                                .onFailure {
+                                    Timber.e(it) { "Unable to create mod backup file at '$modBackupFile'." }
+                                }
+                        }
+                    }
+                } finally {
+                    staging.manualReloadTrigger.trigger.emit("Backed up mod variant: $modVariant")
+                }
+
+                result?.errors?.forEach { Timber.w(it) }
+
+                return result
+            }
         }
     }
 
     fun moveFolder(source: Path, destination: Path, pathsMoved: MutableStateFlow<List<Path>>) {
-        IOLock.read(IOLocks.backupFolderLock) {
+        IOLock.write(IOLocks.backupFolderLock) {
             if (!source.exists()) {
                 Timber.w { "Source folder '$source' does not exist, aborting move." }
-                return@read
+                return@write
             }
 
             if (!source.isDirectory()) {
                 Timber.w { "Source folder '$source' is not a directory, aborting move." }
-                return@read
+                return@write
             }
 
             if (!destination.exists()) {
                 Timber.w { "Destination folder '$destination' does not exist, aborting move." }
-                return@read
+                return@write
             }
 
             if (!destination.isDirectory()) {
                 Timber.w { "Destination folder '$destination' is not a directory, aborting move." }
-                return@read
+                return@write
             }
 
             val filesToMove = source.listDirectoryEntries()

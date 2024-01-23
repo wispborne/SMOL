@@ -12,8 +12,11 @@
 
 package smol.access
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import smol.access.business.*
 import smol.access.config.AppConfig
 import smol.access.config.GamePathManager
@@ -46,6 +49,8 @@ class Access internal constructor(
     val areModsLoading = modLoader.isLoading
     val modModificationState: StateFlow<Map<ModId, ModModificationState>>
         get() = modModificationStateHolder.state
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
+
 
     /**
      * Checks the /mods and archives paths and sets them if they don't exist.
@@ -59,7 +64,7 @@ class Access internal constructor(
 
         // If the mod archive path doesn't exist/isn't set, and the game path is set, set the archive path
         // and create the folder.
-        if (appConfig.areModBackupsEnabled
+        if (appConfig.areAutoModBackupsEnabled
             && appConfig.modBackupPath?.toPathOrNull()?.exists() != true
             && gamePathManager.path.value?.exists() == true
         ) {
@@ -134,7 +139,7 @@ class Access internal constructor(
      */
     fun validateBackupFolderPath(backupFolderPath: Path?): List<String> {
         val errors = mutableListOf<String>()
-        if (appConfig.areModBackupsEnabled) {
+        if (appConfig.areAutoModBackupsEnabled) {
             if (backupFolderPath == null) {
                 errors.add("Mod Backup path invalid or not set..")
             } else if (!backupFolderPath.exists()) {
@@ -203,6 +208,7 @@ class Access internal constructor(
      */
     suspend fun changeActiveVariant(mod: Mod, modVariant: ModVariant?): Result<Unit> {
         Timber.i { "Changing active variant of ${mod.id} to ${modVariant?.smolId}. (current: ${mod.findFirstEnabled?.smolId})." }
+        val variantsToBackUp = mutableListOf(modVariant)
         try {
             val modVariantParent = modVariant?.mod(modsCache)
             if (modVariantParent != null && mod != modVariantParent) {
@@ -243,11 +249,11 @@ class Access internal constructor(
                 }
                 // We've enabled one variant, so any other variants need to be ignored by the vanilla launcher (changeFileExtension = true).
                 .forEach {
-                    backupMod(it)
                     staging.disableModVariant(it, changeFileExtension = true)
+                    variantsToBackUp += it
                 }
 
-            return if (modVariant != null) {
+            val result = if (modVariant != null) {
                 // Enable the one we want.
                 // Slower: Reload, since we just disabled it
 //                val freshModVariant =
@@ -270,6 +276,15 @@ class Access internal constructor(
             } else {
                 Result.success(Unit)
             }
+
+            // Kick off backups before returning
+            if (appConfig.areAutoModBackupsEnabled) {
+                coroutineScope.launch {
+                    variantsToBackUp.filterNotNull().forEach { backupMod(it) }
+                }
+            }
+
+            return result
         } finally {
             staging.manualReloadTrigger.trigger.emit("For mod ${mod.id}, staged variant: $modVariant.")
             modModificationStateHolder.remove(mod.id)
@@ -318,7 +333,7 @@ class Access internal constructor(
         Timber.i { "Deleting mod variant ${modVariant.smolId} folders. Remove staging/mods files? $removeUncompressedFolder." }
 
         // Back up mod if feature is enabled and the backup file doesn't exist.
-        if (appConfig.areModBackupsEnabled && modVariant.backupFile?.exists() != true) {
+        if (appConfig.areAutoModBackupsEnabled && modVariant.backupFile?.exists() != true) {
             backupMod(modVariant)
         }
 

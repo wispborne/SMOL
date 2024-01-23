@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import smol.access.business.ModsCache
 import smol.access.model.ModId
+import smol.timber.ktx.Timber
 
 /**
  * If any mods are having actions taken, this will hold the state of the action.
@@ -46,14 +47,40 @@ internal class ModModificationStateHolder(
                             state = newModState
                         )
                     }
+                    Timber.d { "Updated background task $id." }
+                }
+
+                backgroundTaskState.state.value.forEach { (id, _) ->
+                    if (id !in newState) {
+                        backgroundTaskState.removeTask(id)
+                        Timber.d { "Removed background task $id."  }
+                    }
                 }
             }
+        }
+    }
+
+    fun setModState(id: ModId, state: ModModificationState?) {
+        this.state.update { oldState ->
+            if (state == null) {
+                oldState - id
+            } else
+                oldState.toMutableMap().apply { this[id] = state }
         }
     }
 
     fun remove(id: ModId) {
         state.update { oldState ->
             oldState - id
+        }
+    }
+
+    inline fun doWithModState(id: ModId, state: ModModificationState, action: () -> Unit) {
+        setModState(id, state)
+        try {
+            action()
+        } finally {
+            remove(id)
         }
     }
 }

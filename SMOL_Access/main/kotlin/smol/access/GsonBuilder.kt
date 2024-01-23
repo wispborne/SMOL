@@ -37,7 +37,7 @@ object GsonBuilder {
                 val json = if (arg.json.isJsonObject)
                     arg.json
                 else JsonParser().parse(arg.json.asString)
-
+                Timber.d { "Parsing " + json["id"].string + " mod_info.json" }
 
                 ModInfo(
                     id = json["id"].string,
@@ -47,10 +47,10 @@ object GsonBuilder {
                     requiredMemoryMB = json.getNullable("requiredMemoryMB")?.nullString,
                     gameVersion = json.getNullable("gameVersion")?.nullString,
                     isUtilityMod = runCatching { json["utility"].bool }
-                        .onFailure { Timber.d(it) }
+                        .onFailure { Timber.d { it.message ?: "" } }
                         .getOrElse { false },
                     isTotalConversion = runCatching { json["totalConversion"].bool }
-                        .onFailure { Timber.d(it) }
+                        .onFailure { Timber.d { it.message ?: "" } }
                         .getOrElse { false },
                     jars = runCatching { json.getNullable("jars")!!.array.map { it.string } }
                         .onFailure { Timber.d(it) }

@@ -29,7 +29,6 @@ class ModInfoLoader(
     private val gson: Jsanity
 ) {
 
-    @OptIn(ExperimentalStdlibApi::class)
     fun readModDataFilesFromFolderOfMods(
         folderWithMods: Path,
         desiredFiles: List<DataFile>
@@ -119,6 +118,7 @@ class ModInfoLoader(
 
     fun deserializeModInfoFile(modInfoJson: String, file: String): ModInfo {
         try {
+            // Uses [GsonBuilder] to deserialize the mod info file.
             return gson.fromJson(
                 json = modInfoJson,
                 filename = file,

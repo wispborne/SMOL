@@ -392,14 +392,14 @@ class Archives internal constructor(
     /**
      * @param destinationFile Must already exist.
      */
-    fun createArchive(
+    fun createBackupArchive(
         modVariant: ModVariant,
         destinationFile: Path,
         enableModInfoFileIfBricked: Boolean = true
     ): ArchiveResult {
         // Only need read because we're not modifying the mod folder, we're modifying the archive.
         // Still, we are reading from the mod folder, so we need to lock it.
-        IOLock.read {
+        IOLock.read(IOLocks.modFolderLock) {
             val modFolder = modVariant.modsFolderInfo.folder
             val files =
                 modFolder.walk(maxDepth = 10, options = arrayOf(FileVisitOption.FOLLOW_LINKS))
@@ -407,20 +407,18 @@ class Archives internal constructor(
                     .map { path ->
                         // If mod_info.json is disabled, rename it to mod_info.json (the non-bricked version).
                         val destPath =
-                            if (enableModInfoFileIfBricked && Constants.MOD_INFO_FILE_DISABLED_NAMES.any {
-                                    path.endsWith(
-                                        it
-                                    )
-                                })
+                            if (enableModInfoFileIfBricked
+                                && Constants.MOD_INFO_FILE_DISABLED_NAMES.any { path.endsWith(it) }
+                            )
                                 path.parent.resolve(Constants.UNBRICKED_MOD_INFO_FILE)
                             else path
                         ArchiveFile(path, destPath)
                     }
 
             var wasSuccessful = false
-            var errors: List<Throwable> = emptyList()
             var raf: RandomAccessFile? = null
             var outArchive: IOutCreateArchive7z? = null
+            val compress7zFilesCallback = Compress7zFilesCallback(items = files, relativeTo = modFolder.parent)
             try {
                 raf = RandomAccessFile(destinationFile.absolutePathString(), "rw")
 
@@ -432,12 +430,11 @@ class Archives internal constructor(
                 outArchive.setSolid(true)
 
                 // Create archive
-                val compress7zFilesCallback = Compress7zFilesCallback(items = files, relativeTo = modFolder.parent)
                 outArchive.createArchive(
                     RandomAccessFileOutStream(raf),
-                    files.size, compress7zFilesCallback
+                    files.size,
+                    compress7zFilesCallback
                 )
-                errors = compress7zFilesCallback.errors
                 wasSuccessful = true
             } catch (e: Exception) {
                 Timber.w(e) { "Error creating archive '$destinationFile'." }
@@ -468,7 +465,7 @@ class Archives internal constructor(
 
             return ArchiveResult(
                 wasSuccessful = wasSuccessful,
-                errors = errors,
+                errors = compress7zFilesCallback.errors,
                 modVariant = UserProfile.ModProfile.ShallowModVariant(modVariant)
             )
         }

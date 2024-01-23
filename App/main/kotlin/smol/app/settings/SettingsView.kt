@@ -158,23 +158,23 @@ fun AppScope.settingsView(
 
                                     if (SL.appConfig.isAlphaModBackupFeatureEnabled) {
                                         Column {
-                                            var areModBackupsEnabled by remember { mutableStateOf(SL.appConfig.areModBackupsEnabled) }
+                                            var areModBackupsEnabled by remember { mutableStateOf(SL.appConfig.areAutoModBackupsEnabled) }
                                             val isModBackupPathValid =
                                                 SL.access.validateBackupFolderPath(modBackupPath.toPathOrNull())
                                                     .isEmpty()
 
-                                            SmolTooltipArea(tooltip = {
-                                                SmolTooltipText("Creates a 7z backup in the specified folder whenever you update or remove a mod.")
-                                            }) {
-                                                Row(
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    modifier = Modifier.padding(top = 16.dp).scale(0.9f),
-                                                ) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                modifier = Modifier.padding(top = 16.dp).scale(0.9f),
+                                            ) {
+                                                SmolTooltipArea(tooltip = {
+                                                    SmolTooltipText("Creates a 7z backup in the specified folder whenever you update or remove a mod.")
+                                                }) {
                                                     SmolCheckboxWithText(
                                                         checked = areModBackupsEnabled,
                                                         onCheckedChange = { checked ->
                                                             areModBackupsEnabled = checked
-                                                            SL.appConfig.areModBackupsEnabled = checked
+                                                            SL.appConfig.areAutoModBackupsEnabled = checked
                                                         }
                                                     ) { modifier ->
                                                         Text(
@@ -183,22 +183,26 @@ fun AppScope.settingsView(
                                                             style = MaterialTheme.typography.body2
                                                         )
                                                     }
-                                                    SmolClickableText(
-                                                        text = "Back Up All Now",
-                                                        color = MaterialTheme.colors.hyperlink,
-                                                        modifier = Modifier
-                                                            .align(Alignment.CenterVertically)
-                                                            .padding(start = 24.dp),
-                                                        textDecoration = TextDecoration.Underline,
-                                                        isEnabled = isModBackupPathValid,
-                                                        onClick = {
-                                                            GlobalScope.launch {
-                                                                SL.access.modsFlow.value?.mods.orEmpty()
-                                                                    .flatMap { it.variants }
-                                                                    .forEach { SL.access.backupMod(it) }
-                                                            }
-                                                        },
-                                                    )
+                                                    SmolTooltipArea(tooltip = {
+                                                        SmolTooltipText("Starts a backup of all of your mods.")
+                                                    }) {
+                                                        SmolClickableText(
+                                                            text = "Back Up All Now",
+                                                            color = MaterialTheme.colors.hyperlink,
+                                                            modifier = Modifier
+                                                                .align(Alignment.CenterVertically)
+                                                                .padding(start = 24.dp),
+                                                            textDecoration = TextDecoration.Underline,
+                                                            isEnabled = isModBackupPathValid,
+                                                            onClick = {
+                                                                GlobalScope.launch {
+                                                                    SL.access.modsFlow.value?.mods.orEmpty()
+                                                                        .flatMap { it.variants }
+                                                                        .forEach { SL.access.backupMod(it) }
+                                                                }
+                                                            },
+                                                        )
+                                                    }
                                                 }
                                             }
 
