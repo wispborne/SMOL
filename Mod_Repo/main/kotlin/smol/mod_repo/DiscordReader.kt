@@ -39,7 +39,8 @@ internal object DiscordReader {
 
     @Deprecated("Moved to forums")
     private const val modUpdatesChannelId = "1104110077075542066"
-    private const val modUpdatesForumChannelId = "1115946075262550016"
+//    private const val modUpdatesForumChannelId = "1115946075262550016" // 0.96a channel
+    private const val modUpdatesForumChannelId = "1203051351307985046"
     private val urlFinderRegex = Regex(
         """(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#-]*[\w@?^=%&\/~+#-])"""
     )
