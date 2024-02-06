@@ -40,6 +40,7 @@ internal object DiscordReader {
     @Deprecated("Moved to forums")
     private const val modUpdatesChannelId = "1104110077075542066"
 //    private const val modUpdatesForumChannelId = "1115946075262550016" // 0.96a channel
+
     private const val modUpdatesForumChannelId = "1203051351307985046"
     private val urlFinderRegex = Regex(
         """(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#-]*[\w@?^=%&\/~+#-])"""
@@ -183,45 +184,50 @@ internal object DiscordReader {
     ): ScrapedMod? {
         if (messages.isEmpty()) return null
 
-        val messagesOrdered = messages.sortedBy { it.timestamp }
-        val message = messagesOrdered.first { !it.content.isNullOrBlank() }
-        Timber.i { "Parsing message ${message.content?.lines()?.firstOrNull()}" }
-        // Drop any blank lines from the start of the post.
-        // Use thread title for mod name if it's a thread.
-        val name = message.parentThread?.name?.removeMarkdownFromName()
+        try {
+            val messagesOrdered = messages.sortedBy { it.timestamp }
+            val message = messagesOrdered.firstOrNull { !it.content.isNullOrBlank() } ?: return null
+            Timber.i { "Parsing message ${message.content?.lines()?.firstOrNull()}" }
+            // Drop any blank lines from the start of the post.
+            // Use thread title for mod name if it's a thread.
+            val name = message.parentThread?.name?.removeMarkdownFromName()
 
-        val messageLines = message.content?.lines().orEmpty()
-            .dropWhile { it.isBlank() }
-        val allMessageLines = messagesOrdered.flatMap { it.content?.lines().orEmpty() }
-            .dropWhile { it.isBlank() }
+            val messageLines = message.content?.lines().orEmpty()
+                .dropWhile { it.isBlank() }
+            val allMessageLines = messagesOrdered.flatMap { it.content?.lines().orEmpty() }
+                .dropWhile { it.isBlank() }
 
-        val (forumUrl, downloadArtifactUrl, downloadPageUrl) = getUrlsFromMessage(allMessageLines)
+            val (forumUrl, downloadArtifactUrl, downloadPageUrl) = getUrlsFromMessage(allMessageLines)
 
-        return ScrapedMod(
-            name = name ?: "",
-            summary = messageLines.take(2).joinToString(separator = "\n"),
-            description = messageLines.joinToString(separator = "\n"),
-            modVersion = null,
-            gameVersionReq = "",
-            authors = message.author?.username ?: "",
-            authorsList = message.author?.username.asList(),
-            forumPostLink = forumUrl,
-            link = downloadArtifactUrl ?: forumUrl,
-            urls = listOfNotNull(
-                forumUrl?.let { ModUrlType.Forum to forumUrl },
-                ModUrlType.Discord to
-                        Url("https://discord.com/channels/$serverId/${message.parentThread?.id}/${message.id}"),
-                downloadArtifactUrl?.let { ModUrlType.DirectDownload to downloadArtifactUrl },
-                downloadPageUrl?.let { ModUrlType.DownloadPage to downloadPageUrl },
-            ).toMap(),
-            source = ModSource.Discord,
-            sources = listOf(ModSource.Discord),
-            categories = message.parentThread?.applied_tags.orEmpty().mapNotNull { categoriesLookup[it] },
-            images = messagesOrdered.map { getImagesFromMessage(it) }
-                .reduceOrNull { acc, map -> acc.orEmpty().plus(map.orEmpty()) },
-            dateTimeCreated = message.timestamp,
-            dateTimeEdited = message.edited_timestamp
-        )
+            return ScrapedMod(
+                name = name ?: "",
+                summary = messageLines.take(2).joinToString(separator = "\n"),
+                description = messageLines.joinToString(separator = "\n"),
+                modVersion = null,
+                gameVersionReq = "",
+                authors = message.author?.username ?: "",
+                authorsList = message.author?.username.asList(),
+                forumPostLink = forumUrl,
+                link = downloadArtifactUrl ?: forumUrl,
+                urls = listOfNotNull(
+                    forumUrl?.let { ModUrlType.Forum to forumUrl },
+                    ModUrlType.Discord to
+                            Url("https://discord.com/channels/$serverId/${message.parentThread?.id}/${message.id}"),
+                    downloadArtifactUrl?.let { ModUrlType.DirectDownload to downloadArtifactUrl },
+                    downloadPageUrl?.let { ModUrlType.DownloadPage to downloadPageUrl },
+                ).toMap(),
+                source = ModSource.Discord,
+                sources = listOf(ModSource.Discord),
+                categories = message.parentThread?.applied_tags.orEmpty().mapNotNull { categoriesLookup[it] },
+                images = messagesOrdered.map { getImagesFromMessage(it) }
+                    .reduceOrNull { acc, map -> acc.orEmpty().plus(map.orEmpty()) },
+                dateTimeCreated = message.timestamp,
+                dateTimeEdited = message.edited_timestamp
+            )
+        } catch (e: Exception) {
+            Timber.w(e)
+            return null
+        }
     }
 
     private suspend fun getUrlsFromMessage(messageLines: List<String>): Triple<Url?, Url?, Url?> {

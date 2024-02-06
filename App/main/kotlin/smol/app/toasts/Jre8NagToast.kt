@@ -38,7 +38,7 @@ fun AppScope.jre8NagToast(
     Row {
         Column {
             Text(
-                text = "Upgrade game to JRE 8?",
+                text = "Upgrade game to Java 8?",
             )
 
             Text(
