@@ -377,7 +377,11 @@ internal object DiscordReader {
 
         val channels = if (getFullChannelInfo) {
             Timber.i { "Getting full channel info for ${allThreads.count()} threads." }
-            allThreads.map { getChannel(it.id, httpClient, authToken) }
+            allThreads.mapNotNull {
+                kotlin.runCatching { getChannel(it.id, httpClient, authToken) }
+                    .onFailure { Timber.w(it) }
+                    .getOrNull()
+            }
                 .also { Timber.v { it.joinToString(separator = "\n") } }
         } else allThreads
 

@@ -28,7 +28,7 @@ include("App", "SMOL_Access", "VRAM_Checker", "UpdateStager", "Utilities", "Mod_
 dependencyResolutionManagement {
     versionCatalogs {
         create("libs") {
-            plugin("compose", "org.jetbrains.compose").version("1.5.11")
+            plugin("compose", "org.jetbrains.compose").version("1.6.11")
 
             library("kotlin-reflect", "org.jetbrains.kotlin:kotlin-reflect:1.9.0")
             library("kotlin-reflect", "org.jetbrains.kotlin:kotlin-reflect:1.9.0")
