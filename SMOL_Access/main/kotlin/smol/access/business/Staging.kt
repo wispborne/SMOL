@@ -108,7 +108,7 @@ internal class Staging(
         }
             .filter { it.isReadable() }
 
-        // And disable them.
+        // And enable them.
         IOLock.write {
             if (!modVariant.isModInfoEnabled) {
                 disabledModInfoFiles.forEach { modInfoFile ->

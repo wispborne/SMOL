@@ -20,8 +20,8 @@ import java.time.ZonedDateTime
 data class UserProfile(
     val id: Int,
     val username: String,
-    val activeModProfileId: String,
     val versionCheckerIntervalMillis: Long?,
+    val activeModProfileId: String,
     val modProfiles: List<ModProfile>,
     val profileVersion: Int,
     val theme: String?,
@@ -37,7 +37,7 @@ data class UserProfile(
         get() = modProfiles.firstOrNull { it.id == activeModProfileId } ?: modProfiles.first()
 
 
-    data class ModProfile(
+    data class ModProfile constructor(
         val id: String,
         val name: String,
         val description: String,

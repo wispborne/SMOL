@@ -52,6 +52,7 @@ object ModRepoUtils {
         listOf("Fellout", "felloutwastaken"),
         listOf("Mr. THG", "thog"),
         listOf("Derelict_Surveyor", "jdt15"),
+        listOf("astarat.", "Astarat", "Astarat and PureTilt"),
     )
 
     fun getOtherMatchingAliases(

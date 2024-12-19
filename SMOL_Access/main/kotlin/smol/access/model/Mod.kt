@@ -121,10 +121,10 @@ data class ModVariant(
                 )
             }
 
-        private val systemFolderNameAllowedChars = Regex("""[^0-9a-zA-Z\\.\-_ ]""")
+        private val systemFolderNameDisallowedChars = Regex("""[^0-9a-zA-Z\\.\-_ ]""")
         fun createSmolId(modInfo: ModInfo) = createSmolId(modInfo.id, modInfo.version)
         fun generateVariantFolderName(modInfo: ModInfo) =
-            "${modInfo.name?.replace(systemFolderNameAllowedChars, "")?.take(100)}-${modInfo.version}"
+            "${modInfo.name?.replace(systemFolderNameDisallowedChars, "")?.take(100)}-${modInfo.version}"
 
         fun generateBackupFileName(modInfo: ModInfo, extension: String = Constants.backupFileExtension) =
             "${generateVariantFolderName(modInfo)}.$extension"

@@ -203,53 +203,53 @@ fun AppScope.ModGridView(
                                             mods = mods
                                         )
                                         // Disabled wavy line for now, it's too distracting.
-                                        if (false) {
-
-                                            if (isFinalFavoritedRow) {
-                                                Canvas(
-                                                    Modifier
-                                                        .fillMaxWidth()
-                                                        .padding(
-                                                            start = contentPadding + 32.dp,
-                                                            end = contentPadding + 32.dp,
-                                                            top = 4.dp,
-                                                            bottom = 8.dp
-                                                        )
-                                                ) {
-                                                    val wavyPath = Path().apply {
-                                                        val halfPeriod = 64.dp.toPx() / 2
-                                                        val amplitude = 2.dp.toPx()
-                                                        moveTo(x = -halfPeriod / 2, y = amplitude)
-                                                        repeat(ceil(size.width / halfPeriod + 1).toInt()) { i ->
-                                                            relativeQuadraticBezierTo(
-                                                                dx1 = halfPeriod / 2,
-                                                                dy1 = 2 * amplitude * (if (i % 2 == 0) 1 else -1),
-                                                                dx2 = halfPeriod,
-                                                                dy2 = 0f,
-                                                            )
-                                                        }
-//                                                    lineTo(size.width, size.height)
-//                                                    lineTo(0f, size.height)
-                                                    }
-
-                                                    drawPath(
-                                                        color = secondaryColor.copy(alpha = .2f),
-                                                        path = wavyPath,
-                                                        style = Stroke(
-                                                            width = 1.dp.toPx(),
-//                                                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f))
-                                                        )
-                                                    )
-                                                }
-//                                            Divider(
-//                                                modifier = Modifier.padding(
-//                                                    horizontal = contentPadding * 2,
-//                                                    vertical = 8.dp
-//                                                ),
-//                                                color = secondaryColor.copy(alpha = .2f)
-//                                            )
-                                            }
-                                        }
+//                                        if (false) {
+//
+//                                            if (isFinalFavoritedRow) {
+//                                                Canvas(
+//                                                    Modifier
+//                                                        .fillMaxWidth()
+//                                                        .padding(
+//                                                            start = contentPadding + 32.dp,
+//                                                            end = contentPadding + 32.dp,
+//                                                            top = 4.dp,
+//                                                            bottom = 8.dp
+//                                                        )
+//                                                ) {
+//                                                    val wavyPath = Path().apply {
+//                                                        val halfPeriod = 64.dp.toPx() / 2
+//                                                        val amplitude = 2.dp.toPx()
+//                                                        moveTo(x = -halfPeriod / 2, y = amplitude)
+//                                                        repeat(ceil(size.width / halfPeriod + 1).toInt()) { i ->
+//                                                            relativeQuadraticBezierTo(
+//                                                                dx1 = halfPeriod / 2,
+//                                                                dy1 = 2 * amplitude * (if (i % 2 == 0) 1 else -1),
+//                                                                dx2 = halfPeriod,
+//                                                                dy2 = 0f,
+//                                                            )
+//                                                        }
+////                                                    lineTo(size.width, size.height)
+////                                                    lineTo(0f, size.height)
+//                                                    }
+//
+//                                                    drawPath(
+//                                                        color = secondaryColor.copy(alpha = .2f),
+//                                                        path = wavyPath,
+//                                                        style = Stroke(
+//                                                            width = 1.dp.toPx(),
+////                                                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f))
+//                                                        )
+//                                                    )
+//                                                }
+////                                            Divider(
+////                                                modifier = Modifier.padding(
+////                                                    horizontal = contentPadding * 2,
+////                                                    vertical = 8.dp
+////                                                ),
+////                                                color = secondaryColor.copy(alpha = .2f)
+////                                            )
+//                                            }
+//                                        }
                                     }
                                 }
                             }

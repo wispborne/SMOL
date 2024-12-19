@@ -23,6 +23,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
@@ -59,7 +60,7 @@ fun ModGridSettings() {
             },
             popupPositionProvider = TooltipPlacement.CursorPoint(
                 offset = DpOffset(0.dp, 16.dp)
-            ).positionProvider(),
+            ).positionProvider(Offset.Zero),
         ) {
             Card(
                 elevation = 8.dp
