@@ -132,6 +132,7 @@ fun main() = application {
     // Must be set before a Window is created.
     Timber.i { "Setting renderer to ${SL.appConfig.renderer}." }
     System.setProperty("skiko.renderApi", SL.appConfig.renderer!!)
+    System.setProperty("compose.interop.blending", "true")
 
     println("${ServiceLocator::class.simpleName} is ready ${sinceStartStr()}.")
 

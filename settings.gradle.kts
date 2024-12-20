@@ -16,7 +16,6 @@ pluginManagement {
         gradlePluginPortal()
         maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
     }
-
 }
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version("0.4.0")
@@ -28,13 +27,16 @@ include("App", "SMOL_Access", "VRAM_Checker", "UpdateStager", "Utilities", "Mod_
 dependencyResolutionManagement {
     versionCatalogs {
         create("libs") {
-            plugin("compose", "org.jetbrains.compose").version("1.6.11")
+            version("kotlin", "2.0.21")
+            plugin("kotlinMultiplatform", "org.jetbrains.kotlin").version("2.0.21")
+            plugin("composeCompiler", "org.jetbrains.kotlin.plugin.compose").version("2.0.21")
+            plugin("compose", "org.jetbrains.compose").version("1.7.1")
 
-            library("kotlin-reflect", "org.jetbrains.kotlin:kotlin-reflect:1.9.0")
-            library("kotlin-reflect", "org.jetbrains.kotlin:kotlin-reflect:1.9.0")
+            library("kotlin-reflect", "org.jetbrains.kotlin:kotlin-reflect:2.1.0")
+            library("kotlin-reflect", "org.jetbrains.kotlin:kotlin-reflect:2.1.0")
             library("kotson", "com.github.salomonbrys.kotson:kotson:2.5.0")
-            library("coroutines", "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0-native-mt")
-            library("coroutines-swing", "org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.6.0")
+            library("coroutines", "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+            library("coroutines-swing", "org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.9.0")
             library("jackson-core", "com.fasterxml.jackson.core:jackson-core:2.15.2")
             library("jackson-dataformat-xml", "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.15.2")
             library("jackson-databind", "com.fasterxml.jackson.core:jackson-databind:2.15.2")

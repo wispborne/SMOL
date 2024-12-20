@@ -45,7 +45,7 @@ fun SmolIconButton(
                 enabled = enabled,
                 role = Role.Button,
                 interactionSource = interactionSource,
-                indication = rememberRipple(bounded = false, radius = rippleRadius)
+                indication = null // Previously  rememberRipple(bounded = false, radius = rippleRadius)
             ),
         contentAlignment = Alignment.Center
     ) {

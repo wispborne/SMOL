@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.util.libsDirectory
-
 /*
  * This file is distributed under the GPLv3. An informal description follows:
  * - Anyone can copy, modify and distribute this software as long as the other points are followed.

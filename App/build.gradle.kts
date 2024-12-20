@@ -17,6 +17,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     kotlin("jvm")
     alias(libs.plugins.compose)
+    alias(libs.plugins.composeCompiler)
 }
 
 group = "com.wisp"
