@@ -43,7 +43,11 @@ internal object ForumScraper {
 //        Jsoup.parse(
 //            Path.of("C:/Users/whitm/SMOL/web/Starsector_Index/fractalsoftworks.com/forum/indexebd2.html").toFile(), null
 //        )
-            val categories: Elements = doc.select("ul.bbc_list")
+            val mainPost = doc.select(".post").first() ?: run {
+                Timber.w { "Failed to find main post in mod index." }
+                return@runCatching null
+            }
+            val categories: Elements = mainPost.select("ul.bbc_list")
 
             categories
                 .flatMap { categoryElement ->

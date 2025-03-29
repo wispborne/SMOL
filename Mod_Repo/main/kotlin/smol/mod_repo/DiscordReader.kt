@@ -12,7 +12,6 @@
 
 package smol.mod_repo
 
-import com.google.gson.GsonBuilder
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
@@ -35,13 +34,12 @@ internal object DiscordReader {
     private const val baseUrl = "https://discord.com/api"
     private const val delayBetweenRequestsMillis = 40L // Allowed to do 50 requests per second
     private var timestampOfLastHttpCall: Long = 0L
-    private const val serverId = "187635036525166592"
 
-    @Deprecated("Moved to forums")
-    private const val modUpdatesChannelId = "1104110077075542066"
+//    @Deprecated("Moved to forums-style mod_updates channel")
+//    private const val modUpdatesChannelId = "1104110077075542066"
 //    private const val modUpdatesForumChannelId = "1115946075262550016" // 0.96a channel
 
-    private const val modUpdatesForumChannelId = "1203051351307985046"
+    //    private const val modUpdatesForumChannelId = "1203051351307985046"
     private val urlFinderRegex = Regex(
         """(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#-]*[\w@?^=%&\/~+#-])"""
     )
@@ -50,7 +48,7 @@ internal object DiscordReader {
 
     class DownloadyUrl(val url: String, val isDownloadable: Boolean)
 
-    internal suspend fun readAllMessages(config: Main.Companion.Config, gsonBuilder: GsonBuilder): List<ScrapedMod>? {
+    internal suspend fun readAllMessages(config: Main.Companion.Config): List<ScrapedMod>? {
         apiCallsLastRun = 0
 
         val authToken = config.discordAuthToken ?: run {
@@ -68,8 +66,37 @@ internal object DiscordReader {
                 this.followRedirects = true
             }
 
-        println("Scraping Discord's #mod_updates...")
+        val modUpdatesForumChannelIds = config.discord_forumChannelIdsAndGameVersions?.ifEmpty { null } ?: run {
+            Timber.w { "No channel IDs found in ${Main.configFilePath}." }
+            return@readAllMessages null
+        }
 
+        println("Scraping ${modUpdatesForumChannelIds.size} Discord's #mod_updates channel(s)...")
+        val modCountLimit = if (config.lessScraping) 20 else null
+
+        return modUpdatesForumChannelIds
+            .map { modUpdatesChannelId ->
+                readAllThreadsFromForumChannelId(
+                    config.discord_serverId,
+                    modUpdatesChannelId.key,
+                    httpClient,
+                    authToken,
+                    modCountLimit
+                )
+                    // If there's no game version requirement (which there won't be for Discord mods, set it based on the mod_updates channel it's in)
+                    .map { it.copy(gameVersionReq = it.gameVersionReq?.ifEmpty { null } ?: modUpdatesChannelId.value) }
+            }
+            .flatten()
+            .also { Timber.i { "Done scraping Discord." } }
+    }
+
+    private suspend fun readAllThreadsFromForumChannelId(
+        serverId: String?,
+        modUpdatesForumChannelId: String,
+        httpClient: HttpClient,
+        authToken: String,
+        modCountLimit: Int?
+    ): List<ScrapedMod> {
         val modUpdatesChannel = getChannel(
             channelId = modUpdatesForumChannelId,
             httpClient = httpClient,
@@ -79,10 +106,12 @@ internal object DiscordReader {
         val categoriesLookup = modUpdatesChannel.available_tags.orEmpty().associate { it.id to it.name }
 
         return getThreads(
+            serverId = serverId ?: return emptyList(),
             channelId = modUpdatesForumChannelId,
             httpClient = httpClient,
             authToken = authToken,
-            getFullChannelInfo = true
+            getFullChannelInfo = true,
+            modCountLimit = modCountLimit
         )
             .map { thread ->
                 // For threads, take the first 100 messages of the thread.
@@ -126,9 +155,13 @@ internal object DiscordReader {
             .also { Timber.i { "Done checking reactions." } }
             .parallelMap { message ->
                 return@parallelMap if (message.count() == 1 && !message.first().isInThread()) {
-                    parseAsSingleMessage(message.first())
+                    parseAsSingleMessage(
+                        serverId = serverId,
+                        modUpdatesForumChannelId = modUpdatesForumChannelId,
+                        message = message.first()
+                    )
                 } else {
-                    parseAsThread(message, categoriesLookup)
+                    parseAsThread(messages = message, serverId = serverId, categoriesLookup = categoriesLookup)
                 }
             }
             .mapNotNull { it?.let { cleanUpMod(it) } }
@@ -137,6 +170,8 @@ internal object DiscordReader {
     }
 
     private suspend fun parseAsSingleMessage(
+        serverId: String,
+        modUpdatesForumChannelId: String,
         message: Message
     ): ScrapedMod {
         Timber.i { "Parsing message ${message.content?.lines()?.firstOrNull()}" }
@@ -180,6 +215,7 @@ internal object DiscordReader {
 
     private suspend fun parseAsThread(
         messages: List<Message>,
+        serverId: String,
         categoriesLookup: Map<String, String?>
     ): ScrapedMod? {
         if (messages.isEmpty()) return null
@@ -340,11 +376,13 @@ internal object DiscordReader {
      * @param getFullChannelInfo If true, will make a second request for each Thread to get the full channel info, including tags.
      */
     private suspend fun getThreads(
+        serverId: String,
         channelId: String,
         httpClient: HttpClient,
         authToken: String,
         getFullChannelInfo: Boolean = false,
-        includeArchived: Boolean = true
+        includeArchived: Boolean = true,
+        modCountLimit: Int?
     ): List<Channel> {
         val threads = mutableListOf<Channel>()
 
@@ -370,6 +408,7 @@ internal object DiscordReader {
             )
             .filter { it.parent_id == channelId }
             .sortedByDescending { it.timestamp }
+            .take(modCountLimit ?: Int.MAX_VALUE)
 
         Timber.i { "Found ${allThreads.count()} active and archived threads in Discord #mod_updates." }
         threads += allThreads

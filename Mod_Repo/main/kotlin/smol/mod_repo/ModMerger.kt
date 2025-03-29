@@ -36,7 +36,7 @@ internal class ModMerger {
     suspend fun merge(mods: List<ScrapedMod>): List<ScrapedMod> {
         val startTime = Instant.now()
 
-        // Mods that are also listed from another, more preferable source.
+        // Mods that are also listed from another, more preferable source. Add them to a list so we can skip them in future checks.
         val modsAlreadyAddedToAGroup = mutableListOf<ScrapedMod>()
         val lock = Semaphore(permits = 1)
         val summary = StringBuilder()
@@ -56,70 +56,71 @@ internal class ModMerger {
 
                         // Add the mod and then look for and add all similar ones, starting from location of the outer loop
                         return@mapIndexed listOf(outerLoopMod)
-                            .plus(scrapedMods.subList(index, scrapedMods.count())
-                                .parallelMap { innerLoopMod ->
-                                    // Skip comparing the mod to itself.
-                                    // Skip comparing mods from the same source; there shouldn't be duplicates in the same place.
-                                    if (innerLoopMod === outerLoopMod
-                                        || outerLoopMod.sources().containsAll(innerLoopMod.sources())
-                                    ) {
-                                        return@parallelMap innerLoopMod to false
-                                    }
+                            .plus(
+                                scrapedMods.subList(index, scrapedMods.count())
+                                    .parallelMap { innerLoopMod ->
+                                        // Skip comparing the mod to itself.
+                                        // (disabled this check bc. of mult. discord channels) Skip comparing mods from the same source; there shouldn't be duplicates in the same place.
+                                        if (innerLoopMod === outerLoopMod
+//                                            || outerLoopMod.sources().containsAll(innerLoopMod.sources())
+                                        ) {
+                                            return@parallelMap innerLoopMod to false
+                                        }
 
-                                    val outer = outerLoopMod.name.prepForMatching()
-                                    val inner = innerLoopMod.name.prepForMatching()
+                                        val outer = outerLoopMod.name.prepForMatching()
+                                        val inner = innerLoopMod.name.prepForMatching()
 
-                                    // Check the mod names.
-                                    val bestNameResult = ModRepoUtils.compareToFindBestMatch(
-                                        leftList = outer.asList(),
-                                        rightList = inner.asList()
-                                    )
-
-                                    // If the names are similar, check the authors.
-                                    val bestAuthorsResult =
-                                        ModRepoUtils.compareToFindBestMatch(
-                                            leftList = listOf(
-                                                outerLoopMod.authors.asList(),
-                                                ModRepoUtils.getOtherMatchingAliases(outerLoopMod.authors),
-                                            )
-                                                .flatten()
-                                                .distinct()
-                                                .mapNotNull { it.prepForMatching() },
-                                            rightList = listOf(
-                                                innerLoopMod.authors.asList(),
-                                                ModRepoUtils.getOtherMatchingAliases(innerLoopMod.authors),
-                                            )
-                                                .flatten()
-                                                .distinct()
-                                                .mapNotNull { it.prepForMatching() }
+                                        // Check the mod names.
+                                        val bestNameResult = ModRepoUtils.compareToFindBestMatch(
+                                            leftList = outer.asList(),
+                                            rightList = inner.asList()
                                         )
 
-                                    val outerUrl = outerLoopMod.urls()[ModUrlType.Forum]
-                                    val doForumLinksMatch =
-                                        outerUrl != null && outerUrl == innerLoopMod.urls()[ModUrlType.Forum]
-                                    val doNameAndAuthorMatch = bestNameResult.isMatch && bestAuthorsResult.isMatch
+                                        // If the names are similar, check the authors.
+                                        val bestAuthorsResult =
+                                            ModRepoUtils.compareToFindBestMatch(
+                                                leftList = listOf(
+                                                    outerLoopMod.authors.asList(),
+                                                    ModRepoUtils.getOtherMatchingAliases(outerLoopMod.authors),
+                                                )
+                                                    .flatten()
+                                                    .distinct()
+                                                    .mapNotNull { it.prepForMatching() },
+                                                rightList = listOf(
+                                                    innerLoopMod.authors.asList(),
+                                                    ModRepoUtils.getOtherMatchingAliases(innerLoopMod.authors),
+                                                )
+                                                    .flatten()
+                                                    .distinct()
+                                                    .mapNotNull { it.prepForMatching() }
+                                            )
 
-                                    val isMatch = doNameAndAuthorMatch || doForumLinksMatch
+                                        val outerUrl = outerLoopMod.urls()[ModUrlType.Forum]
+                                        val doForumLinksMatch =
+                                            outerUrl != null && outerUrl == innerLoopMod.urls()[ModUrlType.Forum]
+                                        val doNameAndAuthorMatch = bestNameResult.isMatch && bestAuthorsResult.isMatch
 
-                                    if (doNameAndAuthorMatch) {
-                                        Timber.d { "Matched names $bestNameResult and authors $bestAuthorsResult." }
+                                        val isMatch = doNameAndAuthorMatch || doForumLinksMatch
+
+                                        if (doNameAndAuthorMatch) {
+                                            Timber.d { "Matched names $bestNameResult and authors $bestAuthorsResult." }
+                                        }
+
+                                        if (doForumLinksMatch) {
+                                            Timber.d { "Matching forum urls for ${outerLoopMod.name} and ${innerLoopMod.name}: $outerUrl." }
+                                        }
+
+                                        if (isMatch) {
+                                            lock.acquire()
+                                            modsAlreadyAddedToAGroup.add(innerLoopMod)
+                                            lock.release()
+                                            innerLoopMod to true
+                                        } else {
+                                            innerLoopMod to false
+                                        }
                                     }
-
-                                    if (doForumLinksMatch) {
-                                        Timber.d { "Matching forum urls for ${outerLoopMod.name} and ${innerLoopMod.name}: $outerUrl." }
-                                    }
-
-                                    if (isMatch) {
-                                        lock.acquire()
-                                        modsAlreadyAddedToAGroup.add(innerLoopMod)
-                                        lock.release()
-                                        innerLoopMod to true
-                                    } else {
-                                        innerLoopMod to false
-                                    }
-                                }
-                                .filter { it.second } // Filter out the mods that didn't match
-                                .map { it.first }) // Get the mods that did match
+                                    .filter { it.second } // Filter out the mods that didn't match
+                                    .map { it.first }) // Get the mods that did match
                     }
                     .filterNotNull()
             }
@@ -187,13 +188,25 @@ internal class ModMerger {
                 // Mods from the Index always have priority in case of conflicts.
                 val doesNewModHavePriority =
                     if (mergedMod.sources.orEmpty().contains(ModSource.Index)) {
-                        Timber.i { "Merging '${modToFoldIn.name}' from '${modToFoldIn.authors}' with higher priority '${mergedMod.name}' from '${mergedMod.authors}'." }
+                        Timber.i { "Merging '${modToFoldIn.name}' from '${modToFoldIn.authors}' with higher priority '${mergedMod.name}' from '${mergedMod.authors}' because of Index source." }
                         false
                     } else if (modToFoldIn.sources.orEmpty().contains(ModSource.Index)) {
-                        Timber.i { "Merging '${mergedMod.name}' from '${mergedMod.authors}' with higher priority '${modToFoldIn.name}' from '${modToFoldIn.authors}'." }
+                        Timber.i { "Merging '${mergedMod.name}' from '${mergedMod.authors}' with higher priority '${modToFoldIn.name}' from '${modToFoldIn.authors}' because of Index source." }
                         true
+                    } else if (modToFoldIn.gameVersionReq != null && mergedMod.gameVersionReq != null
+                        && modToFoldIn.gameVersionReq != mergedMod.gameVersionReq
+                    ) {
+                        // If the game version requirements are different, the one with the higher version is preferred.
+                        val isFoldInModHigherGameVersionThanExisting =
+                            Version.parse(modToFoldIn.gameVersionReq) > Version.parse(mergedMod.gameVersionReq)
+                        if (isFoldInModHigherGameVersionThanExisting) {
+                            Timber.i { "Merging '${mergedMod.name}' from '${mergedMod.authors}' with higher priority '${modToFoldIn.name}' from '${modToFoldIn.authors}' because of game version." }
+                        } else {
+                            Timber.i { "Merging '${modToFoldIn.name}' from '${modToFoldIn.authors}' with higher priority '${mergedMod.name}' from '${mergedMod.authors}' because of game version." }
+                        }
+                        isFoldInModHigherGameVersionThanExisting
                     } else {
-                        Timber.i { "Merging '${modToFoldIn.name}' from '${modToFoldIn.authors}' with higher priority '${mergedMod.name}' from '${mergedMod.authors}'." }
+                        Timber.i { "Merging '${modToFoldIn.name}' from '${modToFoldIn.authors}' with higher priority '${mergedMod.name}' from '${mergedMod.authors}' because of fallback." }
                         false
                     }
 

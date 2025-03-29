@@ -47,7 +47,9 @@ class Main {
             val enableNexus: Boolean,
             val logLevel: String,
             val discordAuthToken: String?,
-            val nexusApiToken: String?
+            val nexusApiToken: String?,
+            val discord_serverId: String?,
+            val discord_forumChannelIdsAndGameVersions: Map<String, String>?,
         )
 
         @JvmStatic
@@ -117,12 +119,11 @@ class Main {
                 runCatching {
                     // isDownloadable takes forever, don't use a timeout.
 //                    withTimeout(90000) {
-                        if (config.enableDiscord) {
-                            DiscordReader.readAllMessages(
-                                config = config,
-                                gsonBuilder = gsonBuilder
-                            )
-                        } else emptyList()
+                    if (config.enableDiscord) {
+                        DiscordReader.readAllMessages(
+                            config = config
+                        )
+                    } else emptyList()
 //                    }
                 }
                     .onFailure { Timber.e(it) }
@@ -158,7 +159,11 @@ class Main {
                         modRepoCache.items = this
                         modRepoCache.totalCount = this.count()
                         modRepoCache.lastUpdated = Instant.now().truncatedTo(ChronoUnit.MINUTES).toString()
-                        println("Total time: ${Instant.now().minusMillis(startTime.toEpochMilli()).toEpochMilli() / 1000}s.")
+                        println(
+                            "Total time: ${
+                                Instant.now().minusMillis(startTime.toEpochMilli()).toEpochMilli() / 1000
+                            }s."
+                        )
                         println("Saved ${this.count()} mods to ${ModRepoCache.location.toAbsolutePath()}.")
                     }
 
@@ -175,15 +180,21 @@ class Main {
                     .onFailure { System.err.println(it) }
                     .getOrNull() == true)
                 Properties().apply { this.load(configFilePath.bufferedReader()) }
-                    .let {
+                    .let { configMap ->
                         Config(
-                            lessScraping = it["less_scraping"].toString().toBoolean(),
-                            enableForums = it["enable_forums"].toString().toBoolean(),
-                            enableDiscord = it["enable_discord"].toString().toBoolean(),
-                            enableNexus = it["enable_nexus"].toString().toBoolean(),
-                            logLevel = it["log_level"].toString(),
-                            discordAuthToken = it["auth_token"]?.toString(),
-                            nexusApiToken = it["nexus_api_token"]?.toString(),
+                            lessScraping = configMap["less_scraping"].toString().toBoolean(),
+                            enableForums = configMap["enable_forums"].toString().toBoolean(),
+                            enableDiscord = configMap["enable_discord"].toString().toBoolean(),
+                            enableNexus = configMap["enable_nexus"].toString().toBoolean(),
+                            logLevel = configMap["log_level"].toString(),
+                            discordAuthToken = configMap["auth_token"]?.toString(),
+                            nexusApiToken = configMap["nexus_api_token"]?.toString(),
+                            discord_serverId = configMap["discord_serverId"]?.toString(),
+                            discord_forumChannelIdsAndGameVersions = configMap["discord_forumChannelIdsAndGameVersions"]
+                                ?.toString()
+                                ?.split(",")
+                                ?.map { it.split(":") }
+                                ?.associate { it[0].trim() to it[1].trim() }
                         )
                     }
             else {
