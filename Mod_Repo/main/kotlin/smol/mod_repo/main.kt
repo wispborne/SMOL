@@ -150,6 +150,11 @@ class Main {
                 val nexusMods = nexusModsJob.await() ?: emptyList()
 
                 Timber.i { "Found ${forumMods.size} forum mods, ${discordMods.size} Discord mods, and ${nexusMods.size} Nexus mods." }
+                // Write each to a .json, so they can be checked later if needed to debug something.
+                Path.of("forumMods.json").writeText(jsanity.toJson(forumMods))
+                Path.of("discordMods.json").writeText(jsanity.toJson(discordMods))
+                Path.of("nexusMods.json").writeText(jsanity.toJson(nexusMods))
+
                 Timber.i { "Starting merge..." }
 
                 ModMerger()

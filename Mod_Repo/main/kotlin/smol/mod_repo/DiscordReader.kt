@@ -56,6 +56,13 @@ internal object DiscordReader {
             return@readAllMessages null
         }
 
+
+        val discordServerid = config.discord_serverId
+        if (discordServerid.isNullOrBlank()) {
+            Timber.w { "No Discord server ID found in ${Main.configFilePath}." }
+            return null
+        }
+
         val httpClient =
             HttpClient(CIO) {
                 install(Logging)
@@ -77,7 +84,7 @@ internal object DiscordReader {
         return modUpdatesForumChannelIds
             .map { modUpdatesChannelId ->
                 readAllThreadsFromForumChannelId(
-                    config.discord_serverId,
+                    discordServerid,
                     modUpdatesChannelId.key,
                     httpClient,
                     authToken,
@@ -91,7 +98,7 @@ internal object DiscordReader {
     }
 
     private suspend fun readAllThreadsFromForumChannelId(
-        serverId: String?,
+        serverId: String,
         modUpdatesForumChannelId: String,
         httpClient: HttpClient,
         authToken: String,
@@ -105,18 +112,26 @@ internal object DiscordReader {
 
         val categoriesLookup = modUpdatesChannel.available_tags.orEmpty().associate { it.id to it.name }
 
-        return getThreads(
-            serverId = serverId ?: return emptyList(),
-            channelId = modUpdatesForumChannelId,
-            httpClient = httpClient,
-            authToken = authToken,
-            getFullChannelInfo = true,
-            modCountLimit = modCountLimit
-        )
+        return (runCatching {
+            getThreads(
+                serverId = serverId,
+                channelId = modUpdatesForumChannelId,
+                httpClient = httpClient,
+                authToken = authToken,
+                getFullChannelInfo = true,
+                modCountLimit = modCountLimit
+            )
+        }
+            .onFailure { Timber.w(it) { "Failed to get threads for channel '$modUpdatesForumChannelId'." } }
+            .getOrNull() ?: return emptyList())
             .map { thread ->
-                // For threads, take the first 100 messages of the thread.
-                getMessages(channelId = thread.id, thread.name, httpClient, authToken, limit = 100)
-                    .map { it.copy(parentThread = thread) }
+                runCatching {
+                    // For threads, take the first 100 messages of the thread.
+                    getMessages(channelId = thread.id, thread.name, httpClient, authToken, limit = 100)
+                        .map { it.copy(parentThread = thread) }
+                }
+                    .onFailure { Timber.w(it) { "Failed to get messages for thread '${thread.name}'." } }
+                    .getOrNull() ?: emptyList()
             }
             .also { Timber.i { "Checking for mods with $noscrapeReaction reactions." } }
             .filter { msgs ->
@@ -403,7 +418,12 @@ internal object DiscordReader {
                 run {
                     // Archived threads
                     if (!includeArchived) emptyList()
-                    else getArchivedThreads(httpClient, channelId, authToken)
+                    else try {
+                        getArchivedThreads(httpClient, channelId, authToken)
+                    } catch (e: Exception) {
+                        Timber.w(e)
+                        emptyList()
+                    }
                 }
             )
             .filter { it.parent_id == channelId }
